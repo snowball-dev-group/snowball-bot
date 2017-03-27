@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["es2017"],
+    "outDir": "out",
+    "module": "commonjs",
+    "strictNullChecks": true,
+    "removeComments": true,
+    // "noUnusedLocals": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "inlineSources": true,
+    "allowJs": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "src/**/*",
+    "typings/**/*"
+  ],
+  "exclude": [
+      "node_modules",
+      "out"
+  ]
+}

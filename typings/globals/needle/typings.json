@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/16e6ab0e7d33a2e8056c9af8d266952d89c3249f/needle/index.d.ts",
+    "raw": "registry:dt/needle#1.4.0+20170130190048",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/16e6ab0e7d33a2e8056c9af8d266952d89c3249f/needle/index.d.ts"
+  }
+}

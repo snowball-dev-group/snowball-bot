@@ -1,0 +1,26 @@
+{
+	"rules": {
+		"no-unused-expression": true,
+		"no-duplicate-variable": true,
+		"no-duplicate-key": true,
+		"no-unused-variable": true,
+		"curly": true,
+		"class-name": true,
+		"semicolon": ["always"],
+		"triple-equals": true,
+		"array-type": [
+			"array-simple"
+		],
+		"no-var-keyword": true,
+		"comment-format": [
+			"check-space"
+		],
+		"completed-docs": [
+			"methods"
+		],
+		"no-var-requires": true,
+		"quotemark": [
+			"double"
+		]
+	}
+}
