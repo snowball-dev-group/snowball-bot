@@ -6,6 +6,10 @@ import { isOwner } from "./checks/commands";
 import { commandRedirect, objectToMap } from "./utils/utils";
 import * as needle from "needle";
 
+enum EmbedType {
+    Error, OK
+}
+
 class OwnerCommands extends Plugin implements IModule {
     log:Function = logger("OwnerCMDs");
 
@@ -13,6 +17,26 @@ class OwnerCommands extends Plugin implements IModule {
         super({
             "message": (msg:Message) => this.onMessage(msg)
         });
+    }
+
+    generateEmbed(type:EmbedType, description:string, imageUrl?:string) {
+        return {
+            description: description,
+            image: imageUrl ? {
+                url: imageUrl
+            } : undefined,
+            color: type === EmbedType.Error ? 0xe53935 : type === EmbedType.OK ? 0x43A047 : undefined,
+            author: type === EmbedType.Error ? {
+                name: "Ошибка",
+                icon_url: "https://i.imgur.com/9IwsjHS.png"
+            } : type === EmbedType.OK ? {
+                name: "Успех!",
+                icon_url: "https://i.imgur.com/FcnCpHL.png"
+            } : undefined,
+            footer: {
+                text: discordBot.user.username
+            }
+        };
     }
 
     @isOwner
@@ -33,56 +57,19 @@ class OwnerCommands extends Plugin implements IModule {
                 try {
                     needle.get(msg.attachments.first().url, async (err, resp, body) => {
                         if(err) {
-                            return msg.channel.sendMessage("", {
-                                embed: {
-                                    color: 0xe53935,
-                                    author: {
-                                        name: "Ошибка",
-                                        icon_url: "https://i.imgur.com/9IwsjHS.png"
-                                    },
-                                    description: `Ошибка обновления аватарки: \`${err.message}\``,
-                                    footer: {
-                                        text: discordBot.user.username
-                                    }
-                                }
-                            });
+                            msg.channel.sendMessage("", this.generateEmbed(EmbedType.Error, `Ошибка обновления аватарки: \`${err.message}\``));;
+                            return;
                         }
                         try {
                             let newUser = await discordBot.user.setAvatar(new Buffer(resp.body));
-                            msg.channel.sendMessage("", {
-                                embed: {
-                                    color: 0x43A047,
-                                    image: {
-                                        url: newUser.displayAvatarURL
-                                    },
-                                    author: {
-                                        name: "Успех!",
-                                        icon_url: "https://i.imgur.com/FcnCpHL.png"
-                                    },
-                                    description: "Аватарка бота успешно изменена:",
-                                    footer: {
-                                        text: newUser.username
-                                    }
-                                }
-                            });
+                            msg.channel.sendMessage("", this.generateEmbed(EmbedType.OK, "Аватарка бота успешно изменена:", newUser.avatarURL));
                         } catch (err) {
-                            msg.channel.sendMessage("", {
-                                embed: {
-                                    color: 0xe53935,
-                                    author: {
-                                        name: "Ошибка",
-                                        icon_url: "https://i.imgur.com/9IwsjHS.png"
-                                    },
-                                    description: `Ошибка обновления аватарки: \`${err.message}\``,
-                                    footer: {
-                                        text: discordBot.user.username
-                                    }
-                                }
-                            });
+                            msg.channel.sendMessage("", this.generateEmbed(EmbedType.Error, `Ошибка обновления аватарки: \`${err.message}\``));
                         }
                     });
                 } catch (err) {
                     this.log("err", "Error downloading avy");
+                    msg.channel.sendMessage("", this.generateEmbed(EmbedType.Error, `Ошибка загрузки аватарки: \`${err.message}\``));
                 }
             }
         }));
