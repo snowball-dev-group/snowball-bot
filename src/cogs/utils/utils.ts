@@ -58,3 +58,37 @@ export function escapeDiscordMarkdown(str:string) {
     str = replaceAll(str, "_ ", "\\_ ");
     return str;
 }
+
+export enum EmbedType {
+    Error,
+    OK,
+    Custom
+}
+// customFooter?:string
+
+export interface IEmbedOptions {
+    customFooter?:string;
+    customColor?:string;
+}
+
+export function generateEmbed(type:EmbedType, description:string, imageUrl?:string, options?:IEmbedOptions) {
+    return {
+        description: description,
+        image: imageUrl ? {
+            url: imageUrl
+        } : undefined,
+        color: type === EmbedType.Error ? 0xe53935 : type === EmbedType.OK ? 0x43A047 : options ? options.customColor : undefined,
+        author: type === EmbedType.Error ? {
+            name: "Ошибка",
+            icon_url: "https://i.imgur.com/9IwsjHS.png"
+        } : type === EmbedType.OK ? {
+            name: "Успех!",
+            icon_url: "https://i.imgur.com/FcnCpHL.png"
+        } : undefined,
+        footer: options && options.customFooter ? {
+            text: options.customFooter
+        } : {
+            text: discordBot.user.username
+        }
+    };
+}
