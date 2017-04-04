@@ -1,3 +1,5 @@
+import * as createLogger from "loggy";
+
 export function stringifyError(err, filter = null, space = 2) {
     let plainObject = {};
     Object.getOwnPropertyNames(err).forEach(function(key) {
@@ -66,9 +68,16 @@ export enum EmbedType {
 }
 // customFooter?:string
 
+export interface IEmbedOptionsField {
+    name:string;
+    value:string;
+    inline?:boolean;
+}
+
 export interface IEmbedOptions {
     customFooter?:string;
     customColor?:string;
+    fields?:Array<IEmbedOptionsField>;
 }
 
 export function generateEmbed(type:EmbedType, description:string, imageUrl?:string, options?:IEmbedOptions) {
@@ -91,4 +100,18 @@ export function generateEmbed(type:EmbedType, description:string, imageUrl?:stri
             text: discordBot.user.username
         }
     };
+}
+
+interface ILoggerFunction {
+    (type:"log"|"info"|"ok"|"warn"|"err"|"error"|"warning"|"trace"|"info_trace"|"warn_trace"|"err_trace", arg, ...args:any[]):ILogger;
+}
+
+interface ILogger {
+    name:string;
+    log:ILoggerFunction;
+}
+
+export function getLogger(name:string):ILoggerFunction {
+    if(!name) { throw new Error("No logger name provided"); }
+    return createLogger(name);
 }
