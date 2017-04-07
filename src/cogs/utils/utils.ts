@@ -17,24 +17,6 @@ export function replaceAll(str:string, search:string, replacement:string) {
     return str.replace(new RegExp(search, 'g'), replacement);
 };
 
-export function circularFilter(item) {
-  let i = 0;
-
-  return function(key, value) {
-    if(i !== 0 && typeof(item) === 'object' && typeof(value) === 'object' && item === value){
-        return '[Circular]'; 
-    }
-
-    if(i >= 10) {
-        return '(...)';
-    }
-
-    ++i; // so we know we aren't using the original object anymore
-
-    return value;  
-  };
-}
-
 export function objectToMap<T>(obj) {
     let map = new Map<string, T>();
     Object.keys(obj).forEach(key => {
