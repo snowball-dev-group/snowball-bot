@@ -165,7 +165,7 @@ export function isOwner(target, propertyKey: string, descriptor: TypedPropertyDe
  * Message should have author
  * @example Use it only to check if message sent from webhook or not
  */
-export function shouldHaveAuthor(target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => Promise<void>>) {
+export function shouldHaveAuthor(target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => any>) {
     if (typeof descriptor.value !== 'function') {
         throw new SyntaxError('This only works for events handlers');
     }
