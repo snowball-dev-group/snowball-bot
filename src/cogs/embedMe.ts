@@ -24,8 +24,6 @@ class EmbedME extends Plugin implements IModule {
         if(mContent.startsWith("`") && mContent.endsWith("`")) {
             mContent = mContent.slice(1).substring(0, mContent.length - 2);
         }
-        let lRoleWColor = msg.member.roles.array().reverse().find(r => r.color !== undefined);
-        let mColor =  lRoleWColor ? lRoleWColor.color : undefined;
         await msg.channel.sendMessage("", {
             embed: {
                 author: {
@@ -33,7 +31,6 @@ class EmbedME extends Plugin implements IModule {
                     name: msg.member.displayName
                 },
                 description: mContent,
-                color: mColor,
                 timestamp: msg.createdAt,
                 footer: {
                     icon_url: discordBot.user.avatarURL,
@@ -44,9 +41,9 @@ class EmbedME extends Plugin implements IModule {
         msg.delete();
     }
 
-    unload() {
+    async unload() {
         this.unhandleEvents();
-        return new Promise<boolean>((res) => res(true));
+        return true;
     }
 }
 
