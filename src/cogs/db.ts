@@ -4,7 +4,7 @@ let connection:knex;
 
 export default () => {
     if(!connection) {
-        if(!process.env["DB_PASSW"]) {
+        if(!process.env["DB_PASSWD"]) {
             throw new Error("DB password not set in process environment.");
         }
         connection = knex({
@@ -12,7 +12,7 @@ export default () => {
             connection: {
                 host: process.env["DB_HOST"] || "127.0.0.1",
                 user: process.env["DB_USER"] || "blacksilverbot",
-                password: process.env["DB_PASSW"],
+                password: process.env["DB_PASSWD"],
                 database: process.env["DB_NAME"] || "bsbnew"
             }
         });
