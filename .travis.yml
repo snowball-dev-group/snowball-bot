@@ -5,5 +5,5 @@ before_script:
   - npm install -g typescript tslint
 script:
   - rm -rf ./node_modules/discord.js/typings
-  - tslint
+  - tslint .
   - tsc
