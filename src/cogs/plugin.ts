@@ -1,9 +1,5 @@
-// import { IModule } from "../types/ModuleLoader";
-// import logger = require("loggy");
-
 export class Plugin {
     events:Map<string, Function> = new Map<string, Function>();
-    log:Function;
 
     constructor(events:Object) {
         Object.keys(events).forEach((key) => {
