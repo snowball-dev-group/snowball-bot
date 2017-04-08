@@ -66,6 +66,8 @@ export interface IEmbedOptions {
     };
     fields?:Array<IEmbedOptionsField>;
     title?:string;
+    errorTitle?:string;
+    okTitle?:string;
 }
 
 export function generateEmbed(type:EmbedType, description:string, imageUrl?:string, options?:IEmbedOptions) {
@@ -77,10 +79,10 @@ export function generateEmbed(type:EmbedType, description:string, imageUrl?:stri
         } : undefined,
         color: type === EmbedType.Error ? 0xe53935 : type === EmbedType.OK ? 0x43A047 : options ? options.color : undefined,
         author: type === EmbedType.Error ? {
-            name: "Ошибка",
+            name: (options && options.errorTitle) ? options.errorTitle : "Ошибка",
             icon_url: "https://i.imgur.com/9IwsjHS.png"
         } : type === EmbedType.OK ? {
-            name: "Успех!",
+            name: (options && options.okTitle) ? options.okTitle : "Успех!",
             icon_url: "https://i.imgur.com/FcnCpHL.png"
         } : (options && options.author) ? options.author : undefined,
         footer: options && options.footer ? {
