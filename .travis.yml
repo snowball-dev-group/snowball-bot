@@ -2,9 +2,8 @@ language: node_js
 node_js:
   - node
 before_script:
-  - npm install -g typescript
+  - npm install -g typescript tslint
 script:
-  - ls -A
-  - pwd
   - rm -rf ./node_modules/discord.js/typings
+  - tslint
   - tsc
