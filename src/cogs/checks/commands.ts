@@ -60,7 +60,7 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
                             continue;
                         } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) {
                             if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
-                                if(fallbackFunction && (!msg.content.startsWith(cmd + " ") || msg.content !== cmd)) {
+                                if(fallbackFunction && (msg.content.startsWith(cmd + " ") || msg.content === cmd)) {
                                     triggerFallbackFunction = true;
                                 }
                                 continue;
@@ -81,7 +81,7 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
                         return;
                     } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) { 
                         if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
-                            if(fallbackFunction && (!msg.content.startsWith(cmd + " ") || msg.content !== cmd)) {
+                            if(fallbackFunction && (msg.content.startsWith(cmd + " ") || msg.content === cmd)) {
                                 fallbackFunction.apply(this, [msg]);
                             }
                             return;
