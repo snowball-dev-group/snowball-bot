@@ -89,7 +89,8 @@ export function generateEmbed(type:EmbedType, description:string, imageUrl?:stri
             text: options.footer
         } : {
             text: discordBot.user.username
-        }
+        },
+        fields: (options && options.fields) ? options.fields : undefined
     };
 }
 
