@@ -34,7 +34,7 @@ export enum CommandEquality {
  * @param cmd {String} Command
  * @param eq {CommandEquality} Equality of command and content of message
  */
-export function command(cmd:string, eq:CommandEquality = CommandEquality.Equal) {
+export function command(cmd:string, aliases?:string[], eq:CommandEquality = CommandEquality.Equal) {
     return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => Promise<void>>) => {
         if (typeof descriptor.value !== "function") {
             throw new SyntaxError("This only works for 'message' event handler");
@@ -47,11 +47,26 @@ export function command(cmd:string, eq:CommandEquality = CommandEquality.Equal) 
                 if(!msg.content || msg.content.trim().length === 0) {
                     return;
                 }
-                if(eq === CommandEquality.Equal && msg.content !== cmd) {
-                    return;
-                } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) { 
-                    if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
+                if(aliases) {
+                    aliases = aliases.concat(cmd);
+                    for(let i = 0; i < aliases.length; i++) {
+                        const alias = aliases[i];
+                        if(!alias) { continue; }
+                        if(eq === CommandEquality.Equal && msg.content !== alias) {
+                            continue;
+                        } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) {
+                            if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
+                                continue;
+                            }
+                        }
+                    }
+                } else {
+                    if(eq === CommandEquality.Equal && msg.content !== cmd) {
                         return;
+                    } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) { 
+                        if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
+                            return;
+                        }
                     }
                 }
                 
