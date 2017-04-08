@@ -3,7 +3,7 @@ import { Plugin } from "./Plugin";
 import { Message } from "discord.js";
 import { Context } from "vm";
 import { isOwner, command, CommandEquality as cmdEquality } from "./checks/commands";
-import { stringifyError, replaceAll } from "./utils/utils";
+import { replaceAll, generateEmbed, EmbedType } from "./utils/utils";
 import logger = require("loggy");
 import util = require("util");
 import VM = require("vm");
@@ -51,10 +51,12 @@ class EvalJS extends Plugin implements IModule {
         
         // Parsing our script
         let script = afterCmd.substring(PREFIX_LENGTH, afterCmd.length - PREFIX_LENGTH);
+        let startTime = Date.now();
         try {
             // Trying to run it
             // Actually, it named `safeEval` but it's absolutely not safe
             // For example, if you set timer and throw error there
+            
             let output = this.safeEval(script, {
                 ...global,
                 this: this,
@@ -63,9 +65,32 @@ class EvalJS extends Plugin implements IModule {
                 setTimeout: (handler, ms) => setTimeout(this.makeSafe(handler), ms),
                 setInterval: (handler, ms) => setInterval(this.makeSafe(handler), ms),
             });
-            await message.reply(":white_check_mark: **Executed:**\n```js\n"+ replaceAll(util.inspect(output, false), "`", "'") + "\n```");
+            let diff = Date.now() - startTime;
+
+            message.channel.sendMessage(undefined, {
+                embed: generateEmbed(EmbedType.OK, "```js\n"+ replaceAll(util.inspect(output, false), "`", "'") + "\n```", undefined, {
+                    okTitle: "Executed",
+                    fields: [{
+                        inline: false,
+                        name: "Time spent",
+                        value: `${diff}ms`
+                    }]
+                })
+            });
+            //await message.reply(":white_check_mark: **Executed:**\n```js\n"+ replaceAll(util.inspect(output, false), "`", "'") + "\n```");
         } catch (err) {
-            await message.reply(":x: **Error:**\n```js\n" + replaceAll(stringifyError(err), "`", "'") + "\n```");
+            let diff = Date.now() - startTime;
+            // await message.reply(":x: **Error:**\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```");
+            message.channel.sendMessage(undefined, {
+                embed: generateEmbed(EmbedType.Error, "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```", undefined, {
+                    errorTitle: "Fault.",
+                    fields: [{
+                        inline: false,
+                        name: "Time spent",
+                        value: `${diff}ms`
+                    }]
+                })
+            });
         }
     }
 
