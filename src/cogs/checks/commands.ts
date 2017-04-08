@@ -76,63 +76,6 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
     };
 };
 
-export interface IAdvancedSettings {
-    /**
-     * If called command should have advanced properties
-     */
-    attachments?:boolean;
-    /**
-     * If called command should have embed
-     */
-    embed?:boolean;
-    /**
-     * Equality of command and content of message
-     */
-    commandEquality?:CommandEquality;
-}
-
-/**
- * Command decorator
- * @param cmd {String} Command
- * @param eq {CommandEquality} Equality of command and content of message
- */
-export function advancedCommand(cmd:string, advancedSettings:IAdvancedSettings) {
-    return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => Promise<void>>) => {
-        if (typeof descriptor.value !== "function") {
-            throw new SyntaxError("This only works for 'message' event handler");
-        }
-
-        return {
-            ...descriptor,
-            value: function commandWrapper(msg:Message) {
-                if(!descriptor.value) { return; }
-                if(!msg.content || msg.content.trim().length === 0) {
-                    return;
-                }
-
-                if(typeof advancedSettings.commandEquality !== "undefined" && advancedSettings.commandEquality !== null) {
-                    if(advancedSettings.commandEquality === CommandEquality.Equal && msg.content !== cmd) {
-                        return;
-                    } else if(advancedSettings.commandEquality === CommandEquality.SemiEqual || advancedSettings.commandEquality === CommandEquality.NotEqual) { 
-                        if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
-                            return;
-                        }
-                    }
-                }
-                
-                if(advancedSettings.attachments && msg.attachments.size === 0) {
-                    return;
-                }
-                if(advancedSettings.embed && msg.embeds.length === 0) {
-                    return;
-                }
-
-                return descriptor.value.apply(this, [msg]);
-            }
-        };
-    };
-};
-
 /**
  * Message in channel
  * @param channelId {string} Channel where message should be sent
