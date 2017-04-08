@@ -77,10 +77,8 @@ class EvalJS extends Plugin implements IModule {
                     }]
                 })
             });
-            //await message.reply(":white_check_mark: **Executed:**\n```js\n"+ replaceAll(util.inspect(output, false), "`", "'") + "\n```");
         } catch (err) {
             let diff = Date.now() - startTime;
-            // await message.reply(":x: **Error:**\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```");
             message.channel.sendMessage(undefined, {
                 embed: generateEmbed(EmbedType.Error, "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```", undefined, {
                     errorTitle: "Fault.",
