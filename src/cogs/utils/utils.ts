@@ -46,7 +46,8 @@ export function escapeDiscordMarkdown(str:string) {
 export enum EmbedType {
     Error,
     OK,
-    Custom
+    Infomation,
+    Empty
 }
 // customFooter?:string
 
@@ -57,8 +58,12 @@ export interface IEmbedOptionsField {
 }
 
 export interface IEmbedOptions {
-    footer?:string;
-    color?:string;
+    footerText?:string;
+    footer?:{
+        text:string;
+        icon_url?:string;
+    };
+    color?:number;
     author?:{
         name:string,
         icon_url?:string,
@@ -68,30 +73,75 @@ export interface IEmbedOptions {
     title?:string;
     errorTitle?:string;
     okTitle?:string;
+    informationTitle?:string;
+    imageUrl?:string;
 }
 
-export function generateEmbed(type:EmbedType, description:string, imageUrl?:string, options?:IEmbedOptions) {
-    return {
-        title: (options && options.title) ? options.title : undefined,
-        description: description,
-        image: imageUrl ? {
-            url: imageUrl
-        } : undefined,
-        color: type === EmbedType.Error ? 0xe53935 : type === EmbedType.OK ? 0x43A047 : options ? options.color : undefined,
-        author: type === EmbedType.Error ? {
-            name: (options && options.errorTitle) ? options.errorTitle : "Ошибка",
-            icon_url: "https://i.imgur.com/9IwsjHS.png"
-        } : type === EmbedType.OK ? {
-            name: (options && options.okTitle) ? options.okTitle : "Успех!",
-            icon_url: "https://i.imgur.com/FcnCpHL.png"
-        } : (options && options.author) ? options.author : undefined,
-        footer: options && options.footer ? {
-            text: options.footer
-        } : {
-            text: discordBot.user.username
-        },
-        fields: (options && options.fields) ? options.fields : undefined
-    };
+export function generateEmbed(type:EmbedType, description:string, options?:IEmbedOptions) {
+    let embed:any = {};
+    // embed pre-fill 
+    embed.author = {};
+    switch(type) {
+        case EmbedType.Error: {
+            embed.author.name = "Ошибка";
+            embed.author.icon_url = "https://i.imgur.com/9IwsjHS.png";
+            embed.color = 0xe53935;
+        } break;
+        case EmbedType.Infomation: {
+            embed.author.name = "Информация";
+            embed.author.icon_url = "https://i.imgur.com/cztrSSi.png";
+            embed.color = 0x2196F3;
+        } break;
+        case EmbedType.OK: {
+            embed.author.name = "Успех!";
+            embed.author.icon_url = "https://i.imgur.com/FcnCpHL.png";
+            embed.color = 0x43A047;
+        } break;
+        case EmbedType.Empty: break;
+    }
+    if(options) {
+        if(options.title) {
+            embed.title = options.title;
+        }
+        if(options.fields) {
+            embed.fields = options.fields;
+        }
+        if(type === EmbedType.Error && options.errorTitle) {
+            embed.author.name = options.errorTitle;
+        } else if(type === EmbedType.Infomation && options.informationTitle) {
+            embed.author.name = options.informationTitle;
+        } else if(type === EmbedType.OK && options.okTitle) {
+            embed.author.name = options.okTitle;
+        }
+        if(options.author) {
+            // full override
+            embed.author = options.author;
+        }
+        if(options.footer) {
+            embed.footer = options.footer;
+            if(options.footerText) {
+                embed.footer.text = options.footerText;
+            }
+        } else if(options.footerText) {
+            embed.footer = {
+                text: options.footerText
+            };
+        } else {
+            embed.footer = {
+                text: discordBot.user.username,
+                icon_url: discordBot.user.displayAvatarURL
+            };
+        }
+        if(options.imageUrl) {
+            embed.image = {
+                url: options.imageUrl
+            };
+        }
+        if(options.color) {
+            embed.color = options.color;
+        }
+    }
+    return embed;
 }
 
 interface ILoggerFunction {
