@@ -3,6 +3,6 @@ node_js:
   - node
 before_script:
   - npm install -g typescript
-  - tsc
 script:
   - rm -rf ./node_modules/discord.js/typings
+  - tsc
