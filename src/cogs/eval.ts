@@ -44,7 +44,7 @@ class EvalJS extends Plugin implements IModule {
     }
 
     @isOwner
-    @command("!eval", undefined, cmdEquality.NotEqual)
+    @command("!eval", undefined, cmdEquality.NotEqual, this.messageFallback)
     async onMessage(message:Message) {
         let afterCmd = message.content.slice("!eval ".length).trim();
         if(!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
@@ -68,7 +68,7 @@ class EvalJS extends Plugin implements IModule {
             let diff = Date.now() - startTime;
 
             message.channel.sendMessage(undefined, {
-                embed: generateEmbed(EmbedType.OK, "```js\n"+ replaceAll(util.inspect(output, false), "`", "'") + "\n```", undefined, {
+                embed: generateEmbed(EmbedType.OK, "```js\n"+ replaceAll(util.inspect(output, false), "`", "'") + "\n```", {
                     okTitle: "Executed",
                     fields: [{
                         inline: false,
@@ -80,7 +80,7 @@ class EvalJS extends Plugin implements IModule {
         } catch (err) {
             let diff = Date.now() - startTime;
             message.channel.sendMessage(undefined, {
-                embed: generateEmbed(EmbedType.Error, "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```", undefined, {
+                embed: generateEmbed(EmbedType.Error, "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```", {
                     errorTitle: "Fault.",
                     fields: [{
                         inline: false,
@@ -88,6 +88,24 @@ class EvalJS extends Plugin implements IModule {
                         value: `${diff}ms`
                     }]
                 })
+            });
+        }
+    }
+
+    async fallback(msg:Message) {
+        if(msg.content.startsWith("!eval ")) {
+            msg.channel.sendMessage(undefined, {
+                embed: generateEmbed(EmbedType.Error, "Arguments mismatch.", {
+                    fields: [{
+                        name: "Example",
+                        value: "```!eval ``something`` ```"
+                    }]
+                })
+            });
+            return;
+        } else if(msg.content === "!eval") {
+            msg.channel.sendMessage(undefined, {
+                embed: generateEmbed(EmbedType.Information, "To run this command provide code to eval. This command works only for bot owner.", undefined)
             });
         }
     }

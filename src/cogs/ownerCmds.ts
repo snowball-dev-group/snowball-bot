@@ -38,7 +38,9 @@ class OwnerCommands extends Plugin implements IModule {
                         }
                         try {
                             let newUser = await discordBot.user.setAvatar(new Buffer(resp.body));
-                            msg.channel.sendMessage("", generateEmbed(EmbedType.OK, "Аватарка бота успешно изменена:", newUser.avatarURL));
+                            msg.channel.sendMessage("", generateEmbed(EmbedType.OK, "Аватарка бота успешно изменена:", {
+                                imageUrl: newUser.avatarURL
+                            }));
                         } catch (err) {
                             msg.channel.sendMessage("", generateEmbed(EmbedType.Error, `Ошибка обновления аватарки: \`${err.message}\``));
                         }
