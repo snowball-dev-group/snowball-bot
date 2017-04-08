@@ -57,32 +57,34 @@ export interface IEmbedOptionsField {
 }
 
 export interface IEmbedOptions {
-    customFooter?:string;
-    customColor?:string;
-    customAuthor?:{
+    footer?:string;
+    color?:string;
+    author?:{
         name:string,
         icon_url?:string,
         url?:string
     };
     fields?:Array<IEmbedOptionsField>;
+    title?:string;
 }
 
 export function generateEmbed(type:EmbedType, description:string, imageUrl?:string, options?:IEmbedOptions) {
     return {
+        title: (options && options.title) ? options.title : undefined,
         description: description,
         image: imageUrl ? {
             url: imageUrl
         } : undefined,
-        color: type === EmbedType.Error ? 0xe53935 : type === EmbedType.OK ? 0x43A047 : options ? options.customColor : undefined,
+        color: type === EmbedType.Error ? 0xe53935 : type === EmbedType.OK ? 0x43A047 : options ? options.color : undefined,
         author: type === EmbedType.Error ? {
             name: "Ошибка",
             icon_url: "https://i.imgur.com/9IwsjHS.png"
         } : type === EmbedType.OK ? {
             name: "Успех!",
             icon_url: "https://i.imgur.com/FcnCpHL.png"
-        } : (options && options.customAuthor) ? options.customAuthor : undefined,
-        footer: options && options.customFooter ? {
-            text: options.customFooter
+        } : (options && options.author) ? options.author : undefined,
+        footer: options && options.footer ? {
+            text: options.footer
         } : {
             text: discordBot.user.username
         }
