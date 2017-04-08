@@ -59,6 +59,11 @@ export interface IEmbedOptionsField {
 export interface IEmbedOptions {
     customFooter?:string;
     customColor?:string;
+    customAuthor?:{
+        name:string,
+        icon_url?:string,
+        url?:string
+    };
     fields?:Array<IEmbedOptionsField>;
 }
 
@@ -75,7 +80,7 @@ export function generateEmbed(type:EmbedType, description:string, imageUrl?:stri
         } : type === EmbedType.OK ? {
             name: "Успех!",
             icon_url: "https://i.imgur.com/FcnCpHL.png"
-        } : undefined,
+        } : (options && options.customAuthor) ? options.customAuthor : undefined,
         footer: options && options.customFooter ? {
             text: options.customFooter
         } : {
