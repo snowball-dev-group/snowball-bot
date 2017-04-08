@@ -78,7 +78,7 @@ class Guilds extends Plugin implements IModule {
         if(!this.prepared) { msg.channel.sendMessage(); return; }
         if(args === "!guild create") {
             msg.reply("", { 
-                embed: generateEmbed(EmbedType.Error, "Невозможно создать гильдию", undefined, {
+                embed: generateEmbed(EmbedType.Error, "Невозможно создать гильдию", {
                     fields: [{
                         name: "Ошибка аргументации",
                         value: "Не предоставлены аргументы: владелец; название гильдии; описание"
