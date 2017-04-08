@@ -34,7 +34,7 @@ export enum CommandEquality {
  * @param cmd {String} Command
  * @param eq {CommandEquality} Equality of command and content of message
  */
-export function command(cmd:string, aliases?:string[], eq:CommandEquality = CommandEquality.Equal, fallbackFunction?:Function) {
+export function command(cmd:string, aliases?:string[], eq:CommandEquality = CommandEquality.Equal) {
     return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => Promise<void>>) => {
         if (typeof descriptor.value !== "function") {
             throw new SyntaxError("This only works for 'message' event handler");
@@ -49,41 +49,23 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
                 }
                 if(aliases) {
                     aliases = aliases.concat(cmd);
-                    let triggerFallbackFunction = false;
                     for(let i = 0; i < aliases.length; i++) {
                         const alias = aliases[i];
                         if(!alias) { continue; }
                         if(eq === CommandEquality.Equal && msg.content !== alias) {
-                            if(fallbackFunction && msg.content.startsWith(cmd + " ")) {
-                                triggerFallbackFunction = true;
-                            }
                             continue;
                         } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) {
                             if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
-                                if(fallbackFunction && (msg.content.startsWith(cmd + " ") || msg.content === cmd)) {
-                                    triggerFallbackFunction = true;
-                                }
                                 continue;
                             }
                         }
                     }
-                    if(!triggerFallbackFunction) {
-                        if(fallbackFunction) {
-                            fallbackFunction.apply(this, [msg]);
-                        }
-                        return;
-                    }
+                    return;
                 } else {
                     if(eq === CommandEquality.Equal && msg.content !== cmd) {
-                        if(fallbackFunction && msg.content.startsWith(cmd + " ")) {
-                            fallbackFunction.apply(this, [msg]);
-                        }
                         return;
                     } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) { 
                         if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
-                            if(fallbackFunction && (msg.content.startsWith(cmd + " ") || msg.content === cmd)) {
-                                fallbackFunction.apply(this, [msg]);
-                            }
                             return;
                         }
                     }
