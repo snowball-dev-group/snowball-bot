@@ -75,10 +75,13 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
                     }
                 } else {
                     if(eq === CommandEquality.Equal && msg.content !== cmd) {
+                        if(fallbackFunction && msg.content.startsWith(cmd + " ")) {
+                            fallbackFunction.apply(this, [msg]);
+                        }
                         return;
                     } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) { 
                         if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
-                            if((!msg.content.startsWith(cmd + " ") || msg.content !== cmd) && fallbackFunction) {
+                            if(fallbackFunction && (!msg.content.startsWith(cmd + " ") || msg.content !== cmd)) {
                                 fallbackFunction.apply(this, [msg]);
                             }
                             return;
