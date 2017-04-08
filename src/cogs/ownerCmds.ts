@@ -6,8 +6,6 @@ import { isOwner } from "./checks/commands";
 import { commandRedirect, objectToMap, generateEmbed, EmbedType } from "./utils/utils";
 import * as needle from "needle";
 
-
-
 class OwnerCommands extends Plugin implements IModule {
     log:Function = logger("OwnerCMDs");
 
@@ -55,9 +53,9 @@ class OwnerCommands extends Plugin implements IModule {
 
 
 
-    unload() {
+    async unload() {
         this.unhandleEvents();
-        return new Promise<boolean>((res) => res(true));
+        return true;
     }
 }
 
