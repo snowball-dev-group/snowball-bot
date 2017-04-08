@@ -81,6 +81,7 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
     let embed:any = {};
     // embed pre-fill 
     embed.author = {};
+    embed.description = description;
     switch(type) {
         case EmbedType.Error: {
             embed.author.name = "Ошибка";
