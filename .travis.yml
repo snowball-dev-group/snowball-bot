@@ -4,5 +4,7 @@ node_js:
 before_script:
   - npm install -g typescript
 script:
+  - ls
+  - pwd
   - rm -rf ./node_modules/discord.js/typings
   - tsc
