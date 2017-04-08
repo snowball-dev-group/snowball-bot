@@ -1,5 +1,5 @@
 import { IModule } from "../types/ModuleLoader";
-import { Plugin } from "./Plugin";
+import { Plugin } from "./plugin";
 import { Message } from "discord.js";
 import { Context } from "vm";
 import { isOwner, command, CommandEquality as cmdEquality } from "./checks/commands";
@@ -66,7 +66,7 @@ class EvalJS extends Plugin implements IModule {
                 setInterval: (handler, ms) => setInterval(this.makeSafe(handler), ms),
             });
             let diff = Date.now() - startTime;
-
+            
             message.channel.sendMessage(undefined, {
                 embed: generateEmbed(EmbedType.OK, "```js\n"+ replaceAll(util.inspect(output, false), "`", "'") + "\n```", {
                     okTitle: "Executed",

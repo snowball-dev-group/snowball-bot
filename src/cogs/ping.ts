@@ -1,6 +1,6 @@
 import { IModule } from "../types/ModuleLoader";
 import logger = require("loggy");
-import { Plugin } from "./Plugin";
+import { Plugin } from "./plugin";
 import { Message } from "discord.js"; 
 
 class Ping extends Plugin implements IModule {

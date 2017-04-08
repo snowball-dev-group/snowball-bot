@@ -1,5 +1,5 @@
 import { IModule } from "../types/ModuleLoader";
-import { Plugin } from "./Plugin";
+import { Plugin } from "./plugin";
 import { Message, Role } from "discord.js";
 import { commandRedirect, objectToMap, EmbedType, generateEmbed, getLogger } from "./utils/utils";
 import * as knex from "knex";

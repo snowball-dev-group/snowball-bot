@@ -1,5 +1,5 @@
 import { IModule } from "../types/ModuleLoader";
-import { Plugin } from "./Plugin";
+import { Plugin } from "./plugin";
 import { Message } from "discord.js"; 
 import { inChannel, shouldHaveAuthor } from "./checks/commands";
 
