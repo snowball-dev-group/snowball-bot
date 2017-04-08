@@ -44,7 +44,7 @@ class EvalJS extends Plugin implements IModule {
     }
 
     @isOwner
-    @command("!eval", undefined, cmdEquality.NotEqual, this.messageFallback)
+    @command("!eval", undefined, cmdEquality.NotEqual)
     async onMessage(message:Message) {
         let afterCmd = message.content.slice("!eval ".length).trim();
         if(!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
@@ -88,24 +88,6 @@ class EvalJS extends Plugin implements IModule {
                         value: `${diff}ms`
                     }]
                 })
-            });
-        }
-    }
-
-    async fallback(msg:Message) {
-        if(msg.content.startsWith("!eval ")) {
-            msg.channel.sendMessage(undefined, {
-                embed: generateEmbed(EmbedType.Error, "Arguments mismatch.", {
-                    fields: [{
-                        name: "Example",
-                        value: "```!eval ``something`` ```"
-                    }]
-                })
-            });
-            return;
-        } else if(msg.content === "!eval") {
-            msg.channel.sendMessage(undefined, {
-                embed: generateEmbed(EmbedType.Information, "To run this command provide code to eval. This command works only for bot owner.", undefined)
             });
         }
     }
