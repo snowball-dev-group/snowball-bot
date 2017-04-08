@@ -14,7 +14,7 @@ class EmbedME extends Plugin implements IModule {
     }
 
     @notByBot
-    @command("!embed", cq.SemiEqual)
+    @command("!embed", undefined, cq.SemiEqual)
     async onMessage(msg:Message) {
         if(msg.content === "!embed") { 
             msg.channel.sendMessage(":warning: Используйте эту команду, чтобы встроить своё сообщение в `встраиваемый объект`. Это не работает с изображениями, видео. Поддерживает скрытые ссылки: `[имя](http://example.org/)`, а также смайлики с других серверов, но для этого используйте `<:Name:ID>` и оберните сообщение в блок кода");
