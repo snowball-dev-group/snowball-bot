@@ -46,7 +46,7 @@ export function escapeDiscordMarkdown(str:string) {
 export enum EmbedType {
     Error,
     OK,
-    Infomation,
+    Information,
     Empty
 }
 // customFooter?:string
@@ -87,7 +87,7 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
             embed.author.icon_url = "https://i.imgur.com/9IwsjHS.png";
             embed.color = 0xe53935;
         } break;
-        case EmbedType.Infomation: {
+        case EmbedType.Information: {
             embed.author.name = "Информация";
             embed.author.icon_url = "https://i.imgur.com/cztrSSi.png";
             embed.color = 0x2196F3;
@@ -108,7 +108,7 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
         }
         if(type === EmbedType.Error && options.errorTitle) {
             embed.author.name = options.errorTitle;
-        } else if(type === EmbedType.Infomation && options.informationTitle) {
+        } else if(type === EmbedType.Information && options.informationTitle) {
             embed.author.name = options.informationTitle;
         } else if(type === EmbedType.OK && options.okTitle) {
             embed.author.name = options.okTitle;
