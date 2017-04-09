@@ -44,6 +44,7 @@ class Count extends Plugin implements IModule {
     @shouldHaveAuthor
     async onMessage(msg:Message) {
         if(!this.dbInitialized) { return; }
+        if(msg.channel.type === "dm") { return; }
         if(!msg.content) { msg.delete(); return; }
         let override = msg.content.startsWith("!");
         if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
@@ -85,6 +86,10 @@ class Count extends Plugin implements IModule {
             count: mNumber,
             date: Date.now() + ""
         });
+
+        if(Math.floor(Math.random() * 6) > 4 && row.author !== msg.client.user.id) {
+            msg.channel.sendMessage(mNumber+1);
+        }
     }
 
     unload() {
