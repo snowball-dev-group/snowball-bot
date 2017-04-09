@@ -44,9 +44,9 @@ class EvalJS extends Plugin implements IModule {
     }
 
     @isOwner
-    @command("!eval", ["e", "ev"], cmdEquality.NotEqual)
-    async onMessage(message:Message) {
-        let afterCmd = message.content.slice("!eval ".length).trim();
+    @command("!eval", ["!e", "!ev"], cmdEquality.NotEqual)
+    async onMessage(message:Message, usedPrefix?:string) {
+        let afterCmd = message.content.slice(`${usedPrefix} `.length).trim();
         if(!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
         
         // Parsing our script
