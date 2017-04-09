@@ -67,8 +67,35 @@ class EvalJS extends Plugin implements IModule {
             });
             let diff = Date.now() - startTime;
             
-            message.channel.sendMessage(undefined, {
-                embed: generateEmbed(EmbedType.OK, "```js\n"+ replaceAll(util.inspect(output, false), "`", "'") + "\n```", {
+            let outputMsg:Message;
+            try {
+                outputMsg = await message.channel.sendMessage(undefined, {
+                    embed: generateEmbed(EmbedType.Information, "Generating output. Please, wait...", {
+                        informationTitle: "Busy"
+                    })
+                });
+            } catch (err) {
+                this.log("Can't send message with output:", err);
+                return;
+            }
+
+            let depth = 5;
+            let outputInsp:string = replaceAll(util.inspect(output, false, depth), "`", "'");
+            while(outputInsp.length > 2000 && depth > 0) {
+                outputInsp = replaceAll(util.inspect(output, false, --depth), "`", "'");
+            }
+
+            if(depth === 0 || outputInsp.length > 2000) {
+                outputMsg.edit(undefined, {
+                    embed: generateEmbed(EmbedType.Error, "Can't send output, it's longer than 2000 chars", {
+                        errorTitle: "There's an error"
+                    })
+                });
+                return;
+            }
+
+            outputMsg.edit(undefined, {
+                embed: generateEmbed(EmbedType.OK, "```js\n"+ outputInsp + "\n```", {
                     okTitle: "Executed",
                     fields: [{
                         inline: false,
