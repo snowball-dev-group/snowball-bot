@@ -35,7 +35,7 @@ export enum CommandEquality {
  * @param eq {CommandEquality} Equality of command and content of message
  */
 export function command(cmd:string, aliases?:string[], eq:CommandEquality = CommandEquality.Equal) {
-    return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => any>) => {
+    return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message, usedPrefix?:string) => any>) => {
         if (typeof descriptor.value !== "function") {
             throw new SyntaxError("This only works for 'message' event handler");
         }
@@ -59,6 +59,8 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
                                 continue;
                             }
                         }
+                        descriptor.value.apply(this, [msg, alias]);
+                        break;
                     }
                     return;
                 } else {
@@ -71,7 +73,7 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
                     }
                 }
                 
-                return descriptor.value.apply(this, [msg]);
+                return descriptor.value.apply(this, [msg, cmd]);
             }
         };
     };
@@ -82,7 +84,7 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
  * @param channelId {string} Channel where message should be sent
  */
 export function inChannel(channelId:string) {
-    return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => Promise<void>>) => {
+    return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => any>) => {
         if (typeof descriptor.value !== "function") {
             throw new SyntaxError("This only works for 'message' event handler");
         }
@@ -103,7 +105,7 @@ export function inChannel(channelId:string) {
  * Owner decorator
  * @example Use it only for command which can be accessed only but owner such as !shutdown, !restart and etc.
  */
-export function isOwner(target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => Promise<void>>) {
+export function isOwner(target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message, ...args) => any>) {
     if (typeof descriptor.value !== 'function') {
         throw new SyntaxError('This only works for events handlers');
     }
