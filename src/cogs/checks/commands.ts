@@ -35,7 +35,7 @@ export enum CommandEquality {
  * @param eq {CommandEquality} Equality of command and content of message
  */
 export function command(cmd:string, aliases?:string[], eq:CommandEquality = CommandEquality.Equal) {
-    return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => Promise<void>>) => {
+    return (target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => any>) => {
         if (typeof descriptor.value !== "function") {
             throw new SyntaxError("This only works for 'message' event handler");
         }
@@ -55,7 +55,7 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
                         if(eq === CommandEquality.Equal && msg.content !== alias) {
                             continue;
                         } else if(eq === CommandEquality.SemiEqual || eq === CommandEquality.NotEqual) {
-                            if(!msg.content.startsWith(cmd + " ") && msg.content !== cmd) {
+                            if(!msg.content.startsWith(alias + " ") && msg.content !== alias) {
                                 continue;
                             }
                         }
