@@ -1,9 +1,11 @@
 import { IModule } from "../types/ModuleLoader";
 import logger = require("loggy");
 import { Plugin } from "./plugin";
-import { Message } from "discord.js"; 
+import { Message, TextChannel } from "discord.js"; 
 import { inChannel, shouldHaveAuthor } from "./checks/commands";
+import { default as _getDB } from "./db";
 import * as knex from "knex";
+import { convertNumbers } from "./utils/letters";
 
 class Count extends Plugin implements IModule {
     log:Function = logger("CountChannel");
@@ -15,27 +17,26 @@ class Count extends Plugin implements IModule {
         super({
             "message": (msg:Message) => this.onMessage(msg)
         });
-        this.dbClient = knex({
-            client: 'sqlite3',
-            connection: {
-                filename: __dirname + "/../data/count.sqlite"
+        this.dbClient = _getDB();
+
+        this.dbClient.schema.hasTable("count").then(itHas => {
+            if(itHas) {
+                this.log("ok", "DB: we have table `count`, can safely continue work...");
+                this.dbInitialized = true;
+                return;
             }
-        });
-
-        this.dbClient.schema.createTableIfNotExists("count", (tb) => {
-            tb.integer("count");
-            tb.string("author");
-            tb.string("date");
-        }).catch((err) => {
-            this.log("err", "Can't create table: ", err);
-        });
-
-        setTimeout(() => {
-            this.dbClient.schema.hasTable("count").then((hasOrNot) => {
-                if(hasOrNot) { this.dbInitialized = true; this.log("ok", "DB initialized"); }
-                else { this.log("err", "Can't initalize db"); }
+            this.log("warn", "DB: seems we doesn't have table `count` in database, going to create it right now");
+            this.dbClient.schema.createTable("count", (tb) => {
+                tb.integer("count").notNullable();
+                tb.string("author").notNullable();
+                tb.string("date").notNullable();
+            }).catch(err => {
+                this.log("err", "DB: we can't prepare DB", err);
+            }).then(() => {
+                this.log("ok", "DB: we successfully prepared our DB and ready to work!");
+                this.dbInitialized = true;
             });
-        }, 2000);
+        });
 
         this.countRegex = /^\d{0,}$/i;
     }
@@ -81,11 +82,32 @@ class Count extends Plugin implements IModule {
             return;
         }
 
-        await this.dbClient("count").insert({
-            author: msg.author.id,
-            count: mNumber,
-            date: Date.now() + ""
-        });
+        try {
+            await this.dbClient("count").insert({
+                author: msg.author.id + "",
+                count: mNumber,
+                date: Date.now() + ""
+            });
+        } catch (err) {
+            this.log("err", "Can't push number to DB", err);
+            try {
+                await msg.react("❌");
+                await (msg.channel as TextChannel).edit({
+                    topic: ":warning: База данных не отвечает..."
+                });
+                this.log("ok", "Successfully written error message to description and reacted to message");
+            } catch (err) {
+                this.log("err", "Cannot react to message or edit description of channel: ", err);
+            }
+        }
+
+        try {
+            await (msg.channel as TextChannel).edit({
+                topic: ":v: Последнее число: " + convertNumbers(mNumber)
+            });
+        } catch (err) {
+            this.log("err", "Can't change description of channel", err);
+        }
 
         if(Math.floor(Math.random() * 6) > 4 && row.author !== msg.client.user.id) {
             msg.channel.sendMessage(mNumber+1);
