@@ -38,10 +38,11 @@ export function commandRedirect(content:string, redirects:Map<string, Function>)
 export function escapeDiscordMarkdown(str:string, usernames:boolean = false) {
     str = replaceAll(str, "`", "'");
     str = replaceAll(str, "*", "\\*");
-    str = replaceAll(str, " _", " \\_");
-    str = replaceAll(str, "_ ", "\\_ ");
     if(usernames) {
         str = replaceAll(str, "_", "\\_");
+    } else {
+        str = replaceAll(str, " _", " \\_");
+        str = replaceAll(str, "_ ", "\\_ ");
     }
     return str;
 }
