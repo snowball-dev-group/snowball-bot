@@ -303,7 +303,7 @@ class CountV2 extends Plugin implements IModule {
             userRow.streak += (xpOperation === XPOperation.Lower ? -1 : 1);
 
             let pointsGain = userRow.streak * POINTS_GAIN;
-            pointsGain = Math.min(pointsGain, 20);
+            pointsGain = Math.max(Math.min(pointsGain, 20), -20);
 
             userRow.exp += xpOperation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED;
             userRow.exp += pointsGain;
