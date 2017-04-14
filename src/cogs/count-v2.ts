@@ -416,7 +416,7 @@ class CountV2 extends Plugin implements IModule {
                     if(!(member = this.scoreboardMessages.top10.guild.members.get(row.user))) {
                         str += ` ??? - ${row.exp} POINTS`;
                     } else {
-                        str += ` ${member.displayName} - ${row.exp} POINTS`;
+                        str += ` ${escapeDiscordMarkdown(member.displayName, true)} - ${row.exp} POINTS`;
                     }
                 }
                 lines.push(str);
