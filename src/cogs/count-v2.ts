@@ -223,6 +223,8 @@ class CountV2 extends Plugin implements IModule {
             return;
         }
 
+        let messageDeleted = false;
+
         if(rRowAnsweredBy.indexOf(msg.author.id) !== -1) {
             msg.delete();
             return;
@@ -234,28 +236,29 @@ class CountV2 extends Plugin implements IModule {
         let answerTimeOK = rRowQueueTime !== -1 && ((Date.now() - rRowQueueTime) / 1000) < 10;
 
         if(!answerTimeOK && rRowQueueTime !== -1) {
-            msg.delete();
-            return;
-        }
-
-        let qTime = answerTimeOK && rRowQueueTime !== -1 ? 10000 - (Date.now() - rRowQueueTime) : 10000;
-
-        if(nNumber !== rRowNumber) {
-            setTimeout(async () => {
-                let r = await this.giveXP(msg.member, XPOperation.Lower);
-                await msg.react("❌");
-                if(r) { this.updateScoreboardMessages(r); }
-            }, qTime);
+            await msg.delete();
+            messageDeleted = true;
         } else {
-            setTimeout(async () => {
-                let r = await this.giveXP(msg.member, XPOperation.Raise);
-                await msg.react("✅");
-                if(r) { this.updateScoreboardMessages(r); }
-            }, qTime);
+            let qTime = answerTimeOK && rRowQueueTime !== -1 ? 10000 - (Date.now() - rRowQueueTime) : 10000;
+
+            if(nNumber !== rRowNumber) {
+                setTimeout(async () => {
+                    let r = await this.giveXP(msg.member, XPOperation.Lower);
+                    await msg.react("❌");
+                    if(r) { this.updateScoreboardMessages(r); }
+                }, qTime);
+            } else {
+                setTimeout(async () => {
+                    let r = await this.giveXP(msg.member, XPOperation.Raise);
+                    await msg.react("✅");
+                    if(r) { this.updateScoreboardMessages(r); }
+                }, qTime);
+            }
         }
 
         let t:NodeJS.Timer|undefined = undefined;
-        if(rRowQueueTime === -1 || ((Date.now() - rRowQueueTime) / 1000) > 10) { // more than 15 seconds, timer died?
+        let secondsSinceTimerAdded = (Date.now() - rRowQueueTime) / 1000;
+        if(rRowQueueTime === -1 || (secondsSinceTimerAdded > 10)) { // more than 15 seconds, timer died?
             t = setTimeout(async () => {
                 let random = new Random(Random.engines.mt19937().autoSeed());
 
@@ -283,7 +286,7 @@ class CountV2 extends Plugin implements IModule {
                 }
 
                 msg.channel.send(`✅ **Ответы приняты**. Правильное число: **${rRowNumber}**. Далее: **${operation}** ${diffNumber}`);
-            }, 1000 * 10);
+            }, secondsSinceTimerAdded > 10 ? 1000 : 1000 * 10);
             latestRow.in_queue = Date.now() + "";
         }
 
@@ -292,7 +295,9 @@ class CountV2 extends Plugin implements IModule {
                 date: latestRow.date,
                 number: latestRow.number
             }).update(latestRow);
-            msg.react("👁");
+            if(!messageDeleted) {
+                msg.react("👁");
+            }
         } catch (err) {
             this.log("err", "Can't update element in database");
             if(t) {
