@@ -243,13 +243,13 @@ class CountV2 extends Plugin implements IModule {
         if(nNumber !== rRowNumber) {
             setTimeout(async () => {
                 let r = await this.giveXP(msg.member, XPOperation.Lower);
-                msg.react("❌");
+                await msg.react("❌");
                 if(r) { this.updateScoreboardMessages(r); }
             }, qTime);
         } else {
             setTimeout(async () => {
                 let r = await this.giveXP(msg.member, XPOperation.Raise);
-                msg.react("✅");
+                await msg.react("✅");
                 if(r) { this.updateScoreboardMessages(r); }
             }, qTime);
         }
