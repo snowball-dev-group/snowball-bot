@@ -52,6 +52,12 @@ const POINTS_GAIN = 2;
 const POINTS_RAISED = 1;
 const POINTS_LOWERED = 2;
 
+const STRINGS = {
+    TOP_10: "🏆 Топ-10",
+    LATEST_CHANGES: "📈 Последние изменения"
+};
+
+
 class CountV2 extends Plugin implements IModule {
     log:Function = getLogger("CountV2Channel");
     dbClient:knex;
@@ -334,10 +340,10 @@ class CountV2 extends Plugin implements IModule {
             }
             let puprose = message.embeds[0].footer.text;
             switch(puprose) {
-                case "Top10": {
+                case STRINGS.TOP_10: {
                     this.scoreboardMessages.top10 = message;
                 } break;
-                case "Последние изменения": {
+                case STRINGS.LATEST_CHANGES: {
                     this.scoreboardMessages.latestChanges = message;
                 } break;
                 default: break;
@@ -347,7 +353,7 @@ class CountV2 extends Plugin implements IModule {
         if(!this.scoreboardMessages.top10) {
             let msg = await ch.sendMessage(undefined, {
                 embed: generateEmbed(EmbedType.Empty, "**Загрузка...**", {
-                    footerText: "Top10"
+                    footerText: STRINGS.TOP_10
                 })
             }) as Message;
             this.scoreboardMessages.top10 = msg;
@@ -356,7 +362,7 @@ class CountV2 extends Plugin implements IModule {
         if(!this.scoreboardMessages.latestChanges) {
             let msg = await ch.sendMessage(undefined, {
                 embed: generateEmbed(EmbedType.Empty, "**Загрузка...**", {
-                    footerText: "Последние изменения"
+                    footerText: STRINGS.LATEST_CHANGES 
                 })
             }) as Message;
             this.scoreboardMessages.latestChanges = msg;
@@ -388,7 +394,7 @@ class CountV2 extends Plugin implements IModule {
 
             let embed:any = {};
             embed.description = lines.join("\n");
-            embed.footer = { text: "Последние изменения" };
+            embed.footer = { text: STRINGS.LATEST_CHANGES };
 
             await this.scoreboardMessages.latestChanges.edit("", {
                 embed: embed
@@ -424,7 +430,7 @@ class CountV2 extends Plugin implements IModule {
 
             let embed:any = {};
             embed.description = lines.join("\n");
-            embed.footer = { text: "Top10" };
+            embed.footer = { text: STRINGS.TOP_10 };
 
             await this.scoreboardMessages.top10.edit("", {
                 embed: embed
