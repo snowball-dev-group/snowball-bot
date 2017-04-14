@@ -238,21 +238,21 @@ class CountV2 extends Plugin implements IModule {
             return;
         }
 
+        let qTime = answerTimeOK && rRowQueueTime !== -1 ? 10000 - (Date.now() - rRowQueueTime) : 10000;
+
         if(nNumber !== rRowNumber) {
             setTimeout(async () => {
                 let r = await this.giveXP(msg.member, XPOperation.Lower);
                 msg.react("❌");
                 if(r) { this.updateScoreboardMessages(r); }
-            }, answerTimeOK && rRowQueueTime !== -1 ? Date.now() - rRowQueueTime : 10000);
+            }, qTime);
         } else {
             setTimeout(async () => {
                 let r = await this.giveXP(msg.member, XPOperation.Raise);
                 msg.react("✅");
                 if(r) { this.updateScoreboardMessages(r); }
-            }, answerTimeOK && rRowQueueTime !== -1 ? Date.now() - rRowQueueTime : 10000);
+            }, qTime);
         }
-
-        msg.react("👁");
 
         let t:NodeJS.Timer|undefined = undefined;
         if(rRowQueueTime === -1 || ((Date.now() - rRowQueueTime) / 1000) > 10) { // more than 15 seconds, timer died?
@@ -292,6 +292,7 @@ class CountV2 extends Plugin implements IModule {
                 date: latestRow.date,
                 number: latestRow.number
             }).update(latestRow);
+            msg.react("👁");
         } catch (err) {
             this.log("err", "Can't update element in database");
             if(t) {
@@ -356,7 +357,7 @@ class CountV2 extends Plugin implements IModule {
             pointsGain = Math.max(Math.min(pointsGain, 20), -20);
 
             userRow.exp += xpOperation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED;
-            
+
             if((userRow.streak > 0 && xpOperation === XPOperation.Raise) || (userRow.streak < 0 && xpOperation === XPOperation.Lower)) {
                 userRow.exp += pointsGain;
             } else {
