@@ -356,7 +356,13 @@ class CountV2 extends Plugin implements IModule {
             pointsGain = Math.max(Math.min(pointsGain, 20), -20);
 
             userRow.exp += xpOperation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED;
-            userRow.exp += pointsGain;
+            
+            if((userRow.streak > 0 && xpOperation === XPOperation.Raise) || (userRow.streak < 0 && xpOperation === XPOperation.Lower)) {
+                userRow.exp += pointsGain;
+            } else {
+                pointsGain = 0;
+            }
+            
 
             try {
                 await this.dbClient(TABLENAME_SCOREBOARD).where({
