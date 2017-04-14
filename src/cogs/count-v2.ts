@@ -4,9 +4,8 @@ import { Message, TextChannel, GuildMember } from "discord.js";
 import { inChannel, shouldHaveAuthor } from "./checks/commands";
 import { default as _getDB } from "./db";
 import * as knex from "knex";
-import { convertNumbers } from "./utils/letters";
 import * as Random from "random-js";
-import { generateEmbed, EmbedType, getLogger, escapeDiscordMarkdown } from "./utils/utils";
+import { generateEmbed, EmbedType, getLogger } from "./utils/utils";
 
 let DBInitializationState = {
     NotInitialized: 0,
@@ -22,11 +21,16 @@ enum XPOperation {
 }
 
 interface CountOperationRow {
-    count:Number;
+    count:number;
     author:string;
-    date:string;
+    date:number;
     operation:"-"|"+";
     number:string;
+    /**
+     * JSON
+     */
+    answered_by:string;
+    in_queue:string;
 }
 
 interface ScoreboardUserRow {
@@ -92,6 +96,8 @@ class CountV2 extends Plugin implements IModule {
                 tb.string("date").notNullable();
                 tb.string("operation").notNullable();
                 tb.string("number").notNullable(); // next number
+                tb.string("answered_by").notNullable();
+                tb.string("in_queue").notNullable().defaultTo("-1");
             }).catch(err => {
                 this.log("err", "DB: we can't prepare DB", err);
             }).then(() => {
@@ -188,7 +194,7 @@ class CountV2 extends Plugin implements IModule {
 
         let latestRow:CountOperationRow|undefined = undefined;
         try {
-            latestRow = await this.dbClient(TABLENAME_MAIN).orderBy("date", "DESC").first('count', 'author', 'date', 'operation', 'number');
+            latestRow = await this.dbClient(TABLENAME_MAIN).orderBy("date", "DESC").first('count', 'author', 'date', 'operation', 'number', 'answered_by', 'in_queue');
         } catch (err) {
             this.log("err", "Can't get latest row from database", err);
             latestRow = undefined;
@@ -197,61 +203,103 @@ class CountV2 extends Plugin implements IModule {
         if(!latestRow) { return; }
         
         let rRowNumber = parseInt(latestRow.number, 10);
+        let rRowQueueTime = parseInt(latestRow.in_queue, 10);
+
+        let rRowAnsweredBy:string[]|undefined;
+
+        if(latestRow.answered_by !== "null") {
+            try {
+                rRowAnsweredBy = JSON.parse(latestRow.answered_by);
+            } catch (err) {
+                this.log("err", "Can't parse latest row `answered_by` column");
+                return;
+            }
+        } else {
+            rRowAnsweredBy = [];
+        }
+
+        if(!rRowAnsweredBy) {
+            this.log("err", "No value for `rRowAnsweredBy` variable, returning...");
+            return;
+        }
+
+        if(rRowAnsweredBy.indexOf(msg.author.id) !== -1) {
+            msg.delete();
+            return;
+        } else {
+            rRowAnsweredBy.push(msg.author.id);
+            latestRow.answered_by = JSON.stringify(rRowAnsweredBy);
+        }
+
+        let answerTimeOK = rRowQueueTime !== -1 && ((Date.now() - rRowQueueTime) / 1000) < 10;
+
+        if(!answerTimeOK && rRowQueueTime !== -1) {
+            msg.delete();
+            return;
+        }
 
         if(nNumber !== rRowNumber) {
-            msg.delete();
-            let r = await this.giveXP(msg.member, XPOperation.Lower);
-            if(!r) {
-                this.log("warn", "Invalid result returned by XP giving function, not updating scoreboard...");
-            } else {
-                await this.updateScoreboardMessages(r);
+            setTimeout(async () => {
+                let r = await this.giveXP(msg.member, XPOperation.Lower);
+                msg.react("❌");
+                if(r) { this.updateScoreboardMessages(r); }
+            }, answerTimeOK && rRowQueueTime !== -1 ? Date.now() - rRowQueueTime : 10000);
+        } else {
+            setTimeout(async () => {
+                let r = await this.giveXP(msg.member, XPOperation.Raise);
+                msg.react("✅");
+                if(r) { this.updateScoreboardMessages(r); }
+            }, answerTimeOK && rRowQueueTime !== -1 ? Date.now() - rRowQueueTime : 10000);
+        }
+
+        msg.react("👁");
+
+        let t:NodeJS.Timer|undefined = undefined;
+        if(rRowQueueTime === -1 || ((Date.now() - rRowQueueTime) / 1000) > 10) { // more than 15 seconds, timer died?
+            t = setTimeout(async () => {
+                let random = new Random(Random.engines.mt19937().autoSeed());
+
+                let operation = random.pick(["+", "-"]);
+
+                let nextNumber = rRowNumber;
+                let diffNumber = random.integer(1, 50);
+
+                nextNumber += operation === "+" ? diffNumber : -Math.abs(diffNumber);
+
+                try {
+                    await this.dbClient(TABLENAME_MAIN).insert({
+                        date: Date.now(),
+                        count: rRowNumber,
+                        number: nextNumber,
+                        author: msg.author.id,
+                        operation,
+                        answered_by: "[]",
+                        in_queue: "-1"
+                    });
+                } catch (err) {
+                    this.log("err", "Can't put element into database", err);
+                    msg.channel.send(":frowning: К сожалению, возникли проблемы с базой данных.");
+                    return;
+                }
+
+                msg.channel.send(`✅ **Ответы приняты**. Правильное число: **${rRowNumber}**. Далее: **${operation}** ${diffNumber}`);
+            }, 1000 * 10);
+            latestRow.in_queue = Date.now() + "";
+        }
+
+        try {
+            await this.dbClient(TABLENAME_MAIN).where({
+                date: latestRow.date,
+                number: latestRow.number
+            }).update(latestRow);
+        } catch (err) {
+            this.log("err", "Can't update element in database");
+            if(t) {
+                this.log("err", "Timer should not be called, clearing...");
+                clearTimeout(t);
             }
             return;
         }
-
-        let operation = "+";
-
-        let random = new Random(Random.engines.mt19937().autoSeed());
-        
-        operation = random.pick(["+", "-"]);
-
-        let nextNumber = rRowNumber;
-        let diffNumber = random.integer(1, 50);
-
-        nextNumber += operation === "+" ? diffNumber : -Math.abs(diffNumber);
-
-
-        let r = await this.giveXP(msg.member, XPOperation.Raise);
-        
-        if(!r) {
-            this.log("warn", "Invalid result returned by XP giving function, not updating scoreboard");
-            return;
-        }
-
-        try {
-            await msg.channel.sendMessage(`✅ **Правильное число: ${rRowNumber}**.\nДалее: **${operation}** ${diffNumber}`);
-        } catch (err) {
-            msg.delete();
-            this.log('warn', "Can't send message", err);
-            return;
-        }
-
-        try {
-            await this.dbClient(TABLENAME_MAIN).insert({
-                date: Date.now(),
-                count: rRowNumber,
-                number: nextNumber,
-                author: msg.author.id,
-                operation
-            });
-        } catch (err) {
-            this.log("err", "Can't put element into database", err);
-            await msg.react("😦");
-            msg.author.sendMessage("😦 Прости, в настоящий момент возникли неполадки с базой данных");
-            return;
-        }
-
-        await this.updateScoreboardMessages(r);
     }
 
     async giveXP(member:GuildMember, xpOperation:XPOperation) : Promise<ScoreboardUserUpdateInfo|undefined> {
@@ -296,7 +344,9 @@ class CountV2 extends Plugin implements IModule {
         } else {
             if(userRow.streak < 0 && xpOperation === XPOperation.Raise) {
                 userRow.streak = -1;
-            } else if(userRow.streak > 0 && xpOperation === XPOperation.Lower) {
+            } else if(userRow.streak > 4 && xpOperation === XPOperation.Lower) {
+                userRow.streak -= 4;
+            } else if(userRow.streak > 0 && userRow.streak < 5 && xpOperation === XPOperation.Lower) {
                 userRow.streak = 1;
             }
 
