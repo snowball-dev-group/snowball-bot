@@ -1,10 +1,12 @@
 {
   "dependencies": {
-    "discord.js": "github:hydrabolt/discord.js",
+    "discord.js": "^11.0.0",
     "knex": "^0.12.9",
     "loggy": "https://gitlab.com/BlackSilverBot/loggy.git",
+    "mysql": "^2.13.0",
     "needle": "^1.6.0",
     "node-fetch": "^1.6.3",
+    "random-js": "^1.0.8",
     "sqlite3": "^3.1.8"
   },
   "name": "blacksilverbot-discord",
