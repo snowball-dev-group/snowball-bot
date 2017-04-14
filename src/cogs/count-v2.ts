@@ -382,7 +382,7 @@ class CountV2 extends Plugin implements IModule {
 
             // sorry, sorry... i'm sorry: 
             // https://hydra-media.cursecdn.com/overwatch.gamepedia.com/e/e4/Mei_-_Sorry%2C_Sorry%2C_I%27m_Sorry_Sorry.mp3
-            let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} **${escapeDiscordMarkdown(playerUpdate.member.displayName, true)}** - ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED} ${playerUpdate.streak !== 0 ? `(${playerUpdate.addition} (${playerUpdate.streak > 0 ? "**бонус за правильные ответы**" : "**штраф за неправильные ответы**"}))` : "*без бонусов*"}`;
+            let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} **${escapeDiscordMarkdown(playerUpdate.member.displayName, true)}**: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED} ${playerUpdate.streak !== 0 ? `(${playerUpdate.addition} (${playerUpdate.streak > 0 ? "**бонус за правильные ответы**" : "**штраф за неправильные ответы**"}))` : ""}`;
 
             lines.push(newLine);
 
@@ -408,7 +408,7 @@ class CountV2 extends Plugin implements IModule {
             top10.forEach((row, index) => {
                 if(row.exp < 10) { return; }
                 index = index + 1;
-                let str = index === 1 ? "🥇" : index === 2 ? "🥈" : index === 3 ? "🥉" : `**${index}.**`;
+                let str = index === 1 ? "🥇" : index === 2 ? "🥈" : index === 3 ? "🥉" : `**\`${index}.\`**`;
                 if(!this.scoreboardMessages.top10) {
                     str += ` ??? **-** ${row.exp} очков`;
                 } else {
