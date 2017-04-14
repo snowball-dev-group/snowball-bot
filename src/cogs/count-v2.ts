@@ -54,7 +54,8 @@ const POINTS_LOWERED = 2;
 
 const STRINGS = {
     TOP_10: "🏆 Топ-10",
-    LATEST_CHANGES: "📈 Последние изменения"
+    LATEST_CHANGES: "📈 Последние изменения",
+    LOADING: "**Загрузка...**"
 };
 
 
@@ -352,7 +353,7 @@ class CountV2 extends Plugin implements IModule {
 
         if(!this.scoreboardMessages.top10) {
             let msg = await ch.sendMessage(undefined, {
-                embed: generateEmbed(EmbedType.Empty, "**Загрузка...**", {
+                embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
                     footerText: STRINGS.TOP_10
                 })
             }) as Message;
@@ -361,7 +362,7 @@ class CountV2 extends Plugin implements IModule {
 
         if(!this.scoreboardMessages.latestChanges) {
             let msg = await ch.sendMessage(undefined, {
-                embed: generateEmbed(EmbedType.Empty, "**Загрузка...**", {
+                embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
                     footerText: STRINGS.LATEST_CHANGES 
                 })
             }) as Message;
@@ -381,7 +382,7 @@ class CountV2 extends Plugin implements IModule {
         }
 
         if(this.scoreboardMessages.latestChanges && playerUpdate) {
-            let lines = this.scoreboardMessages.latestChanges.embeds[0].description.split("\n").filter(l => l!=="**Загрузка...**");
+            let lines = this.scoreboardMessages.latestChanges.embeds[0].description.split("\n").filter(l => l!==STRINGS.LOADING);
             if(lines.length === 10) {
                 lines.splice(0, 1); // adding one line
             }
@@ -414,15 +415,16 @@ class CountV2 extends Plugin implements IModule {
             top10.forEach((row, index) => {
                 if(row.exp < 10) { return; }
                 index = index + 1;
-                let str = index === 1 ? "🥇" : index === 2 ? "🥈" : index === 3 ? "🥉" : `**\`${index}.\`**`;
+                let str = index === 1 ? "🥇" : index === 2 ? "🥈" : index === 3 ? "🥉" : `**${index}.**`;
                 if(!this.scoreboardMessages.top10) {
-                    str += ` ??? **-** ${row.exp} очков`;
+                    str = "";
+                    // str += ` \`???\` **-** ${row.exp} очков`;
                 } else {
                     let member:GuildMember|undefined;
                     if(!(member = this.scoreboardMessages.top10.guild.members.get(row.user))) {
-                        str += ` ??? **-** ${row.exp} очков`;
+                        str += ` \`???\` **-** ${row.exp} очков`;
                     } else {
-                        str += ` ${escapeDiscordMarkdown(member.displayName, true)} **-** ${row.exp} очков`;
+                        str += ` \`${member.displayName}\`**-** ${row.exp} очков`;
                     }
                 }
                 lines.push(str);
