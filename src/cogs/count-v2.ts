@@ -408,15 +408,15 @@ class CountV2 extends Plugin implements IModule {
             top10.forEach((row, index) => {
                 if(row.exp < 10) { return; }
                 index = index + 1;
-                let str = index === 1 ? "🥇" : index === 2 ? "🥈" : index === 3 ? "🥉" : convertNumbers(index);
+                let str = index === 1 ? "🥇" : index === 2 ? "🥈" : index === 3 ? "🥉" : `**${index}.**`;
                 if(!this.scoreboardMessages.top10) {
-                    str += ` ??? - ${row.exp} POINTS`;
+                    str += ` ??? **-** ${row.exp} очков`;
                 } else {
                     let member:GuildMember|undefined;
                     if(!(member = this.scoreboardMessages.top10.guild.members.get(row.user))) {
-                        str += ` ??? - ${row.exp} POINTS`;
+                        str += ` ??? **-** ${row.exp} очков`;
                     } else {
-                        str += ` ${escapeDiscordMarkdown(member.displayName, true)} - ${row.exp} POINTS`;
+                        str += ` ${escapeDiscordMarkdown(member.displayName, true)} **-** ${row.exp} очков`;
                     }
                 }
                 lines.push(str);
