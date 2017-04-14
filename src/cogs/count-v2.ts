@@ -389,7 +389,7 @@ class CountV2 extends Plugin implements IModule {
 
             // sorry, sorry... i'm sorry: 
             // https://hydra-media.cursecdn.com/overwatch.gamepedia.com/e/e4/Mei_-_Sorry%2C_Sorry%2C_I%27m_Sorry_Sorry.mp3
-            let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} **${escapeDiscordMarkdown(playerUpdate.member.displayName, true)}**: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED} ${playerUpdate.streak !== 0 ? `(${playerUpdate.addition} (${playerUpdate.streak > 0 ? "**бонус за правильные ответы**" : "**штраф за неправильные ответы**"}))` : ""}`;
+            let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} \`${playerUpdate.member.displayName}\`: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : "+"+POINTS_RAISED} | ${playerUpdate.xp} ${playerUpdate.streak !== 0 ? `(**${playerUpdate.addition > 0 ? "+" + playerUpdate.addition : playerUpdate.addition}** - ${playerUpdate.streak > 0 ? "бонус за правильные ответы" : "штраф за неправильные ответы"})` : ""}`;
 
             lines.push(newLine);
 
