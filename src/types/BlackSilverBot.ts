@@ -45,10 +45,12 @@ declare global {
     /**
      * Bot itself
      */
+    // tslint:disable-next-line:no-unused-variable
     let discordBot:djs.Client;
     /**
      * Public bot config visible to all modules
      */
+    // tslint:disable-next-line:no-unused-variable
     let botConfig:IPublicBotConfig;
 }
 
