@@ -225,7 +225,7 @@ class CountV2 extends Plugin implements IModule {
             await msg.channel.sendMessage(`✅ **Правильное число: ${rRowNumber}**.\nДалее: **${operation}** ${diffNumber}`);
         } catch (err) {
             msg.delete();
-            this.log('warn', "Can't send message");
+            this.log('warn', "Can't send message", err);
             return;
         }
 
@@ -382,7 +382,7 @@ class CountV2 extends Plugin implements IModule {
 
             // sorry, sorry... i'm sorry: 
             // https://hydra-media.cursecdn.com/overwatch.gamepedia.com/e/e4/Mei_-_Sorry%2C_Sorry%2C_I%27m_Sorry_Sorry.mp3
-            let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} **${escapeDiscordMarkdown(playerUpdate.member.displayName)}** - ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED} ${playerUpdate.streak !== 0 ? `(${playerUpdate.addition} (${playerUpdate.streak > 0 ? "**бонус за правильные ответы**" : "**штраф за неправильные ответы**"}))` : "*без бонусов*"}`;
+            let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} **${escapeDiscordMarkdown(playerUpdate.member.displayName, true)}** - ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED} ${playerUpdate.streak !== 0 ? `(${playerUpdate.addition} (${playerUpdate.streak > 0 ? "**бонус за правильные ответы**" : "**штраф за неправильные ответы**"}))` : "*без бонусов*"}`;
 
             lines.push(newLine);
 
