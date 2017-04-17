@@ -9,8 +9,8 @@
     "random-js": "^1.0.8",
     "sqlite3": "^3.1.8"
   },
-  "name": "blacksilverbot-discord",
-  "displayName": "Discord BlackSilverBot",
+  "name": "snowballbot-discord",
+  "displayName": "Discord Snowball bot",
   "author": "DaFri_Nochiterov",
   "version": "0.0.1",
   "main": "init.js"
