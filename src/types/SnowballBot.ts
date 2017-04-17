@@ -54,7 +54,7 @@ declare global {
     let botConfig:IPublicBotConfig;
 }
 
-export class BlackSilverBot extends EventEmitter {
+export class SnowballBot extends EventEmitter {
     /**
      * Module loader
      */

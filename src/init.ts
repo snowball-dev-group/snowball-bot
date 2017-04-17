@@ -1,8 +1,8 @@
 import logger = require("loggy");
-import { BlackSilverBot, IBotConfig } from "./types/BlackSilverBot";
+import { SnowballBot, IBotConfig } from "./types/SnowballBot";
 
 const coreInfo = {
-    "version": "0.1.5"
+    "version": "0.1.6"
 };
 
 (() => {
@@ -24,15 +24,15 @@ const coreInfo = {
     log("ok", `${config.name} v${coreInfo.version}`);
 
     log("info", "Initializing bot...");
-    const BSB = new BlackSilverBot(config);
+    const Snowball = new SnowballBot(config);
 
     log("info", "Preparing our Discord client");
-    BSB.prepareDiscordClient();
+    Snowball.prepareDiscordClient();
 
     log("info", "Connecting...");
-    BSB.connect().then(() => {
+    Snowball.connect().then(() => {
         log("ok", "Successfully connected, preparing our module loader");
-        BSB.prepareModLoader();
+        Snowball.prepareModLoader();
     }, (err) => {
         log("err", "Can't connect to Discord", err);
         log("err", "Exiting due we can't work without bot connected to Discord");
