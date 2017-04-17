@@ -79,6 +79,7 @@ export interface IEmbedOptions {
     okTitle?:string;
     informationTitle?:string;
     imageUrl?:string;
+    clearFooter?:boolean;
 }
 
 export function generateEmbed(type:EmbedType, description:string, options?:IEmbedOptions) {
@@ -137,6 +138,9 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
                 icon_url: discordBot.user.displayAvatarURL
             };
         }
+        if(options.clearFooter) {
+            embed.footer = undefined;
+        }
         if(options.imageUrl) {
             embed.image = {
                 url: options.imageUrl
@@ -161,4 +165,15 @@ interface ILogger {
 export function getLogger(name:string):ILoggerFunction {
     if(!name) { throw new Error("No logger name provided"); }
     return createLogger(name);
+}
+
+export function sleep(delay:number) {
+    return new Promise((res, rej) => {
+        if(typeof delay !== "number") {
+            return rej("Invalid delay");
+        }
+        setTimeout(() => {
+            res();
+        }, delay);
+    });
 }
