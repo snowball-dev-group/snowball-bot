@@ -235,7 +235,7 @@ class CountV2 extends Plugin implements IModule {
 
         let answerTimeOK = rRowQueueTime !== -1 && ((Date.now() - rRowQueueTime) / 1000) < 10;
 
-        if(!answerTimeOK && rRowQueueTime !== -1) {
+        if(!answerTimeOK) {
             await msg.delete();
             messageDeleted = true;
         } else {
@@ -258,7 +258,8 @@ class CountV2 extends Plugin implements IModule {
 
         let t:NodeJS.Timer|undefined = undefined;
         let secondsSinceTimerAdded = (Date.now() - rRowQueueTime) / 1000;
-        if(rRowQueueTime === -1 || (secondsSinceTimerAdded > 10)) { // more than 15 seconds, timer died?
+        if(rRowQueueTime === -1 || (secondsSinceTimerAdded > 15)) { // more than 15 seconds, timer died?
+            let deadTimer = (rRowQueueTime !== -1 && (secondsSinceTimerAdded > 15));
             t = setTimeout(async () => {
                 let random = new Random(Random.engines.mt19937().autoSeed());
 
@@ -284,9 +285,13 @@ class CountV2 extends Plugin implements IModule {
                     msg.channel.send(":frowning: К сожалению, возникли проблемы с базой данных.");
                     return;
                 }
-
-                msg.channel.send(`✅ **Ответы приняты**. Правильное число: **${rRowNumber}**. Далее: **${operation}** ${diffNumber}`);
-            }, secondsSinceTimerAdded > 10 ? 1000 : 1000 * 10);
+                if(!deadTimer) {
+                    msg.channel.send(`✅ **Ответы приняты**. Правильное число: **${rRowNumber}**. Далее: **${operation}** ${diffNumber}`);
+                } else {
+                    msg.channel.send(`😱 **Ой!** Я случайно заснул... Извиняюсь. Итак, на чем мы остановились?\n*Внимательно читает историю чисел* Ах, вот! Было число **${rRowNumber}**. Далее.. (хмммм) Вот же, чего это я... Далее: **${operation}** ${diffNumber}`);
+                }
+                
+            }, deadTimer ? 500 : 10000);
             latestRow.in_queue = Date.now() + "";
         }
 
