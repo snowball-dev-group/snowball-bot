@@ -94,7 +94,9 @@ class Ball8 extends Plugin implements IModule {
                         name: BALL_NAME
                     },
                     color: this.responses[category].color,
-                    clearFooter: true
+                    footer: {
+                        text: "В ответ " + msg.author.displayAvatarURL
+                    }
                 })
             });
         } catch (err) {
