@@ -184,8 +184,28 @@ class CountV2 extends Plugin implements IModule {
         let override = msg.content.startsWith("!");
         if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
         
-        if(override) {
-            // TODO: Override function
+        if(override && msg.author.id === botConfig.botOwner) {
+            msg.react("⏳");
+            let nNumber = parseInt(msg.content.slice("!".length), 10);
+            try {
+                await this.dbClient(TABLENAME_MAIN).insert({
+                    date: Date.now(),
+                    count: nNumber,
+                    number: nNumber,
+                    author: msg.author.id,
+                    operation: "+",
+                    answered_by: "[]",
+                    in_queue: "-1"
+                });
+                msg.react("✅");
+                msg.channel.sendMessage("✅ Перезапись числа завершена. Теперь введите это число.")
+            } catch (err) {
+                msg.react("❌");
+                msg.channel.sendMessage("❌ Ошибка перезаписи числа: `" + err.message + "`.");
+                this.log("err", "Can't insert new number into database", err);
+            }
+            return;
+        } else if(override) {
             msg.delete();
             return;
         }
@@ -225,15 +245,19 @@ class CountV2 extends Plugin implements IModule {
 
         let messageDeleted = false;
 
-        if(rRowAnsweredBy.indexOf(msg.author.id) !== -1) {
+        let secondsSinceTimerAdded = (Date.now() - rRowQueueTime) / 1000;
+
+        let answerTimeOK = rRowQueueTime === -1 ? true : secondsSinceTimerAdded < 10;
+
+        let alreadyAnswered = rRowAnsweredBy.indexOf(msg.author.id) !== -1;
+
+        if(alreadyAnswered && answerTimeOK) {
             msg.delete();
             return;
-        } else {
+        } else if(!alreadyAnswered) {
             rRowAnsweredBy.push(msg.author.id);
             latestRow.answered_by = JSON.stringify(rRowAnsweredBy);
         }
-
-        let answerTimeOK = rRowQueueTime !== -1 && ((Date.now() - rRowQueueTime) / 1000) < 10;
 
         if(!answerTimeOK) {
             await msg.delete();
@@ -257,7 +281,6 @@ class CountV2 extends Plugin implements IModule {
         }
 
         let t:NodeJS.Timer|undefined = undefined;
-        let secondsSinceTimerAdded = (Date.now() - rRowQueueTime) / 1000;
         if(rRowQueueTime === -1 || (secondsSinceTimerAdded > 15)) { // more than 15 seconds, timer died?
             let deadTimer = (rRowQueueTime !== -1 && (secondsSinceTimerAdded > 15));
             t = setTimeout(async () => {
