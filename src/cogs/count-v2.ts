@@ -2,7 +2,7 @@ import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, TextChannel, GuildMember } from "discord.js"; 
 import { inChannel, shouldHaveAuthor } from "./checks/commands";
-import { default as _getDB } from "./db";
+import { default as _getDB } from "./utils/db";
 import * as knex from "knex";
 import * as Random from "random-js";
 import { generateEmbed, EmbedType, getLogger } from "./utils/utils";
