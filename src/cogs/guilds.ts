@@ -3,7 +3,7 @@ import { Plugin } from "./plugin";
 import { Message, Role } from "discord.js";
 import { commandRedirect, objectToMap, EmbedType, generateEmbed, getLogger } from "./utils/utils";
 import * as knex from "knex";
-import { default as giveMeDbPls } from "./db";
+import { default as giveMeDbPls } from "./utils/db";
 import { notByBot } from "./checks/commands";
 
 class Guilds extends Plugin implements IModule { 
