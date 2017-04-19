@@ -1,11 +1,13 @@
 export class Plugin {
-    events:Map<string, Function> = new Map<string, Function>();
+    private events:Map<string, Function> = new Map<string, Function>();
 
-    constructor(events:Object) {
+    constructor(events:Object, dontAutoHandle = false) {
         Object.keys(events).forEach((key) => {
             this.events.set(key, events[key]);
         });
-        this.handleEvents();
+        if(!dontAutoHandle) {
+            this.handleEvents();
+        }
     }
 
     handleEvents() {
