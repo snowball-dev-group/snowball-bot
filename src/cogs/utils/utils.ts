@@ -133,10 +133,12 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
                 text: options.footerText
             };
         } else {
-            embed.footer = {
-                text: discordBot.user.username,
-                icon_url: discordBot.user.displayAvatarURL
-            };
+            if(type !== EmbedType.Empty){
+                embed.footer = {
+                    text: discordBot.user.username,
+                    icon_url: discordBot.user.displayAvatarURL
+                };
+            }
         }
         if(options.clearFooter) {
             embed.footer = undefined;
