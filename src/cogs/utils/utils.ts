@@ -182,9 +182,13 @@ export function sleep(delay:number) {
 
 export function cbFunctionToPromise(f:Function, ...args:any[]) {
     return new Promise((res, rej) => {
-        if(!f) { return; }
-        f.apply(this, ([] as any[]).concat(args).concat(() => {
-            res();
+        if(!f) { return rej(); }
+        f.apply(this, ([] as any[]).concat(args).concat((err, ...argms) => {
+            if(err) {
+                rej(argms);
+            } else {
+                res(argms);
+            }
         }));
     });
 }
