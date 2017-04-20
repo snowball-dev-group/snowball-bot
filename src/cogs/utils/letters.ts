@@ -9,7 +9,7 @@ const NUMBERS = [
   "8⃣ ",
   "9⃣ ",
   "0⃣"
-];
+].map(n => n.trim());
 
 export function convertNumbers(number:string|number) {
     let str = number + "";
