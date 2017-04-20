@@ -81,12 +81,11 @@ class VoiceRole extends Plugin implements IModule {
         this.handleEvents();
 
         // stage six: do cleanup for all guilds
-        cbFunctionToPromise(async.forEach, discordBot.guilds, (guild:Guild) => {
-            this.VCR_Cleanup(guild);
-        }, (err) => {
-            if(err) {
-                this.log("err", err);
-            }
+        await cbFunctionToPromise(_async.forEach, discordBot.guilds, (guild:Guild, cb:Function) => {
+            // it's map, so `[1]` is here
+            // [ID, Guild]
+            this.VCR_Cleanup(guild[1]);
+            cb();
         });
 
         // done
@@ -176,6 +175,7 @@ class VoiceRole extends Plugin implements IModule {
     }
 
     async VCR_Cleanup(guild:Guild, role?:Role) {
+        if(!guild) { return; }
         if(!role) {
             let row = await this.getGuildRow(guild);
             if(!row || row.voice_role === "-") {
@@ -189,12 +189,13 @@ class VoiceRole extends Plugin implements IModule {
             role = guild.roles.get(row.voice_role);
         }
 
-        guild.members.filter((m:GuildMember) => {
-            if(!role) { /* fuck ts logic pls */ return false; }
-            return m.roles.has(role.id);
-        }).forEach(m => {
+        guild.members.forEach(m => {
             if(!role) { return; }
-            m.removeRole(role);
+            if(!m.voiceChannel && m.roles.has(role.id)) {
+                m.removeRole(role);
+            } else if(m.voiceChannel && !m.roles.has(role.id)) {
+                m.addRole(role);
+            }
         });
 
         return;
