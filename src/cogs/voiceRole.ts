@@ -2,8 +2,9 @@ import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, Guild, Role, GuildMember } from "discord.js"; 
 import { default as getDB } from "./utils/db";
-import { getLogger } from "./utils/utils";
+import { getLogger, cbFunctionToPromise } from "./utils/utils";
 import * as knex from "knex";
+import * as _async from "async";
 
 const TABLE_NAME = "voice_role";
 const PREFIX = "!voiceRole";
@@ -78,6 +79,15 @@ class VoiceRole extends Plugin implements IModule {
 
         // stage five: handling events
         this.handleEvents();
+
+        // stage six: do cleanup for all guilds
+        cbFunctionToPromise(async.forEach, discordBot.guilds, (guild:Guild) => {
+            this.VCR_Cleanup(guild);
+        }, (err) => {
+            if(err) {
+                this.log("err", err);
+            }
+        });
 
         // done
         this.log("ok", "'VoiceRole' plugin loaded and ready to work");
