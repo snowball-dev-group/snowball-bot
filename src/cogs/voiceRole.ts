@@ -235,7 +235,7 @@ class VoiceRole extends Plugin implements IModule {
         let cmd = msg.content.slice(PREFIX.length + 1);
         if(cmd === "" || cmd === "help") {
             const SPECIFIC_CMD = "\n• `specific set [канал], [роль]` - установить специальную голосовую роль\n• `specific delete [канал], [роль]` - удалить специальную голосовую роль";
-            msg.channel.sendMessage("Доступные настройки:\n• `set [роль]` - установить голосовую роль\n• `delete` - сбросить роль" + SPECIFIC_DONE ? SPECIFIC_CMD : "");
+            msg.channel.sendMessage("Доступные настройки:\n• `set [роль]` - установить голосовую роль\n• `delete` - сбросить роль" + (SPECIFIC_DONE ? SPECIFIC_CMD : ""));
             return;
         }
 
