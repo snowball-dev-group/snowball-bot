@@ -1,4 +1,7 @@
 out/*
 !out/.gitkeep
+!out/config
+out/config/*
+!out/config/.gitkeep
 node_modules
 yarn*
