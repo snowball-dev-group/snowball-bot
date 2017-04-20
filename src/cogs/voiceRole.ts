@@ -210,7 +210,7 @@ class VoiceRole extends Plugin implements IModule {
         }
 
         if(member.guild.roles.has(row.voice_role)) {
-            if(!member.roles.has(row.voice_role)) {
+            if(member.roles.has(row.voice_role)) {
                 return;
             }
             await member.addRole(row.voice_role);
