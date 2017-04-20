@@ -333,7 +333,6 @@ class VoiceRole extends Plugin implements IModule {
             try {
                 await this.updateGuildRow(row);
                 msg.react("👍");
-                this.VCR_Cleanup(msg.guild);
             } catch (err) {
                 msg.channel.sendMessage(DATA_NOT_SAVED);
             }
