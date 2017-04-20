@@ -276,7 +276,13 @@ class VoiceRole extends Plugin implements IModule {
             }
 
             if(row.voice_role !== "-") {
-                await this.VCR_Cleanup(msg.guild);
+                await cbFunctionToPromise(_async.forEach, msg.guild.members, async (member:[string, GuildMember], cb:Function) => {
+                    if(!row) { return cb(); }
+                    if(member[1].roles.has(row.voice_role)) {
+                        await member[1].removeRole(row.voice_role);
+                    }
+                    cb();
+                });
             }
 
             row.voice_role = resolvableRole.id;
@@ -284,6 +290,7 @@ class VoiceRole extends Plugin implements IModule {
             try {
                 await this.updateGuildRow(row);
                 msg.react("👍");
+                this.VCR_Cleanup(msg.guild);
             } catch (err) {
                 msg.channel.sendMessage(DATA_NOT_SAVED);
             }
@@ -312,7 +319,13 @@ class VoiceRole extends Plugin implements IModule {
             }
 
             if(row.voice_role !== "-") {
-                await this.VCR_Cleanup(msg.guild);
+                await cbFunctionToPromise(_async.forEach, msg.guild.members, async (member:[string, GuildMember], cb:Function) => {
+                    if(!row) { return cb(); }
+                    if(member[1].roles.has(row.voice_role)) {
+                        await member[1].removeRole(row.voice_role);
+                    }
+                    cb();
+                });
             }
 
             row.voice_role = "-";
@@ -320,6 +333,7 @@ class VoiceRole extends Plugin implements IModule {
             try {
                 await this.updateGuildRow(row);
                 msg.react("👍");
+                this.VCR_Cleanup(msg.guild);
             } catch (err) {
                 msg.channel.sendMessage(DATA_NOT_SAVED);
             }
