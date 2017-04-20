@@ -1,4 +1,4 @@
-out
+out/*
 !out/.gitkeep
 node_modules
 yarn*
