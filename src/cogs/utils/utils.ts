@@ -179,3 +179,12 @@ export function sleep(delay:number) {
         }, delay);
     });
 }
+
+export function cbFunctionToPromise(f:Function, ...args:any[]) {
+    return new Promise((res, rej) => {
+        if(!f) { return; }
+        f.apply(this, ([] as any[]).concat(args).concat(() => {
+            res();
+        }));
+    });
+}
