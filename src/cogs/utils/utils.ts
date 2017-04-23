@@ -169,15 +169,12 @@ export function getLogger(name:string):ILoggerFunction {
     return createLogger(name);
 }
 
-export function sleep(delay:number) {
-    return new Promise((res, rej) => {
-        if(typeof delay !== "number") {
-            return rej("Invalid delay");
-        }
-        setTimeout(() => {
-            res();
-        }, delay);
-    });
+export function sleep<T>(delay: number=1000, value?: T): Promise<T> {
+  return new Promise<T>((resolve) => {
+      setTimeout(() => {
+        resolve(value);
+      }, delay);
+  });
 }
 
 export function cbFunctionToPromise(f:Function, ...args:any[]) {
