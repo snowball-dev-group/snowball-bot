@@ -115,5 +115,5 @@ Don't be scared of making Pull Requests! Make it! I will suggest you what to cha
 
 If you regular user, then report bugs and feedback to Issues section. You also can ask questions there.
 
-
+---
 **MADE WITH ♥ BY DAFRI_NOCHITEROV**.
