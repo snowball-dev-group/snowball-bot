@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2017",
     "lib": ["es2017"],
     "outDir": "out",
     "module": "commonjs",
@@ -8,11 +8,11 @@
     "removeComments": true,
     // "noUnusedLocals": true,
     "moduleResolution": "node",
-    "sourceMap": true,
     "inlineSources": true,
     "allowJs": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "inlineSourceMap": true
   },
   "include": [
     "src/**/*",
