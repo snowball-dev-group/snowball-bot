@@ -286,7 +286,7 @@ class CountV2 extends Plugin implements IModule {
             t = setTimeout(async () => {
                 let random = new Random(Random.engines.mt19937().autoSeed());
 
-                let operation = random.pick(["+", "-"]);
+                let operation = random.pick(["+", "-", "+", "+", "+", "-", "+", "-", "-", "+"]);
 
                 let nextNumber = rRowNumber;
                 let diffNumber = random.integer(1, 50);
