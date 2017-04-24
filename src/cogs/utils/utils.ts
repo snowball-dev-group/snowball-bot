@@ -51,6 +51,7 @@ export enum EmbedType {
     Error,
     OK,
     Information,
+    Progress,
     Empty
 }
 // customFooter?:string
@@ -102,6 +103,11 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
             embed.author.name = "Успех!";
             embed.author.icon_url = "https://i.imgur.com/FcnCpHL.png";
             embed.color = 0x43A047;
+        } break;
+        case EmbedType.Progress: {
+            embed.author.name = "Загрузка...";
+            embed.author.icon_url = "https://i.imgur.com/Lb04Jg0.gif";
+            embed.color = 0x546E7A;
         } break;
         case EmbedType.Empty: break;
     }
