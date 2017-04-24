@@ -413,6 +413,7 @@ class Profiles extends Plugin implements IModule {
     }
 
     async unload() {
+        this.plugLoader.unloadAll();
         this.unhandleEvents();
         return true;
     }
