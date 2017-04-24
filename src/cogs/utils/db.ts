@@ -2,7 +2,7 @@ import * as knex from "knex";
 
 let connection:knex;
 
-export default () => {
+export function getDB() {
     if(!connection) {
         if(!process.env["DB_PASSWD"]) {
             throw new Error("DB password not set in process environment.");
@@ -39,7 +39,7 @@ function getTypeInfo(type:string) {
         default: undefined
     };
 
-    type = type.replace(/[\!\?]/, (s) => {
+    type = type.replace(/[\!\?\*]/, (s) => {
         if(s === "!") {
             t.unique = true;
         } else if(s === "?") {
@@ -67,7 +67,7 @@ function getTypeInfo(type:string) {
     });
 
     if(["string", "number", "boolean"].indexOf(type) === -1) {
-        throw new Error(`Invalid type 'type'`)
+        throw new Error(`Invalid type '${type}'`)
     }
 
     t.type = type;
