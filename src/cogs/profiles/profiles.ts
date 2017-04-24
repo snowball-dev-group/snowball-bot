@@ -256,7 +256,7 @@ class Profiles extends Plugin implements IModule {
         switch(user.presence.status) {
             case "online": { return "онлайн"; }
             case "idle": { return "отошел"; }
-            case "dnd": { return "не беспокоить"; }
+            case "dnd": { return "занят"; }
             default: { return "не в сети"; }
         }
     }
@@ -270,14 +270,10 @@ class Profiles extends Plugin implements IModule {
         statusString += this.getUserStatusEmoji(member) + " ";
         statusString += this.getUserStatusString(member);
 
-        switch(member.presence.status) {
-            case "online": case "idle": case "offline": {
-                if(!dbProfile.status_changed) { break; }
-                let changedAt = new Date(dbProfile.status_changed).getTime();
-                let diff = Date.now() - changedAt;
-                statusString += ` ${this.humanize(diff)}`;
-            } break;
-            default: break;
+        if(dbProfile.status_changed) {
+            let changedAt = new Date(dbProfile.status_changed).getTime();
+            let diff = Date.now() - changedAt;
+            statusString += ` ${this.humanize(diff)}`;
         }
 
         let fields:IEmbedOptionsField[] = [];
