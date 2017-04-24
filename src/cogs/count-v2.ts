@@ -2,7 +2,7 @@ import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, TextChannel, GuildMember } from "discord.js"; 
 import { inChannel, shouldHaveAuthor } from "./checks/commands";
-import { default as _getDB } from "./utils/db";
+import { getDB } from "./utils/db";
 import * as knex from "knex";
 import * as Random from "random-js";
 import { generateEmbed, EmbedType, getLogger } from "./utils/utils";
@@ -81,7 +81,7 @@ class CountV2 extends Plugin implements IModule {
         super({
             "message": (msg:Message) => this.onMessage(msg)
         });
-        this.dbClient = _getDB();
+        this.dbClient = getDB();
 
         this.dbClient.schema.hasTable(TABLENAME_MAIN).then(itHas => {
             if(itHas) {

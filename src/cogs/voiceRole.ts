@@ -1,7 +1,7 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, Guild, Role, GuildMember } from "discord.js"; 
-import { default as getDB } from "./utils/db";
+import { getDB } from "./utils/db";
 import { getLogger, cbFunctionToPromise } from "./utils/utils";
 import * as knex from "knex";
 import * as _async from "async";

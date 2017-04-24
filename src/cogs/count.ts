@@ -3,7 +3,7 @@ import logger = require("loggy");
 import { Plugin } from "./plugin";
 import { Message, TextChannel } from "discord.js"; 
 import { inChannel, shouldHaveAuthor } from "./checks/commands";
-import { default as _getDB } from "./utils/db";
+import { getDB } from "./utils/db";
 import * as knex from "knex";
 import { convertNumbers } from "./utils/letters";
 
@@ -17,7 +17,7 @@ class Count extends Plugin implements IModule {
         super({
             "message": (msg:Message) => this.onMessage(msg)
         });
-        this.dbClient = _getDB();
+        this.dbClient = getDB();
 
         this.dbClient.schema.hasTable("count").then(itHas => {
             if(itHas) {

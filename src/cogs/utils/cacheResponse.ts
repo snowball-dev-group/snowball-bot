@@ -1,5 +1,5 @@
 import { AES } from "crypto-js";
-import { default as getDB, createTableBySchema } from "./db";
+import { getDB, createTableBySchema } from "./db";
 import * as knex from "knex";
 import { getLogger } from "./utils";
 import { currentTimestamp } from "./time";
@@ -82,7 +82,7 @@ export async function getFromCache(cache_owner:string, key:string) : Promise<ICa
     }
     return await db(CACHE_TABLE_NAME).where({
         cache_owner, key
-    }).first.apply(this, CACHE_TABLE_ROW_KEYS);
+    }).first(...CACHE_TABLE_ROW_KEYS);
 }
 
 // very unique!
