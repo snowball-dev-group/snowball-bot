@@ -55,7 +55,12 @@ class Profiles extends Plugin implements IModule {
             this.showProfile(msg);
         } else if(msg.content.startsWith("!edit_profile")) {
             this.editProfile(msg);
+        } else if(msg.content.startsWith("!set_bio")) {
+            this.editBio(msg);
         }
+        // else if(msg.content.startsWith("!status")) {
+        //     this.editActivity(msg);
+        // }
     }
 
     // =====================================
@@ -87,7 +92,7 @@ class Profiles extends Plugin implements IModule {
         if(msg.content === "!edit_profile") {
             await msg.channel.sendMessage("", {
                 embed: {
-                    description: "Вы можете редактировать профиль добавляя или удаляя разные элементы.\nНе путайте эту команду с `!set_bio` `!set_status`! Данная команда позволяет вам настраивать элементы профиля, а не менять их значения (статус, биография)."
+                    description: "Вы можете редактировать профиль добавляя или удаляя разные элементы.\nНе путайте эту команду с `!set_bio` `!status`! Данная команда позволяет вам настраивать элементы профиля, а не менять их значения (статус, биография)."
                 }
             });
             return;
@@ -139,6 +144,12 @@ class Profiles extends Plugin implements IModule {
                 customize.plugins[param] = completeInfo.json;
             }
 
+            customize = JSON.stringify(customize);
+
+            profile.customize = customize;
+
+            await this.updateProfile(profile);
+
             await msg.channel.sendMessage("", {
                 embed: generateEmbed(EmbedType.OK, "Так выглядит новый плагин в вашем профиле:", {
                     okTitle: "Настройка завершена!",
@@ -159,6 +170,41 @@ class Profiles extends Plugin implements IModule {
         }
         
     }
+
+    async editBio(msg:Message) {
+        if(msg.content === "!set_bio") {
+            await msg.channel.sendMessage("", {
+                embed: generateEmbed(EmbedType.Information, "`!set_bio [о себе]`", {
+                    fields: [{
+                        name: "`о себе`",
+                        inline: false,
+                        value: "Любая информация о себе для других участников этого сервера"
+                    }]
+                })
+            });
+            return;
+        }
+        let newBio = msg.content.slice("!set_bio ".length);
+        if(newBio.length >= 1024) {
+            await msg.channel.sendMessage("", {
+                embed: generateEmbed(EmbedType.Error, "Прекрасно, но твоя биография уж сильно большая. Попробуй уместится в 1000 символов и учитывай, что [Emoji - ложь](https://www.quora.com/Why-does-using-emoji-reduce-my-SMS-character-limit-to-70/answer/Andrew-Vilcsak).")
+            });
+            return;
+        }
+
+        let profile = await this.getProfile(msg.member, msg.guild);
+        profile.bio = newBio;
+        await this.updateProfile(profile);
+
+        await msg.channel.sendMessage("", {
+            embed: generateEmbed(EmbedType.OK, "Профиль успешно обновлён!")
+        });
+
+        return;
+    }
+
+    // async editActivity(msg:Message) {
+    // }
 
     getUserStatusEmoji(user:User|GuildMember) {
         switch(user.presence.status) {
