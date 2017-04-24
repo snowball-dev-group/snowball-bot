@@ -27,9 +27,9 @@ export class RatingProfilePlugin implements IProfilesPlugin {
         let args = str.split(";").map(arg => arg.trim());
 
         let info = {
-            platform: args[2],
-            region: args[1].toLowerCase() || "eu",
-            battletag: args[0].replace(/\#/i, "-"),
+            platform: args[2] || "pc",
+            region: (args[1] || "eu").toLowerCase(),
+            battletag: args[0].replace(/\#/i, () => "-"),
             verifed: false
         };
 
@@ -67,7 +67,7 @@ export class RatingProfilePlugin implements IProfilesPlugin {
         postStatus();
         let profile:IBlobResponse|null = null;
         try {
-            profile = getProfile(info.battletag, info.region, info.platform);
+            profile = await getProfile(info.battletag, info.region, info.platform);
         } catch (err) {
             await statusMsg.edit("", {
                 embed: generateEmbed(EmbedType.Error, err.message)
@@ -105,9 +105,21 @@ export class RatingProfilePlugin implements IProfilesPlugin {
 
         return {
             inline: true,
-            name: info.platform ? `<:ow:306134976670466050> ${info.platform} Rating` : "<:ow:306134976670466050> Rating",
-            value: `${profile.stats.competitive.overall_stats.comprank}\n${profile.stats.competitive.game_stats.games_won} won (${profile.stats.competitive.overall_stats.games} total)`
+            name: "<:ow:306134976670466050> Overwatch",
+            value: `**${(100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.competitive.overall_stats.level}LVL** - ${this.getTierEmoji(profile.stats.competitive.overall_stats.tier)} ${profile.stats.competitive ? `${profile.stats.competitive.overall_stats.comprank} - ${profile.stats.competitive.game_stats.games_won} games won (${profile.stats.competitive.overall_stats.games} total)` : "not ranked" }`
         };
+    }
+
+    getTierEmoji(tier:"bronze"|"silver"|"gold"|"platinum"|"diamond"|"master"|"grandmaster") {
+        switch(tier) {
+            default: return "<:bronze:306194850796273665>";
+            case "silver": return "<:silver:306194903464148992>";
+            case "gold": return "<:gold:306194951568621568>";
+            case "platinum": return "<:platinum:306195013929533441>";
+            case "diamond": return "<:diamond:306195127226073089>";
+            case "master": return "<:master:306195210348527626>";
+            case "grandmaster": return "<:grandmaster:306195240568487936>";
+        }
     }
 
     async unload() { return true; }
