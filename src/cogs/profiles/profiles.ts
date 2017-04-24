@@ -137,7 +137,6 @@ class Profiles extends Plugin implements IModule {
                             imageUrl: encodeURI(arg)
                         })
                     });
-                    return;
                 }
 
                 customize = JSON.stringify(customize);
@@ -145,6 +144,8 @@ class Profiles extends Plugin implements IModule {
                 profile.customize = customize;
 
                 await this.updateProfile(profile);
+
+                return;
             }
 
             let mod:Module|undefined = undefined;
@@ -313,15 +314,30 @@ class Profiles extends Plugin implements IModule {
             };
         }
 
+        let pushing = false;
+        let repushAfterPush = false;
+
         let pushUpdate = async () => {
+            if(pushing) {
+                repushAfterPush = true;
+                return;
+            }
+            pushing = true;
             if(!pushedMessage) {
-                return pushedMessage = await msg.channel.sendMessage("", {
+                pushedMessage = await msg.channel.sendMessage("", {
                     embed: getEmbed()
                 }) as Message;
+                pushing = false
+                return pushedMessage;
             }
-            return pushedMessage = (await pushedMessage.edit("", {
+            pushedMessage = (await pushedMessage.edit("", {
                 embed: getEmbed()
             }) as Message);
+            pushing = false;
+            if(repushAfterPush) {
+                pushUpdate();
+            }
+            return pushedMessage;
         };
 
         if(dbProfile.customize !== "{}") {
@@ -330,6 +346,8 @@ class Profiles extends Plugin implements IModule {
             if(customize["image_url"]) {
                 imageUrl = customize["image_url"];
             }
+
+            
 
             if(customize.plugins) {
                 Object.keys(customize.plugins).forEach(pluginName => {
@@ -360,8 +378,8 @@ class Profiles extends Plugin implements IModule {
                         // failed to load...
                     });
                 });
-                pushUpdate();
-            } else { pushUpdate(); }
+                await pushUpdate();
+            } else { await pushUpdate(); }
         } else { await pushUpdate(); }
     }
 
