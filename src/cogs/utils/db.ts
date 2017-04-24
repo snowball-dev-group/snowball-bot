@@ -23,6 +23,7 @@ export default () => {
 interface TypeInfo {
     unique:boolean;
     nullable:boolean;
+    notNullable:boolean;
     type:string;
     length:number|undefined;
     default:string|undefined;
@@ -32,6 +33,7 @@ function getTypeInfo(type:string) {
     let t:TypeInfo = {
         unique: false,
         nullable: false,
+        notNullable: false,
         type: "string",
         length: undefined,
         default: undefined
@@ -41,7 +43,15 @@ function getTypeInfo(type:string) {
         if(s === "!") {
             t.unique = true;
         } else if(s === "?") {
+            if(t.notNullable) {
+                throw new Error("What not nullable cannot be nullable");
+            }
             t.nullable = true;
+        } else if(s === "*") {
+            if(t.nullable) {
+                throw new Error("What nullable cannot be not nullable");
+            }
+            t.notNullable = false;
         }
         return "";
     });
@@ -111,8 +121,10 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
                 }
             }
 
-            if(typeInfo.nullable) {
+            if(typeInfo.nullable && !typeInfo.notNullable) {
                 cb.nullable();
+            } else if(typeInfo.notNullable && !typeInfo.nullable) {
+                cb.notNullable();
             }
             if(typeInfo.unique) {
                 cb.unique();
