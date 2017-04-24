@@ -3,10 +3,11 @@ import logger = require("loggy");
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js"; 
 import { getLogger, generateEmbed, EmbedType, IEmbedOptionsField } from "../utils/utils";
-import { default as getDB, createTableBySchema } from "../utils/db";
+import { getDB, createTableBySchema } from "../utils/db";
 import * as humanizeDuration from "humanize-duration";
 import { IProfilesPlugin, IAddedProfilePlugin } from "./plugins/plugin";
-import { timeDiff } from "../utils/time"
+import { timeDiff } from "../utils/time";
+import { default as fetch } from 'node-fetch';
 
 interface IDBUserProfile {
     real_name?:string;
@@ -41,7 +42,8 @@ class Profiles extends Plugin implements IModule {
     
     constructor(options:string) {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg:Message) => this.onMessage(msg),
+            "presenceUpdate": (oldMember:GuildMember, newMember:GuildMember) => this.onPresenseUpdate(newMember)
         }, true);
         this.init(options);
     }
@@ -61,6 +63,12 @@ class Profiles extends Plugin implements IModule {
         // else if(msg.content.startsWith("!status")) {
         //     this.editActivity(msg);
         // }
+    }
+
+    async onPresenseUpdate(member:GuildMember) {
+        let profile = await this.getOrCreateProfile(member, member.guild);
+        profile.status_changed = (new Date()).toISOString();
+        this.updateProfile(profile);
     }
 
     // =====================================
@@ -83,7 +91,7 @@ class Profiles extends Plugin implements IModule {
             return;
         }
 
-        let profile = await this.getProfile(profileOwner, msg.guild);
+        let profile = await this.getOrCreateProfile(profileOwner, msg.guild);
         
         await this.sendProfile(msg, profile, profileOwner);
     }
@@ -98,15 +106,45 @@ class Profiles extends Plugin implements IModule {
             return;
         }
         let param = msg.content.slice("!edit_profile ".length);
-        let profile = await this.getProfile(msg.member, msg.guild);
+        let profile = await this.getOrCreateProfile(msg.member, msg.guild);
         if(param.startsWith("set ")) {
             param = param.slice("set ".length);
-            let arg = param.slice(param.indexOf(" "));
+            let arg = param.slice(param.indexOf(" ") + 1);
+            param = param.slice(0, param.indexOf(" "));
             if(arg === "") {
                 await msg.channel.sendMessage("", {
                     embed: generateEmbed(EmbedType.Error, "Аргументы не предоставлены. Установка невозможна.")
                 })
                 return;
+            }
+
+            if(["image"].indexOf(param) !== -1) {
+                let customize = JSON.parse(profile.customize);
+
+                if(param === "image") {
+                    try {
+                        await fetch(encodeURI(arg));
+                    } catch (err) {
+                        await msg.channel.sendMessage("", {
+                            embed: generateEmbed(EmbedType.Error, "Невозможно загрузить изображение.")
+                        });
+                        return;
+                    }
+                    
+                    customize["image_url"] = encodeURI(arg);
+                    await msg.channel.sendMessage("", {
+                        embed: generateEmbed(EmbedType.OK, "Изображение профиля установлено: ", {
+                            imageUrl: encodeURI(arg)
+                        })
+                    });
+                    return;
+                }
+
+                customize = JSON.stringify(customize);
+
+                profile.customize = customize;
+
+                await this.updateProfile(profile);
             }
 
             let mod:Module|undefined = undefined;
@@ -168,7 +206,6 @@ class Profiles extends Plugin implements IModule {
             });
             return;
         }
-        
     }
 
     async editBio(msg:Message) {
@@ -192,7 +229,7 @@ class Profiles extends Plugin implements IModule {
             return;
         }
 
-        let profile = await this.getProfile(msg.member, msg.guild);
+        let profile = await this.getOrCreateProfile(msg.member, msg.guild);
         profile.bio = newBio;
         await this.updateProfile(profile);
 
@@ -224,6 +261,10 @@ class Profiles extends Plugin implements IModule {
         }
     }
 
+    humanize(duration:number, largest:number = 2, round:boolean = true) {
+        return humanizeDuration(duration, { language: "ru", largest, round: true });
+    }
+
     async sendProfile(msg:Message, dbProfile:IDBUserProfile, member:GuildMember) {
         let statusString = "";
         statusString += this.getUserStatusEmoji(member) + " ";
@@ -234,7 +275,7 @@ class Profiles extends Plugin implements IModule {
                 if(!dbProfile.status_changed) { break; }
                 let changedAt = new Date(dbProfile.status_changed).getTime();
                 let diff = Date.now() - changedAt;
-                statusString += humanizeDuration(diff, { language: "ru", largest: 2 })
+                statusString += ` ${this.humanize(diff)}`;
             } break;
             default: break;
         }
@@ -251,14 +292,26 @@ class Profiles extends Plugin implements IModule {
 
         let pushedMessage:Message|undefined = undefined;
 
+        let imageUrl:string|undefined = undefined;
+
         let getEmbed = () => {
             return {
+                author: {
+                    icon_url: member.user.displayAvatarURL,
+                    name: member.displayName
+                },
                 title: dbProfile.real_name ? dbProfile.real_name : undefined,
                 description: statusString,
                 fields: fields,
                 footer: {
-                    text: `Участник уже ${humanizeDuration(timeDiff(dbProfile.joined, Date.now(), "ms"))}`,
+                    text: `Участник уже ${this.humanize(timeDiff(dbProfile.joined, Date.now(), "ms"))}`,
                     icon_url: msg.guild.iconURL
+                },
+                image: imageUrl ? {
+                    url: imageUrl
+                } : undefined,
+                thumbnail: {
+                    url: member.user.displayAvatarURL
                 },
                 timestamp: member.user.createdAt
             };
@@ -270,14 +323,18 @@ class Profiles extends Plugin implements IModule {
                     embed: getEmbed()
                 }) as Message;
             }
-            return pushedMessage.edit("", {
+            return pushedMessage = (await pushedMessage.edit("", {
                 embed: getEmbed()
-            });
+            }) as Message);
         };
 
         if(dbProfile.customize !== "{}") {
             let customize = JSON.parse(dbProfile.customize);
-            await pushUpdate();
+
+            if(customize["image_url"]) {
+                imageUrl = customize["image_url"];
+            }
+
             if(customize.plugins) {
                 Object.keys(customize.plugins).forEach(pluginName => {
                     let mod:Module|undefined = undefined;
@@ -300,14 +357,15 @@ class Profiles extends Plugin implements IModule {
                         inline: true
                     });
                     
-                    plugin.getEmbed(customize[pluginName]).then(field => {
+                    plugin.getEmbed(customize.plugins[pluginName]).then(field => {
                         fields[fNum] = field;
                         pushUpdate();
                     }).catch(() => {
                         // failed to load...
                     });
                 });
-            }
+                pushUpdate();
+            } else { pushUpdate(); }
         } else { await pushUpdate(); }
     }
 
@@ -339,7 +397,7 @@ class Profiles extends Plugin implements IModule {
         return await this.db(TABLE_NAME).where({
             guild_id: guild.id,
             uid: member.id
-        }).first.apply(this, Object.keys(DB_PROFILE_PROPS));
+        }).first(...Object.keys(DB_PROFILE_PROPS));
     }
 
     async getOrCreateProfile(member:GuildMember, guild:Guild) {
