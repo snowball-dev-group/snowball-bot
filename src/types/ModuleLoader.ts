@@ -10,6 +10,10 @@ export interface IModuleInfo {
      * Path to module
      */
     path: string;
+    /**
+     * Options for plugin
+     */
+    options: any;
 }
 
 export interface IConfig {
@@ -41,7 +45,7 @@ export interface IModule {
     unload(): Promise<boolean>;
 }
 
-class Module extends EventEmitter {
+export class Module extends EventEmitter {
     /**
      * Base information about module
      */
@@ -71,7 +75,7 @@ class Module extends EventEmitter {
             try {
                 //let l = logger(this.info.name);
                 let mod = require(this.info.path);
-                this.base = new mod();
+                this.base = new mod(this.info.options);
                 this.loaded = true;
                 this.emit("loaded", this.base);
                 res(this.base);
