@@ -75,7 +75,7 @@ class Guilds extends Plugin implements IModule {
      * @param args {String} Arguments after command or command itself
      */
     async createGuild(msg:Message, args:string) {
-        if(!this.prepared) { msg.channel.sendMessage(); return; }
+        if(!this.prepared) { msg.channel.sendMessage("-.-"); return; }
         if(args === "!guild create") {
             msg.reply("", { 
                 embed: generateEmbed(EmbedType.Error, "Невозможно создать гильдию", {

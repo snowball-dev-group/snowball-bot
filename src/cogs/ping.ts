@@ -15,7 +15,7 @@ class Ping extends Plugin implements IModule {
         if(msg.content === "!ping") {
             await msg.react("🏃");
             let startDate = Date.now();
-            msg = await msg.channel.sendMessage(":information_source: Pong!");
+            msg = await msg.channel.sendMessage(":information_source: Pong!") as Message;
             let diff = Date.now() - startDate;
             this.log("info", `Ping for sendMessage to Channel#${msg.channel.id}: ${diff}ms`);
             msg.edit(`:information_source: Pong - \`${diff}ms\`!`);
@@ -26,7 +26,7 @@ class Ping extends Plugin implements IModule {
                 embed: {
                     description: "Pong!"
                 }
-            });
+            }) as Message;
             let diff = Date.now() - startDate;
             this.log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${diff}ms`);
             msg.edit(``, {

@@ -74,7 +74,7 @@ class Ball8 extends Plugin implements IModule {
                     },
                     clearFooter: true
                 })
-            });
+            }) as Message;
         } catch (err) {
             this.log("err", "Damn! 8Ball can't send message", err);
             return;

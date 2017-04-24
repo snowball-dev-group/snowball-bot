@@ -443,7 +443,7 @@ class CountV2 extends Plugin implements IModule {
         });
 
         if(!this.scoreboardMessages.top10) {
-            let msg = await ch.sendMessage(undefined, {
+            let msg = await ch.sendMessage("", {
                 embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
                     footerText: STRINGS.TOP_10
                 })
@@ -452,7 +452,7 @@ class CountV2 extends Plugin implements IModule {
         }
 
         if(!this.scoreboardMessages.latestChanges) {
-            let msg = await ch.sendMessage(undefined, {
+            let msg = await ch.sendMessage("", {
                 embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
                     footerText: STRINGS.LATEST_CHANGES 
                 })

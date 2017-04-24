@@ -69,11 +69,11 @@ class EvalJS extends Plugin implements IModule {
             
             let outputMsg:Message;
             try {
-                outputMsg = await message.channel.sendMessage(undefined, {
+                outputMsg = await message.channel.sendMessage("", {
                     embed: generateEmbed(EmbedType.Information, "Generating output. Please, wait...", {
                         informationTitle: "Busy"
                     })
-                });
+                }) as Message;
             } catch (err) {
                 this.log("Can't send message with output:", err);
                 return;
@@ -106,7 +106,7 @@ class EvalJS extends Plugin implements IModule {
             });
         } catch (err) {
             let diff = Date.now() - startTime;
-            message.channel.sendMessage(undefined, {
+            message.channel.sendMessage("", {
                 embed: generateEmbed(EmbedType.Error, "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```", {
                     errorTitle: "Fault.",
                     fields: [{
