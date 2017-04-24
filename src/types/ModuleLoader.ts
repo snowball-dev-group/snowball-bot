@@ -1,5 +1,7 @@
 import { EventEmitter } from "events";
 import logger = require("loggy");
+import { cbFunctionToPromise } from "../cogs/utils/utils";
+import * as _async from "async";
 
 export interface IModuleInfo {
     /**
@@ -161,9 +163,6 @@ export class ModuleLoader {
         this.config.fastLoad.forEach((name) => {
             this.load(name);
         });
-
-        
-        // this.log = logger(this.config.name);
     }
 
     /**
@@ -181,42 +180,41 @@ export class ModuleLoader {
      * @param name Name in registry
      * @returns {Promise} Promise which'll be resolved once module is loaded
      */
-    load(name:string) {
-        return new Promise<IModule>((res, rej) => {
-            if(!this.registry.has(name)) {
-                let reason = "Module not found in registry. Use `ModuleLoader#register` to put your module in registry";
-                this.log("err", "#load: attempt to load module", name, "failed:", reason);
-                return rej(new Error(reason));
-            }
-            if(this.loadedModulesRegistry.has(name)) {
-                let reason = "Module already loaded";
-                this.log("err", "#load: attempt to load module", name, "failed:", reason);
-                return rej(new Error(reason));
-            }
-            let moduleInfo = this.registry.get(name);
-            if(!moduleInfo) {
-                this.log("err", "#load: module found in registry, but returned undefined value");
-                return rej(new Error("No module info"));
-            }
-            moduleInfo.path = __dirname + "/../" + this.config.basePath + moduleInfo.path;
-            
-            try {
-                moduleInfo.path = require.resolve(moduleInfo.path);
-                this.log("info", "#load: path converted:", moduleInfo.path, "(module can be loaded)");
-            } catch (err) {
-                this.log("err", "#load: path conversation failed (module can't be loaded)");
-                return rej(err);
-            }
+    async load(name:string) {
+        if(!this.registry.has(name)) {
+            let reason = "Module not found in registry. Use `ModuleLoader#register` to put your module in registry";
+            this.log("err", "#load: attempt to load module", name, "failed:", reason);
+            throw new Error(reason);
+        }
+        if(this.loadedModulesRegistry.has(name)) {
+            let reason = "Module already loaded";
+            this.log("err", "#load: attempt to load module", name, "failed:", reason);
+            throw new Error(reason);
+        }
+        let moduleInfo = this.registry.get(name);
+        if(!moduleInfo) {
+            this.log("err", "#load: module found in registry, but returned undefined value");
+            throw new Error("No module info");
+        }
+        moduleInfo.path = __dirname + "/../" + this.config.basePath + moduleInfo.path;
+        
+        try {
+            moduleInfo.path = require.resolve(moduleInfo.path);
+            this.log("info", "#load: path converted:", moduleInfo.path, "(module can be loaded)");
+        } catch (err) {
+            this.log("err", "#load: path conversation failed (module can't be loaded)");
+            throw err;
+        }
 
-            let module = new Module(moduleInfo);
-            module.load().then((mod) => {
-                this.log("ok", "#load: module", module.info.name, "resolved (loading complete)");
-                this.loadedModulesRegistry.set(module.info.name, module);
-            }, (err) => {
-                this.log("err", "#load: module", module.info.name, " rejected loading:", err);
-                return rej(err);
-            });
-        });
+        let module = new Module(moduleInfo);
+        try {
+            await module.load();
+        } catch (err) {
+            this.log("err", "#load: module", module.info.name, " rejected loading:", err);
+            throw err;
+        }
+        this.log("ok", "#load: module", module.info.name, "resolved (loading complete)");
+        this.loadedModulesRegistry.set(module.info.name, module);
     }
 
     /**
@@ -224,32 +222,41 @@ export class ModuleLoader {
      * @param name Name of loaded module
      * @returns {Promise} Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
      */
-    unload(name:string, skipCallingUnload:boolean) {
-        return new Promise((res, rej) => {
-            if(!this.loadedModulesRegistry.has(name)) {
-                let reason = "Module not found or not loaded yet";
-                this.log("err", "#unload: check failed: ", reason);
-                return rej(new Error(reason));
-            }
-            let m = this.loadedModulesRegistry.get(name);
-            if(skipCallingUnload) {
-                this.log("warn", "#unload: skiping calling `unload` method");
+    async unload(name:string, skipCallingUnload:boolean = false) {
+        if(!this.loadedModulesRegistry.has(name)) {
+            let reason = "Module not found or not loaded yet";
+            this.log("err", "#unload: check failed: ", reason);
+            throw new Error(reason);
+        }
+        let m = this.loadedModulesRegistry.get(name);
+        if(skipCallingUnload) {
+            this.log("warn", "#unload: skiping calling `unload` method");
+            this.loadedModulesRegistry.delete(name);
+        } else {
+            if(!m) {
+                this.log("warn", "#unload: check failed: registry member is already undefined");
                 this.loadedModulesRegistry.delete(name);
-            } else {
-                if(!m) {
-                    this.log("warn", "#unload: check failed: registry member is already undefined");
-                    this.loadedModulesRegistry.delete(name);
-                    return res();
-                }
-                m.unload().then(() => {
-                    this.log("ok", "#unload: module", name, "successfully unloaded");
-                    this.loadedModulesRegistry.delete(name);
-                    res();
-                }, (err) => {
-                    this.log("err", "#unload: module", name, "rejected to unload:", err);
-                    return rej(err);
-                });
+                return;
             }
+            try {
+                await m.unload();
+            } catch (err) {
+                this.log("err", "#unload: module", name, "rejected to unload:", err);
+                throw err;
+            }
+            this.log("ok", "#unload: module", name, "successfully unloaded");
+            this.loadedModulesRegistry.delete(name);
+        }
+    }
+
+    /**
+     * Unloads ALL modules
+     */
+    async unloadAll() {
+        let allModulesNames = Array.from(this.loadedModulesRegistry.keys());
+        await cbFunctionToPromise(_async.forEach, allModulesNames, async (moduleName:string, cb:Function) => {
+            await this.unload(moduleName);
+            cb();
         });
     }
 }
