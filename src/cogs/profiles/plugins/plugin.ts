@@ -10,5 +10,5 @@ export interface IAddedProfilePlugin {
 export interface IProfilesPlugin extends IModule {
     name:string;
     getEmbed(info) : Promise<IEmbedOptionsField>;
-    setup(args:string, member:GuildMember, message:Message) : Promise <IAddedProfilePlugin>
+    setup(args:string, member?:GuildMember, message?:Message) : Promise <IAddedProfilePlugin>
 }
