@@ -336,6 +336,7 @@ class Profiles extends Plugin implements IModule {
             }) as Message);
             pushing = false;
             if(repushAfterPush) {
+                repushAfterPush = false;
                 pushUpdate();
             }
             return pushedMessage;
