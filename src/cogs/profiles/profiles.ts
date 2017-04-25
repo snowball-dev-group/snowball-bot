@@ -109,8 +109,9 @@ class Profiles extends Plugin implements IModule {
         let profile = await this.getOrCreateProfile(msg.member, msg.guild);
         if(param.startsWith("set ")) {
             param = param.slice("set ".length);
-            let arg = param.slice(param.indexOf(" ") + 1);
-            param = param.slice(0, param.indexOf(" "));
+            let firstSpaceIndex = param.indexOf(" ");
+            let arg = firstSpaceIndex !== -1 ? param.slice(firstSpaceIndex + 1) : "";
+            param = param.slice(0, firstSpaceIndex === -1 ? param.length + 1 : firstSpaceIndex);
 
             if(["image"].indexOf(param) !== -1) {
                 let customize = JSON.parse(profile.customize);
