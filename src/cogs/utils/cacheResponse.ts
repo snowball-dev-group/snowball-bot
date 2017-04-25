@@ -16,7 +16,7 @@ const CACHE_TABLE_ROW_SCHEME = {
 
 // it's can cost us time later
 const CACHE_TABLE_ROW_KEYS = Object.keys(CACHE_TABLE_ROW_SCHEME);
-const LOG = getLogger("OverwatchProfilePlugin");
+const LOG = getLogger("CachingUtil");
 
 let db:knex|undefined = undefined;
 let initialized = false;
@@ -70,19 +70,28 @@ export interface ICachingResponse {
     /**
      * Cached row (or what you just did put in cache)
      */
-    row:ICachedRow;
+    row:ICachedRow|null;
 }
 
-export async function getFromCache(cache_owner:string, key:string) : Promise<ICachedRow> {
+export async function getFromCache(cache_owner:string, key:string) : Promise<ICachedRow|undefined> {
     if(!initialized || !db) { 
         await init();
         if(!db) {
             throw new Error("Initialization not completed");
         }
     }
-    return await db(CACHE_TABLE_NAME).where({
-        cache_owner, key
-    }).first(...CACHE_TABLE_ROW_KEYS);
+    let logPrefix = `${cache_owner}:${key} (getFromCache)|`;
+    let elem:ICachedRow|undefined = undefined;
+    try {
+        elem = await db(CACHE_TABLE_NAME).where({
+            cache_owner, key
+        }).first(...CACHE_TABLE_ROW_KEYS);
+        LOG("ok", logPrefix, "Got element from cache");
+    } catch (err) {
+        LOG("err", logPrefix, "Failed to get element from cache");
+        throw new Error("Failed to get element from cache");
+    }
+    return elem;
 }
 
 // very unique!
@@ -91,45 +100,84 @@ function getCode() {
 }
 
 // never wait!
-export async function cache(cache_owner:string, key:string, value:string, onlyNew:boolean = false) : Promise<ICachingResponse> {
+export async function cache(cache_owner:string, key:string, value:string, noWait:boolean = true, onlyNew:boolean = false) : Promise<ICachingResponse> {
     if(!initialized || !db) {
         await init();
         if(!db) {
             throw new Error("Initialization not completed");
         }
     }
-    let current:ICachedRow|undefined = await getFromCache(cache_owner, key);
+    let current:ICachedRow|undefined = undefined;
+    let logPrefix = `${cache_owner}:${key} (cache)|`;
+    try {
+        current = await getFromCache(cache_owner, key);
+    } catch (err) {
+        LOG("err", logPrefix, "Failed to get current version", err);
+    }
     if(current) {
         if(onlyNew) {
             throw new Error("There's an already created cache for this key & owner");
         }
+        LOG("ok", logPrefix, "There's already cached version.");
         return {
             new: false,
             row: current
         };
     }
-    await db(CACHE_TABLE_NAME).insert({
-        cache_owner, key, value,
-        timestamp: currentTimestamp(),
-        code: getCode()
-    });
-    current = await getFromCache(cache_owner, key);
+    try {
+        await db(CACHE_TABLE_NAME).insert({
+            cache_owner, key, value,
+            timestamp: currentTimestamp(),
+            code: getCode()
+        });
+        LOG("ok", logPrefix, "Inserting done");
+    } catch (err) {
+        LOG("err", logPrefix, "Caching failed", err);
+        throw new Error("Failed to write in DB. Caching cancelled");
+    }
+    if(noWait) {
+        LOG("ok", logPrefix, "No wait passed, skipping checking for current version");
+        return {
+            new: true,
+            row: null
+        };
+    }
+    try {
+        current = await getFromCache(cache_owner, key);
+        LOG("ok", logPrefix, "Got current version from DB");
+    } catch (err) {
+        LOG("err", logPrefix, "Failed to check if element was inserted", err);
+        throw new Error("Failed to get element from database");
+    }
+    if(!current) {
+        throw new Error("Failed to cache element: something wrong with DB");
+    }
     return {
         new: true,
         row: current
     };
 }
 
-export async function clearCache(cache_owner:string, key:string, notEmpty:boolean = false) : Promise<boolean> {
+export async function clearCache(cache_owner:string, key:string, noWait:boolean = true, notEmpty:boolean = false) : Promise<boolean> {
     if(!initialized || !db) {
         await init();
         if(!db) {
             throw new Error("Initialization not completed");
         }
     }
-    let current:ICachedRow|undefined = await getFromCache(cache_owner, key);
+    let logPrefix = `${cache_owner}:${key} (clearCache)|`;
+
+    let current:ICachedRow|undefined = undefined;
+    try {
+        current = await getFromCache(cache_owner, key);
+        LOG("ok", logPrefix, "Got current element from DB");
+    } catch (err) {
+        LOG("err", logPrefix, "Can't get cache from DB");
+    }
+    
     if(!current) {
         if(notEmpty) {
+            LOG("err", logPrefix, "notEmpty passed, but no value - throwing exception");
             throw new Error("Row is already empty");
         }
         return false;
@@ -137,8 +185,17 @@ export async function clearCache(cache_owner:string, key:string, notEmpty:boolea
         await db(CACHE_TABLE_NAME).where({
             'code': current.code
         }).delete();
-        current = await getFromCache(cache_owner, key); // should be undefined
-        if(!current) { 
+        if(noWait) {
+            return true;
+        }
+        try {
+            current = await getFromCache(cache_owner, key);
+            LOG("ok", logPrefix, "Got current element from DB");
+        } catch (err) {
+            LOG("err", logPrefix, "Failed to get current element from DB");
+        }
+        if(!current) {
+            LOG("ok", logPrefix, "Element removed from DB");
             return true;
         } else {
             throw new Error("Can't delete element");
