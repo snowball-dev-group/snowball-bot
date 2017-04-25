@@ -113,7 +113,7 @@ export class RatingProfilePlugin implements IProfilesPlugin {
         return {
             inline: true,
             name: "<:ow:306134976670466050> Overwatch",
-            value: `**${(100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.competitive.overall_stats.level}LVL** - ${this.getTierEmoji(profile.stats.competitive.overall_stats.tier)} ${profile.stats.competitive ? `${profile.stats.competitive.overall_stats.comprank} - ${profile.stats.competitive.game_stats.games_won} games won (${profile.stats.competitive.overall_stats.games} total)` : "not ranked" }`
+            value: `**${(100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.competitive.overall_stats.level}LVL**\n${this.getTierEmoji(profile.stats.competitive.overall_stats.tier)} ${profile.stats.competitive ? `${profile.stats.competitive.overall_stats.comprank}\n${profile.stats.competitive.game_stats.games_won} games won (${profile.stats.competitive.overall_stats.games} total)` : "not ranked" }`
         };
     }
 
