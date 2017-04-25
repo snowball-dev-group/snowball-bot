@@ -27,7 +27,7 @@ export interface IUserInfo {
     /**	
      * How much reputation the user has
      */
-    repuration: number;
+    reputation: number;
     /**
      * Badges the user has equipped
      */

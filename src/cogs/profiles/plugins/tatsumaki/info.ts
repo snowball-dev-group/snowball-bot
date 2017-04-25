@@ -35,7 +35,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
         return {
             inline: true,
             name: "<:tatsu:306223189628026881> Tatsumaki",
-            value: `**${escapeDiscordMarkdown(profile.name)}**\n**+${profile.repuration}rep**\nУровень: ${profile.level} (${profile.total_xp}XP)\nКредиты: ${profile.credits}\nГлоб. ранк: #${profile.rank}`
+            value: `**${escapeDiscordMarkdown(profile.name)}**\n**+${profile.reputation}rep**\nУровень: ${profile.level} (${profile.total_xp}XP)\nКредиты: ${profile.credits}\nГлоб. ранк: #${profile.rank}`
         };
     }
 
