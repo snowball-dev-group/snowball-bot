@@ -8,6 +8,7 @@ import * as humanizeDuration from "humanize-duration";
 import { IProfilesPlugin, IAddedProfilePlugin } from "./plugins/plugin";
 import { timeDiff } from "../utils/time";
 import { default as fetch } from 'node-fetch';
+import * as util from "util";
 
 interface IDBUserProfile {
     real_name?:string;
@@ -161,7 +162,7 @@ class Profiles extends Plugin implements IModule {
             if(!mod.loaded) {
                 await msg.channel.sendMessage("", {
                     embed: generateEmbed(EmbedType.Error, "Плагин не загружен. Установка невозможна.")
-                })
+                });
                 return;
             }
 
@@ -171,6 +172,14 @@ class Profiles extends Plugin implements IModule {
             try {
                 completeInfo = await plugin.setup(arg, msg.member, msg);
             } catch (err) {
+                await msg.channel.sendMessage("", {
+                    embed: generateEmbed(EmbedType.Error, "Возникла ошибка при выполнении настройки плагина.", {
+                        fields: [{
+                            name: "Подробности",
+                            value: "\`\`\`js\n"+ util.inspect(err) + "\`\`\`"
+                        }]
+                    })
+                });
                 return;
             }
 
