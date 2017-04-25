@@ -2,7 +2,7 @@ import { IModule, ModuleLoader, IModuleInfo, Module } from "../../types/ModuleLo
 import logger = require("loggy");
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js"; 
-import { getLogger, generateEmbed, EmbedType, IEmbedOptionsField } from "../utils/utils";
+import { getLogger, generateEmbed, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import * as humanizeDuration from "humanize-duration";
 import { IProfilesPlugin, IAddedProfilePlugin } from "./plugins/plugin";
@@ -254,20 +254,23 @@ class Profiles extends Plugin implements IModule {
     // async editActivity(msg:Message) {
     // }
 
-    getUserStatusEmoji(user:User|GuildMember) {
-        switch(user.presence.status) {
+    getUserStatusEmoji(user:User|GuildMember|string) {
+        switch(typeof user !== "string" ? user.presence.status : user) {
             case "online": { return "<:vpOnline:212789758110334977>"; }
             case "idle": { return "<:vpAway:212789859071426561>"; }
             case "dnd": { return "<:vpDnD:236744731088912384>"; }
+            case "streaming": { return "<:vpStreaming:212789640799846400>"; }
             default: { return "<:vpOffline:212790005943369728>"; }
         }
     }
 
-    getUserStatusString(user:User|GuildMember) {
-        switch(user.presence.status) {
+    getUserStatusString(user:User|GuildMember|string) {
+        switch(typeof user !== "string" ? user.presence.status : user) {
             case "online": { return "онлайн"; }
             case "idle": { return "отошел"; }
             case "dnd": { return "занят"; }
+            case "streaming": { return "стримит"; }
+            case "playing": { return "играет"; }
             default: { return "не в сети"; }
         }
     }
@@ -281,10 +284,23 @@ class Profiles extends Plugin implements IModule {
         statusString += this.getUserStatusEmoji(member) + " ";
         statusString += this.getUserStatusString(member);
 
+        if(member.presence.game) {
+            statusString = "";
+            if(member.presence.game.streaming) {
+                statusString += this.getUserStatusEmoji("streaming") + " ";
+                statusString += this.getUserStatusString("streaming") + " ";
+                statusString += `[${escapeDiscordMarkdown(member.presence.game.name)}](${member.presence.game.url})`;
+            } else {
+                statusString += this.getUserStatusEmoji("online") + " ";
+                statusString += this.getUserStatusString("playing") + " ";
+                statusString += `в **${escapeDiscordMarkdown(member.presence.game.name)}**`;
+            }
+        }
+
         if(dbProfile.status_changed) {
             let changedAt = new Date(dbProfile.status_changed).getTime();
             let diff = Date.now() - changedAt;
-            statusString += ` ${this.humanize(diff)}`;
+            statusString += ` (${this.humanize(diff)})`;
         }
 
         let fields:IEmbedOptionsField[] = [];
