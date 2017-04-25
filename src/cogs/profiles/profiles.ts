@@ -111,17 +111,17 @@ class Profiles extends Plugin implements IModule {
             param = param.slice("set ".length);
             let arg = param.slice(param.indexOf(" ") + 1);
             param = param.slice(0, param.indexOf(" "));
-            if(arg === "") {
-                await msg.channel.sendMessage("", {
-                    embed: generateEmbed(EmbedType.Error, "Аргументы не предоставлены. Установка невозможна.")
-                })
-                return;
-            }
 
             if(["image"].indexOf(param) !== -1) {
                 let customize = JSON.parse(profile.customize);
 
                 if(param === "image") {
+                    if(arg === "" || (!arg.startsWith("http://") && !arg.startsWith("https://"))) {
+                        await msg.channel.sendMessage("", {
+                            embed: generateEmbed(EmbedType.Error, "Неправильная ссылка или аргументы отстутствуют.")
+                        });
+                        return;
+                    }
                     try {
                         await fetch(encodeURI(arg));
                     } catch (err) {
@@ -346,8 +346,6 @@ class Profiles extends Plugin implements IModule {
             if(customize["image_url"]) {
                 imageUrl = customize["image_url"];
             }
-
-            
 
             if(customize.plugins) {
                 Object.keys(customize.plugins).forEach(pluginName => {
