@@ -20,6 +20,7 @@
 		"no-var-requires": true,
 		"quotemark": [
 			"double"
-		]
+		],
+		"no-empty": true
 	}
 }
