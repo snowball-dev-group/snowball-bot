@@ -1,6 +1,6 @@
 import { IProfilesPlugin } from "../plugin";
 import { GuildMember } from "discord.js";
-import { IEmbedOptionsField, escapeDiscordMarkdown } from "../../../utils/utils";
+import { IEmbedOptionsField, escapeDiscordMarkdown, replaceAll } from "../../../utils/utils";
 import { getOrFetchRecents } from "./lastfm";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
 
@@ -11,11 +11,11 @@ export interface ILastFMInfo {
 export class LastFMRecentProfilePlugin implements IProfilesPlugin {
     public name = "lastfm_recentrack";
     private apiKey:string;
-
+    
     constructor(apiKey:string) {
         this.apiKey = apiKey;
     }
-
+    
     async setup(str:string, member:GuildMember) {
         let js:ILastFMInfo = {
             username: str
@@ -32,12 +32,12 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
             example: await this.getEmbed(js)
         };
     }
-
+    
     async getEmbed(info:ILastFMInfo|string) : Promise<IEmbedOptionsField> {
         if(typeof info !== "object") {
             info = JSON.parse(info) as ILastFMInfo;
         }
-
+        
         let profile:IRecentTracksResponse|undefined = undefined;
         try {
             profile = await getOrFetchRecents(info.username, this.apiKey);
@@ -56,16 +56,20 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
                 value: `❌ Invalid response.`
             };
         }
-
+        
         const recentTrack = profile.recenttracks.track[0];
+        
+        const fixedUrl = recentTrack ? replaceAll(replaceAll(recentTrack.url, "(", "%28"), ")", "%29") : "";
 
+        const str = `${recentTrack ? `🎵 [${escapeDiscordMarkdown(`${recentTrack.artist["#text"]} - ${recentTrack.name}`, true)}](${fixedUrl})` : "no recent track"}`;
+        
         return {
             inline: true,
             name: "<:lastfm:306344550744457217> Last.FM",
-            value: `${recentTrack ? `🎵 [${escapeDiscordMarkdown(`${recentTrack.artist["#text"]} - ${recentTrack.name}`, true)}](${recentTrack.url})` : "no recent track"}`
+            value: str
         };
     }
-
+    
     async unload() { return true; }
 }
 
