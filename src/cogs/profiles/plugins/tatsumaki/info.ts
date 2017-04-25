@@ -41,3 +41,5 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 
     async unload() { return true; }
 }
+
+module.exports = TatsumakiProfilePlugin;
