@@ -32,7 +32,7 @@ export async function getRecents(username:string, apiKey:string) : Promise<IRece
         throw new Error("Ошибка сервера");
     }
 
-    cache(CACHE_OWNER, username, JSON.stringify(parsedRecents));
+    await cache(CACHE_OWNER, username, JSON.stringify(parsedRecents), true);
 
     return parsedRecents;
 }

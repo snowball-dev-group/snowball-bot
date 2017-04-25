@@ -90,7 +90,7 @@ export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUs
         throw new Error("Ошибка сервера");
     }
 
-    cache(CACHE_OWNER, uid, JSON.stringify(uObject));
+    await cache(CACHE_OWNER, uid, JSON.stringify(uObject), true);
 
     return uObject;
 }
