@@ -26,6 +26,13 @@ export class RatingProfilePlugin implements IProfilesPlugin {
 
         let args = str.split(";").map(arg => arg.trim());
 
+        if(args.length === 0) {
+            await statusMsg.edit("", {
+                embed: generateEmbed(EmbedType.Error, "Аргументы не предоставлены.")
+            })
+            throw new Error("Invalid argumentation");
+        }
+
         let info = {
             platform: args[2] || "pc",
             region: (args[1] || "eu").toLowerCase(),
