@@ -374,8 +374,11 @@ class Profiles extends Plugin implements IModule {
                     plugin.getEmbed(customize.plugins[pluginName]).then(field => {
                         fields[fNum] = field;
                         pushUpdate();
-                    }).catch(() => {
-                        // failed to load...
+                    }).catch((err) => {
+                        fields[fNum] = {
+                            name: pluginName,
+                            value: "failed to load:\n" + err.message
+                        };
                     });
                 });
                 await pushUpdate();
