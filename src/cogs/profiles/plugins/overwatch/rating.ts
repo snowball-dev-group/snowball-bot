@@ -1,11 +1,12 @@
 import { IProfilesPlugin } from "../plugin";
 import { Message, GuildMember } from "discord.js";
-import { generateEmbed, EmbedType, IEmbedOptionsField } from "../../../utils/utils";
+import { generateEmbed, EmbedType, IEmbedOptionsField, getLogger } from "../../../utils/utils";
 import { IBlobResponse, IRegionalProfile } from "./owApiInterfaces";
 import { getProfile, IOverwatchProfilePluginInfo } from "./overwatch";
 
 const ACCEPTED_REGIONS = ["eu", "kr", "us"];
 const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
+const LOG = getLogger("OWRatingPlugin");
 
 export class RatingProfilePlugin implements IProfilesPlugin {
     public name = "ow_rating";
@@ -34,7 +35,7 @@ export class RatingProfilePlugin implements IProfilesPlugin {
         }
 
         let info = {
-            platform: args[2] || "pc",
+            platform: (args[2] || "pc").toLowerCase(),
             region: (args[1] || "eu").toLowerCase(),
             battletag: args[0].replace(/\#/i, () => "-"),
             verifed: false
@@ -84,7 +85,7 @@ export class RatingProfilePlugin implements IProfilesPlugin {
 
         if(!profile) {
             await statusMsg.edit("", {
-                embed: generateEmbed(EmbedType.Error, "Вы не играете на этом регионе!")
+                embed: generateEmbed(EmbedType.Error, "Вы не играете на этом регионе или профиль не найден.")
             });
             throw new Error("Player not registered on this region.");
         }
@@ -104,10 +105,17 @@ export class RatingProfilePlugin implements IProfilesPlugin {
             info = JSON.parse(info) as IOverwatchProfilePluginInfo;
         }
 
-        let profile:IRegionalProfile = await getProfile(info.battletag, info.region, info.platform);
+        let profile:IRegionalProfile|undefined = undefined;
+        try {
+            profile = await getProfile(info.battletag, info.region, info.platform);
+        } catch (err) {
+            LOG("err", "Error during getting profile", err, info);
+            throw new Error("Can't get profile")
+        }
 
         if(!profile) {
-            throw new Error("Can't get profile");
+            LOG("err", "Can't get profile: ", info);
+            throw new Error("Exception not catched, but value not present.");
         }
 
         return {

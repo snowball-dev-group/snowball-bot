@@ -44,7 +44,7 @@ export async function getProfile(battletag:string, region:string = "eu", platfor
     if(!cached) {
         return (await fetchBlobProfile(battletag, platform))[region];
     } else {
-        if(timeDiff(cached.timestamp) > 60) {
+        if(timeDiff(cached.timestamp, Date.now(), "s") > 60) {
             await clearCache(CACHE_OWNER, battletag);
             return (await fetchBlobProfile(battletag, platform))[region];
         } else {
