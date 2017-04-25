@@ -120,7 +120,7 @@ export async function cache(cache_owner:string, key:string, value:string, onlyNe
     };
 }
 
-export async function clearCache(cache_owner:string, key:string, notEmpty:boolean = false) {
+export async function clearCache(cache_owner:string, key:string, notEmpty:boolean = false) : Promise<boolean> {
     if(!initialized || !db) {
         await init();
         if(!db) {
@@ -134,7 +134,9 @@ export async function clearCache(cache_owner:string, key:string, notEmpty:boolea
         }
         return false;
     } else {
-        await db(CACHE_TABLE_NAME).where('code', current.code).delete();
+        await db(CACHE_TABLE_NAME).where({
+            'code': current.code
+        }).delete();
         current = await getFromCache(cache_owner, key); // should be undefined
         if(!current) { 
             return true;
