@@ -13,7 +13,8 @@ export function getDB() {
                 host: process.env["DB_HOST"] || "127.0.0.1",
                 user: process.env["DB_USER"] || "snowballbot",
                 password: process.env["DB_PASSWD"],
-                database: process.env["DB_NAME"] || "snowbot"
+                database: process.env["DB_NAME"] || "snowbot",
+                charset: "utf8mb4_general_ci"
             }
         });
     }
@@ -108,7 +109,7 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
             let cb:knex.ColumnBuilder;
             switch(typeInfo.type) {
                 case "string": {
-                    cb = tb.string(key, typeInfo.length);
+                    cb = tb.string(key, typeInfo.length).collate("utf8_unicode_ci");
                 } break;
                 case "number": {
                     cb = tb.integer(key);
