@@ -409,6 +409,7 @@ namespace Knex {
         index(indexName?: string): ColumnBuilder;
         primary(): ColumnBuilder;
         unique(): ColumnBuilder;
+        collate(collation:string): ColumnBuilder;
         references(columnName: string): ReferencingColumnBuilder;
         onDelete(command: string): ColumnBuilder;
         onUpdate(command: string): ColumnBuilder;
