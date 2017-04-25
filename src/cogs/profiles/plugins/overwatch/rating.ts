@@ -29,7 +29,7 @@ export class RatingProfilePlugin implements IProfilesPlugin {
         if(args.length === 0) {
             await statusMsg.edit("", {
                 embed: generateEmbed(EmbedType.Error, "Аргументы не предоставлены.")
-            })
+            });
             throw new Error("Invalid argumentation");
         }
 
