@@ -81,14 +81,14 @@ Create file named `configuration.json` in `out/config` directory with this conte
 }
 ```
 
-- **`name`** ([`string`](string)): Name of the bot, used for output in console
-- **`token`** ([`string`](string)): Bot authorization token, get it using [My Apps](https://discordapp.com/developers/applications/me) page on Discord Developers site.
+- **`name`** ([`string`][string]): Name of the bot, used for output in console
+- **`token`** ([`string`][string]): Bot authorization token, get it using [My Apps](https://discordapp.com/developers/applications/me) page on Discord Developers site.
 - **`modules`** ([`IModuleInfo[]`](./src/types/ModuleLoader.ts#L6)): Represents an array with information about plugins which will be registered once bot started.
-  - `name` ([`string`](string)): Name of module
-  - `path` ([`string`](string)): Absolute path from `cogs` directory
-  - `options` ([`any`](any)): Any options for plugin
-- **`autoLoad`** ([`string`](string)): Array of names of plugins which should be automatically loaded after registration, be sure you typing their names right: case matters, it's not path.
-- **`botOwner`** ([`string`](string)): Your (owner) Discord ID. It gives you permission to call `eval` command and other stuff which can do damage to bot if you type wrong ID here.
+  - `name` ([`string`][string]): Name of module
+  - `path` ([`string`][string]): Absolute path from `cogs` directory
+  - `options` ([`any`][any]): Any options for plugin
+- **`autoLoad`** ([`string`][string]): Array of names of plugins which should be automatically loaded after registration, be sure you typing their names right: case matters, it's not path.
+- **`botOwner`** ([`string`][string]): Your (owner) Discord ID. It gives you permission to call `eval` command and other stuff which can do damage to bot if you type wrong ID here.
 
 [string]:https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String
 [any]:https://www.typescriptlang.org/docs/handbook/basic-types.html#any
