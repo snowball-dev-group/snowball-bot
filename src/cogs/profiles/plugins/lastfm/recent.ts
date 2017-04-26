@@ -22,7 +22,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
         };
         
         try {
-            let recentTracks = await getOrFetchRecents(js.username, this.apiKey);
+            await getOrFetchRecents(js.username, this.apiKey);
         } catch (err) {
             throw new Error("API error");
         }
