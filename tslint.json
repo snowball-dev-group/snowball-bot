@@ -2,7 +2,10 @@
 	"rules": {
 		"no-unused-expression": true,
 		"no-duplicate-variable": true,
-		"no-unused-variable": true,
+		"no-unused-new": true,
+		"no-unused-variable": [
+			true
+		],
 		"curly": true,
 		"class-name": true,
 		"semicolon": ["always"],
@@ -21,6 +24,16 @@
 		"quotemark": [
 			"double"
 		],
-		"no-empty": true
+		"no-empty": true,
+		"indent": [
+			true
+		]
+	},
+	"jsRules": {
+		"no-unused-new": true,
+		"no-unused-expression": true,
+		"semicolon": [
+			"always"
+		]
 	}
 }
