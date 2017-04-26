@@ -1,6 +1,4 @@
-import { IProfilesPlugin } from "../plugin";
-import { IEmbedOptionsField, getLogger, EmbedType, generateEmbed } from "../../../utils/utils";
-import { GuildMember, Message } from "discord.js";
+import { getLogger } from "../../../utils/utils";
 import { default as fetch, Response } from "node-fetch";
 import { IBlobResponse, IRegionalProfile } from "./owApiInterfaces";
 import { getFromCache, clearCache, cache, ICachedRow } from "../../../utils/cacheResponse";
