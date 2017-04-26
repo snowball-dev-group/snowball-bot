@@ -74,7 +74,7 @@ class Profiles extends Plugin implements IModule {
                 }
             }
         } else {
-            if(old.presence.game.equals(member.presence.game)) {
+            if(old.presence.game && member.presence.game && old.presence.game.equals(member.presence.game)) {
                 return; // game not changed ?
             }
         }
