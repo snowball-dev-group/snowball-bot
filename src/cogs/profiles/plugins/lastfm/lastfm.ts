@@ -78,7 +78,7 @@ export async function getOrFetchRecents(uid:string, apiKey:string) : Promise<IRe
             }
 
             if(obj) {
-                LOG("ok", logPrefix, "Returning parsed cached version", obj);
+                LOG("ok", logPrefix, "Returning parsed cached version");
                 return obj;
             }
         } else {
