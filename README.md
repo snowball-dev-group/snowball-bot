@@ -60,8 +60,23 @@ Create file named `configuration.json` in `out/config` directory with this conte
     }, {
         "name": "voiceRole",
         "path": "voiceRole"
+    }, {
+        "name": "profiles",
+        "path": "profiles/profiles",
+        "options": [{
+            "name": "overwatch-rating",
+            "path": "overwatch/rating"
+        }, {
+            "name": "tatsumaki-info",
+            "path": "tatsumaki/info",
+            "options": "TATSUMAKI API KEY"
+        }, {
+            "name": "lastfm",
+            "path": "lastfm/recent",
+            "options": "LAST FM API KEY"
+        }]
     }],
-    "autoLoad": ["ping", "eval", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole"],
+    "autoLoad": ["ping", "eval", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles"],
     "botOwner": "133145125122605057"
 }
 ```
