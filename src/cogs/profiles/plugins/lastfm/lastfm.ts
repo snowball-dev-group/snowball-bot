@@ -80,7 +80,7 @@ export async function getOrFetchRecents(uid:string, apiKey:string) : Promise<IRe
     LOG("info", logPrefix, "Fetching profile...", uid);
     let recents:IRecentTracksResponse|undefined = undefined;
     try {
-        recents = await getOrFetchRecents(uid, apiKey);
+        recents = await getRecents(uid, apiKey);
         LOG("ok", logPrefix, "Fetching done.");
     } catch (err) {
         LOG("err", logPrefix, "Fetching failed", err);
