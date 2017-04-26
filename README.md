@@ -83,6 +83,20 @@ I like to use [MySQL](https://www.mysql.com/) database, compatible to nice `knex
 - `DB_USER`: Name of user who connecting to database
 - `DB_NAME`: Password of user who connecting to database
 
+To insure saving of unicode 8 emojis I changed `my.cfg` (thanks google):
+
+```ini
+[mysqld]
+init_connect='SET collation_connection = utf8mb4_unicode_ci'
+init_connect='SET NAMES utf8mb4'
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+skip-character-set-client-handshake
+
+[mysql]
+default-character-set=utf8mb4
+```
+
 ### Starting
 
 You had to setup database, environment variable and configuration json file (locally).
