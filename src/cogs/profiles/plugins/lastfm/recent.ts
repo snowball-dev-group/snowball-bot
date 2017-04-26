@@ -1,8 +1,10 @@
 import { IProfilesPlugin } from "../plugin";
 import { GuildMember } from "discord.js";
-import { IEmbedOptionsField, escapeDiscordMarkdown, replaceAll } from "../../../utils/utils";
+import { IEmbedOptionsField, escapeDiscordMarkdown, replaceAll, getLogger } from "../../../utils/utils";
 import { getOrFetchRecents } from "./lastfm";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
+
+const LOG = getLogger("LastFMPlugin");
 
 export interface ILastFMInfo {
     username:string;
@@ -21,10 +23,14 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
             username: str
         };
         
+        let logPrefix = `${js.username} (setup)|`;
+
         try {
+            LOG("info", logPrefix, "Getting recent tracks...");
             await getOrFetchRecents(js.username, this.apiKey);
         } catch (err) {
-            throw new Error("API error");
+            LOG("err", logPrefix, "Failed to get recent tracks", err);
+            throw new Error("Can't get recent tracks.");
         }
         
         return {
@@ -38,10 +44,13 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
             info = JSON.parse(info) as ILastFMInfo;
         }
         
+        let logPrefix = `${info.username} (getEmbed)|`;
         let profile:IRecentTracksResponse|undefined = undefined;
         try {
+            LOG("info", logPrefix, "Getting recent tracks...");
             profile = await getOrFetchRecents(info.username, this.apiKey);
         } catch (err) {
+            LOG("err", logPrefix, "Failed to get recent tracks", err);
             return {
                 inline: true,
                 name: "<:lastfm:306344550744457217> Last.FM",
@@ -50,6 +59,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
         }
         
         if(!profile) {
+            LOG("err", logPrefix, "No 'profile' variable!");
             return {
                 inline: true,
                 name: "<:lastfm:306344550744457217> Last.FM",
@@ -57,17 +67,24 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
             };
         }
         
-        const recentTrack = profile.recenttracks.track[0];
-        
-        const fixedUrl = recentTrack ? replaceAll(replaceAll(recentTrack.url, "(", "%28"), ")", "%29") : "";
+        LOG("ok", logPrefix, "Generating embed...");
 
-        const str = `${recentTrack ? `🎵 [${escapeDiscordMarkdown(`${recentTrack.artist["#text"]} - ${recentTrack.name}`, true)}](${fixedUrl})` : "no recent track"}`;
+        try {
+            const recentTrack = profile.recenttracks.track[0];
         
-        return {
-            inline: true,
-            name: "<:lastfm:306344550744457217> Last.FM",
-            value: str
-        };
+            const fixedUrl = recentTrack ? replaceAll(replaceAll(recentTrack.url, "(", "%28"), ")", "%29") : "";
+
+            const str = `${recentTrack ? `🎵 [${escapeDiscordMarkdown(`${recentTrack.artist["#text"]} - ${recentTrack.name}`, true)}](${fixedUrl})` : "no recent track"}`;
+            
+            return {
+                inline: true,
+                name: "<:lastfm:306344550744457217> Last.FM",
+                value: str
+            };
+        } catch (err) {
+            LOG("err", logPrefix, "Failed to generate embed", err);
+            throw new Error("Failed to generate embed");
+        }
     }
     
     async unload() { return true; }

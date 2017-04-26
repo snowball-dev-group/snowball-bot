@@ -67,7 +67,20 @@ export async function getOrFetchRecents(uid:string, apiKey:string) : Promise<IRe
         LOG("info", logPrefix, "There's cached version, checking difference");
         if(timeDiff(cached.timestamp, Date.now(), "s") < 60) {
             LOG("ok", logPrefix, "We can use cached version");
-            return (JSON.parse(cached.value));
+            
+            LOG("info", logPrefix, "Parsing cached JSON...");
+            let obj:IRecentTracksResponse|undefined = undefined;
+            try {
+                obj = JSON.parse(cached.value) as IRecentTracksResponse;
+                LOG("ok", logPrefix, "Cached JSON parsed!");
+            } catch (err) {
+                LOG("err", logPrefix, "Failed to parse cached JSON!", cached.value);
+            }
+
+            if(obj) {
+                LOG("ok", logPrefix, "Returning parsed cached version", obj);
+                return obj;
+            }
         } else {
             LOG("warn", logPrefix, "Old cache detected, removing...");
             try {
