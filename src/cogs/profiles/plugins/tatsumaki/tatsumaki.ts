@@ -88,7 +88,7 @@ export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUs
     let uObject:IUserInfo|undefined = undefined;
     try {
         LOG("info", logPrefix, "Parsing JSON response");
-        uObject = await resp.json();
+        uObject = await resp.json() as IUserInfo;
     } catch (err) {
         LOG("err", logPrefix, "JSON parsing failed", err);
         throw new Error("Error retrieving information from the API.");
@@ -125,7 +125,20 @@ export async function getTatsuProfile(uid:string, apiKey:string) : Promise<IUser
         LOG("info", logPrefix, "There's cached version, checking difference");
         if(timeDiff(cached.timestamp, Date.now(), "s") < 60) {
             LOG("ok", logPrefix, "We can use cached version");
-            return (JSON.parse(cached.value));
+
+            LOG("info", "Parsing cached JSON...");
+            let obj:IUserInfo|undefined = undefined;
+            try {
+                obj = JSON.parse(cached.value) as IUserInfo;
+                LOG("ok", logPrefix, "Cached JSON parsed!");
+            } catch (err) {
+                LOG("err", logPrefix, "Failed to parse cached JSON", cached.value);
+            }
+            
+            if(obj) {
+                LOG("ok", logPrefix, "Returning parsed cached version");
+                return obj;
+            }
         } else {
             LOG("warn", logPrefix, "Old cache detected, removing...");
             try {
