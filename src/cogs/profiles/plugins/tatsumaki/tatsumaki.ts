@@ -1,6 +1,7 @@
 import { default as fetch, Response } from "node-fetch";
-import { getFromCache, clearCache, cache } from "../../../utils/cacheResponse";
+import { getFromCache, clearCache, cache, ICachedRow } from "../../../utils/cacheResponse";
 import { timeDiff } from "../../../utils/time";
+import { getLogger } from "../../../utils/utils";
 
 export interface IUserInfo {
     /**
@@ -58,52 +59,95 @@ export interface IUserInfo {
 }
 
 const CACHE_OWNER = "tatskumaki:profile";
+const LOG = getLogger("TatsuPlugin");
 
 export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUserInfo> {
     let resp:Response|undefined = undefined;
+    let logPrefix = `${uid} (fetchTatsuProfile)|`;
     try {
-        resp = await fetch(`https://api.tatsumaki.xyz/users/${uid}`, {
+        let uri = `https://api.tatsumaki.xyz/users/${uid}`;
+        LOG("info", logPrefix, "Fetching URL", uri);
+        resp = await fetch(uri, {
             headers: {
                 Authorization: apiKey
             }
         });
     } catch (err) {
-        if(err.status === 404) {
-            throw new Error("Профиль не найден");
+        LOG("err", logPrefix, "Error catched!", err);
+        if(err.status && err.status === 404) {
+            throw new Error("Profile not found");
         }
-        throw new Error("Профиль не найден или API сервер недоступен.");
+        throw new Error("Profile not found or Tatsumaki API server not available.");
     }
 
     if(!resp) {
-        throw new Error("API сервер не ответил.");
+        LOG("err", logPrefix, "No `resp` at middle of FETCH operation!")
+        throw new Error("No response.");
     }
 
     let uObject:IUserInfo|undefined = undefined;
     try {
+        LOG("info", logPrefix, "Parsing JSON response");
         uObject = await resp.json();
     } catch (err) {
-        throw new Error("Ошибка получения информации из ответа.");
+        LOG("err", logPrefix, "JSON parsing failed", err);
+        throw new Error("Error retrieving information from the API.");
     }
 
     if(!uObject) {
-        throw new Error("Ошибка сервера");
+        LOG("err", logPrefix, "No `uObject` at final state of FETCH operation!");
+        throw new Error("No user info");
     }
 
-    await cache(CACHE_OWNER, uid, JSON.stringify(uObject), true);
+    try {
+        LOG("info", logPrefix, "Caching response");
+        await cache(CACHE_OWNER, uid, JSON.stringify(uObject), true)
+    } catch (err) {
+        LOG("err", logPrefix, "Caching failed", err);
+    }
 
     return uObject;
 }
 
 export async function getTatsuProfile(uid:string, apiKey:string) : Promise<IUserInfo> {
-    let cached = await getFromCache(CACHE_OWNER, uid);
-    if(!cached) {
-        return (await fetchTatsuProfile(uid, apiKey));
-    } else {
-        if(timeDiff(cached.timestamp) > 60) {
-            await clearCache(CACHE_OWNER, uid);
-            return (await fetchTatsuProfile(uid, apiKey));
-        } else {
+    let cached:ICachedRow|undefined = undefined;
+    let logPrefix = `${uid} (getTatsuProfile)|`;
+
+    try {
+        cached = await getFromCache(CACHE_OWNER, uid);
+        LOG("ok", logPrefix, "Got element from cache");
+    } catch (err) {
+        LOG("err", logPrefix, "Failed to get element from cache.", err);
+        throw err;
+    }
+
+    if(cached) {
+        LOG("info", "There's cached version, checking difference");
+        if(timeDiff(cached.timestamp, Date.now(), "s") < 60) {
             return (JSON.parse(cached.value));
+        } else {
+            LOG("warn", "Old cache detected, removing...");
+            try {
+                await clearCache(CACHE_OWNER, uid);
+            } catch (err) {
+                LOG("err", logPrefix, "Caching removal failed", err);
+            }
         }
     }
+
+    LOG("info", logPrefix, "Fetching profile...", uid);
+    let profile:IUserInfo|undefined = undefined;
+    try {
+        profile = await fetchTatsuProfile(uid, apiKey);
+        LOG("ok", logPrefix, "Fetching done.");
+    } catch (err) {
+        LOG("err", logPrefix, "Fetching failed", err);
+    }
+
+    if(!profile) {
+        LOG("err", logPrefix, "No profile at final of GET operation!");
+        throw new Error("Got no profile");
+    }
+
+    return profile;
 }
