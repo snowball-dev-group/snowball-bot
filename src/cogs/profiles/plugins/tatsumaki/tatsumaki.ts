@@ -1,4 +1,3 @@
-import { IProfilesPlugin } from "../plugin";
 import { default as fetch, Response } from "node-fetch";
 import { getFromCache, clearCache, cache } from "../../../utils/cacheResponse";
 import { timeDiff } from "../../../utils/time";
