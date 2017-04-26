@@ -1,5 +1,4 @@
 import { IModule, ModuleLoader, IModuleInfo, Module } from "../../types/ModuleLoader";
-import logger = require("loggy");
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js"; 
 import { getLogger, generateEmbed, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown } from "../utils/utils";
@@ -44,7 +43,7 @@ class Profiles extends Plugin implements IModule {
     constructor(options:string) {
         super({
             "message": (msg:Message) => this.onMessage(msg),
-            "presenceUpdate": (oldMember:GuildMember, newMember:GuildMember) => this.onPresenseUpdate(newMember)
+            "presenceUpdate": (oldMember:GuildMember, newMember:GuildMember) => this.onPresenseUpdate(oldMember, newMember)
         }, true);
         this.init(options);
     }
@@ -66,8 +65,19 @@ class Profiles extends Plugin implements IModule {
         // }
     }
 
-    async onPresenseUpdate(member:GuildMember) {
+    async onPresenseUpdate(old:GuildMember, member:GuildMember) {
         let profile = await this.getOrCreateProfile(member, member.guild);
+        if(old.presence.status !== member.presence.status) {
+            if(old.presence.game && member.presence.game) {
+                if(old.presence.game.equals(member.presence.game)) {
+                    return; // nothing changed
+                }
+            }
+        } else {
+            if(old.presence.game.equals(member.presence.game)) {
+                return; // game not changed ?
+            }
+        }
         profile.status_changed = (new Date()).toISOString();
         this.updateProfile(profile);
     }
