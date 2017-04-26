@@ -81,13 +81,14 @@ Create file named `configuration.json` in `out/config` directory with this conte
 }
 ```
 
-- **`name`**: Name of the bot, used for output in console
-- **`token`**: Bot authorization token, get it using [My Apps](https://discordapp.com/developers/applications/me) page on Discord Developers site.
-- **`modules`**: Represents an array with information about plugins which will be registered once bot started.
-  - `name`: Name of module
-  - `path`: Absolute path from `cogs` directory
-- **`autoLoad`**: Plugins which should be automatically loaded after registration, be sure you typing their names right: case matters, it's not path.
-- **`botOwner`**: Your (owner) ID. It gives you permission to call `eval` command and other stuff which can do damage to bot if you type wrong ID here.
+- **`name`** (string): Name of the bot, used for output in console
+- **`token`** (string): Bot authorization token, get it using [My Apps](https://discordapp.com/developers/applications/me) page on Discord Developers site.
+- **`modules`** (IModule[]): Represents an array with information about plugins which will be registered once bot started.
+  - `name` (string): Name of module
+  - `path` (string): Absolute path from `cogs` directory
+  - `options` (any): Any options for plugin
+- **`autoLoad`** (string[]): Array of names of plugins which should be automatically loaded after registration, be sure you typing their names right: case matters, it's not path.
+- **`botOwner`** (string): Your (owner) Discord ID. It gives you permission to call `eval` command and other stuff which can do damage to bot if you type wrong ID here.
 
 ### Database
 
