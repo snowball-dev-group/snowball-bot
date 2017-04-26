@@ -1,4 +1,3 @@
-import { AES } from "crypto-js";
 import { getDB, createTableBySchema } from "./db";
 import * as knex from "knex";
 import { getLogger } from "./utils";
