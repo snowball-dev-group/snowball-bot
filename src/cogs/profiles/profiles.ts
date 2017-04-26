@@ -348,7 +348,7 @@ class Profiles extends Plugin implements IModule {
                 },
                 timestamp: member.user.createdAt
             };
-        }
+        };
 
         let pushing = false;
         let repushAfterPush = false;
@@ -363,13 +363,22 @@ class Profiles extends Plugin implements IModule {
                 pushedMessage = await msg.channel.sendMessage("", {
                     embed: getEmbed()
                 }) as Message;
-                pushing = false
+                pushing = false;
+                if(repushAfterPush) {
+                    repushAfterPush = true;
+                    pushUpdate();
+                }
                 return pushedMessage;
             }
-            pushedMessage = (await pushedMessage.edit("", {
-                embed: getEmbed()
-            }) as Message);
-            pushing = false;
+            try {
+                pushedMessage = (await pushedMessage.edit("", {
+                    embed: getEmbed()
+                }) as Message);
+                pushing = false;
+            } catch (err) {
+                repushAfterPush = true;
+            }
+
             if(repushAfterPush) {
                 repushAfterPush = false;
                 pushUpdate();
@@ -405,15 +414,39 @@ class Profiles extends Plugin implements IModule {
                         value: "Загрузка...",
                         inline: true
                     });
-                    
-                    plugin.getEmbed(customize.plugins[pluginName]).then(field => {
-                        fields[fNum] = field;
+
+                    let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+
+                    let canEdit = true;
+                    let t:NodeJS.Timer = setTimeout(() => {
+                        this.log("err", pluginLogPrefix, "timed out.");
+                        canEdit = false;
+                        fields[fNum] = {
+                            name: pluginName,
+                            value: "timed out"
+                        };
                         pushUpdate();
+                    }, 10000);
+
+                    plugin.getEmbed(customize.plugins[pluginName]).then(field => {
+                        if(!canEdit) {
+                            return;
+                        }
+                        if(t) { clearTimeout(t); }
+                        fields[fNum] = field;
+                        if(pushedMessage && ((Date.now() - pushedMessage.createdAt.getTime()) / 1000) < 3) {
+                            setTimeout(() => pushUpdate(), 1000);
+                        } else {
+                            pushUpdate();
+                        }
                     }).catch((err) => {
+                        this.log("err", pluginLogPrefix, "Error at plugin", err);
+                        if(t) { clearTimeout(t); }
                         fields[fNum] = {
                             name: pluginName,
                             value: "failed to load:\n" + err.message
                         };
+                        pushUpdate();
                     });
                 });
                 await pushUpdate();
