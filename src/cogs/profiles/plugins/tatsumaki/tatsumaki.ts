@@ -122,11 +122,12 @@ export async function getTatsuProfile(uid:string, apiKey:string) : Promise<IUser
     }
 
     if(cached) {
-        LOG("info", "There's cached version, checking difference");
+        LOG("info", logPrefix, "There's cached version, checking difference");
         if(timeDiff(cached.timestamp, Date.now(), "s") < 60) {
+            LOG("ok", logPrefix, "We can use cached version");
             return (JSON.parse(cached.value));
         } else {
-            LOG("warn", "Old cache detected, removing...");
+            LOG("warn", logPrefix, "Old cache detected, removing...");
             try {
                 await clearCache(CACHE_OWNER, uid);
             } catch (err) {
