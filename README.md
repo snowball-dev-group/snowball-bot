@@ -137,12 +137,12 @@ NODE_ENV=production node --trace-warnings ./init.js
 
 I really appreciate your contribution to this project. You can fix my errors, create good cogs, but follow these styles:
 
-- Use Visual Studio Code, it's awesome editor better than others and has good support for TypeScript.
-- Use tslint, so you can check for errors
-- Use universal API. I created `db`, `letters`, `utils`, be sure you using it and bot's gonna work anywhere!
-- Be sure your plugin not for one server. For example, you can create cog for `shib channel` - that's fine, but you should support other servers if you making serious plugins like `Overwatch statistic`.
+- Use [Visual Studio Code](https://code.visualstudio.com/), it's awesome editor better than others and has good support for TypeScript.
+- Use [`tslint`](https://palantir.github.io/tslint/), it'll notify you if there's an errors in your code
+- Use universal API. I created `db`, `letters`, `utils`, `cacheResponse`, `time`, be sure you using it and bot's gonna work anywhere!
+- Be sure your plugin not for one server. For example, you can create cog for `shib channel` - that's fine, but you should provide support for other servers if you making serious plugins like `Overwatch statistic`.
 
-Don't be scared of making Pull Requests! Make it! I will suggest you what to change, what not to changed and etc. :)
+Don't be scared of making Pull Requests! Make it! I will suggest you what to change, what to not and etc. :)
 
 ### Issues
 
