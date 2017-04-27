@@ -301,7 +301,7 @@ class Profiles extends Plugin implements IModule {
                 statusString += this.getUserStatusString("streaming") + " ";
                 statusString += `[${escapeDiscordMarkdown(member.presence.game.name)}](${member.presence.game.url})`;
             } else {
-                statusString += this.getUserStatusEmoji("online") + " ";
+                statusString += this.getUserStatusEmoji(member) + " ";
                 statusString += this.getUserStatusString("playing") + " ";
                 statusString += `в **${escapeDiscordMarkdown(member.presence.game.name)}**`;
             }
