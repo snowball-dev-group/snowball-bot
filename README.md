@@ -1,4 +1,4 @@
-# Snowball - Mei's friend
+# Snowball - Mei's friend [![Discord](https://discordapp.com/api/guilds/283995293190455296/embed.png?style=shield)](https://discord.gg/BQDVn)
 
 Mei has beautiful friend called Snowball, which used to make a Blizzard and cease enemy resistance.
 
