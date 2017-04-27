@@ -496,29 +496,30 @@ class CountV2 extends Plugin implements IModule {
         if(this.scoreboardMessages.top10) {
             let top10:ScoreboardUserRow[];
             try {
-                top10 = await this.dbClient(TABLENAME_SCOREBOARD).orderBy("exp", "DESC").limit(10);
+                top10 = await this.dbClient(TABLENAME_SCOREBOARD).orderBy("exp", "DESC").limit(15);
             } catch (err) {
                 this.log("err", "Can't get top 10 from database");
                 return;
             }
 
             let lines:string[] = [];
-            top10.forEach((row, index) => {
+            let pos = 0;
+            top10.forEach((row) => {
                 if(row.exp < 10) { return; }
-                index = index + 1;
-                let str = index === 1 ? "🥇" : index === 2 ? "🥈" : index === 3 ? "🥉" : `**${index}.**`;
+                if(pos >= 10) { return; }
                 if(!this.scoreboardMessages.top10) {
-                    str = "";
-                    // str += ` \`???\` **-** ${row.exp} очков`;
+                    return;
                 } else {
                     let member:GuildMember|undefined;
                     if(!(member = this.scoreboardMessages.top10.guild.members.get(row.user))) {
-                        str += ` \`???\` **-** ${row.exp} очков`;
+                        return;
                     } else {
+                        pos++;
+                        let str = pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : `**${pos}.**`;
                         str += ` \`${member.displayName}\`**-** ${row.exp} очков`;
+                        lines.push(str);
                     }
                 }
-                lines.push(str);
             });
 
             let embed:any = {};
