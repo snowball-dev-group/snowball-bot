@@ -14,7 +14,7 @@ export function getDB() {
                 user: process.env["DB_USER"] || "snowballbot",
                 password: process.env["DB_PASSWD"],
                 database: process.env["DB_NAME"] || "snowbot",
-                charset: "utf8mb4"
+                charset: "UTF8MB4_UNICODE_CI"
             }
         });
     }
