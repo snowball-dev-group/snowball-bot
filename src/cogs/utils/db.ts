@@ -109,7 +109,7 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
             let cb:knex.ColumnBuilder;
             switch(typeInfo.type) {
                 case "string": {
-                    cb = tb.string(key, typeInfo.length).collate("utf8_unicode_ci");
+                    cb = tb.string(key, typeInfo.length).collate("utf8mb4_unicode_ci");
                 } break;
                 case "number": {
                     cb = tb.integer(key);
