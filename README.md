@@ -95,12 +95,12 @@ Create file named `configuration.json` in `out/config` directory with this conte
 
 ### Database
 
-I like to use [MySQL](https://www.mysql.com/) database, compatible to nice `knexjs` library. You need to install it and setup user `snowballbot`. Put password into environment variable named `DB_PASSWD`. If you want, you can set different name for user, database name and even host IP using this vars:
+I like to use [MySQL](https://www.mysql.com/) database, compatible with nice [`knexjs`](http://knexjs.org/) library. You need to install it and setup user `snowballbot`. Put password into environment variable named `DB_PASSWD`. If you want, you can set different name for user, database name and even host IP using this vars:
 
 - `DB_HOST`: Where database hosted (default falls to `127.0.0.1`)
+- `DB_NAME`: Name of database where bot will store their tables
 - `DB_PASSWD`: Password for database user
 - `DB_USER`: Name of user who connecting to database
-- `DB_NAME`: Password of user who connecting to database
 
 To insure saving of unicode 8 emojis I changed `my.cfg` (thanks google):
 
