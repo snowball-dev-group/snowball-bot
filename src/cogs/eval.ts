@@ -3,8 +3,7 @@ import { Plugin } from "./plugin";
 import { Message } from "discord.js";
 import { Context } from "vm";
 import { isOwner, command, CommandEquality as cmdEquality } from "./checks/commands";
-import { replaceAll, generateEmbed, EmbedType } from "./utils/utils";
-import logger = require("loggy");
+import { replaceAll, generateEmbed, EmbedType, getLogger } from "./utils/utils";
 import util = require("util");
 import VM = require("vm");
 
@@ -12,7 +11,7 @@ const PREFIX = "``";
 const PREFIX_LENGTH = PREFIX.length;
 
 class EvalJS extends Plugin implements IModule {
-    log:Function = logger("EvalJS");
+    log = getLogger("EvalJS");
 
     constructor() {
         super({
@@ -75,7 +74,7 @@ class EvalJS extends Plugin implements IModule {
                     })
                 }) as Message;
             } catch (err) {
-                this.log("Can't send message with output:", err);
+                this.log("err", "Can't send message with output:", err);
                 return;
             }
 
