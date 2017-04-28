@@ -26,8 +26,9 @@ interface TypeInfo {
     nullable:boolean;
     notNullable:boolean;
     type:string;
-    length:number|undefined;
-    default:string|undefined;
+    length?:number;
+    default?:string;
+    collate?:string;
 }
 
 function getTypeInfo(type:string) {
@@ -35,9 +36,7 @@ function getTypeInfo(type:string) {
         unique: false,
         nullable: false,
         notNullable: false,
-        type: "string",
-        length: undefined,
-        default: undefined
+        type: "string"
     };
 
     type = type.replace(/[\!\?\*]/, (s) => {
@@ -57,18 +56,16 @@ function getTypeInfo(type:string) {
         return "";
     });
 
-    type = type.replace(/[0-9]{1,}/, (n) => {
-        if(t.length !== undefined) {
-            throw new Error('Length can be specified once');
-        }
+    if(["string", "number"].indexOf(type) !== -1) {
+        type = type.replace(/[0-9]{1,}/, (n) => {
+            if(t.length !== undefined) {
+                throw new Error('Length can be specified once');
+            }
 
-        t.length = parseInt(n, 10);
+            t.length = parseInt(n, 10);
 
-        return "";
-    });
-
-    if(["string", "number", "boolean"].indexOf(type) === -1) {
-        throw new Error(`Invalid type '${type}'`)
+            return "";
+        });
     }
 
     t.type = type;
@@ -109,7 +106,7 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
             let cb:knex.ColumnBuilder;
             switch(typeInfo.type) {
                 case "string": {
-                    cb = tb.string(key, typeInfo.length).collate("utf8mb4_unicode_ci");
+                    cb = tb.string(key, typeInfo.length);
                 } break;
                 case "number": {
                     cb = tb.integer(key);
@@ -118,7 +115,7 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
                     cb = tb.boolean(key);
                 } break;
                 default: {
-                    throw new Error(`Unsupported type: '${typeInfo.type}'`);
+                    cb = tb.specificType(key, typeInfo.type);
                 }
             }
 
@@ -132,6 +129,9 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
             }
             if(typeInfo.default) {
                 cb.defaultTo(typeInfo.default);
+            }
+            if(typeInfo.collate) {
+                cb.collate(typeInfo.collate);
             }
         });
     });
