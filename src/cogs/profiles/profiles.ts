@@ -330,7 +330,7 @@ class Profiles extends Plugin implements IModule {
         let getEmbed = () => {
             return {
                 author: {
-                    icon_url: member.user.displayAvatarURL,
+                    icon_url: member.user.displayAvatarURL.replace("?size=2048", "?size=512"),
                     name: member.displayName
                 },
                 title: dbProfile.real_name ? dbProfile.real_name : undefined,
