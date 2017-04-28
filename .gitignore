@@ -5,3 +5,6 @@ out/config/*
 !out/config/.gitkeep
 node_modules
 yarn*
+
+# Private cogs
+src/cogs/private_cogs

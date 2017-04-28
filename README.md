@@ -148,5 +148,9 @@ Don't be scared of making Pull Requests! Make it! I will suggest you what to cha
 
 If you regular user, then report bugs and feedback to Issues section. You also can ask questions there.
 
+### Private Modules
+
+You can create private cogs without commiting them to public. Put your cog in `private_cogs` directory.
+
 ---
 **MADE WITH ♥ BY DAFRI_NOCHITEROV**.
