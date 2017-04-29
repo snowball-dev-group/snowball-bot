@@ -63,6 +63,7 @@ class EvalJS extends Plugin implements IModule {
                 $msg: message,
                 setTimeout: (handler, ms) => setTimeout(this.makeSafe(handler), ms),
                 setInterval: (handler, ms) => setInterval(this.makeSafe(handler), ms),
+                require: require
             });
             let diff = Date.now() - startTime;
             
