@@ -11,6 +11,10 @@ const LOG = getLogger("OWRatingPlugin");
 export class RatingProfilePlugin implements IProfilesPlugin {
     public name = "ow_rating";
 
+    getSetupArgs() {
+        return "<юзернейм>[;Регион[;Платформа]]";
+    }
+
     async setup(str:string, member:GuildMember, msg:Message) {
         let status = "**Загрузка...**", prevStatus = status;
 

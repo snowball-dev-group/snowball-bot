@@ -17,6 +17,10 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
         this.apiKey = apiKey;
     }
 
+    getSetupArgs() {
+        return "не требует аргументов";
+    }
+
     async setup(str:string, member:GuildMember) {
         let js:ITatsumakiInfo = {
             uid: member.id
@@ -63,7 +67,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
             return {
                 inline: true,
                 name: "<:tatsu:306223189628026881> Tatsumaki",
-                value: `**${escapeDiscordMarkdown(profile.name)}**\n**+${profile.reputation}rep**\nУровень: ${profile.level} (${profile.total_xp}XP)\nКредиты: ${profile.credits}\nГлоб. ранк: #${profile.rank}`
+                value: `**${escapeDiscordMarkdown(profile.name)}**\n**+${profile.reputation}rep**\nУровень: ${profile.level} (${profile.xp[0]}XP / ${profile.xp[1]}XP)\nКредиты: ${profile.credits}\nГлоб. ранк: #${profile.rank}`
             };
         } catch (err) {
             LOG("err", logPrefix, "Failed to generate embed", err);

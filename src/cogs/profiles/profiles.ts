@@ -8,6 +8,8 @@ import { IProfilesPlugin, IAddedProfilePlugin } from "./plugins/plugin";
 import { timeDiff } from "../utils/time";
 import { default as fetch } from 'node-fetch';
 import * as util from "util";
+import { command as docCmd, Category, IArgumentInfo } from "../utils/help";
+
 
 interface IDBUserProfile {
     real_name?:string;
@@ -35,6 +37,34 @@ const DB_PROFILE_PROPS = {
     status_changed: "string"
 };
 
+@docCmd(Category.Profiles, "profile", "Показывает ваш или профиль упомянутого участника сервера", new Map<string, IArgumentInfo>([
+    ["mention", {
+        optional: true,
+        description: "Упоминание другого участника сервера"
+    }]
+]))
+@docCmd(Category.Profiles, "set_bio", "Устанавливает содержание \"О себе\"", new Map<string, IArgumentInfo>([
+    ["content", {
+        optional: false,
+        description: "Содержание поля. Может содержать около 1024 символов. Поддерживает Discord Markdown"
+    }]
+]))
+@docCmd(Category.Profiles, "edit_profile", "Редактирует ваш профиль, добавляя или удаляя плагины.", new Map<string, IArgumentInfo>([
+    ["operation", {
+        optional: false,
+        description: "Операция. Удалить или установить новый плагин",
+        values: ["remove", "set"]
+    }],
+    ["plugin-name", {
+        optional: false,
+        description: "Имя плагина"
+    }],
+    ["argument", {
+        optional: true,
+        description: "Аргументы для мастера установки плагина. Не всегда нужно. Не нужно вообще для операции удаления."
+    }]
+]))
+@docCmd(Category.Profiles, "profile_plugins", "Отправляет список доступных для установки плагинов")
 class Profiles extends Plugin implements IModule {
     plugLoader: ModuleLoader;
     log = getLogger("ProfilesJS");
@@ -53,7 +83,9 @@ class Profiles extends Plugin implements IModule {
     // =====================================
 
     async onMessage(msg:Message) {
-        if(msg.content.startsWith("!profile")) {
+        if(msg.content === "!profile_plugins") {
+            this.sendPluginsList(msg);
+        } else if(msg.content.startsWith("!profile")) {
             this.showProfile(msg);
         } else if(msg.content.startsWith("!edit_profile")) {
             this.editProfile(msg);
@@ -85,6 +117,22 @@ class Profiles extends Plugin implements IModule {
     // =====================================
     // MAIN FUNCTIONS
     // =====================================
+
+    async sendPluginsList(msg:Message) {
+        let str = "# Список доступных плагинов";
+
+        this.plugLoader.loadedModulesRegistry.forEach((plugin, name) => {
+            str += `\n- ${name}`;
+            if(!plugin.base) { return; }
+            let plug = plugin.base as IProfilesPlugin;
+            str += `\n  - Аргументы установки: ${plug.getSetupArgs()}\n`;
+        });
+
+        await msg.channel.send(str, {
+            code: "md",
+            split: true
+        });
+    }
 
     async showProfile(msg:Message) {
         let profileOwner:GuildMember|undefined;

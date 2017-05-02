@@ -2,7 +2,10 @@ import { IModule } from "../types/ModuleLoader";
 import logger = require("loggy");
 import { Plugin } from "./plugin";
 import { Message } from "discord.js"; 
+import { command, Category } from "./utils/help";
 
+@command(Category.Utilites, "ping", "Пингует бота (чтобы проверить в сети ли он)")
+@command(Category.Utilites, "ping_embed", "Пингует бота (использует встраиваемый объект)")
 class Ping extends Plugin implements IModule {
     log:Function = logger("PingJS");
 

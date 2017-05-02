@@ -1,9 +1,9 @@
 import { IModule } from "../types/ModuleLoader";
-import logger = require("loggy");
 import { Plugin } from "./plugin";
 import { Message } from "discord.js"; 
 import * as Random from "random-js";
 import { getLogger, generateEmbed, EmbedType, sleep } from "./utils/utils";
+import { command, Category, IArgumentInfo } from "./utils/help";
 
 const BALL_NAME = "Шар 8";
 const BALL_THINKING = "Шар думает...";
@@ -13,6 +13,12 @@ const ICONS = {
 };
 
 
+@command(Category.Fun, "8ball", "Магический шар 8.", new Map<string, IArgumentInfo>([
+    ["question", {
+        optional: false,
+        description: "Вопрос, на который можно ответить только положительно или отрицательно."
+    }]
+]))
 class Ball8 extends Plugin implements IModule {
     log = getLogger("8Ball");
     responses = {
@@ -66,13 +72,14 @@ class Ball8 extends Plugin implements IModule {
 
         let message:Message;
         try {
-            message = await msg.channel.sendMessage("", {
+            message = await msg.channel.send("", {
                 embed: generateEmbed(EmbedType.Empty, BALL_THINKING, {
                     author: {
                         icon_url: ICONS.THINKING,
                         name: BALL_NAME
                     },
-                    clearFooter: true
+                    clearFooter: true,
+                    thumbUrl: ICONS.THINKING
                 })
             }) as Message;
         } catch (err) {
@@ -96,7 +103,8 @@ class Ball8 extends Plugin implements IModule {
                     color: this.responses[category].color,
                     footer: {
                         text: "В ответ " + msg.member.displayName
-                    }
+                    },
+                    thumbUrl: ICONS.RESPONSE
                 })
             });
         } catch (err) {

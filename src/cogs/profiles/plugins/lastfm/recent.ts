@@ -18,6 +18,10 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
         this.apiKey = apiKey;
     }
     
+    getSetupArgs() {
+        return "<юзернейм>";
+    }
+
     async setup(str:string, member:GuildMember) {
         let js:ILastFMInfo = {
             username: str

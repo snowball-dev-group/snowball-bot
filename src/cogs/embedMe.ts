@@ -3,7 +3,14 @@ import logger = require("loggy");
 import { Plugin } from "./plugin";
 import { Message } from "discord.js"; 
 import { command, CommandEquality as cq, notByBot } from "./checks/commands";
+import { command as docCmd, Category, IArgumentInfo } from "./utils/help";
 
+@docCmd(Category.Helpful, "embed", "Превращает любой текст в встраиваемый объект.", new Map<string, IArgumentInfo>([
+    ["content", {
+        optional: false,
+        description: "Контент, который будет в описании встраиваемого объекта"
+    }]
+]))
 class EmbedME extends Plugin implements IModule {
     log:Function = logger("EmbedME");
 
