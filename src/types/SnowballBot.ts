@@ -105,6 +105,9 @@ export class SnowballBot extends EventEmitter {
         // Making new Discord Client
         this.discordBot = new djs.Client(this.config.djs_config);
 
+        // Setting max listeners
+        this.discordBot.setMaxListeners(500);
+
         // Global bot variable, which should be used by plugins
         Object.defineProperty(global, "discordBot", {
             configurable: false, enumerable: false,
