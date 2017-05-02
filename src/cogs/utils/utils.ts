@@ -1,4 +1,5 @@
 import * as createLogger from "loggy";
+import { Guild } from "discord.js";
 
 export function stringifyError(err, filter = null, space = 2) {
     let plainObject = {};
@@ -84,6 +85,7 @@ export interface IEmbedOptions {
     informationTitle?:string;
     imageUrl?:string;
     clearFooter?:boolean;
+    thumbUrl?:string;
 }
 
 export function generateEmbed(type:EmbedType, description:string, options?:IEmbedOptions) {
@@ -157,6 +159,11 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
                 url: options.imageUrl
             };
         }
+        if(options.thumbUrl) {
+            embed.thumbnail = {
+                url: options.thumbUrl
+            };
+        }
         if(options.color) {
             embed.color = options.color;
         }
@@ -176,6 +183,17 @@ interface ILogger {
 export function getLogger(name:string):ILoggerFunction {
     if(!name) { throw new Error("No logger name provided"); }
     return createLogger(name);
+}
+
+export function resolveGuildRole(nameOrID:string, guild:Guild) {
+    if(/[0-9]+/.test(nameOrID)) {
+        // it's can be ID
+        if(guild.roles.has(nameOrID)) {
+            return guild.roles.get(nameOrID);
+        }
+    }
+    // going to search
+    return guild.roles.find('name', nameOrID); // it can return undefined, it's okay
 }
 
 export function sleep<T>(delay: number=1000, value?: T): Promise<T> {
