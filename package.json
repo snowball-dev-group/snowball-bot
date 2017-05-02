@@ -2,7 +2,7 @@
   "dependencies": {
     "async": "^2.3.0",
     "crypto-js": "^3.1.9-1",
-    "discord.js": "^11.0.0",
+    "discord.js": "^11.1.0",
     "humanize-duration": "^3.10.0",
     "knex": "^0.12.9",
     "loggy": "https://gitlab.com/BlackSilverBot/loggy.git",
