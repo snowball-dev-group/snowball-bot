@@ -1,0 +1,27 @@
+image: node:latest
+
+cache:
+  paths:
+    - node_modules
+
+before_script:
+  - yarn global add typescript tslint
+  - yarn install
+
+stages:
+  - lint
+  - build
+
+linting:
+  stage: lint
+  script:
+    - tslint .
+
+compiling:
+  stage: build
+  script:
+    - tsc
+  artifacts:
+    untracked: true
+    paths:
+      - out
