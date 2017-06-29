@@ -131,8 +131,8 @@ class Profiles extends Plugin implements IModule {
             str += `\n- ${name}`;
             if(!plugin.base) { return; }
             let plug = plugin.base as IProfilesPlugin;
-            str += `\n  - : ${await localizeForUser(msg.member, "", {
-                arguments: plug.getSetupArgs(msg.member)
+            str += `\n  - : ${await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_ARGUMENTS", {
+                arguments: (await plug.getSetupArgs(msg.member)) || await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_ARGUMENTS_EMPTY")
             })}\n`;
         }
 
