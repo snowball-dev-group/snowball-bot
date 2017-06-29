@@ -66,7 +66,7 @@ export class Localizer {
             // "" for empty crowdin translations
             unique += langFile[key] !== defLang[key] && langFile[key] !== "" ? 1 : 0;
         }
-        return (unique / Object.keys(defLang).length).toFixed(2);
+        return (100 * (unique / Object.keys(defLang).length)).toFixed(2);
     }
 
     public get loadedLanguages() {
