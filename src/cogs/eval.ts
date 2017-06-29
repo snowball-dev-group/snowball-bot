@@ -47,7 +47,7 @@ class EvalJS extends Plugin implements IModule {
     async onMessage(message:Message, usedPrefix?:string) {
         let afterCmd = message.content.slice(`${usedPrefix} `.length).trim();
         if(!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
-        
+
         // Parsing our script
         let script = afterCmd.substring(PREFIX_LENGTH, afterCmd.length - PREFIX_LENGTH);
         let startTime = Date.now();
@@ -55,7 +55,7 @@ class EvalJS extends Plugin implements IModule {
             // Trying to run it
             // Actually, it named `safeEval` but it's absolutely not safe
             // For example, if you set timer and throw error there
-            
+
             let output = this.safeEval(script, {
                 ...global,
                 this: this,
@@ -66,10 +66,10 @@ class EvalJS extends Plugin implements IModule {
                 require: require
             });
             let diff = Date.now() - startTime;
-            
+
             let outputMsg:Message;
             try {
-                outputMsg = await message.channel.sendMessage("", {
+                outputMsg = await message.channel.send("", {
                     embed: generateEmbed(EmbedType.Information, "Generating output. Please, wait...", {
                         informationTitle: "Busy"
                     })
@@ -106,7 +106,7 @@ class EvalJS extends Plugin implements IModule {
             });
         } catch (err) {
             let diff = Date.now() - startTime;
-            message.channel.sendMessage("", {
+            message.channel.send("", {
                 embed: generateEmbed(EmbedType.Error, "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```", {
                     errorTitle: "Fault.",
                     fields: [{

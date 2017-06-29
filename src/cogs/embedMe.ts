@@ -1,18 +1,19 @@
 import { IModule } from "../types/ModuleLoader";
-import logger = require("loggy");
 import { Plugin } from "./plugin";
 import { Message } from "discord.js"; 
 import { command, CommandEquality as cq, notByBot } from "./checks/commands";
 import { command as docCmd, Category, IArgumentInfo } from "./utils/help";
+import { localizeForUser } from "./utils/ez-i18n";
+import { getLogger } from "./utils/utils";
 
-@docCmd(Category.Helpful, "embed", "Превращает любой текст в встраиваемый объект.", new Map<string, IArgumentInfo>([
+@docCmd(Category.Helpful, "embed", "loc:EMBEDME_CMDMETA_DESCRIPTION", new Map<string, IArgumentInfo>([
     ["content", {
         optional: false,
-        description: "Контент, который будет в описании встраиваемого объекта"
+        description: "loc:EMBEDME_CMDMETA_ARG_DESCRIPTION"
     }]
 ]))
 class EmbedME extends Plugin implements IModule {
-    log:Function = logger("EmbedME");
+    log = getLogger("EmbedME");
 
     constructor() {
         super({
@@ -23,29 +24,34 @@ class EmbedME extends Plugin implements IModule {
     @notByBot
     @command("!embed", undefined, cq.SemiEqual)
     async onMessage(msg:Message) {
-        if(msg.content === "!embed") { 
-            msg.channel.sendMessage(":warning: Используйте эту команду, чтобы встроить своё сообщение в `встраиваемый объект`. Это не работает с изображениями, видео. Поддерживает скрытые ссылки: `[имя](http://example.org/)`, а также смайлики с других серверов, но для этого используйте `<:Name:ID>` и оберните сообщение в блок кода");
+        if(msg.content === "!embed") {
+            let str = await localizeForUser(msg.member, "EMBEDME_INFO");
+            msg.channel.send(`:information_source: ${str}`);
             return;
         }
         let mContent = msg.content.slice("!embed ".length);
         if(mContent.startsWith("`") && mContent.endsWith("`")) {
             mContent = mContent.slice(1).substring(0, mContent.length - 2);
         }
-        await msg.channel.sendMessage("", {
+        await msg.channel.send("", {
             embed: {
                 author: {
                     icon_url: msg.author.avatarURL,
-                    name: msg.member.displayName
+                    name: msg.member ? msg.member.displayName : msg.author.username
                 },
                 description: mContent,
                 timestamp: msg.createdAt,
                 footer: {
-                    icon_url: discordBot.user.avatarURL,
-                    text: "Встроено " + discordBot.user.username
+                    icon_url: discordBot.user.displayAvatarURL,
+                    text: await localizeForUser(msg.member, "EMBEDME_EMBED", {
+                        botName: discordBot.user.username
+                    })
                 }
             },
         });
-        msg.delete();
+        if(msg.channel.type === "text") {
+            msg.delete();
+        }
     }
 
     async unload() {

@@ -36,5 +36,5 @@ export interface IRecentTrack {
 export interface IRecentTracksResponse {
     recenttracks: {
         track: IRecentTrack[]
-    }
+    };
 }

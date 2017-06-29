@@ -1,8 +1,9 @@
-import { IProfilesPlugin } from "../plugin";
+import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { GuildMember } from "discord.js";
 import { IEmbedOptionsField, escapeDiscordMarkdown, replaceAll, getLogger } from "../../../utils/utils";
 import { getOrFetchRecents } from "./lastfm";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
+import { localizeForUser } from "../../../utils/ez-i18n";
 
 const LOG = getLogger("LastFMPlugin");
 
@@ -11,15 +12,14 @@ export interface ILastFMInfo {
 }
 
 export class LastFMRecentProfilePlugin implements IProfilesPlugin {
-    public name = "lastfm_recentrack";
     private apiKey:string;
     
     constructor(apiKey:string) {
         this.apiKey = apiKey;
     }
     
-    getSetupArgs() {
-        return "<юзернейм>";
+    async getSetupArgs(caller:GuildMember) {
+        return await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ARGS");
     }
 
     async setup(str:string, member:GuildMember) {
@@ -39,11 +39,11 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
         
         return {
             json: JSON.stringify(js),
-            example: await this.getEmbed(js)
+            type: AddedProfilePluginType.Embed
         };
     }
     
-    async getEmbed(info:ILastFMInfo|string) : Promise<IEmbedOptionsField> {
+    async getEmbed(info:ILastFMInfo|string, caller:GuildMember) : Promise<IEmbedOptionsField> {
         if(typeof info !== "object") {
             info = JSON.parse(info) as ILastFMInfo;
         }
@@ -67,7 +67,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
             return {
                 inline: true,
                 name: "<:lastfm:306344550744457217> Last.FM",
-                value: `❌ Invalid response.`
+                value: "❌ " + await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ERR_INVALIDRESP")
             };
         }
         

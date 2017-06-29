@@ -1,22 +1,31 @@
 
+import { Message } from "discord.js";
+import { localizeForUser } from "./ez-i18n";
+
 export enum Category {
     Helpful,
     Utilites,
     Fun,
-    Profiles
+    Profiles,
+    Colors,
+    Premium,
+    Guilds,
+    Language
 };
 
 export interface IArgumentInfo {
-    description: string,
-    optional: boolean,
-    values?:string[]
+    description: string;
+    optional: boolean;
+    values?:string[];
+    specialCheck?:(msg:Message) => boolean;
 }
 
 // Arguments
 //  - name? => [optional, ]
 export interface IHelpfulObject {
-    arguments?:Map<string, IArgumentInfo>,
-    description:string
+    arguments?:Map<string, IArgumentInfo>;
+    description:string;
+    specialCheck?:(msg:Message) => boolean;
 }
 
 // - Category
@@ -30,7 +39,7 @@ function init() {
     return dict;
 }
 
-export function command(category:Category, command:string, description:string, args?:Map<string, IArgumentInfo>) {
+export function command(category:Category, command:string, description:string, args?:Map<string, IArgumentInfo>, specialCheck?:(msg:Message)=>boolean) {
     return (target) => {
         let d = init();
         
@@ -44,32 +53,53 @@ export function command(category:Category, command:string, description:string, a
 
         cat.set(command, {
             arguments: args,
-            description: description
+            description,
+            specialCheck
         });
 
         return target;
     };
 }
 
-export function getHelp() {
-    let str = "";
-    init().forEach((commands, category) => {
-        str += `\n# ${Category[category]}\n`;
-        commands.forEach((target, command) => {
+export async function getHelp(msg:Message) {
+    let rStr = "";
+    let user = msg.channel.type === "text" ? msg.member : msg.author;
+    for(let [category, commands] of init()) {
+        let str = "";
+        for(let [command, target] of commands) {
+            if(target.specialCheck && !target.specialCheck(msg)) {
+                continue;
+            }
             str += `\n- ${command}`;
             if(target.arguments) {
-                target.arguments.forEach((argInfo, argName) => {
+                for (let [argName, argInfo] of target.arguments) {
+                    if(argName.startsWith("loc:")) {
+                        argName = await localizeForUser(msg.member, argName.slice("loc:".length));
+                    }
+                    if(argInfo.specialCheck && !argInfo.specialCheck(msg)) {
+                        continue;
+                    }
                     if(argInfo.values) {
                         let vals = argInfo.values.join("/");
                         str += argInfo.optional ? ` [${vals}]` : ` <${vals}>`;
                     } else {
                         str += argInfo.optional ? ` [${argName}]` : ` <${argName}>`;
                     }
-                });
+                }
             }
-            str += `: ${target.description}\n`;
+            let desc = target.description;
+            if(desc.startsWith("loc:")) {
+                desc = await localizeForUser(user, desc.slice("loc:".length));
+            }
+            str += `: ${desc}\n`;
             if(target.arguments) {
-                target.arguments.forEach((argInfo, argName) => {
+                for(let [argName, argInfo] of target.arguments) {
+                    if(argName.startsWith("loc:")) {
+                        argName = await localizeForUser(msg.member, argName.slice("loc:".length));
+                    }
+                    if(argInfo.specialCheck && !argInfo.specialCheck(msg)) {
+                        continue;
+                    }
                     str += "  - ";
                     if(argInfo.values) {
                         let vals = argInfo.values.join("/");
@@ -78,11 +108,19 @@ export function getHelp() {
                         str += argInfo.optional ? `[${argName}]` : `<${argName}>`;
                     }
                     
-                    str += `: ${argInfo.description}\n`;
-                });
+                    let argDesc = argInfo.description;
+                    if(argDesc.startsWith("loc:")) {
+                        argDesc = await localizeForUser(user, argDesc.slice("loc:".length));
+                    }
+                    str += `: ${argDesc}\n`;
+                }
             }
-        });
-        str += "";
-    });
-    return str.trim();
+        }
+        if(str.trim().length > 0) {
+            let catName = Category[category];
+            catName = await localizeForUser(user, `HELP_CATEGORY_${catName}`.toUpperCase());
+            rStr += `\n# ${catName}\n${str}`;
+        }
+    }
+    return rStr.trim();
 }

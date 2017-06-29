@@ -1,15 +1,16 @@
 import { IModule, ModuleLoader, IModuleInfo, Module } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js"; 
-import { getLogger, generateEmbed, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown } from "../utils/utils";
+import { getLogger, generateEmbed, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import * as humanizeDuration from "humanize-duration";
-import { IProfilesPlugin, IAddedProfilePlugin } from "./plugins/plugin";
+import { IProfilesPlugin, IAddedProfilePlugin, AddedProfilePluginType } from "./plugins/plugin";
 import { timeDiff } from "../utils/time";
-import { default as fetch } from 'node-fetch';
+import { default as fetch } from "node-fetch";
 import * as util from "util";
 import { command as docCmd, Category, IArgumentInfo } from "../utils/help";
-
+import { isPremium } from "../utils/premium";
+import { localizeForUser } from "../utils/ez-i18n";
 
 interface IDBUserProfile {
     real_name?:string;
@@ -37,34 +38,38 @@ const DB_PROFILE_PROPS = {
     status_changed: "string"
 };
 
-@docCmd(Category.Profiles, "profile", "Показывает ваш или профиль упомянутого участника сервера", new Map<string, IArgumentInfo>([
-    ["mention", {
+function isChat(msg:Message) {
+    return msg.channel.type === "text";
+}
+
+@docCmd(Category.Profiles, "profile", "loc:PROFILES_META_PROFILE", new Map<string, IArgumentInfo>([
+    ["loc:PROFILES_META_PROFILE_ARG0", {
         optional: true,
-        description: "Упоминание другого участника сервера"
+        description: "loc:PROFILES_META_PROFILE_ARG0_DESC"
     }]
-]))
-@docCmd(Category.Profiles, "set_bio", "Устанавливает содержание \"О себе\"", new Map<string, IArgumentInfo>([
-    ["content", {
+]), isChat)
+@docCmd(Category.Profiles, "set_bio", "loc:PROFILES_META_SETBIO", new Map<string, IArgumentInfo>([
+    ["loc:PROFILES_META_SETBIO_ARG0", {
         optional: false,
-        description: "Содержание поля. Может содержать около 1024 символов. Поддерживает Discord Markdown"
+        description: "loc:PROFILES_META_SETBIO_ARG0_DESC"
     }]
-]))
-@docCmd(Category.Profiles, "edit_profile", "Редактирует ваш профиль, добавляя или удаляя плагины.", new Map<string, IArgumentInfo>([
-    ["operation", {
+]), isChat)
+@docCmd(Category.Profiles, "edit_profile", "loc:PROFILES_META_EDITPROFILE", new Map<string, IArgumentInfo>([
+    ["loc:PROFILES_META_EDITPROFILE_ARG0", {
         optional: false,
-        description: "Операция. Удалить или установить новый плагин",
+        description: "loc:PROFILES_META_EDITPROFILE_ARG0_DESC",
         values: ["remove", "set"]
     }],
-    ["plugin-name", {
+    ["loc:PROFILES_META_EDITPROFILE_ARG1", {
         optional: false,
-        description: "Имя плагина"
+        description: "loc:PROFILES_META_EDITPROFILE_ARG1_DESC"
     }],
-    ["argument", {
+    ["loc:PROFILES_META_EDITPROFILE_ARG2", {
         optional: true,
-        description: "Аргументы для мастера установки плагина. Не всегда нужно. Не нужно вообще для операции удаления."
+        description: "loc:PROFILES_META_EDITPROFILE_ARG2_DESC"
     }]
-]))
-@docCmd(Category.Profiles, "profile_plugins", "Отправляет список доступных для установки плагинов")
+]), isChat)
+@docCmd(Category.Profiles, "profile_plugins", "loc:PROFILES_META_PROFILEPLUGINS", undefined, isChat)
 class Profiles extends Plugin implements IModule {
     plugLoader: ModuleLoader;
     log = getLogger("ProfilesJS");
@@ -83,6 +88,7 @@ class Profiles extends Plugin implements IModule {
     // =====================================
 
     async onMessage(msg:Message) {
+        if(msg.channel.type !== "text") { return; }
         if(msg.content === "!profile_plugins") {
             this.sendPluginsList(msg);
         } else if(msg.content.startsWith("!profile")) {
@@ -119,14 +125,16 @@ class Profiles extends Plugin implements IModule {
     // =====================================
 
     async sendPluginsList(msg:Message) {
-        let str = "# Список доступных плагинов";
+        let str = "# " + await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE");
 
-        this.plugLoader.loadedModulesRegistry.forEach((plugin, name) => {
+        for (let [name, plugin] of this.plugLoader.loadedModulesRegistry) {
             str += `\n- ${name}`;
             if(!plugin.base) { return; }
             let plug = plugin.base as IProfilesPlugin;
-            str += `\n  - Аргументы установки: ${plug.getSetupArgs()}\n`;
-        });
+            str += `\n  - : ${await localizeForUser(msg.member, "", {
+                arguments: plug.getSetupArgs(msg.member)
+            })}\n`;
+        }
 
         await msg.channel.send(str, {
             code: "md",
@@ -141,9 +149,9 @@ class Profiles extends Plugin implements IModule {
         } else if(msg.content.startsWith("!profile ") && msg.mentions.users.size === 1) {
             let ment = msg.mentions.users.first();
             if(!(profileOwner = msg.guild.members.get(ment.id))) {
-                msg.channel.sendMessage("", {
-                    embed: generateEmbed(EmbedType.Error, "Упомянутый пользователь не является участником данной гильдии.")
-                })
+                msg.channel.send("", {
+                    embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_NOTAMEMBER"))
+                });
                 return;
             }
         } else {
@@ -155,11 +163,25 @@ class Profiles extends Plugin implements IModule {
         await this.sendProfile(msg, profile, profileOwner);
     }
 
+    async addBadge(msg:Message) {
+        if(msg.author.id !== botConfig.botOwner) {
+            return;
+        }
+        let args = msg.content.slice("!add_badge ".length).split(",").map(arg => arg.trim());
+        if(args.length !== 4) {
+            // uid, gid, add/remove, badgeid
+            msg.channel.send("", {
+                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_ADDBADGE_ARGSERR"))
+            });
+            return;
+        }
+    }
+
     async editProfile(msg:Message) {
         if(msg.content === "!edit_profile") {
-            await msg.channel.sendMessage("", {
+            await msg.channel.send("", {
                 embed: {
-                    description: "Вы можете редактировать профиль добавляя или удаляя разные элементы.\nНе путайте эту команду с `!set_bio` `!status`! Данная команда позволяет вам настраивать элементы профиля, а не менять их значения (статус, биография)."
+                    description: await localizeForUser(msg.member, "PROFILES_PROFILE_DESCRIPTION")
                 }
             });
             return;
@@ -174,26 +196,25 @@ class Profiles extends Plugin implements IModule {
 
             if(["image"].indexOf(param) !== -1) {
                 let customize = JSON.parse(profile.customize);
-
                 if(param === "image") {
                     if(arg === "" || (!arg.startsWith("http://") && !arg.startsWith("https://"))) {
-                        await msg.channel.sendMessage("", {
-                            embed: generateEmbed(EmbedType.Error, "Неправильная ссылка или аргументы отстутствуют.")
+                        await msg.channel.send("", {
+                            embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_INVALID_LINK"))
                         });
                         return;
                     }
                     try {
                         await fetch(encodeURI(arg));
                     } catch (err) {
-                        await msg.channel.sendMessage("", {
-                            embed: generateEmbed(EmbedType.Error, "Невозможно загрузить изображение.")
+                        await msg.channel.send("", {
+                            embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_DOWNLOAD_FAILED"))
                         });
                         return;
                     }
                     
                     customize["image_url"] = encodeURI(arg);
-                    await msg.channel.sendMessage("", {
-                        embed: generateEmbed(EmbedType.OK, "Изображение профиля установлено: ", {
+                    await msg.channel.send("", {
+                        embed: generateEmbed(EmbedType.OK, await localizeForUser(msg.member, "PROFILES_PROFILE_IMAGE_SET"), {
                             imageUrl: encodeURI(arg)
                         })
                     });
@@ -211,15 +232,15 @@ class Profiles extends Plugin implements IModule {
             let mod:Module|undefined = undefined;
 
             if(!(mod = this.plugLoader.loadedModulesRegistry.get(param))) {
-                await msg.channel.sendMessage("", {
-                    embed: generateEmbed(EmbedType.Error, "Такой плагин не найден.")
+                await msg.channel.send("", {
+                    embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_404"))
                 });
                 return;
             }
 
             if(!mod.loaded) {
-                await msg.channel.sendMessage("", {
-                    embed: generateEmbed(EmbedType.Error, "Плагин не загружен. Установка невозможна.")
+                await msg.channel.send("", {
+                    embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_NOT_LOADED"))
                 });
                 return;
             }
@@ -230,8 +251,8 @@ class Profiles extends Plugin implements IModule {
             try {
                 completeInfo = await plugin.setup(arg, msg.member, msg);
             } catch (err) {
-                await msg.channel.sendMessage("", {
-                    embed: generateEmbed(EmbedType.Error, "Возникла ошибка при выполнении настройки плагина.", {
+                await msg.channel.send("", {
+                    embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_SETUP_FAILED"), {
                         fields: [{
                             name: "Подробности",
                             value: "\`\`\`js\n"+ util.inspect(err) + "\`\`\`"
@@ -244,11 +265,88 @@ class Profiles extends Plugin implements IModule {
             let customize = JSON.parse(profile.customize);
 
             if(!customize.plugins) {
-                customize.plugins = {
-                    [param]: completeInfo.json
-                };
+                customize.plugins = {};
+            }
+
+            if(completeInfo.type === AddedProfilePluginType.Embed) {
+                let embedsCount = Object.keys(customize.plugins).map(e => customize.plugins[e]).filter(e => e.type === AddedProfilePluginType.Embed).length;
+                if(embedsCount > 4 && !(await isPremium(msg.member))) {
+                    msg.channel.send("", {
+                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_PREMIUMERR"))
+                    });
+                    return;
+                }
+                if(embedsCount > 9) {
+                    msg.channel.send("", {
+                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_MAXPLUGINSERR"))
+                    });
+                    return;
+                }
+            }
+
+            customize.plugins[param] = completeInfo;
+
+            customize = JSON.stringify(customize);
+
+            profile.customize = customize;
+
+            await this.updateProfile(profile);
+
+            await msg.channel.send("", {
+                embed: generateEmbed(EmbedType.Tada, await localizeForUser(msg.member, "PROFILES_PROFILE_SETUP_COMPLETE"))
+            });
+        } else if(param === "set") {
+            let strs = {
+                key: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY"),
+                value: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_VALUE"),
+                keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION"),
+                valueDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_VALUE_DEFINITION")
+            };
+            await msg.channel.send("", {
+                embed: generateEmbed(EmbedType.Information, `\`set [${strs.key}] [${strs.value}]\``, {
+                    fields: [{
+                        name: `\`${strs.key}\``, inline: false, value: strs.keyDef
+                    }, {
+                        name: `\`${strs.value}\``, inline: false, value: strs.valueDef
+                    }]
+                })
+            });
+            return;
+        } else if(param === "remove") {
+            let strs = {
+                key: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY"),
+                keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION")
+            };
+            await msg.channel.send("", {
+                embed: generateEmbed(EmbedType.Information, `\`remove [${strs.key}]\``, {
+                    fields: [{
+                        name: `\`${strs.key}\``, inline: false, value: strs.keyDef
+                    }]
+                })
+            });
+        } else if(param.startsWith("remove ")) {
+            param = param.slice("remove ".length);
+
+            let customize = JSON.parse(profile.customize);
+
+            let doneStr = "";
+
+            if(["image"].indexOf(param) !== -1) {
+                if(param === "image") {
+                    doneStr = await localizeForUser(msg.member, "PROFILES_PROFILE_IMAGE_REMOVED");
+                    delete customize["image_url"];
+                }
             } else {
-                customize.plugins[param] = completeInfo.json;
+                if(!this.plugLoader.loadedModulesRegistry.has(param)) {
+                    await msg.channel.send("", {
+                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_404"))
+                    });
+                    return;
+                }
+                delete customize["plugins"][param];
+                doneStr = await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_REMOVED", {
+                    pluginName: param
+                });
             }
 
             customize = JSON.stringify(customize);
@@ -257,34 +355,24 @@ class Profiles extends Plugin implements IModule {
 
             await this.updateProfile(profile);
 
-            await msg.channel.sendMessage("", {
-                embed: generateEmbed(EmbedType.OK, "Так выглядит новый плагин в вашем профиле:", {
-                    okTitle: "Настройка завершена!",
-                    fields: [completeInfo.example]
-                })
-            })
-        } else if(param === "set") {
-            await msg.channel.sendMessage("", {
-                embed: generateEmbed(EmbedType.Information, "`set [ключ] [значение]`", {
-                    fields: [{
-                        name: "`ключ`", inline: false, value: "название плагина или надстройки"
-                    }, {
-                        name: "`значение`", inline: false, value: "значение для плагина или надстройки\nУ каждого плагина индивидуальные значения, учтите это!"
-                    }]
-                })
+            msg.channel.send("", {
+                embed: generateEmbed(EmbedType.OK, doneStr)
             });
-            return;
         }
     }
 
     async editBio(msg:Message) {
         if(msg.content === "!set_bio") {
-            await msg.channel.sendMessage("", {
-                embed: generateEmbed(EmbedType.Information, "`!set_bio [о себе]`", {
+            let strs = {
+                aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME"),
+                def_aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_DEFINITON")
+            };
+            await msg.channel.send("", {
+                embed: generateEmbed(EmbedType.Information, `\`!set_bio [${strs.aboutMe}]\``, {
                     fields: [{
-                        name: "`о себе`",
+                        name: `\`${strs.aboutMe}\``,
                         inline: false,
-                        value: "Любая информация о себе для других участников этого сервера"
+                        value: strs.def_aboutMe
                     }]
                 })
             });
@@ -292,8 +380,8 @@ class Profiles extends Plugin implements IModule {
         }
         let newBio = msg.content.slice("!set_bio ".length);
         if(newBio.length >= 1024) {
-            await msg.channel.sendMessage("", {
-                embed: generateEmbed(EmbedType.Error, "Прекрасно, но твоя биография уж сильно большая. Попробуй уместится в 1000 символов и учитывай, что [Emoji - ложь](https://www.quora.com/Why-does-using-emoji-reduce-my-SMS-character-limit-to-70/answer/Andrew-Vilcsak).")
+            await msg.channel.send("", {
+                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_INVALIDTEXT"))
             });
             return;
         }
@@ -302,8 +390,8 @@ class Profiles extends Plugin implements IModule {
         profile.bio = newBio;
         await this.updateProfile(profile);
 
-        await msg.channel.sendMessage("", {
-            embed: generateEmbed(EmbedType.OK, "Профиль успешно обновлён!")
+        await msg.channel.send("", {
+            embed: generateEmbed(EmbedType.OK, await localizeForUser(msg.member, "PROFILES_PROFILE_UPDATED"))
         });
 
         return;
@@ -314,51 +402,60 @@ class Profiles extends Plugin implements IModule {
 
     getUserStatusEmoji(user:User|GuildMember|string) {
         switch(typeof user !== "string" ? user.presence.status : user) {
-            case "online": { return "<:vpOnline:212789758110334977>"; }
-            case "idle": { return "<:vpAway:212789859071426561>"; }
-            case "dnd": { return "<:vpDnD:236744731088912384>"; }
-            case "streaming": { return "<:vpStreaming:212789640799846400>"; }
-            default: { return "<:vpOffline:212790005943369728>"; }
+            case "online": { return "<:online:313949006864711680>"; }
+            case "idle": { return "<:away:313949134954561536>"; }
+            case "dnd": { return "<:dnd:313949206119186432>"; }
+            case "streaming": { return "<:streaming:313949265888280586>"; }
+            default: { return "<:offline:313949330283167748>"; }
         }
     }
 
-    getUserStatusString(user:User|GuildMember|string) {
+    async getUserStatusString(user:User|GuildMember|string, localizingFor: GuildMember | User) {
+        let lF = async (str:string) => { return await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`); };
         switch(typeof user !== "string" ? user.presence.status : user) {
-            case "online": { return "онлайн"; }
-            case "idle": { return "отошел"; }
-            case "dnd": { return "занят"; }
-            case "streaming": { return "стримит"; }
-            case "playing": { return "играет"; }
-            default: { return "не в сети"; }
+            case "online": { return await lF("online"); }
+            case "idle": { return await lF("idle"); }
+            case "dnd": { return await lF("dnd"); }
+            case "streaming": { return lF("streaming"); }
+            case "playing": { return lF("playing"); }
+            default: { return lF("offline"); }
         }
     }
 
-    humanize(duration:number, largest:number = 2, round:boolean = true) {
-        return humanizeDuration(duration, { language: "ru", largest, round: true });
+    humanize(duration:number, largest:number = 2, round:boolean = true, lang = "ru") {
+        return humanizeDuration(duration, { language: lang, largest, round: true });
     }
 
     async sendProfile(msg:Message, dbProfile:IDBUserProfile, member:GuildMember) {
         let statusString = "";
-        statusString += this.getUserStatusEmoji(member) + " ";
-        statusString += this.getUserStatusString(member);
+        statusString += await this.getUserStatusEmoji(member) + " ";
+        statusString += await this.getUserStatusString(member, msg.member);
 
         if(member.presence.game) {
             statusString = "";
+
             if(member.presence.game.streaming) {
-                statusString += this.getUserStatusEmoji("streaming") + " ";
-                statusString += this.getUserStatusString("streaming") + " ";
+                statusString += await this.getUserStatusEmoji("streaming") + " ";
+                statusString += await this.getUserStatusString("streaming", msg.member) + " ";
                 statusString += `[${escapeDiscordMarkdown(member.presence.game.name)}](${member.presence.game.url})`;
             } else {
-                statusString += this.getUserStatusEmoji(member) + " ";
-                statusString += this.getUserStatusString("playing") + " ";
+                statusString += await this.getUserStatusEmoji(member) + " ";
+                statusString += await this.getUserStatusString("playing", msg.member) + " ";
                 statusString += `в **${escapeDiscordMarkdown(member.presence.game.name)}**`;
             }
+        }
+
+        if(member.id === botConfig.botOwner) {
+            statusString = `<:adm_badge:313954950143279117> ${statusString}`;
+        } else if((await isPremium(member))) {
+            statusString = `<:premium:315520823504928768> ${statusString}`;
         }
 
         if(dbProfile.status_changed) {
             let changedAt = new Date(dbProfile.status_changed).getTime();
             let diff = Date.now() - changedAt;
-            statusString += ` (${this.humanize(diff)})`;
+            let sDiff = this.humanize(diff, undefined, undefined, await localizeForUser(msg.member, "+SHORT_CODE"));
+            statusString += ` (${sDiff})`;
         }
 
         let fields:IEmbedOptionsField[] = [];
@@ -366,37 +463,33 @@ class Profiles extends Plugin implements IModule {
         if(dbProfile.bio) {
             fields.push({
                 inline: false,
-                name: "О себе:",
+                name: await localizeForUser(msg.member, "PROFILES_PROFILE_ABOUTME"),
                 value: dbProfile.bio
             });
         }
 
         let pushedMessage:Message|undefined = undefined;
 
-        let imageUrl:string|undefined = undefined;
-
-        let getEmbed = () => {
-            return {
-                author: {
-                    icon_url: member.user.displayAvatarURL.replace("?size=2048", "?size=512"),
-                    name: member.displayName
-                },
-                title: dbProfile.real_name ? dbProfile.real_name : undefined,
-                description: statusString,
-                fields: fields,
-                footer: {
-                    text: `Участник уже ${this.humanize(timeDiff(dbProfile.joined, Date.now(), "ms"))}`,
-                    icon_url: msg.guild.iconURL
-                },
-                image: imageUrl ? {
-                    url: imageUrl
-                } : undefined,
-                thumbnail: {
-                    url: member.user.displayAvatarURL
-                },
-                timestamp: member.user.createdAt
-            };
-        };
+        let embed = {
+            author: {
+                icon_url: member.user.displayAvatarURL.replace("?size=2048", "?size=512"),
+                name: member.displayName
+            },
+            title: dbProfile.real_name ? dbProfile.real_name : undefined,
+            description: statusString,
+            fields: fields,
+            footer: {
+                text: await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME", {
+                    duration: this.humanize(timeDiff(dbProfile.joined, Date.now(), "ms"), undefined, undefined, await localizeForUser(msg.member, "+SHORT_CODE"))
+                }),
+                icon_url: msg.guild.iconURL
+            },
+            image: undefined,
+            thumbnail: {
+                url: member.user.displayAvatarURL
+            },
+            timestamp: member.user.createdAt.toISOString()
+        } as IEmbed;
 
         let pushing = false;
         let repushAfterPush = false;
@@ -408,8 +501,8 @@ class Profiles extends Plugin implements IModule {
             }
             pushing = true;
             if(!pushedMessage) {
-                pushedMessage = await msg.channel.sendMessage("", {
-                    embed: getEmbed()
+                pushedMessage = await msg.channel.send("", {
+                    embed: embed as any
                 }) as Message;
                 pushing = false;
                 if(repushAfterPush) {
@@ -420,7 +513,7 @@ class Profiles extends Plugin implements IModule {
             }
             try {
                 pushedMessage = (await pushedMessage.edit("", {
-                    embed: getEmbed()
+                    embed: embed as any
                 }) as Message);
                 pushing = false;
             } catch (err) {
@@ -438,11 +531,15 @@ class Profiles extends Plugin implements IModule {
             let customize = JSON.parse(dbProfile.customize);
 
             if(customize["image_url"]) {
-                imageUrl = customize["image_url"];
+                embed.image = { url: customize["image_url"] };
+            }
+
+            if(customize["video_url"]) {
+                embed.video = { url: customize["video_url"] };
             }
 
             if(customize.plugins) {
-                Object.keys(customize.plugins).forEach(pluginName => {
+                for(let pluginName of Object.keys(customize.plugins)) {
                     let mod:Module|undefined = undefined;
                     if(!(mod = this.plugLoader.loadedModulesRegistry.get(pluginName))) {
                         // not found, skipping
@@ -455,48 +552,81 @@ class Profiles extends Plugin implements IModule {
                     }
 
                     let plugin = mod.base as IProfilesPlugin;
-                    let fNum = fields.length;
 
-                    fields.push({
-                        name: pluginName,
-                        value: "Загрузка...",
-                        inline: true
-                    });
+                    let addedPlugin = customize.plugins[pluginName] as IAddedProfilePlugin;
 
-                    let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+                    if(addedPlugin.type === AddedProfilePluginType.Embed) {
+                        if(!plugin.getEmbed) { return; }
 
-                    let canEdit = true;
-                    let t:NodeJS.Timer = setTimeout(() => {
-                        this.log("err", pluginLogPrefix, "timed out.");
-                        canEdit = false;
-                        fields[fNum] = {
+                        let fNum = fields.length;
+
+                        fields.push({
                             name: pluginName,
-                            value: "timed out"
-                        };
-                        pushUpdate();
-                    }, 10000);
+                            value: await localizeForUser(msg.member, "PROFILES_PROFILE_LOADING"),
+                            inline: true
+                        });
 
-                    plugin.getEmbed(customize.plugins[pluginName]).then(field => {
-                        if(!canEdit) {
-                            return;
-                        }
-                        if(t) { clearTimeout(t); }
-                        fields[fNum] = field;
-                        if(pushedMessage && ((Date.now() - pushedMessage.createdAt.getTime()) / 1000) < 3) {
-                            setTimeout(() => pushUpdate(), 1000);
-                        } else {
+                        let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+
+                        let canEdit = true;
+                        let t:NodeJS.Timer = setTimeout(async () => {
+                            this.log("err", pluginLogPrefix, "timed out.");
+                            canEdit = false;
+                            fields[fNum] = {
+                                name: pluginName,
+                                value: await localizeForUser(msg.member, "PROFILES_PROFILE_TIMEDOUT"),
+                                inline: true
+                            };
                             pushUpdate();
-                        }
-                    }).catch((err) => {
-                        this.log("err", pluginLogPrefix, "Error at plugin", err);
-                        if(t) { clearTimeout(t); }
-                        fields[fNum] = {
-                            name: pluginName,
-                            value: "failed to load:\n" + err.message
-                        };
-                        pushUpdate();
-                    });
-                });
+                        }, 20000);
+                        
+                        plugin.getEmbed(addedPlugin.json, msg.member).then(field => {
+                            if(!canEdit) { return; }
+                            if(t) { clearTimeout(t); }
+                            fields[fNum] = field;
+                            if(pushedMessage && ((Date.now() - pushedMessage.createdAt.getTime()) / 1000) < 3) {
+                                setTimeout(() => pushUpdate(), 1000);
+                            } else {
+                                pushUpdate();
+                            }
+                        }).catch(async (err) => {
+                            this.log("err", pluginLogPrefix, "Error at plugin", err);
+                            if(t) { clearTimeout(t); }
+                            fields[fNum] = {
+                                name: pluginName,
+                                value: await localizeForUser(msg.member, "PROFILES_PROFILE_FAILED", {
+                                    msg: err.message
+                                })
+                            };
+                            pushUpdate();
+                        });
+                    } else if(addedPlugin.type === AddedProfilePluginType.Customs) {
+                        if(!plugin.getCustoms) { return; }
+
+                        let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+
+                        let canEdit = true;
+                        let t:NodeJS.Timer = setTimeout(() => {
+                            this.log("err", pluginLogPrefix, "timed out.");
+                            canEdit = false;
+                        }, 20000);
+
+                        plugin.getCustoms(addedPlugin.json, msg.member).then(customs => {
+                            if(!canEdit) { return; }
+                            if(t) { clearTimeout(t); }
+                            if(customs.image_url) {
+                                embed.image = {url: customs.image_url};
+                            }
+                            if(customs.thumbnail_url) {
+                                embed.thumbnail = {url: customs.thumbnail_url};
+                            }
+                            pushUpdate();
+                        }).catch(err => {
+                            this.log("err", pluginLogPrefix, "Error at plugin", err);
+                            if(t) { clearTimeout(t); }
+                        });
+                    }
+                }
                 await pushUpdate();
             } else { await pushUpdate(); }
         } else { await pushUpdate(); }
@@ -537,7 +667,7 @@ class Profiles extends Plugin implements IModule {
         let currentUser = await this.getProfile(member, guild);
         if(!currentUser) {
             await this.createProfile(member, guild);
-            currentUser = await this.getProfile(member, guild)
+            currentUser = await this.getProfile(member, guild);
         } else {
             return currentUser;
         }
@@ -586,7 +716,7 @@ class Profiles extends Plugin implements IModule {
             basePath: "./cogs/profiles/plugins/",
             registry: plugins,
             fastLoad: Array.from(plugins.keys())
-        })
+        });
 
         this.handleEvents();
     }

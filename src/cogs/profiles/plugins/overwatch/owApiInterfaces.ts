@@ -1,3 +1,5 @@
+export type Tier = "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master" | "grandmaster" | null;
+
 export interface IAchievementsStatus {
     defense: {
         armor_up:boolean;
@@ -12,7 +14,7 @@ export interface IAchievementsStatus {
         smooth_as_silk:boolean;
         the_dragon_is_sated:boolean;
         triple_threat:boolean;
-    },
+    };
     general: {
         blackjack:boolean;
         centenary:boolean;
@@ -25,7 +27,7 @@ export interface IAchievementsStatus {
         the_friend_zone:boolean;
         the_path_is_closed:boolean;
         undying:boolean;
-    },
+    };
     maps: {
         cant_touch_this:boolean;
         double_cap:boolean;
@@ -33,7 +35,7 @@ export interface IAchievementsStatus {
         lockdown:boolean;
         shutout:boolean;
         world_traveler:boolean;
-    },
+    };
     offense: {
         clearing_the_area:boolean;
         death_from_above:boolean;
@@ -49,7 +51,7 @@ export interface IAchievementsStatus {
         total_recall:boolean;
         waste_not_want_not:boolean;
         whoa_there:boolean;
-    },
+    };
     special: {
         ambush:boolean;
         cleanup_duty:boolean;
@@ -61,7 +63,7 @@ export interface IAchievementsStatus {
         snowed_in:boolean;
         survived_the_night:boolean;
         whap:boolean;
-    },
+    };
     support: {
         enabler:boolean;
         group_health_plan:boolean;
@@ -73,7 +75,7 @@ export interface IAchievementsStatus {
         the_car_wash:boolean;
         the_floor_is_lava:boolean;
         the_iris_embraces_you:boolean;
-    },
+    };
     tank: {
         anger_management:boolean;
         game_over:boolean;
@@ -87,7 +89,7 @@ export interface IAchievementsStatus {
         shot_down:boolean;
         storm_earth_and_fire:boolean;
         the_power_of_attraction:boolean;
-    }
+    };
 }
 
 export interface IHeroesInfo<T> {
@@ -117,21 +119,32 @@ export interface IHeroesInfo<T> {
     zenyatta:T;   
 }
 
+export interface ICompAndQuick<T> {
+    quickplay:T;
+    competitive:T;
+}
+
 export interface IPlaytimeInfo {
     quickplay?:IHeroesInfo<number>;
     competitive?:IHeroesInfo<number>;
 }
 
+export interface IProfileHeroesInfo {
+    playtime:IPlaytimeInfo;
+    stats:ICompAndQuick<IHeroesStats>;
+}
+
 export interface IRegionalProfile {
     achievements:IAchievementsStatus;
-    heroes:IHeroesStats;
-    stats:IStatsInfo;
+    heroes:IProfileHeroesInfo;
+    stats:ICompAndQuick<IStats>;
 }
 
 export interface IBlobResponse {
     eu?:IRegionalProfile;
     kr?:IRegionalProfile;
     us?:IRegionalProfile;
+    retry:number;
 }
 
 export interface IAverageStats {
@@ -200,9 +213,13 @@ export interface IOverallStats {
     comprank:string;
     games:number;
     level:number;
+    losses:number;
     prestige:number;
     rank_image:string;
-    tier:"bronze"|"silver"|"gold"|"platinum"|"diamond"|"master"|"grandmaster";
+    tier:Tier;
+    ties:number;
+    win_rate:number;
+    wins:number;
 }
 
 export interface IStats {
@@ -283,7 +300,7 @@ export interface IHeroesStats {
         hero_stats: {
             melee_final_blow_most_in_game: number
         }
-    },
+    };
     mercy: {
         average_stats: {
             damage_amplified_average: number,
@@ -362,7 +379,7 @@ export interface IHeroesStats {
             players_resurrected_most_in_game: number,
             players_resurrected: number
         }
-    },
+    };
     lucio: {
         average_stats: {
             deaths_average: number,
@@ -435,7 +452,7 @@ export interface IHeroesStats {
             sound_barriers_provided_most_in_game: number,
             melee_final_blow_most_in_game: number
         }
-    },
+    };
     dva: {
         average_stats: {
             deaths_average: number,
@@ -504,7 +521,7 @@ export interface IHeroesStats {
             mechs_called_most_in_game: number,
             melee_final_blow_most_in_game: number
         }
-    },
+    };
     symmetra: {
         average_stats: {
             sentry_turret_kills_average: number,
@@ -563,7 +580,7 @@ export interface IHeroesStats {
             players_teleported: number,
             teleporter_uptime: number
         }
-    },
+    };
     widowmaker: {
         average_stats: {
             deaths_average: number,
@@ -631,7 +648,7 @@ export interface IHeroesStats {
             scoped_accuracy_best_in_game: number,
             venom_mine_kills: number
         }
-    },
+    };
     reaper: {
         average_stats: {
             deaths_average: number,
@@ -702,7 +719,7 @@ export interface IHeroesStats {
             death_blossom_kills: number,
             souls_consumed: number
         }
-    },
+    };
     tracer: {
         average_stats: {
             damage_done_average: number,
@@ -762,7 +779,7 @@ export interface IHeroesStats {
             pulse_bombs_attached: number,
             pulse_bombs_attached_most_in_game: number
         }
-    },
+    };
     ana: {
         average_stats: {
             deaths_average: number,
@@ -845,7 +862,7 @@ export interface IHeroesStats {
             scoped_accuracy_best_in_game: number,
             melee_final_blow_most_in_game: number
         }
-    },
+    };
     zenyatta: {
         average_stats: {
             deaths_average: number,
@@ -917,7 +934,7 @@ export interface IHeroesStats {
             melee_final_blow_most_in_game: number,
             transcendence_healing_best: number
         }
-    },
+    };
     junkrat: {
         average_stats: {
             rip_tire_kills_average: number,
@@ -977,7 +994,7 @@ export interface IHeroesStats {
             melee_final_blow_most_in_game: number,
             enemies_trapped_a_minute: number
         }
-    },
+    };
     roadhog: {
         average_stats: {
             whole_hog_kills_average: number,
@@ -1042,7 +1059,7 @@ export interface IHeroesStats {
             hooks_attempted: number,
             hook_accuracy_best_in_game: number
         }
-    },
+    };
     zarya: {
         average_stats: {
             projected_barriers_applied_average: number,
@@ -1105,7 +1122,7 @@ export interface IHeroesStats {
             energy_maximum: number,
             high_energy_kills_most_in_game: number
         }
-    },
+    };
     orisa: {
         average_stats: {
             damage_amplified_average: number,
@@ -1162,7 +1179,7 @@ export interface IHeroesStats {
         hero_stats: {
             melee_final_blow_most_in_game: number
         }
-    },
+    };
     pharah: {
         average_stats: {
             damage_done_average: number,
@@ -1223,7 +1240,7 @@ export interface IHeroesStats {
             rocket_direct_hits_most_in_game: number,
             rocket_direct_hits: number
         }
-    },
+    };
     mccree: {
         average_stats: {
             deaths_average: number,
@@ -1268,7 +1285,7 @@ export interface IHeroesStats {
             solo_kill_most_in_game: number
         },
         hero_stats: {}
-    },
+    };
     torbjorn: {
         average_stats: {
             deaths_average: number,
@@ -1334,7 +1351,7 @@ export interface IHeroesStats {
             turret_kills: number,
             armor_packs_created: number
         }
-    },
+    };
     mei: {
         average_stats: {
             blizzard_kills_average: number,
@@ -1406,7 +1423,7 @@ export interface IHeroesStats {
             melee_final_blow_most_in_game: number,
             blizzard_kills_most_in_game: number
         }
-    },
+    };
     reinhardt: {
         average_stats: {
             deaths_average: number,
@@ -1461,7 +1478,7 @@ export interface IHeroesStats {
             earthshatter_kills: number,
             fire_strike_kills: number
         }
-    },
+    };
     hanzo: {
         average_stats: {
             scatter_arrow_kills_average: number,
@@ -1519,7 +1536,7 @@ export interface IHeroesStats {
             scatter_arrow_kills_most_in_game: number,
             recon_assists_most_in_game: number
         }
-    },
+    };
     genji: {
         average_stats: {
             deaths_average: number,
@@ -1587,7 +1604,7 @@ export interface IHeroesStats {
             damage_reflected: number,
             melee_final_blow_most_in_game: number
         }
-    },
+    };
     winston: {
         average_stats: {
             jump_pack_kills_average: number,
@@ -1652,7 +1669,7 @@ export interface IHeroesStats {
             melee_final_blow_most_in_game: number,
             melee_kills_most_in_game: number
         }
-    },
+    };
     bastion: {
         average_stats: {
             deaths_average: number,
@@ -1722,7 +1739,7 @@ export interface IHeroesStats {
             sentry_kills_most_in_game: number,
             recon_kills: number
         }
-    },
+    };
     soldier76: {
         average_stats: {
             deaths_average: number,
@@ -1795,5 +1812,5 @@ export interface IHeroesStats {
             biotic_fields_deployed: number,
             biotic_field_healing_done: number
         }
-    }
+    };
 }

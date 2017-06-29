@@ -182,7 +182,7 @@ export async function clearCache(cache_owner:string, key:string, noWait:boolean 
         return false;
     } else {
         await db(CACHE_TABLE_NAME).where({
-            'code': current.code
+            "code": current.code
         }).delete();
         if(noWait) {
             return true;

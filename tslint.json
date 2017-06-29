@@ -8,20 +8,20 @@
 		],
 		"curly": true,
 		"class-name": true,
-		"semicolon": ["always"],
+		"semicolon": [true, "always"],
 		"triple-equals": true,
 		"array-type": [
+			true,
 			"array-simple"
 		],
 		"no-var-keyword": true,
 		"comment-format": [
+			true,
 			"check-space"
-		],
-		"completed-docs": [
-			"methods"
 		],
 		"no-var-requires": true,
 		"quotemark": [
+			true,
 			"double"
 		],
 		"no-empty": true,

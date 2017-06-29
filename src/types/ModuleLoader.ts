@@ -1,7 +1,5 @@
 import { EventEmitter } from "events";
 import logger = require("loggy");
-import { cbFunctionToPromise } from "../cogs/utils/utils";
-import * as _async from "async";
 
 export interface IModuleInfo {
     /**
@@ -155,14 +153,14 @@ export class ModuleLoader {
         this.log = logger(config.name);
         
         this.log("info", "Registering modules");
-        config.registry.forEach((value) => {
+        for(let value of config.registry.values()) {
             this.register(value);
-        });
+        }
 
         this.log("info", "Starting fast load");
-        this.config.fastLoad.forEach((name) => {
-            this.load(name);
-        });
+        for(let modName of this.config.fastLoad) {
+            this.load(modName);
+        }
     }
 
     /**
@@ -253,10 +251,8 @@ export class ModuleLoader {
      * Unloads ALL modules
      */
     async unloadAll() {
-        let allModulesNames = Array.from(this.loadedModulesRegistry.keys());
-        await cbFunctionToPromise(_async.forEach, allModulesNames, async (moduleName:string, cb:Function) => {
+        for(let moduleName of this.loadedModulesRegistry.keys()) {
             await this.unload(moduleName);
-            cb();
-        });
+        }
     }
 }

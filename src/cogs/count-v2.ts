@@ -170,7 +170,7 @@ class CountV2 extends Plugin implements IModule {
             this.log("err", "First start: Can't but element into database", err);
         }
         
-        ch.sendMessage("**Первый запуск!**\n__Число__: 1322.\n__Далее__: **+15**");
+        ch.send("**Первый запуск!**\n__Число__: 1322.\n__Далее__: **+15**");
     }
 
     @inChannel(CHANNELID_MAIN)
@@ -198,10 +198,10 @@ class CountV2 extends Plugin implements IModule {
                     in_queue: "-1"
                 });
                 msg.react("✅");
-                msg.channel.sendMessage("✅ Перезапись числа завершена. Теперь введите это число.")
+                msg.channel.send("✅ Перезапись числа завершена. Теперь введите это число.");
             } catch (err) {
                 msg.react("❌");
-                msg.channel.sendMessage("❌ Ошибка перезаписи числа: `" + err.message + "`.");
+                msg.channel.send("❌ Ошибка перезаписи числа: `" + err.message + "`.");
                 this.log("err", "Can't insert new number into database", err);
             }
             return;
@@ -214,7 +214,7 @@ class CountV2 extends Plugin implements IModule {
 
         let latestRow:CountOperationRow|undefined = undefined;
         try {
-            latestRow = await this.dbClient(TABLENAME_MAIN).orderBy("date", "DESC").first('count', 'author', 'date', 'operation', 'number', 'answered_by', 'in_queue');
+            latestRow = await this.dbClient(TABLENAME_MAIN).orderBy("date", "DESC").first("count", "author", "date", "operation", "number", "answered_by", "in_queue");
         } catch (err) {
             this.log("err", "Can't get latest row from database", err);
             latestRow = undefined;
@@ -342,7 +342,7 @@ class CountV2 extends Plugin implements IModule {
         try {
             userRow = await this.dbClient(TABLENAME_SCOREBOARD).where({
                 user: member.id
-            }).first('user', 'exp', 'streak');
+            }).first("user", "exp", "streak");
         } catch (err) {
             this.log("warn", "Can't poll user out'a DB");
             userRow = undefined;
@@ -443,7 +443,7 @@ class CountV2 extends Plugin implements IModule {
         });
 
         if(!this.scoreboardMessages.top10) {
-            let msg = await ch.sendMessage("", {
+            let msg = await ch.send("", {
                 embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
                     footerText: STRINGS.TOP_10
                 })
@@ -452,7 +452,7 @@ class CountV2 extends Plugin implements IModule {
         }
 
         if(!this.scoreboardMessages.latestChanges) {
-            let msg = await ch.sendMessage("", {
+            let msg = await ch.send("", {
                 embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
                     footerText: STRINGS.LATEST_CHANGES 
                 })

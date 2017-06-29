@@ -1,7 +1,8 @@
-import { IProfilesPlugin } from "../plugin";
+import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { Message, GuildMember } from "discord.js";
 import { generateEmbed, EmbedType, IEmbedOptionsField, getLogger } from "../../../utils/utils";
-import { IBlobResponse, IRegionalProfile } from "./owApiInterfaces";
+import { localizeForUser } from "../../../utils/ez-i18n";
+import { IRegionalProfile } from "./owApiInterfaces";
 import { getProfile, IOverwatchProfilePluginInfo } from "./overwatch";
 
 const ACCEPTED_REGIONS = ["eu", "kr", "us"];
@@ -9,14 +10,13 @@ const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
 const LOG = getLogger("OWRatingPlugin");
 
 export class RatingProfilePlugin implements IProfilesPlugin {
-    public name = "ow_rating";
 
-    getSetupArgs() {
-        return "<юзернейм>[;Регион[;Платформа]]";
+    async getSetupArgs(caller:GuildMember) {
+        return await localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
     }
 
     async setup(str:string, member:GuildMember, msg:Message) {
-        let status = "**Загрузка...**", prevStatus = status;
+        let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING"), prevStatus = status;
 
         let statusMsg = await msg.channel.sendMessage("", {
             embed: generateEmbed(EmbedType.Progress, status)
@@ -27,13 +27,13 @@ export class RatingProfilePlugin implements IProfilesPlugin {
                 embed: generateEmbed(EmbedType.Progress, prevStatus + "\n" + status)
             });
             prevStatus = statusMsg.content;
-        }
+        };
 
         let args = str.split(";").map(arg => arg.trim());
 
         if(args.length === 0) {
             await statusMsg.edit("", {
-                embed: generateEmbed(EmbedType.Error, "Аргументы не предоставлены.")
+                embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_ARGS"))
             });
             throw new Error("Invalid argumentation");
         }
@@ -47,10 +47,10 @@ export class RatingProfilePlugin implements IProfilesPlugin {
 
         if(ACCEPTED_REGIONS.indexOf(info.region) === -1) {
             await statusMsg.edit("", {
-                embed: generateEmbed(EmbedType.Error, "Неправильный регион введен.", {
+                embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGREGION"), {
                     fields: [{
                         inline: false,
-                        name: "Доступные регионы",
+                        name: await localizeForUser(member, "OWPROFILEPLUGIN_AVAILABLE_REGIONS"),
                         value: ACCEPTED_REGIONS.join("\n")
                     }]
                 })
@@ -60,10 +60,10 @@ export class RatingProfilePlugin implements IProfilesPlugin {
 
         if(ACCEPTED_PLATFORMS.indexOf(info.platform)) {
             await statusMsg.edit("", {
-                embed: generateEmbed(EmbedType.Error, "Неправильная платформа введена.", {
+                embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGPLATFORM"), {
                     fields: [{
                         inline: false,
-                        name: "Доступные платформы:",
+                        name: await localizeForUser(member, "OWPROFILEPLUGIN_AVAILABLE_PLATFORMS"),
                         value: ACCEPTED_PLATFORMS.join("\n")
                     }]
                 })
@@ -75,9 +75,9 @@ export class RatingProfilePlugin implements IProfilesPlugin {
             throw new Error("Invalid argumentation");
         }
 
-        status = "Получение профиля...";
+        status = await localizeForUser(member, "OWPROFILEPLUGIN_FETCHINGPROFILE");
         postStatus();
-        let profile:IBlobResponse|null = null;
+        let profile:IRegionalProfile|null = null;
         try {
             profile = await getProfile(info.battletag, info.region, info.platform);
         } catch (err) {
@@ -89,7 +89,7 @@ export class RatingProfilePlugin implements IProfilesPlugin {
 
         if(!profile) {
             await statusMsg.edit("", {
-                embed: generateEmbed(EmbedType.Error, "Вы не играете на этом регионе или профиль не найден.")
+                embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED"))
             });
             throw new Error("Player not registered on this region.");
         }
@@ -98,13 +98,15 @@ export class RatingProfilePlugin implements IProfilesPlugin {
 
         let json = JSON.stringify(info);
 
+        await statusMsg.delete();
+
         return {
             json: json,
-            example: await this.getEmbed(json)
-        }
+            type: AddedProfilePluginType.Embed
+        };
     }
 
-    async getEmbed(info:string|IOverwatchProfilePluginInfo) : Promise<IEmbedOptionsField> {
+    async getEmbed(info:string|IOverwatchProfilePluginInfo, caller:GuildMember) : Promise<IEmbedOptionsField> {
         if(typeof info !== "object") {
             info = JSON.parse(info) as IOverwatchProfilePluginInfo;
         }
@@ -114,7 +116,7 @@ export class RatingProfilePlugin implements IProfilesPlugin {
             profile = await getProfile(info.battletag, info.region, info.platform);
         } catch (err) {
             LOG("err", "Error during getting profile", err, info);
-            throw new Error("Can't get profile")
+            throw new Error("Can't get profile");
         }
 
         if(!profile) {
@@ -122,16 +124,62 @@ export class RatingProfilePlugin implements IProfilesPlugin {
             throw new Error("Exception not catched, but value not present.");
         }
 
+        let str = "";
+
+        let tStrs = {
+            competitive: await localizeForUser(caller, "OWPROFILEPLUGIN_COMPETITIVE"),
+            quickplay: await localizeForUser(caller, "OWPROFILEPLUGIN_QUICKPLAY"),
+        };
+
+        str += `**${(100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.quickplay.overall_stats.level}LVL**\n`;
+        
+        str += `<:competitive:322781963943673866> __**${tStrs.competitive}**__\n`;
+        if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
+            str += this.getTierEmoji(null);
+            str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
+        } else {
+            let compOveral = profile.stats.competitive.overall_stats;
+            str += `${this.getTierEmoji(compOveral.tier)} ${compOveral.comprank} SR\n`;
+            str += (await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
+                games: compOveral.games
+            })) + "\n";
+            let atStrs = {
+                win: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_WIN"),
+                loss: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_LOSS"),
+                tie: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_TIE")
+            };
+            str += ` ${atStrs.win}: ${compOveral.wins}.\n ${atStrs.loss}: ${compOveral.losses}.\n ${atStrs.tie}: ${compOveral.ties}.\n`;
+            str += `  (`;
+            str += (await localizeForUser(caller, "OWPROFILEPLUGIN_WINRATE", {
+                winrate: compOveral.win_rate
+            })) + ")";
+        }
+
+        str += `\n<:quick:322781693205282816> __**${tStrs.quickplay}**__\n`;
+        
+        if(!profile.stats.quickplay || !profile.stats.quickplay.overall_stats.games) {
+            str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
+        } else {
+            let qpOveral = profile.stats.quickplay.overall_stats;
+            str += (await localizeForUser(caller, "OWPROFILEPLUGIN_HOURSPLAYED", {
+                hours: profile.stats.quickplay.game_stats.time_played
+            })) + "\n";
+            str += await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
+                gamesWon: qpOveral.wins
+            });
+        }
+
         return {
             inline: true,
             name: "<:ow:306134976670466050> Overwatch",
-            value: `**${(100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.competitive.overall_stats.level}LVL**\n${this.getTierEmoji(profile.stats.competitive.overall_stats.tier)} ${profile.stats.competitive ? `${profile.stats.competitive.overall_stats.comprank}\n${profile.stats.competitive.game_stats.games_won} games won (${profile.stats.competitive.overall_stats.games} total)` : "not ranked" }`
+            value: str
         };
     }
 
-    getTierEmoji(tier:"bronze"|"silver"|"gold"|"platinum"|"diamond"|"master"|"grandmaster") {
+    getTierEmoji(tier:"bronze"|"silver"|"gold"|"platinum"|"diamond"|"master"|"grandmaster"|null) {
         switch(tier) {
             default: return "<:bronze:306194850796273665>";
+            case null: return "<:no_rating:322361682460672000>";
             case "silver": return "<:silver:306194903464148992>";
             case "gold": return "<:gold:306194951568621568>";
             case "platinum": return "<:platinum:306195013929533441>";

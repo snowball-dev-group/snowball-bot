@@ -1,7 +1,8 @@
-import { IProfilesPlugin } from "../plugin";
+import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { GuildMember } from "discord.js";
 import { IEmbedOptionsField, escapeDiscordMarkdown, getLogger } from "../../../utils/utils";
 import { getTatsuProfile, IUserInfo } from "./tatsumaki";
+import { localizeForUser } from "../../../utils/ez-i18n";
 
 const LOG = getLogger("TatsuPlugin");
 
@@ -10,15 +11,14 @@ export interface ITatsumakiInfo {
 }
 
 export class TatsumakiProfilePlugin implements IProfilesPlugin {
-    public name = "tatsumaki_info";
     private apiKey:string;
 
     constructor(apiKey:string) {
         this.apiKey = apiKey;
     }
 
-    getSetupArgs() {
-        return "не требует аргументов";
+    async getSetupArgs(caller:GuildMember) {
+        return null;
     }
 
     async setup(str:string, member:GuildMember) {
@@ -35,11 +35,11 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 
         return {
             json: JSON.stringify(js),
-            example: await this.getEmbed(js)
+            type: AddedProfilePluginType.Embed
         };
     }
 
-    async getEmbed(info:ITatsumakiInfo|string) : Promise<IEmbedOptionsField> {
+    async getEmbed(info:ITatsumakiInfo|string, caller:GuildMember) : Promise<IEmbedOptionsField> {
         if(typeof info !== "object") {
             info = JSON.parse(info) as ITatsumakiInfo;
         }
@@ -63,11 +63,27 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 
         LOG("ok", logPrefix, "Generating embed");
 
+        let str = "";
+        str += `**${escapeDiscordMarkdown(profile.name)}**\n`;
+        str += (await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_REP", {
+            rep: profile.reputation
+        })) + "\n";
+        str += await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_LVL", {
+            lvl: profile.level
+        });
+        str += ` (${profile.xp[0]}XP / ${profile.xp[1]}XP)\n`;
+        str += (await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_CREDITS", {
+            credits: profile.credits
+        })) + "\n";
+        str += await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_RANK", {
+            rank: profile.rank
+        });
+
         try {
             return {
                 inline: true,
                 name: "<:tatsu:306223189628026881> Tatsumaki",
-                value: `**${escapeDiscordMarkdown(profile.name)}**\n**+${profile.reputation}rep**\nУровень: ${profile.level} (${profile.xp[0]}XP / ${profile.xp[1]}XP)\nКредиты: ${profile.credits}\nГлоб. ранк: #${profile.rank}`
+                value: str
             };
         } catch (err) {
             LOG("err", logPrefix, "Failed to generate embed", err);

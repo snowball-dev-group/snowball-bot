@@ -1,11 +1,12 @@
 import logger = require("loggy");
 import { SnowballBot, IBotConfig } from "./types/SnowballBot";
+import { join as pathJoin } from "path";
 
 const coreInfo = {
-    "version": "0.1.6"
+    "version": "0.9.67-rc4"
 };
 
-(() => {
+(async () => {
     let log = logger(":init");
 
     let config:IBotConfig;
@@ -20,8 +21,11 @@ const coreInfo = {
 
     log = logger(config.name + ":init");
 
-    log("ok", `Node ${process.version}`)
+    log("ok", `Node ${process.version}`);
     log("ok", `${config.name} v${coreInfo.version}`);
+
+    log("info", "Fixing config...");
+    config.localizerOptions.directory = pathJoin(__dirname, config.localizerOptions.directory);
 
     log("info", "Initializing bot...");
     const Snowball = new SnowballBot(config);
@@ -29,13 +33,21 @@ const coreInfo = {
     log("info", "Preparing our Discord client");
     Snowball.prepareDiscordClient();
 
+    
+
     log("info", "Connecting...");
-    Snowball.connect().then(() => {
-        log("ok", "Successfully connected, preparing our module loader");
+    try {
+        await Snowball.connect();
+        log("ok", "Successfully connected, preparing our localizer...");
+        await Snowball.prepareLocalizator();
+
+        log("ok", "Localizer prepared, preparing module loader...");
         Snowball.prepareModLoader();
-    }, (err) => {
+
+        log("ok", "====== DONE ======");
+    } catch (err) {
         log("err", "Can't connect to Discord", err);
         log("err", "Exiting due we can't work without bot connected to Discord");
         process.exit(1);
-    });
+    }
 })();

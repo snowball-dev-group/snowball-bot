@@ -14,7 +14,7 @@ export function getDB() {
                 user: process.env["DB_USER"] || "snowballbot",
                 password: process.env["DB_PASSWD"],
                 database: process.env["DB_NAME"] || "snowbot",
-                charset: "UTF8MB4_UNICODE_CI"
+                charset: "utf8mb4"
             }
         });
     }
@@ -56,10 +56,10 @@ function getTypeInfo(type:string) {
         return "";
     });
 
-    if(["string", "number"].indexOf(type) !== -1) {
+    if(!!(["string", "number"].find(t => type.startsWith(t)))) {
         type = type.replace(/[0-9]{1,}/, (n) => {
             if(t.length !== undefined) {
-                throw new Error('Length can be specified once');
+                throw new Error("Length can be specified once");
             }
 
             t.length = parseInt(n, 10);
@@ -110,6 +110,9 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
                 } break;
                 case "number": {
                     cb = tb.integer(key);
+                } break;
+                case "bignumber": {
+                    cb = tb.bigInteger(key);
                 } break;
                 case "boolean": {
                     cb = tb.boolean(key);

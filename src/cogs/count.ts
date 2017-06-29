@@ -66,7 +66,7 @@ class Count extends Plugin implements IModule {
             }
         }
 
-        let row = await this.dbClient("count").orderBy("count", "DESC").first('count', 'author', 'date');
+        let row = await this.dbClient("count").orderBy("count", "DESC").first("count", "author", "date");
 
         if(!row) { this.log("err", "Not found element"); return; }
 

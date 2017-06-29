@@ -81,7 +81,7 @@ export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUs
     }
 
     if(!resp) {
-        LOG("err", logPrefix, "No `resp` at middle of FETCH operation!")
+        LOG("err", logPrefix, "No `resp` at middle of FETCH operation!");
         throw new Error("No response.");
     }
 
@@ -101,7 +101,7 @@ export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUs
 
     try {
         LOG("info", logPrefix, "Caching response");
-        await cache(CACHE_OWNER, uid, JSON.stringify(uObject), true)
+        await cache(CACHE_OWNER, uid, JSON.stringify(uObject), true);
     } catch (err) {
         LOG("err", logPrefix, "Caching failed", err);
     }

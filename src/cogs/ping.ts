@@ -1,13 +1,13 @@
 import { IModule } from "../types/ModuleLoader";
-import logger = require("loggy");
 import { Plugin } from "./plugin";
 import { Message } from "discord.js"; 
 import { command, Category } from "./utils/help";
+import { getLogger } from "./utils/utils";
 
-@command(Category.Utilites, "ping", "Пингует бота (чтобы проверить в сети ли он)")
-@command(Category.Utilites, "ping_embed", "Пингует бота (использует встраиваемый объект)")
+@command(Category.Utilites, "ping", "loc:PING_CMDMETA_DEFAULT_DESCRIPTION")
+@command(Category.Utilites, "ping_embed", "loc:PING_CMDMETA_EMBED_DESCRIPTION")
 class Ping extends Plugin implements IModule {
-    log:Function = logger("PingJS");
+    log:Function = getLogger("PingJS");
 
     constructor() {
         super({

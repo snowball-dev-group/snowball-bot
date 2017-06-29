@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { ModuleLoader, IModuleInfo } from "./ModuleLoader";
+import { ILocalizerOptions, Localizer } from "../cogs/utils/localize";
 import * as djs from "discord.js";
-
 
 export interface IBotConfig {
     /**
@@ -19,15 +19,19 @@ export interface IBotConfig {
     /**
      * Modules to automatic load
      */
-    autoLoad:Array<string>;
+    autoLoad:string[];
     /**
      * Array of modules info
      */
-    modules:Array<IModuleInfo>;
+    modules:IModuleInfo[];
     /**
      * Discord Client's config
      */
     djs_config: djs.ClientOptions;
+    /**
+     * Localizator options
+     */
+    localizerOptions:ILocalizerOptions;
 }
 
 export interface IPublicBotConfig {
@@ -52,6 +56,12 @@ declare global {
      */
     // tslint:disable-next-line:no-unused-variable
     let botConfig:IPublicBotConfig;
+
+    /**
+     * Localizer
+     */
+    // tslint:disable-next-line:no-unused-variable
+    let localizer:Localizer;
 }
 
 export class SnowballBot extends EventEmitter {
@@ -106,7 +116,7 @@ export class SnowballBot extends EventEmitter {
         this.discordBot = new djs.Client(this.config.djs_config);
 
         // Setting max listeners
-        this.discordBot.setMaxListeners(500);
+        this.discordBot.setMaxListeners(50);
 
         // Global bot variable, which should be used by plugins
         Object.defineProperty(global, "discordBot", {
@@ -121,6 +131,15 @@ export class SnowballBot extends EventEmitter {
                 name: this.config.name,
                 botOwner: this.config.botOwner
             }
+        });
+    }
+
+    async prepareLocalizator() {
+        let localizer = new Localizer(`${this.config.name}:Localizer`, this.config.localizerOptions);
+        await localizer.init();
+        Object.defineProperty(global, "localizer", {
+            configurable: false, enumerable: false,
+            writable: false, value: localizer
         });
     }
 

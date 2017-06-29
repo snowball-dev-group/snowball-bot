@@ -106,8 +106,8 @@ export function inChannel(channelId:string) {
  * @example Use it only for command which can be accessed only but owner such as !shutdown, !restart and etc.
  */
 export function isOwner(target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message, ...args) => any>) {
-    if (typeof descriptor.value !== 'function') {
-        throw new SyntaxError('This only works for events handlers');
+    if (typeof descriptor.value !== "function") {
+        throw new SyntaxError("This only works for events handlers");
     }
 
     return {
@@ -127,8 +127,8 @@ export function isOwner(target, propertyKey: string, descriptor: TypedPropertyDe
  * @example Use it only to check if message sent from webhook or not
  */
 export function shouldHaveAuthor(target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => any>) {
-    if (typeof descriptor.value !== 'function') {
-        throw new SyntaxError('This only works for events handlers');
+    if (typeof descriptor.value !== "function") {
+        throw new SyntaxError("This only works for events handlers");
     }
 
     return {
@@ -147,8 +147,8 @@ export function shouldHaveAuthor(target, propertyKey: string, descriptor: TypedP
  * @example Use it if you want to check if message sent not by bot
  */
 export function notByBot(target, propertyKey: string, descriptor: TypedPropertyDescriptor<(msg: Message) => any>) {
-    if (typeof descriptor.value !== 'function') {
-        throw new SyntaxError('This only works for events handlers');
+    if (typeof descriptor.value !== "function") {
+        throw new SyntaxError("This only works for events handlers");
     }
 
     return {

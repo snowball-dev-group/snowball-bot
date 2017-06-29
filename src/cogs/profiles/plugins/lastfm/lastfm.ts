@@ -12,7 +12,7 @@ export async function getRecents(username:string, apiKey:string) : Promise<IRece
     let logPrefix = `${username} (getRecents)|`;
     try {
         let uri = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${apiKey}&format=json`;
-        LOG("info", logPrefix, "Fetching", uri.replace(apiKey, "{{API_KEY}}"))
+        LOG("info", logPrefix, "Fetching", uri.replace(apiKey, "{{API_KEY}}"));
         resp = await fetch(uri);
     } catch (err) {
         LOG("err", logPrefix, "Failed to fetch URI");

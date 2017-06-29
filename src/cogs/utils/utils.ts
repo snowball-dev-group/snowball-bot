@@ -10,12 +10,20 @@ export function stringifyError(err, filter = null, space = 2) {
 }
 
 export function escapeRegExp(str:string) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+}
+
+export function colorNumberToHex(color) {
+    let hex = color.toString(16);
+    while (hex.length < 6) {
+        hex = `0${hex}`;
+    };
+    return `${hex}`.toUpperCase();
 }
 
 export function replaceAll(str:string, search:string, replacement:string) {
     search = escapeRegExp(search);
-    return str.replace(new RegExp(search, 'g'), replacement);
+    return str.replace(new RegExp(search, "g"), replacement);
 };
 
 export function objectToMap<T>(obj) {
@@ -56,7 +64,9 @@ export enum EmbedType {
     OK,
     Information,
     Progress,
-    Empty
+    Empty,
+    Tada,
+    Question
 }
 // customFooter?:string
 
@@ -78,7 +88,7 @@ export interface IEmbedOptions {
         icon_url?:string,
         url?:string
     };
-    fields?:Array<IEmbedOptionsField>;
+    fields?:IEmbedOptionsField[];
     title?:string;
     errorTitle?:string;
     okTitle?:string;
@@ -86,6 +96,44 @@ export interface IEmbedOptions {
     imageUrl?:string;
     clearFooter?:boolean;
     thumbUrl?:string;
+    ts?:Date;
+}
+
+export interface IEmbed {
+    title?:string;
+    description?:string;
+    url?:string;
+    timestamp:string|number;
+    color?:number;
+    footer?: {
+        text:string;
+        icon_url?:string;
+    };
+    image?: {
+        url:string;
+        height?:number;
+        width?:number;
+    };
+    thumbnail?:{
+        url:string;
+        height?:number;
+        width?:number;
+    };
+    video?:{
+        url:string;
+        height?:number;
+        width?:number;
+    };
+    provider:{
+        name:string;
+        url?:string;
+    };
+    author?: {
+        icon_url?:string;
+        name:string;
+        url?:string;
+    };
+    fields?:IEmbedOptionsField[];
 }
 
 export function generateEmbed(type:EmbedType, description:string, options?:IEmbedOptions) {
@@ -109,10 +157,21 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
             embed.author.icon_url = "https://i.imgur.com/FcnCpHL.png";
             embed.color = 0x43A047;
         } break;
+        case EmbedType.Tada: {
+            embed.author.name = "Та-да!";
+            embed.author.icon_url = "https://i.imgur.com/FcnCpHL.png";
+            embed.thumbnail = {
+                url: "https://i.imgur.com/EkYEqfC.png"
+            };
+        } break;
         case EmbedType.Progress: {
             embed.author.name = "Загрузка...";
             embed.author.icon_url = "https://i.imgur.com/Lb04Jg0.gif";
             embed.color = 0x546E7A;
+        } break;
+        case EmbedType.Question: {
+            embed.author.name = "Подтверждение...";
+            embed.author.icon_url = "https://i.imgur.com/CFzVpVt.png";
         } break;
         case EmbedType.Empty: break;
     }
@@ -167,15 +226,18 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
         if(options.color) {
             embed.color = options.color;
         }
+        if(options.ts) {
+            embed.timestamp = options.ts.toISOString();
+        }
     }
     return embed;
 }
 
-interface ILoggerFunction {
+export interface ILoggerFunction {
     (type:"log"|"info"|"ok"|"warn"|"err"|"error"|"warning"|"trace"|"info_trace"|"warn_trace"|"err_trace", arg, ...args:any[]):ILogger;
 }
 
-interface ILogger {
+export interface ILogger {
     name:string;
     log:ILoggerFunction;
 }
@@ -185,15 +247,29 @@ export function getLogger(name:string):ILoggerFunction {
     return createLogger(name);
 }
 
-export function resolveGuildRole(nameOrID:string, guild:Guild) {
+export function resolveGuildRole(nameOrID:string, guild:Guild, strict=true) {
     if(/[0-9]+/.test(nameOrID)) {
         // it's can be ID
-        if(guild.roles.has(nameOrID)) {
-            return guild.roles.get(nameOrID);
-        }
+        let role = guild.roles.get(nameOrID);
+        if(role) { return role; }
     }
     // going to search
-    return guild.roles.find('name', nameOrID); // it can return undefined, it's okay
+    return guild.roles.find((role) => {
+        if(strict) { return role.name === nameOrID; }
+        else { return role.name.includes(nameOrID); }
+    }); // it can return undefined, it's okay
+}
+
+export function resolveGuildChannel(nameOrID:string, guild:Guild, strict=true) {
+    if(/[0-9]+/.test(nameOrID)) {
+        let ch = guild.channels.get(nameOrID);
+        if(ch) { return ch; }
+    }
+
+    return guild.channels.find((vc) => {
+        if(strict) { return vc.name === nameOrID; }
+        else { return vc.name.includes(nameOrID); }
+    });
 }
 
 export function sleep<T>(delay: number=1000, value?: T): Promise<T> {
@@ -202,17 +278,4 @@ export function sleep<T>(delay: number=1000, value?: T): Promise<T> {
         resolve(value);
       }, delay);
   });
-}
-
-export function cbFunctionToPromise(f:Function, ...args:any[]) {
-    return new Promise((res, rej) => {
-        if(!f) { return rej(); }
-        f(...([] as any[]).concat(args).concat((err, ...argms) => {
-            if(err) {
-                rej(argms);
-            } else {
-                res(argms);
-            }
-        }));
-    });
 }

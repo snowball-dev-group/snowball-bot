@@ -2,23 +2,23 @@ export class Plugin {
     private events:Map<string, Function> = new Map<string, Function>();
 
     constructor(events:Object, dontAutoHandle = false) {
-        Object.keys(events).forEach((key) => {
+        for(let key of Object.keys(events)) {
             this.events.set(key, events[key]);
-        });
+        }
         if(!dontAutoHandle) {
             this.handleEvents();
         }
     }
 
     handleEvents() {
-        this.events.forEach((value, key) => {
+        for (let [key, value] of this.events) {
             discordBot.on(key, value);
-        });
+        }
     }
 
     unhandleEvents() {
-        this.events.forEach((value, key) => {
+        for(let [key, value] of this.events) {
             discordBot.removeListener(key, value);
-        });
+        }
     }
 }
