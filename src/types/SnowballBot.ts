@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { ModuleLoader, IModuleInfo } from "./ModuleLoader";
-import { ILocalizerOptions, Localizer } from "../cogs/utils/localize";
+import { ILocalizerOptions, Localizer } from "./Localizer";
 import * as djs from "discord.js";
 
 export interface IBotConfig {

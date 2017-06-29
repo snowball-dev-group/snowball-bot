@@ -8,9 +8,18 @@ Mei has beautiful friend called Snowball, which used to make a Blizzard and ceas
 
 To install bot, you need to have installed LATEST version of [NodeJS](https://nodejs.org/). Then, you should install TypeScript compiler and dependencies by running these commands:
 
+**NPM**:
+
 ```bash
 npm install --global typescript
 npm install
+```
+
+**Yarn**:
+
+```bash
+yarn global add typescript
+yarn install
 ```
 
 Then try to run compilation into good Javascript code by running this command:
@@ -19,67 +28,15 @@ Then try to run compilation into good Javascript code by running this command:
 tsc
 ```
 
-Compilation may fail because of typings duplicate for `discord.js` library. So, to fix this errors you need to remove typings coming with `discord.js` in `node_modules/discord.js/typings/`. Then try to run compilation again and it shouldn't fail this time.
-
 All compiled files will stay in directory named `out`. Clone `package.json` there, you'll get why later.
 
 ### Setup
 
 Now, after compilation you should setup your bot for working.
 
-Create file named `configuration.json` in `out/config` directory with this content like this:
+Create file named `configuration.json` in `out/config` directory. See [`configuration.example.json`](./src/out/config/configuration.example.json)
 
-```json
-{
-    "name": "❄️ SnowballBot",
-    "token": "BOT_TOKEN",
-    "modules": [{
-        "name": "ping",
-        "path": "ping"
-    }, {
-        "name": "eval",
-        "path": "eval"
-    }, {
-        "name": "count",
-        "path": "count"
-    }, {
-        "name": "embedME",
-        "path": "embedMe"
-    }, {
-        "name": "ownerCMDs",
-        "path": "ownerCmds"
-    }, {
-        "name": "shibChannel",
-        "path": "shib"
-    }, {
-        "name": "count_V2",
-        "path": "count-v2"
-    }, {
-        "name": "8Ball",
-        "path": "8ball"
-    }, {
-        "name": "voiceRole",
-        "path": "voiceRole"
-    }, {
-        "name": "profiles",
-        "path": "profiles/profiles",
-        "options": [{
-            "name": "overwatch-rating",
-            "path": "overwatch/rating"
-        }, {
-            "name": "tatsumaki-info",
-            "path": "tatsumaki/info",
-            "options": "TATSUMAKI API KEY"
-        }, {
-            "name": "lastfm",
-            "path": "lastfm/recent",
-            "options": "LAST FM API KEY"
-        }]
-    }],
-    "autoLoad": ["ping", "eval", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles"],
-    "botOwner": "133145125122605057"
-}
-```
+#### Configuration file properties
 
 - **`name`** ([`string`][string]): Name of the bot, used for output in console
 - **`token`** ([`string`][string]): Bot authorization token, get it using [My Apps](https://discordapp.com/developers/applications/me) page on Discord Developers site.
@@ -89,6 +46,10 @@ Create file named `configuration.json` in `out/config` directory with this conte
   - `options` ([`any`][any]): Any options for plugin
 - **`autoLoad`** ([`string`][string]): Array of names of plugins which should be automatically loaded after registration, be sure you typing their names right: case matters, it's not path.
 - **`botOwner`** ([`string`][string]): Your (owner) Discord ID. It gives you permission to call `eval` command and other stuff which can do damage to bot if you type wrong ID here.
+- **`localizerOptions`** ([`ILocalizerOptions`](./src/typesc/Localizer.ts#L7)): Configuration for your localizer
+  - `languages` ([`string[]`][string]): Languages code (file names, e.g. `en-US`)
+  - `defaultLanguage` ([`string`][string]): Default language code
+  - `directory` ([`string`][string]): Absolute path from `out` directory
 
 [string]:https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String
 [any]:https://www.typescriptlang.org/docs/handbook/basic-types.html#any
@@ -102,7 +63,7 @@ I like to use [MySQL](https://www.mysql.com/) database, compatible with nice [`k
 - `DB_PASSWD`: Password for database user
 - `DB_USER`: Name of user who connecting to database
 
-To insure saving of unicode 8 emojis I changed `my.cfg` (thanks google):
+To insure saving of unicode 8 emojis I changed `my.cfg` (thanks Google):
 
 ```ini
 [mysqld]
@@ -116,31 +77,33 @@ skip-character-set-client-handshake
 default-character-set=utf8mb4
 ```
 
-### Starting
+### Start
 
 You had to setup database, environment variable and configuration json file (locally).
 
-Now, in your `out` is real distribute of your bot. You pushing it to your VM and starting using:
+Now, in your `out` is real distribute of your bot. You pushing it to your VM (VPS) and starting using:
 
 ```bash
 # installing all deps (that's why we copied package.json)
 npm install
-# starting
-NODE_ENV=production node --trace-warnings ./init.js
+# making run.sh executable
+chmod +x ./run.sh
+# then you just starting bot
+./run.sh
 ```
 
-:tada: Bot should now work.
+:tada: Bot should now work. Not works? Create new Issue and I'll gonna say what's wrong
 
 ## Contribution
 
 ### Pull Requests
 
-I really appreciate your contribution to this project. You can fix my errors, create good cogs, but follow these styles:
+I really appreciate your contribution to this project. You can fix my errors, create new good cogs, but follow these styles:
 
 - Use [Visual Studio Code](https://code.visualstudio.com/), it's awesome editor better than others and has good support for TypeScript.
-- Use [`tslint`](https://palantir.github.io/tslint/), it'll notify you if there's an errors in your code
-- Use universal API. I created `db`, `letters`, `utils`, `cacheResponse`, `time`, be sure you using it and bot's gonna work anywhere!
-- Be sure your plugin not for one server. For example, you can create cog for `shib channel` - that's fine, but you should provide support for other servers if you making serious plugins like `Overwatch statistic`.
+- Use [`tslint`](https://palantir.github.io/tslint/), it'll notify you if there's an errors in your code. [**VSCODE EXTENSION**](https://marketplace.visualstudio.com/items?itemName=eg2.tslint)
+- Use my universal APIs. I created `db`, `letters`, `utils`, `cacheResponse`, `time`, be sure you using them, they pretty simple
+- Make plugin for all servers, not yours one. To be honest, you can create cog for `shib channel` - that's fine (I included same cogs in source just for fun), but you should provide support for other servers if you making *serious* plugins like `Overwatch statistic`.
 
 Don't be scared of making Pull Requests! Make it! I will suggest you what to change, what to not and etc. :)
 
@@ -154,3 +117,5 @@ You can create private cogs without commiting them to public. Put your cog in `p
 
 ---
 **MADE WITH ♥ BY DAFRI_NOCHITEROV**.
+
+*Mei is hero from [Overwatch](https://playoverwatch.com/), game created by [Blizzard](blizzard.com)*.

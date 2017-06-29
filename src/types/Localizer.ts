@@ -2,7 +2,7 @@ import "any-promise/register/bluebird";
 import * as fs from "mz/fs";
 import { join as pathJoin } from "path";
 import * as formatMsg from "format-message";
-import { getLogger, ILoggerFunction } from "./utils";
+import { getLogger, ILoggerFunction } from "../cogs/utils/utils";
 
 export interface ILocalizerOptions {
     languages:string[];

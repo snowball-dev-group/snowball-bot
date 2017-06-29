@@ -1,0 +1,98 @@
+{
+    "name": "C00L NAM3 F0R Y0UR B07",
+    "token": "YOUR DISC0RD T0K3N",
+    "modules": [{
+        "name": "ping",
+        "path": "ping"
+    }, {
+        "name": "eval",
+        "path": "eval"
+    }, {
+        "name": "count",
+        "path": "count"
+    }, {
+        "name": "embedME",
+        "path": "embedMe"
+    }, {
+        "name": "ownerCMDs",
+        "path": "ownerCmds"
+    }, {
+        "name": "shibChannel",
+        "path": "shib"
+    }, {
+        "name": "count_V2",
+        "path": "count-v2"
+    }, {
+        "name": "8Ball",
+        "path": "8ball"
+    }, {
+        "name": "voiceRole",
+        "path": "voiceRole"
+    }, {
+        "name": "help",
+        "path": "help"
+    }, {
+        "name": "profiles",
+        "path": "profiles/profiles",
+        "options": [{
+            "name": "overwatch-rating",
+            "path": "overwatch/rating"
+        },{
+            "name": "overwatch-avatar",
+            "path": "overwatch/avatar"
+        }, {
+            "name": "tatsumaki-info",
+            "path": "tatsumaki/info",
+            "options": "TATSUMAKI API KEY"
+        }, {
+            "name": "lastfm",
+            "path": "lastfm/recent",
+            "options": "LAST.FM API KEY"
+        }, {
+            "name": "overwatch-heroes",
+            "path": "overwatch/heroes"
+        }]
+    }, {
+        "name": "colors",
+        "path": "colors"
+    }, {
+        "name": "premiumControl",
+        "path": "premiumControl"
+    }, {
+        "name": "guilds",
+        "path": "guilds"
+    }, {
+        "name": "verificationhandler",
+        "path": "verfiedUtilHandler"
+    }, {
+        "name": "fsthings",
+        "path": "fs_things",
+        "options": {
+            "fsGuildId": "209767264210255883",
+            "nickRegexp": "^[A-Za-zА-Яа-я0-9ё\\-\\_\\.\\ ]{0,}$",
+            "wrongNickFallback": "💩 <change nickname>",
+            "adminRoles": ["256596153246810114"],
+            "modRoles": ["209768989511909377"],
+            "subRoles": ["210209826708389888", "240838818335293440"],
+            "subAncChannel": "209768394059153409",
+            "texts": [{
+                "roleId": "210209826708389888",
+                "text": "++, thanks for subscribing to streamer A"
+            }, {
+                "roleId": "240838818335293440",
+                "text": "++, thanks for subscribing to streamer B"
+            }],
+            "oneSubRole": "214431344355180545"
+        }
+    }, {
+        "name": "setLanguage",
+        "path": "setLanguage"
+    }],
+    "autoLoad": ["ping", "eval", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "premiumControl", "guilds", "verificationhandler", "fsthings", "setLanguage"],
+    "botOwner": "80351110224678912",
+    "localizerOptions": {
+        "languages": ["ru-RU", "en-US", "uk-UA"],
+        "default_language": "ru-RU",
+        "directory": "./languages/"
+    }
+}

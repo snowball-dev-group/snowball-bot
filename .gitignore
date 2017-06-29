@@ -2,7 +2,7 @@ out/*
 !out/.gitkeep
 !out/config
 out/config/*
-!out/config/.gitkeep
+!out/config/configuration.example.json
 node_modules
 yarn*
 
