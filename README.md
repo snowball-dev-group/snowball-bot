@@ -46,7 +46,7 @@ Create file named `configuration.json` in `out/config` directory. See [`configur
   - `options` ([`any`][any]): Any options for plugin
 - **`autoLoad`** ([`string`][string]): Array of names of plugins which should be automatically loaded after registration, be sure you typing their names right: case matters, it's not path.
 - **`botOwner`** ([`string`][string]): Your (owner) Discord ID. It gives you permission to call `eval` command and other stuff which can do damage to bot if you type wrong ID here.
-- **`localizerOptions`** ([`ILocalizerOptions`](./src/typesc/Localizer.ts#L7)): Configuration for your localizer
+- **`localizerOptions`** ([`ILocalizerOptions`](./src/types/Localizer.ts#L7)): Configuration for your localizer
   - `languages` ([`string[]`][string]): Languages code (file names, e.g. `en-US`)
   - `defaultLanguage` ([`string`][string]): Default language code
   - `directory` ([`string`][string]): Absolute path from `out` directory
