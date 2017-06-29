@@ -61,7 +61,12 @@ export class Localizer {
     }
 
     private async testCoverage(langFile, defLang = this.langMaps.get(this.opts.default_language)) {
-        return ((Object.keys(langFile).length / Object.keys(defLang).length) * 100).toFixed(2);
+        let unique = 0;
+        for(let key of Object.keys(langFile)) {
+            // "" for empty crowdin translations
+            unique += langFile[key] !== defLang[key] && langFile[key] !== "" ? 1 : 0;
+        }
+        return (unique / Object.keys(defLang).length).toFixed(2);
     }
 
     public get loadedLanguages() {
@@ -74,7 +79,7 @@ export class Localizer {
 
     public getString(lang:string = this.opts.default_language, str:string) {
         let l = this.langMaps.get(lang)[str];
-        if(!l && lang !== this.opts.default_language) {
+        if((!l || l === "") && lang !== this.opts.default_language) {
             l = this.langMaps.get(this.opts.default_language)[str];
             if(!l) {
                 let estr = `String "${str}" not found nor in prefered language nor in language by default.`;
