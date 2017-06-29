@@ -25,7 +25,6 @@ compiling:
     - cp src/languages/*.json out/languages/
     - cp src/*.sh out/
     - cp package.json out/
-    - cp node_modules out/
   artifacts:
     untracked: true
     paths:
