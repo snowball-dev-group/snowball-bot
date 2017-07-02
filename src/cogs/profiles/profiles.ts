@@ -1,7 +1,7 @@
 import { IModule, ModuleLoader, IModuleInfo, Module } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js"; 
-import { getLogger, generateEmbed, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed } from "../utils/utils";
+import { getLogger, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed, generateLocalizedEmbed } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import * as humanizeDuration from "humanize-duration";
 import { IProfilesPlugin, IAddedProfilePlugin, AddedProfilePluginType } from "./plugins/plugin";
@@ -150,7 +150,7 @@ class Profiles extends Plugin implements IModule {
             let ment = msg.mentions.users.first();
             if(!(profileOwner = msg.guild.members.get(ment.id))) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_NOTAMEMBER"))
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTAMEMBER")
                 });
                 return;
             }
@@ -171,7 +171,7 @@ class Profiles extends Plugin implements IModule {
         if(args.length !== 4) {
             // uid, gid, add/remove, badgeid
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_ADDBADGE_ARGSERR"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_ADDBADGE_ARGSERR")
             });
             return;
         }
@@ -181,7 +181,7 @@ class Profiles extends Plugin implements IModule {
         if(msg.content === "!edit_profile") {
             await msg.channel.send("", {
                 embed: {
-                    description: await localizeForUser(msg.member, "PROFILES_PROFILE_DESCRIPTION")
+                    description: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PROFILES_PROFILE_DESCRIPTION")
                 }
             });
             return;
@@ -199,7 +199,7 @@ class Profiles extends Plugin implements IModule {
                 if(param === "image") {
                     if(arg === "" || (!arg.startsWith("http://") && !arg.startsWith("https://"))) {
                         await msg.channel.send("", {
-                            embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_INVALID_LINK"))
+                            embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_INVALID_LINK")
                         });
                         return;
                     }
@@ -207,14 +207,14 @@ class Profiles extends Plugin implements IModule {
                         await fetch(encodeURI(arg));
                     } catch (err) {
                         await msg.channel.send("", {
-                            embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_DOWNLOAD_FAILED"))
+                            embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_DOWNLOAD_FAILED")
                         });
                         return;
                     }
                     
                     customize["image_url"] = encodeURI(arg);
                     await msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.OK, await localizeForUser(msg.member, "PROFILES_PROFILE_IMAGE_SET"), {
+                        embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PROFILES_PROFILE_IMAGE_SET", {
                             imageUrl: encodeURI(arg)
                         })
                     });
@@ -233,14 +233,14 @@ class Profiles extends Plugin implements IModule {
 
             if(!(mod = this.plugLoader.loadedModulesRegistry.get(param))) {
                 await msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_404"))
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
                 });
                 return;
             }
 
             if(!mod.loaded) {
                 await msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_NOT_LOADED"))
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_NOT_LOADED")
                 });
                 return;
             }
@@ -252,7 +252,7 @@ class Profiles extends Plugin implements IModule {
                 completeInfo = await plugin.setup(arg, msg.member, msg);
             } catch (err) {
                 await msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_SETUP_FAILED"), {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_SETUP_FAILED", {
                         fields: [{
                             name: "Подробности",
                             value: "\`\`\`js\n"+ util.inspect(err) + "\`\`\`"
@@ -272,13 +272,13 @@ class Profiles extends Plugin implements IModule {
                 let embedsCount = Object.keys(customize.plugins).map(e => customize.plugins[e]).filter(e => e.type === AddedProfilePluginType.Embed).length;
                 if(embedsCount > 4 && !(await isPremium(msg.member))) {
                     msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_PREMIUMERR"))
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PREMIUMERR")
                     });
                     return;
                 }
                 if(embedsCount > 9) {
                     msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_MAXPLUGINSERR"))
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_MAXPLUGINSERR")
                     });
                     return;
                 }
@@ -293,7 +293,7 @@ class Profiles extends Plugin implements IModule {
             await this.updateProfile(profile);
 
             await msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Tada, await localizeForUser(msg.member, "PROFILES_PROFILE_SETUP_COMPLETE"))
+                embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, "PROFILES_PROFILE_SETUP_COMPLETE")
             });
         } else if(param === "set") {
             let strs = {
@@ -303,7 +303,7 @@ class Profiles extends Plugin implements IModule {
                 valueDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_VALUE_DEFINITION")
             };
             await msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, `\`set [${strs.key}] [${strs.value}]\``, {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, `\`set [${strs.key}] [${strs.value}]\``, {
                     fields: [{
                         name: `\`${strs.key}\``, inline: false, value: strs.keyDef
                     }, {
@@ -318,7 +318,7 @@ class Profiles extends Plugin implements IModule {
                 keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION")
             };
             await msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, `\`remove [${strs.key}]\``, {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, `\`remove [${strs.key}]\``, {
                     fields: [{
                         name: `\`${strs.key}\``, inline: false, value: strs.keyDef
                     }]
@@ -339,7 +339,7 @@ class Profiles extends Plugin implements IModule {
             } else {
                 if(!this.plugLoader.loadedModulesRegistry.has(param)) {
                     await msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_404"))
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
                     });
                     return;
                 }
@@ -356,7 +356,7 @@ class Profiles extends Plugin implements IModule {
             await this.updateProfile(profile);
 
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.OK, doneStr)
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, `custom:${doneStr}`)
             });
         }
     }
@@ -368,7 +368,7 @@ class Profiles extends Plugin implements IModule {
                 def_aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_DEFINITON")
             };
             await msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, `\`!set_bio [${strs.aboutMe}]\``, {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, `\`!set_bio [${strs.aboutMe}]\``, {
                     fields: [{
                         name: `\`${strs.aboutMe}\``,
                         inline: false,
@@ -381,7 +381,7 @@ class Profiles extends Plugin implements IModule {
         let newBio = msg.content.slice("!set_bio ".length);
         if(newBio.length >= 1024) {
             await msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_INVALIDTEXT"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_INVALIDTEXT")
             });
             return;
         }
@@ -391,7 +391,7 @@ class Profiles extends Plugin implements IModule {
         await this.updateProfile(profile);
 
         await msg.channel.send("", {
-            embed: generateEmbed(EmbedType.OK, await localizeForUser(msg.member, "PROFILES_PROFILE_UPDATED"))
+            embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PROFILES_PROFILE_UPDATED")
         });
 
         return;
