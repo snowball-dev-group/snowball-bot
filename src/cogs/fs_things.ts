@@ -119,7 +119,7 @@ class FanServerThings extends Plugin implements IModule {
 
             let random = new Random(Random.engines.mt19937().autoSeed());
 
-            let ancChannel = newMember.guild.channels.find('id', this.options.subAncChannel);
+            let ancChannel = newMember.guild.channels.find("id", this.options.subAncChannel);
             if(!!ancChannel) {
                 for(let nSubRole of newSubRoles.keys()) {
                     let texts = this.options.texts.filter(r => r.roleId === nSubRole);
