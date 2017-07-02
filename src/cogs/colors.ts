@@ -1,11 +1,11 @@
 import { IModule } from "./../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, Guild, Role, GuildMember } from "discord.js"; 
-import { getLogger, generateLocalizedEmbed, EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "./utils/utils";
+import { getLogger, EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "./utils/utils";
 import { getDB } from "./utils/db";
 import { command as cmd, Category, IArgumentInfo } from "./utils/help";
 import { createConfirmationMessage } from "./utils/interactive";
-import { localizeForUser } from "./utils/ez-i18n";
+import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
 
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";

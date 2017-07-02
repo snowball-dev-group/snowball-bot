@@ -3,9 +3,10 @@ import { Plugin } from "./plugin";
 import { Message } from "discord.js";
 import { Context } from "vm";
 import { isOwner, command, CommandEquality as cmdEquality } from "./checks/commands";
-import { replaceAll, generateLocalizedEmbed, EmbedType, getLogger } from "./utils/utils";
+import { replaceAll, EmbedType, getLogger } from "./utils/utils";
 import util = require("util");
 import VM = require("vm");
+import { generateLocalizedEmbed } from "./utils/ez-i18n";
 
 const PREFIX = "``";
 const PREFIX_LENGTH = PREFIX.length;

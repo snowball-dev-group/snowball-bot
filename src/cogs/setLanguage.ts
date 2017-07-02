@@ -2,9 +2,9 @@ import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message } from "discord.js";
 import { command, Category, IArgumentInfo } from "./utils/help";
-import { localizeForUser, getPrefsNames, forceUserLanguageUpdate } from "./utils/ez-i18n";
+import { localizeForUser, getPrefsNames, forceUserLanguageUpdate, generateLocalizedEmbed } from "./utils/ez-i18n";
 import { startsOrEqual, slice } from "./utils/text";
-import { generateLocalizedEmbed, EmbedType } from "./utils/utils";
+import { EmbedType } from "./utils/utils";
 import { setPreferenceValue as setUserPref } from "./utils/userPrefs";
 
 const BASE_PREFIX = "!sb_lang";

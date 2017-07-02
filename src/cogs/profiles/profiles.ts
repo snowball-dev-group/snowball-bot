@@ -1,7 +1,7 @@
 import { IModule, ModuleLoader, IModuleInfo, Module } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js"; 
-import { getLogger, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed, generateLocalizedEmbed } from "../utils/utils";
+import { getLogger, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import * as humanizeDuration from "humanize-duration";
 import { IProfilesPlugin, IAddedProfilePlugin, AddedProfilePluginType } from "./plugins/plugin";
@@ -10,7 +10,7 @@ import { default as fetch } from "node-fetch";
 import * as util from "util";
 import { command as docCmd, Category, IArgumentInfo } from "../utils/help";
 import { isPremium } from "../utils/premium";
-import { localizeForUser } from "../utils/ez-i18n";
+import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
 
 interface IDBUserProfile {
     real_name?:string;
