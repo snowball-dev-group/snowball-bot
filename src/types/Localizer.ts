@@ -62,11 +62,18 @@ export class Localizer {
 
     private async testCoverage(langFile, defLang = this.langMaps.get(this.opts.default_language)) {
         let unique = 0;
-        for(let key of Object.keys(langFile)) {
+        for(let key of Object.keys(defLang)) {
+            // ignored keys
+            if(["+COVERAGE", "$schema"].includes(key)) { unique += 1; continue; }
             // "" for empty crowdin translations
-            unique += langFile[key] !== defLang[key] && langFile[key] !== "" ? 1 : 0;
+            if(typeof langFile[key] === "string" && langFile[key] !== "") {
+                unique += +1;
+            } else {
+                this.log("warn", `String "${key}" not translated in lang ${langFile["+NAME"]}`);
+            }
         }
-        return (100 * (unique / Object.keys(defLang).length)).toFixed(2);
+        let coverage = (100 * (unique / Object.keys(defLang).length));
+        return Math.round(coverage * 1e2 ) / 1e2; // 99.99%
     }
 
     public get loadedLanguages() {
