@@ -26,7 +26,7 @@ export interface IConfig {
     /**
      * Names of modules for fast load after registry'll be filled with values
      */
-    fastLoad: Array<string>;
+    fastLoad: string[];
     /**
      * Pre-filled registry with info about modules
      */
@@ -73,7 +73,6 @@ export class Module extends EventEmitter {
     load() {
         return new Promise((res, rej) => {
             try {
-                //let l = logger(this.info.name);
                 let mod = require(this.info.path);
                 this.base = new mod(this.info.options);
                 this.loaded = true;
