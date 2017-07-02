@@ -551,12 +551,12 @@ class Profiles extends Plugin implements IModule {
                     let mod:Module|undefined = undefined;
                     if(!(mod = this.plugLoader.loadedModulesRegistry.get(pluginName))) {
                         // not found, skipping
-                        return;
+                        continue;
                     }
 
                     if(!mod.loaded) {
                         // not loaded, skipping
-                        return;
+                        continue;
                     }
 
                     let plugin = mod.base as IProfilesPlugin;
@@ -564,7 +564,7 @@ class Profiles extends Plugin implements IModule {
                     let addedPlugin = customize.plugins[pluginName] as IAddedProfilePlugin;
 
                     if(addedPlugin.type === AddedProfilePluginType.Embed) {
-                        if(!plugin.getEmbed) { return; }
+                        if(!plugin.getEmbed) { continue; }
 
                         let fNum = fields.length;
 
@@ -609,7 +609,7 @@ class Profiles extends Plugin implements IModule {
                             pushUpdate();
                         });
                     } else if(addedPlugin.type === AddedProfilePluginType.Customs) {
-                        if(!plugin.getCustoms) { return; }
+                        if(!plugin.getCustoms) { continue; }
 
                         let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
 
