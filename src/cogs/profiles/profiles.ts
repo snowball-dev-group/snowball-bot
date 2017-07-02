@@ -470,6 +470,14 @@ class Profiles extends Plugin implements IModule {
 
         let pushedMessage:Message|undefined = undefined;
 
+        let joinedDate = new Date(dbProfile.joined).getTime();
+
+        if(joinedDate === 0) {
+            dbProfile.joined = member.joinedAt.toISOString();
+            await this.updateProfile(dbProfile);
+            joinedDate = member.joinedAt.getTime();
+        }
+
         let embed = {
             author: {
                 icon_url: member.user.displayAvatarURL.replace("?size=2048", "?size=512"),
@@ -480,7 +488,7 @@ class Profiles extends Plugin implements IModule {
             fields: fields,
             footer: {
                 text: await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME", {
-                    duration: this.humanize(timeDiff(dbProfile.joined, Date.now(), "ms"), undefined, undefined, await localizeForUser(msg.member, "+SHORT_CODE"))
+                    duration: this.humanize(timeDiff(joinedDate, Date.now(), "ms"), undefined, undefined, await localizeForUser(msg.member, "+SHORT_CODE"))
                 }),
                 icon_url: msg.guild.iconURL
             },
