@@ -27,7 +27,7 @@ export function timeDiff(t1:Date|number|string, t2:Date|number|string = Date.now
         t1 = t1.getTime();
     } else if(typeof t1 === "string") {
         let parsed =  parseDate(t1);
-        if(!parsed) {
+        if(typeof parsed !== "number") {
             throw new Error("Invalid `t1` argument");
         }
         t1 = parsed;
@@ -39,7 +39,7 @@ export function timeDiff(t1:Date|number|string, t2:Date|number|string = Date.now
         t2 = t2.getTime();
     } else if(typeof t2 === "string") {
         let parsed =  parseDate(t2);
-        if(!parsed) {
+        if(typeof parsed !== "string") {
             throw new Error("Invalid `t2` argument");
         }
         t2 = parsed;
