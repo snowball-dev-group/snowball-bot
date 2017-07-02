@@ -1,22 +1,21 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
-import { Message } from "discord.js"; 
+import { Message, GuildMember, User } from "discord.js"; 
 import * as Random from "random-js";
 import { getLogger, generateEmbed, EmbedType, sleep } from "./utils/utils";
 import { command, Category, IArgumentInfo } from "./utils/help";
+import { localizeForUser } from "./utils/ez-i18n";
 
-const BALL_NAME = "Шар 8";
-const BALL_THINKING = "Шар думает...";
 const ICONS = {
     THINKING: "https://i.imgur.com/hIuSpIl.png",
     RESPONSE: "https://twemoji.maxcdn.com/72x72/1f3b1.png"
 };
 
 
-@command(Category.Fun, "8ball", "Магический шар 8.", new Map<string, IArgumentInfo>([
-    ["question", {
+@command(Category.Fun, "8ball", "loc:8BALL_META_DEFAULT", new Map<string, IArgumentInfo>([
+    ["loc:8BALL_META_DEFAULT_ARG0", {
         optional: false,
-        description: "Вопрос, на который можно ответить только положительно или отрицательно."
+        description: "loc:8BALL_META_DEFAULT_ARG0_DESC"
     }]
 ]))
 class Ball8 extends Plugin implements IModule {
@@ -25,29 +24,29 @@ class Ball8 extends Plugin implements IModule {
         "affirmative": {
             color: 0x2196F3,
             variants: [
-                "Бесспорно", "Предрешено", "Никаких сомнений",
-                "Определённо да", "Можешь быть уверен в этом"
+                "8BALL_ANSWER_CERTAIN", "8BALL_ANSWER_DECIDEDLY", "8BALL_ANSWER_WODOUBT",
+                "8BALL_ANSWER_DEFINITELY", "8BALL_ANSWER_RELY"
             ]
         },
         "non-committal": {
             color: 0x4CAF50,
             variants: [
-                "Мне кажется — \"да\"", "Вероятнее всего", "Хорошие перспективы",
-                "Знаки говорят — \"да\"", "Да"
+                "8BALL_ANSWER_NC_PROB", "8BALL_ANSWER_NC_MOSTLIKELY", "8BALL_ANSWER_NC_OUTLOOK",
+                "8BALL_ANSWER_NC_SIGNS", "8BALL_ANSWER_NC_YES"
             ]
         },
         "neutral": {
             color: 0xFFC107,
             variants: [
-                "Пока не ясно, попробуй снова", "Спроси позже", "Лучше не рассказывать",
-                "Сейчас нельзя предсказать", "Сконцентрируйся и спроси опять"
+                "8BALL_ANSWER_NEUTRAL_HAZY", "8BALL_ANSWER_NEUTRAL_LATER", "8BALL_ANSWER_NEUTRAL_NOT",
+                "8BALL_ANSWER_NEUTRAL_CANTPREDICT", "8BALL_ANSWER_NEUTRAL_CONCENTRATE"
             ]
         },
         "negative": {
             color: 0xe53935,
             variants: [
-                "Даже не думай", "Мой ответ — \"нет\"", "По моим данным — \"нет\"",
-                "Перспективы не очень хорошие", "Весьма сомнительно"
+                "8BALL_ANSWER_NEGATIVE_DONT", "8BALL_ANSWER_NEGATIVE_MYREPLY", "8BALL_ANSWER_NEGATIVE_SOURCES",
+                "8BALL_ANSWER_NEGATIVE_OUTLOOK", "8BALL_ANSWER_NEGATIVE_DOUBTFUL"
             ]
         }
     };
@@ -68,15 +67,17 @@ class Ball8 extends Plugin implements IModule {
             return;
         }
 
+        let u = msg.member || msg.author;
+
         let random = new Random(Random.engines.mt19937().autoSeed());
 
         let message:Message;
         try {
             message = await msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Empty, BALL_THINKING, {
+                embed: generateEmbed(EmbedType.Empty, await localizeForUser(u, "8BALL_THINKING"), {
                     author: {
                         icon_url: ICONS.THINKING,
-                        name: BALL_NAME
+                        name: await localizeForUser(u, "8BALL_NAME")
                     },
                     clearFooter: true,
                     thumbUrl: ICONS.THINKING
@@ -95,14 +96,16 @@ class Ball8 extends Plugin implements IModule {
 
         try {
             await message.edit("", {
-                embed: generateEmbed(EmbedType.Empty, answer, {
+                embed: generateEmbed(EmbedType.Empty, await localizeForUser(u, answer), {
                     author: {
                         icon_url: ICONS.RESPONSE,
-                        name: BALL_NAME
+                        name: await localizeForUser(u, "8BALL_NAME")
                     },
                     color: this.responses[category].color,
                     footer: {
-                        text: "В ответ " + (msg.member ? msg.member.displayName : msg.author.username)
+                        text: await localizeForUser(u, "8BALL_INREPLY", {
+                            username: u instanceof GuildMember ? u.displayName : (u as User).username
+                        })
                     },
                     thumbUrl: ICONS.RESPONSE
                 })
