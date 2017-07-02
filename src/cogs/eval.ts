@@ -3,7 +3,7 @@ import { Plugin } from "./plugin";
 import { Message } from "discord.js";
 import { Context } from "vm";
 import { isOwner, command, CommandEquality as cmdEquality } from "./checks/commands";
-import { replaceAll, generateEmbed, EmbedType, getLogger } from "./utils/utils";
+import { replaceAll, generateLocalizedEmbed, EmbedType, getLogger } from "./utils/utils";
 import util = require("util");
 import VM = require("vm");
 
@@ -70,7 +70,10 @@ class EvalJS extends Plugin implements IModule {
             let outputMsg:Message;
             try {
                 outputMsg = await message.channel.send("", {
-                    embed: generateEmbed(EmbedType.Information, "Generating output. Please, wait...", {
+                    embed: await generateLocalizedEmbed(EmbedType.Information, message.member, {
+                        custom: true,
+                        string: "Generating output. Please, wait..."
+                    }, {
                         informationTitle: "Busy"
                     })
                 }) as Message;
@@ -87,7 +90,10 @@ class EvalJS extends Plugin implements IModule {
 
             if(depth === 0 || outputInsp.length > 2000) {
                 outputMsg.edit(undefined, {
-                    embed: generateEmbed(EmbedType.Error, "Can't send output, it's longer than 2000 chars", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, message.member, {
+                        custom: true,
+                        string: "Can't send output, it's longer than 2000 chars"
+                    }, {
                         errorTitle: "There's an error"
                     })
                 });
@@ -95,7 +101,10 @@ class EvalJS extends Plugin implements IModule {
             }
 
             outputMsg.edit(undefined, {
-                embed: generateEmbed(EmbedType.OK, "```js\n"+ outputInsp + "\n```", {
+                embed: await generateLocalizedEmbed(EmbedType.OK, message.member, {
+                    custom: true,
+                    string: "```js\n"+ outputInsp + "\n```"
+                }, {
                     okTitle: "Executed",
                     fields: [{
                         inline: false,
@@ -107,7 +116,10 @@ class EvalJS extends Plugin implements IModule {
         } catch (err) {
             let diff = Date.now() - startTime;
             message.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```", {
+                embed: await generateLocalizedEmbed(EmbedType.Error, message.member, {
+                    custom: true,
+                    string: "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```"
+                }, {
                     errorTitle: "Fault.",
                     fields: [{
                         inline: false,
