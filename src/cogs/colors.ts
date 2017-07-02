@@ -1,7 +1,7 @@
 import { IModule } from "./../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, Guild, Role, GuildMember } from "discord.js"; 
-import { getLogger, generateEmbed, EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "./utils/utils";
+import { getLogger, generateLocalizedEmbed, EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "./utils/utils";
 import { getDB } from "./utils/db";
 import { command as cmd, Category, IArgumentInfo } from "./utils/help";
 import { createConfirmationMessage } from "./utils/interactive";
@@ -127,7 +127,7 @@ class Colors extends Plugin implements IModule {
         } catch (err) {
             this.log("err", "Error due running command `", msg.content + "`:", err);
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_RUNNINGFAILED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_RUNNINGFAILED")
             });
         }
     }
@@ -142,7 +142,7 @@ class Colors extends Plugin implements IModule {
 
         if(!colorInfo) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_NOTFOUND"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOTFOUND")
             });
             return;
         }
@@ -153,7 +153,7 @@ class Colors extends Plugin implements IModule {
                 canApply = !!colorInfo.required_role.find(roleId => msg.member.roles.has(roleId));
                 if(!canApply) {
                     msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_NOREQUIREDROLES"))
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOREQUIREDROLES")
                     });
                     return;
                 }
@@ -161,7 +161,7 @@ class Colors extends Plugin implements IModule {
                 canApply = msg.member.roles.has(colorInfo.required_role);
                 if(!canApply) {
                     msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_NOREQUIREDROLE"))
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOREQUIREDROLE")
                     });
                     return;
                 }
@@ -172,19 +172,19 @@ class Colors extends Plugin implements IModule {
         
         if(!colorRole) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_ROLENOTFOUND"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ROLENOTFOUND")
             });
             return;
         }
 
         if(msg.member.roles.has(colorInfo.role)) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_ALREADYSET"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ALREADYSET")
             });
             return;
         }
 
-        let _confirmationEmbed = generateEmbed(EmbedType.Question, await localizeForUser(msg.member, "COLORS_ASSIGN_CONFIRMATION"), {
+        let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_ASSIGN_CONFIRMATION", {
             thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
         });
 
@@ -192,7 +192,7 @@ class Colors extends Plugin implements IModule {
 
         if(!confirmation) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_CANCELED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_CANCELED")
             });
             return;
         }
@@ -209,7 +209,7 @@ class Colors extends Plugin implements IModule {
             await msg.member.removeRoles(toUnassign);
         } catch (err) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_FAILED_UNASSIGN"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_FAILED_UNASSIGN")
             });
             return;
         }
@@ -218,24 +218,24 @@ class Colors extends Plugin implements IModule {
             await msg.member.addRole(colorInfo.role);
         } catch (err) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_FAILED_ASSIGN"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_FAILED_ASSIGN")
             });
             return;
         }
 
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.Tada, await localizeForUser(msg.member, "COLORS_ASSIGN_DONE"))
+            embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, "COLORS_ASSIGN_DONE")
         });
     }
 
     async resetColor(msg:Message) {
-        let _confirmationEmbed = generateEmbed(EmbedType.Question, await localizeForUser(msg.member, "COLORS_ASSIGNDONE"));
+        let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_ASSIGNDONE");
 
         let confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
         if(!confirmation) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_CANCELED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_CANCELED")
             });
             return;
         }
@@ -252,20 +252,20 @@ class Colors extends Plugin implements IModule {
             await msg.member.removeRoles(toUnassign);
         } catch (err) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_RESET_FAILED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_RESET_FAILED")
             });
             return;
         }
 
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.Tada, await localizeForUser(msg.member, "COLORS_RESET_DONE"))
+            embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, "COLORS_RESET_DONE")
         });
     }
 
     async addColor(msg:Message, args:string[]) {
         if(!checkPerms(msg.member)) {
             msg.channel.sendMessage("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_NOPERMISSION"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOPERMISSION")
             });
             return;
         }
@@ -276,7 +276,7 @@ class Colors extends Plugin implements IModule {
         args = args.join(" ").split(",").map(arg => arg.trim());
         if(args.length !== 2 && args.length !== 3) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member, "COLORS_ADD_ARGSERR"))
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_ADD_ARGSERR")
             });
             return;
         }
@@ -285,7 +285,7 @@ class Colors extends Plugin implements IModule {
 
         if(colorfulInfo.rolePrefixes.has(args[0])) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_ADD_ALREADYEXISTS"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ALREADYEXISTS")
             });
             return;
         }
@@ -300,7 +300,7 @@ class Colors extends Plugin implements IModule {
         let colorRole = resolveGuildRole(namedArgs.role, msg.guild);
         if(!colorRole) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_ADD_ROLENOTFOUND"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ROLENOTFOUND")
             });
             return;
         }
@@ -311,7 +311,7 @@ class Colors extends Plugin implements IModule {
                 requiredRoles = resolveGuildRole(namedArgs.required_role, msg.guild);
                 if(!requiredRoles) {
                     msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_ADD_REQUIREDROLENOTFOUND"))
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_REQUIREDROLENOTFOUND")
                     });
                     return;
                 }
@@ -322,9 +322,12 @@ class Colors extends Plugin implements IModule {
                     let resolvedRole = resolveGuildRole(nameToResolve, msg.guild);
                     if(!resolvedRole) {
                         msg.channel.send("", {
-                            embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_ADD_REQUIREDROLENOTFOUND2", {
-                                rolename: nameToResolve
-                            }))
+                            embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                                key: "COLORS_ADD_REQUIREDROLENOTFOUND2",
+                                formatOptions: {
+                                    rolename: nameToResolve
+                                }
+                            })
                         });
                         return;
                     }
@@ -361,7 +364,10 @@ class Colors extends Plugin implements IModule {
 
         _confirmationString += localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_RIGHTSWARNING");
 
-        let _confirmationEmbed = generateEmbed(EmbedType.Question, _confirmationString, {
+        let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+            custom: true,
+            string: _confirmationString
+        }, {
             thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
         });
 
@@ -369,7 +375,7 @@ class Colors extends Plugin implements IModule {
 
         if(!confirmed) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_CANCELED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_CANCELED")
             });
             return;
         }
@@ -386,7 +392,7 @@ class Colors extends Plugin implements IModule {
             });
         } catch (err) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_ADD_ROLEFIX_FAILED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ROLEFIX_FAILED")
             });
             return;
         }
@@ -396,7 +402,7 @@ class Colors extends Plugin implements IModule {
 
         if(colorfulInfo.rolePrefixes.has(namedArgs.name)) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_ADD_ALREADYEXISTS"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ALREADYEXISTS")
             });
             return;
         }
@@ -409,14 +415,14 @@ class Colors extends Plugin implements IModule {
         await this.updateInfo(colorfulInfo);
 
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.Tada, await localizeForUser(msg.member, "COLORS_ADD_DONE"))
+            embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, "COLORS_ADD_DONE")
         });
     }
 
     async renameColor(msg:Message, args:string[]) {
         if(!checkPerms(msg.member)) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_NOPERMISSION"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOPERMISSION")
             });
             return;
         }
@@ -430,7 +436,7 @@ class Colors extends Plugin implements IModule {
         // ["Синий", "blue"]
         if(args.length !== 2) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member, "COLORS_RENAME_ARGSERR"))
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_RENAME_ARGSERR")
             });
             return;
         }
@@ -441,33 +447,42 @@ class Colors extends Plugin implements IModule {
 
         if(!previousColor) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_COLORNOTFOUND", {
-                    colorName: escapeDiscordMarkdown(args[0])
-                }))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                    key: "COLORS_COLORNOTFOUND", 
+                    formatOptions: {
+                        colorName: escapeDiscordMarkdown(args[0])
+                    }
+                })
             });
             return;
         }
 
         if(colorfulInfo.rolePrefixes.has(args[1])) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_RENAME_ALREADYEXISTS", {
-                    colorName: args[1]
-                }))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                    key: "COLORS_RENAME_ALREADYEXISTS",
+                    formatOptions: {
+                        colorName: args[1]
+                    }
+                })
             });
             return;
         }
 
         // 
-        let _confirmationEmbed = generateEmbed(EmbedType.Question, await localizeForUser(msg.member, "COLORS_RENAME_CONFIRMATION", {
-            before: args[0],
-            after: args[1]
-        }));
+        let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+            key: "COLORS_RENAME_CONFIRMATION", 
+            formatOptions: {
+                before: args[0],
+                after: args[1]
+            }
+        });
 
         let confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
         if(!confirmation) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_CANCELED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_CANCELED")
             });
             return;
         }
@@ -478,18 +493,24 @@ class Colors extends Plugin implements IModule {
 
         if(!previousColor) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_RENAME_CONFIRMATIONWAITREMOVED", {
-                    colorName: args[0]
-                }))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                    key: "COLORS_RENAME_CONFIRMATIONWAITREMOVED",
+                    formatOptions: {
+                        colorName: escapeDiscordMarkdown(args[0])
+                    }
+                })
             });
             return;
         }
 
         if(colorfulInfo.rolePrefixes.has(args[1])) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_RENAME_CONFIRMATIONWAITBINDED", {
-                    colorName: args[1]
-                }))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                    key: "COLORS_RENAME_CONFIRMATIONWAITBINDED",
+                    formatOptions: {
+                        colorName: args[1]
+                    }
+                })
             });
             return;
         }
@@ -501,7 +522,7 @@ class Colors extends Plugin implements IModule {
         await this.updateInfo(colorfulInfo);
 
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.OK, await localizeForUser(msg.member, "COLORS_RENAME_DONE"))
+            embed: await generateLocalizedEmbed(EmbedType.OK,msg.member, "COLORS_RENAME_DONE")
         });
     }
 
@@ -518,7 +539,7 @@ class Colors extends Plugin implements IModule {
         // Синий
         if(colorName.length === 0) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member, "COLORS_DELETE_INFO"))
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_DELETE_INFO")
             });
             return;
         }
@@ -529,9 +550,12 @@ class Colors extends Plugin implements IModule {
 
         if(!colorInfo) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_COLORNOTFOUND", {
-                    colorName
-                }))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                    key: "COLORS_COLORNOTFOUND",
+                    formatOptions: {
+                        colorName
+                    }
+                })
             });
             return;
         }
@@ -542,21 +566,21 @@ class Colors extends Plugin implements IModule {
             colorfulInfo.rolePrefixes.delete(colorName);
             await this.updateInfo(colorfulInfo);
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_DELETE_REMOVEDWITHOUTCONFIRMATION"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_DELETE_REMOVEDWITHOUTCONFIRMATION")
             });
             return;
         }
 
         let confirmed = await createConfirmationMessage(
-            generateEmbed(EmbedType.Question, await localizeForUser(msg.member, "COLORS_DELETE_CONFIRMATION"), {
-                    thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
-                }), 
+            await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_DELETE_CONFIRMATION", {
+                thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
+            }), 
             msg
         );
 
         if(!confirmed) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_CANCELED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_CANCELED")
             });
             return;
         }
@@ -568,7 +592,7 @@ class Colors extends Plugin implements IModule {
 
         if(!colorInfo) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_DELETE_ALREADYDELETED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_DELETE_ALREADYDELETED")
             });
             return;
         }
@@ -578,7 +602,7 @@ class Colors extends Plugin implements IModule {
         await this.updateInfo(colorfulInfo);
 
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.OK, await localizeForUser(msg.member, "COLORS_DELETE_DONE"))
+            embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "COLORS_DELETE_DONE")
         });
     }
 
@@ -590,7 +614,7 @@ class Colors extends Plugin implements IModule {
         // Синий
         if(colorName.length === 0) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member, "COLORS_GETINFO_INFO"))
+                embed: await generateLocalizedEmbed(EmbedType.Information,  msg.member, "COLORS_GETINFO_INFO")
             });
             return;
         }
@@ -601,9 +625,12 @@ class Colors extends Plugin implements IModule {
 
         if(!colorInfo) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_GETINFO_NOTFOUND", {
-                    prefix: COLORFUL_PREFIX
-                }))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                    key: "COLORS_GETINFO_NOTFOUND",
+                    formatOptions: {
+                        prefix: COLORFUL_PREFIX
+                    }
+                })
             });
             return;
         }
@@ -611,7 +638,7 @@ class Colors extends Plugin implements IModule {
         let colorRole = msg.guild.roles.get(colorInfo.role);
         if(!colorRole) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_GETINFO_ROLEREMOVED"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_GETINFO_ROLEREMOVED")
             });
             return;
         }
@@ -645,7 +672,7 @@ class Colors extends Plugin implements IModule {
         });
 
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member, "COLORS_GETINFO_DESCRIPTION"), {
+            embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_GETINFO_DESCRIPTION", {
                 thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`,
                 fields
             })
@@ -655,7 +682,7 @@ class Colors extends Plugin implements IModule {
     async performDiag(msg:Message) {
         if(!checkPerms(msg.member)) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member, "COLORS_DIAG_NOTPERMISSIONS"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_DIAG_NOTPERMISSIONS")
             });
             return;
         }
@@ -664,7 +691,7 @@ class Colors extends Plugin implements IModule {
 
         if(colorfulInfo.rolePrefixes.size === 0) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member, "COLORS_DIAG_NOCOLORS"))
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_DIAG_NOCOLORS")
             });
             return;
         }
@@ -736,7 +763,7 @@ class Colors extends Plugin implements IModule {
         
         if(colorfulInfo.rolePrefixes.size === 0) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member, "COLORS_LIST_NOCOLORS"))
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_LIST_NOCOLORS")
             });
             return;
         }
@@ -804,9 +831,12 @@ class Colors extends Plugin implements IModule {
         // }
 
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member, "COLORS_LIST_DESCRIPTION", {
-                prefix: COLORFUL_PREFIX
-            }), {
+            embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                key: "COLORS_LIST_DESCRIPTION",
+                formatOptions: {
+                    prefix: COLORFUL_PREFIX
+                }
+            }, {
                 fields
             })
         });
