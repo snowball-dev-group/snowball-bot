@@ -1,6 +1,5 @@
 import * as createLogger from "loggy";
 import { Guild } from "discord.js";
-import { identify, localizeForUser } from "./ez-i18n";
 
 export function stringifyError(err, filter = null, space = 2) {
     let plainObject = {};
@@ -138,69 +137,6 @@ export interface IEmbed {
         url?:string;
     };
     fields?:IEmbedOptionsField[];
-}
-
-interface ILocalizedEmbedString {
-    key:string;
-    formatOptions:any;
-}
-
-interface ICustomString {
-    custom:boolean;
-    string:string;
-}
-
-function isCustomString(object: any): object is ICustomString {
-    return "custom" in object;
-}
-
-export async function generateLocalizedEmbed(type:EmbedType, user:identify, descriptionKey:string|ILocalizedEmbedString|ICustomString, options:IEmbedOptions = {}) {
-    // EMBED_ERROR
-    // EMBED_INFORMATION
-    // EMBED_SUCCESS
-    // EMBED_TADA
-    // EMBED_PROGRESS
-    // EMBED_QUESTION
-    switch(type) {
-        case EmbedType.Error: {
-            if(options.errorTitle) { break; }
-            options.errorTitle = await localizeForUser(user, "EMBED_ERROR");
-        } break;
-        case EmbedType.Information: {
-            if(options.informationTitle) { break; }
-            options.informationTitle = await localizeForUser(user, "EMBED_INFORMATION");
-        } break;
-        case EmbedType.OK: {
-            if(options.okTitle) { break; }
-            options.okTitle = await localizeForUser(user, "EMBED_SUCCESS");
-        } break;
-        case EmbedType.Tada: {
-            if(options.tadaTitle) { break; }
-            options.tadaTitle = await localizeForUser(user, "EMBED_TADA");
-        } break;
-        case EmbedType.Progress: {
-            if(options.progressTitle) { break; }
-            options.progressTitle = await localizeForUser(user, "EMBED_PROGRESS");
-        } break;
-        case EmbedType.Question: {
-            if(options.questionTitle) { break; }
-            options.questionTitle = await localizeForUser(user, "EMBED_QUESTION");
-        } break;
-    }
-    if(typeof descriptionKey === "string" && descriptionKey.startsWith("custom:")) {
-        descriptionKey = descriptionKey.slice("custom:".length);
-        return generateEmbed(type, descriptionKey, options);
-    } else {
-        if(typeof descriptionKey === "string") {
-            return generateEmbed(type, await localizeForUser(user, descriptionKey), options);
-        } else {
-            if(isCustomString(descriptionKey)) {
-                return generateEmbed(type, descriptionKey.string, options);
-            } else {
-                return generateEmbed(type, await localizeForUser(user, descriptionKey.key, descriptionKey.formatOptions), options);
-            }
-        }
-    }
 }
 
 export function generateEmbed(type:EmbedType, description:string, options?:IEmbedOptions) {
