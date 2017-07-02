@@ -4,7 +4,7 @@ import { Message } from "discord.js";
 import { command, Category, IArgumentInfo } from "./utils/help";
 import { localizeForUser, getPrefsNames, forceUserLanguageUpdate } from "./utils/ez-i18n";
 import { startsOrEqual, slice } from "./utils/text";
-import { generateEmbed, EmbedType } from "./utils/utils";
+import { generateLocalizedEmbed, EmbedType } from "./utils/utils";
 import { setPreferenceValue as setUserPref } from "./utils/userPrefs";
 
 const BASE_PREFIX = "!sb_lang";
@@ -44,33 +44,40 @@ class HelpfulCommand extends Plugin implements IModule {
 
     async getCurrentLang(msg:Message) {
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member || msg.author, "LANGUAGE_CURRENTLANG", {
-                lang: `${await localizeForUser(msg.member, "+NAME")} (${await localizeForUser(msg.member, "+COUNTRY")})`,
-                coverage: await localizeForUser(msg.member, "+COVERAGE")
-            }))
+            embed: await generateLocalizedEmbed(EmbedType.Information, msg.member || msg.author, {
+                key: "LANGUAGE_CURRENTLANG",
+                formatOptions: {
+                    lang: `${await localizeForUser(msg.member, "+NAME")} (${await localizeForUser(msg.member, "+COUNTRY")})`,
+                    coverage: await localizeForUser(msg.member, "+COVERAGE")
+                }
+            })
         });
     }
 
     async switchLanguage(msg:Message) {
+        let u = msg.member || msg.author;
         if(msg.content === CMD.SWITCH) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, await localizeForUser(msg.member || msg.author, "LANGUAGE_SWITCH_USAGE"))
+                embed: await generateLocalizedEmbed(EmbedType.Information, u, "LANGUAGE_SWITCH_USAGE")
             });
             return;
         }
         let lang = msg.content.slice(CMD.SWITCH.length).trim();
         if(!localizer.languageExists(lang)) {
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Error, await localizeForUser(msg.member || msg.author, "LANGUAGE_SWITCH_ERRLANGNOTFOUND"))
+                embed: await generateLocalizedEmbed(EmbedType.Error, u, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
             });
             return;
         }
         await setUserPref(msg.member, this.prefs.user, lang);
         await forceUserLanguageUpdate(msg.member);
         msg.channel.send("", {
-            embed: generateEmbed(EmbedType.OK, await localizeForUser(msg.member, "LANGUAGE_SWITCH_DONE", {
-                lang: `${await localizeForUser(msg.member, "+NAME")} (${await localizeForUser(msg.member, "+COUNTRY")})`
-            }))
+            embed: await generateLocalizedEmbed(EmbedType.OK, u, {
+                key: "LANGUAGE_SWITCH_DONE",
+                formatOptions: {
+                    lang: `${await localizeForUser(msg.member, "+NAME")} (${await localizeForUser(msg.member, "+COUNTRY")})`
+                }
+            })
         });
     }
 
