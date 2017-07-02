@@ -2,7 +2,7 @@ import { GuildMember, User, Guild } from "discord.js";
 import { getPreferenceValue as getUserPreferenceValue, setPreferenceValue as setUserPreferenceValue } from "./userPrefs";
 import { getPreferenceValue as getGuildPreferenceValue, setPreferenceValue as setGuildPreferenceValue } from "./guildPrefs";
 
-type ind = User | GuildMember;
+export type identify = User | GuildMember;
 const languagePref = ":language";
 const guildLangPref = ":language";
 const guildEnforcePref = ":enforce_lang";
@@ -23,7 +23,7 @@ export function getPrefsNames() {
     };
 }
 
-export async function localizeForUser(u:ind, str:string, formatOpts?:any) {
+export async function getUserLanguage(u:identify) {
     let lang:string|undefined = undefined;
     if(u instanceof GuildMember) {
         // let's check if guild enforces language
@@ -50,6 +50,11 @@ export async function localizeForUser(u:ind, str:string, formatOpts?:any) {
         // no guild / lang not set / guild not enforces language
         lang = uCache.get(u.id) || await forceUserLanguageUpdate(u);
     }
+    return lang;
+}
+
+export async function localizeForUser(u:identify, str:string, formatOpts?:any) {
+    let lang = await getUserLanguage(u);
     return formatOpts ? localizer.getFormattedString(lang, str, formatOpts) : localizer.getString(lang, str);
 }
 
@@ -66,7 +71,7 @@ export async function forceGuildEnforceUpdate(guild:Guild) {
     }
 }
 
-export async function forceUserLanguageUpdate(u:ind) {
+export async function forceUserLanguageUpdate(u:identify) {
     let preferableLang:string|undefined = await getUserPreferenceValue(u, languagePref);
     if(preferableLang === undefined) {
         if(u instanceof GuildMember) {
