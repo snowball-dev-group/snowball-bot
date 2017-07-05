@@ -9,7 +9,14 @@
             "outFiles": [],
             "protocol": "inspector",
             "sourceMaps": true,
-            "preLaunchTask": "tsc"
+            "preLaunchTask": "runBuildScript",
+            "env": {
+
+            },
+            "runtimeArgs": [
+                "--nolazy",
+                "--icu-data-dir=./node_modules/full-icu"
+            ]
         },
         {
             "type": "node",

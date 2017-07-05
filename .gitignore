@@ -8,3 +8,6 @@ yarn*
 
 # Private cogs
 src/cogs/private_cogs
+
+# TSCACHE
+.tscache

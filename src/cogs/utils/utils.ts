@@ -1,5 +1,6 @@
 import * as createLogger from "loggy";
 import { Guild } from "discord.js";
+import { replaceAll } from "./text";
 
 export function stringifyError(err, filter = null, space = 2) {
     let plainObject = {};
@@ -9,10 +10,6 @@ export function stringifyError(err, filter = null, space = 2) {
     return JSON.stringify(plainObject, filter, space);
 }
 
-export function escapeRegExp(str:string) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
-}
-
 export function colorNumberToHex(color) {
     let hex = color.toString(16);
     while (hex.length < 6) {
@@ -20,11 +17,6 @@ export function colorNumberToHex(color) {
     };
     return `${hex}`.toUpperCase();
 }
-
-export function replaceAll(str:string, search:string, replacement:string) {
-    search = escapeRegExp(search);
-    return str.replace(new RegExp(search, "g"), replacement);
-};
 
 export function objectToMap<T>(obj) {
     let map = new Map<string, T>();

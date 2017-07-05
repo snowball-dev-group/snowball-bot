@@ -5,7 +5,7 @@ cache:
     - node_modules
 
 before_script:
-  - yarn global add typescript tslint
+  - yarn global add typescript tslint grunt-cli
   - yarn install
 
 stages:
@@ -20,11 +20,7 @@ linting:
 compiling:
   stage: build
   script:
-    - tsc
-    - mkdir out/languages
-    - cp src/languages/*.json out/languages/
-    - cp src/*.sh out/
-    - cp package.json out/
+    - grunt
   artifacts:
     untracked: true
     paths:

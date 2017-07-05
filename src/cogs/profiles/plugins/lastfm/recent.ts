@@ -1,9 +1,10 @@
 import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { GuildMember } from "discord.js";
-import { IEmbedOptionsField, escapeDiscordMarkdown, replaceAll, getLogger } from "../../../utils/utils";
+import { IEmbedOptionsField, escapeDiscordMarkdown, getLogger } from "../../../utils/utils";
 import { getOrFetchRecents } from "./lastfm";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
 import { localizeForUser } from "../../../utils/ez-i18n";
+import { replaceAll } from "../../../utils/text";
 
 const LOG = getLogger("LastFMPlugin");
 

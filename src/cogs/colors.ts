@@ -229,7 +229,7 @@ class Colors extends Plugin implements IModule {
     }
 
     async resetColor(msg:Message) {
-        let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_ASSIGNDONE");
+        let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_RESET_CONFIRMATION");
 
         let confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
