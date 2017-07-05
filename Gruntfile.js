@@ -15,6 +15,12 @@ module.exports = function(grunt) {
                     dest: "out/languages/",
                     flatten: true,
                     filter: 'isFile'
+                }, {
+                    expand: true,
+                    src: ["src/run.sh", "src/run.bat"],
+                    dest: "out/",
+                    flatten: true,
+                    filter: "isFile"
                 }]
             }
         }
