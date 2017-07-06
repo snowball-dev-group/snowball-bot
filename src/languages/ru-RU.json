@@ -300,7 +300,7 @@
     "GUILDS_MEMBERSCONTROL_KICKEDADMITEM": "Администратор {username} был выкинут из гильдии",
     "GUILDS_MEMBERSCONTROL_SENT": "Список участников гильдии отправлен в ЛС",
     "GUILDS_MEMBERSCONTROL_NOMENTIONS": "Вы не упомянули ни одного пользователя",
-    "LANGUAGE_SWITCH_USAGE": "Правильное использование: `{prefix} [код языка]`. Коды языков можно поулчить, набрав `{codesCmd}`",
+    "LANGUAGE_SWITCH_USAGE": "Правильное использование: `{prefix} [код языка]`. Коды языков можно получить, набрав `{codesCmd}`",
     "LANGUAGE_SWITCH_ERRLANGNOTFOUND": "Такой язык не найден",
     "LANGUAGE_META_DEFAULT": "Узнать свой текущий язык",
     "LANGUAGE_META_SWITCH": "Сменить язык",
