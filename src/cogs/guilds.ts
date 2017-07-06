@@ -1488,7 +1488,7 @@ class Guilds extends Plugin implements IModule {
                 return;
             }
         }
-        let dbResp = await this.getGuilds(msg.guild, 10 - (10 * list), 10);
+        let dbResp = await this.getGuilds(msg.guild, (10 * list) - 10, 10);
         if(dbResp.rows.length === 0) {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_LIST_EMPTYPAGE")
