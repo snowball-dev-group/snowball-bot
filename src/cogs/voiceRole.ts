@@ -40,10 +40,10 @@ class VoiceRole extends Plugin implements IModule {
             "voiceStateUpdate": (oldMember:GuildMember, newMember:GuildMember) => this.vcUpdated(oldMember, newMember)
         }, true);
         this.log("info", "Loading 'VoiceRole' plugin");
-        this.initialize();
+        // this.initialize();
     }
 
-    async initialize() {
+    async init() {
         this.log("info", "Asking for DB...");
         // stage one: DB initialization
         try {
@@ -620,7 +620,7 @@ class VoiceRole extends Plugin implements IModule {
 
             progMsg.edit("", {
                 embed: generateEmbed(EmbedType.OK, "Новая специальная 'голосовая роль' установлена")
-            })
+            });
             msg.react("👍");
 
             return;
@@ -637,7 +637,7 @@ class VoiceRole extends Plugin implements IModule {
             if(!resolvedChannel) {
                 msg.channel.send("", {
                     embed: generateEmbed(EmbedType.Error, "Такой канал не найден. Если Вы уверены, что он существует, то используйте его ID или особую часть имени")
-                })
+                });
                 return;
             }
 
