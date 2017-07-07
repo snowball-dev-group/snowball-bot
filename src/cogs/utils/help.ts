@@ -74,13 +74,20 @@ export async function getHelp(msg:Message) {
             if(target.arguments) {
                 for (let [argName, argInfo] of target.arguments) {
                     if(argName.startsWith("loc:")) {
-                        argName = await localizeForUser(msg.member, argName.slice("loc:".length));
+                        argName = await localizeForUser(user, argName.slice("loc:".length));
                     }
                     if(argInfo.specialCheck && !argInfo.specialCheck(msg)) {
                         continue;
                     }
                     if(argInfo.values) {
-                        let vals = argInfo.values.join("/");
+                        let fixedValues:string[] = [];
+                        for(let val of argInfo.values) {
+                            if(val.startsWith("loc:")) {
+                                val = await localizeForUser(user, val.slice("loc:".length));
+                            }
+                            fixedValues.push(val);
+                        }
+                        let vals = fixedValues.join("/");
                         str += argInfo.optional ? ` [${vals}]` : ` <${vals}>`;
                     } else {
                         str += argInfo.optional ? ` [${argName}]` : ` <${argName}>`;
@@ -95,14 +102,21 @@ export async function getHelp(msg:Message) {
             if(target.arguments) {
                 for(let [argName, argInfo] of target.arguments) {
                     if(argName.startsWith("loc:")) {
-                        argName = await localizeForUser(msg.member, argName.slice("loc:".length));
+                        argName = await localizeForUser(user, argName.slice("loc:".length));
                     }
                     if(argInfo.specialCheck && !argInfo.specialCheck(msg)) {
                         continue;
                     }
                     str += "  - ";
                     if(argInfo.values) {
-                        let vals = argInfo.values.join("/");
+                        let fixedValues:string[] = [];
+                        for(let val of argInfo.values) {
+                            if(val.startsWith("loc:")) {
+                                val = await localizeForUser(user, val.slice("loc:".length));
+                            }
+                            fixedValues.push(val);
+                        }
+                        let vals = fixedValues.join("/");
                         str += argInfo.optional ? `[${vals}]` : `<${vals}>`;
                     } else {
                         str += argInfo.optional ? `[${argName}]` : `<${argName}>`;
