@@ -10,6 +10,8 @@ let db = getDB(),
     complete = false,
     retry = true;
 
+let cache = new Map<string, IPremiumRow|"nope">();
+
 export interface IPremiumRow {
     id:string;
     subscribed_at:Date;
@@ -87,6 +89,7 @@ export async function deletePremium(person:GuildMember|User) : Promise<boolean> 
 
     try {
         await db(PREMIUM_TABLE).where(toRaw(currentPremium)).delete();
+        cache.set(person.id, "nope");
     } catch (err) {
         LOG("err", logPrefix, "DB calling failed", err);
         throw err;
@@ -98,9 +101,15 @@ export async function deletePremium(person:GuildMember|User) : Promise<boolean> 
 export async function checkPremium(person:GuildMember|User, internalCallSign?:string) : Promise<IPremiumRow|undefined> {
     if(!(await init())) { throw new Error("Initialization failed"); }
 
-    let premiumRow = await db(PREMIUM_TABLE).where({
-        "id": person.id
-    }).first() as IPremiumRawRow;
+    let cached = cache.get(person.id);
+    let premiumRow:IPremiumRawRow|undefined = undefined;
+    if(cached !== "nope" && cached !== undefined) {
+        premiumRow = toRaw(cached);
+    } else {
+        premiumRow = await db(PREMIUM_TABLE).where({
+            "id": person.id
+        }).first() as IPremiumRawRow;
+    }
     
     if(!premiumRow) { return; }
     else if(premiumRow) {
@@ -109,16 +118,24 @@ export async function checkPremium(person:GuildMember|User, internalCallSign?:st
             throw new EvalError("You cannot call this function with `internalCallSign`");
         } else if(!internalCallSign) {
             if(premiumRow.due_to < Date.now()) {
-                // await deletePremium(person);
+                await deletePremium(person);
                 return;
             }
         }
     }
 
+    let standard = toStandard(premiumRow);
+
+    cache.set(person.id, standard);
+
+    return standard;
+}
+
+function toStandard(row:IPremiumRawRow) : IPremiumRow {
     return {
-        due_to: new Date(premiumRow.due_to),
-        subscribed_at: new Date(premiumRow.subscribed_at),
-        id: premiumRow.id
+        due_to: new Date(row.due_to),
+        subscribed_at: new Date(row.subscribed_at),
+        id: row.id
     };
 }
 
@@ -162,11 +179,13 @@ export async function givePremium(person:GuildMember|User, dueTo:Date, override 
         let nDate = currentPremium.due_to.getTime() + diff;
         LOG("info", logPrefix, "Adding new premium subscription");
         try {
-            await db(PREMIUM_TABLE).where(toRaw(currentPremium)).update({
+            let raw:IPremiumRawRow = {
                 id: person.id,
                 subscribed_at: Date.now(),
                 due_to: nDate
-            } as IPremiumRawRow);
+            };
+            await db(PREMIUM_TABLE).where(toRaw(currentPremium)).update(raw);
+            cache.set(person.id, toStandard(raw));
         } catch (err) {
             LOG("err", logPrefix, "Updating failed", err);
             throw err;
@@ -175,11 +194,13 @@ export async function givePremium(person:GuildMember|User, dueTo:Date, override 
     }
 
     try {
-        await db(PREMIUM_TABLE).insert({
+        let raw:IPremiumRawRow = {
             id: person.id,
             subscribed_at: Date.now(),
             due_to: dueTo.getTime()
-        } as IPremiumRawRow);
+        };
+        await db(PREMIUM_TABLE).insert(raw);
+        cache.set(person.id, toStandard(raw));
     } catch (err) {
         LOG("err", logPrefix, "Inserting failed", err);
         throw err;
