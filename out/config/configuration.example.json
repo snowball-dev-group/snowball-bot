@@ -63,7 +63,7 @@
         "path": "guilds"
     }, {
         "name": "verificationhandler",
-        "path": "verfiedUtilHandler"
+        "path": "verifiedUtilHandler"
     }, {
         "name": "fsthings",
         "path": "fs_things",
