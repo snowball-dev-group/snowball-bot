@@ -9,7 +9,7 @@ const ACCEPTED_REGIONS = ["eu", "kr", "us"];
 const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
 const LOG = getLogger("OWRatingPlugin");
 
-export class RatingProfilePlugin implements IProfilesPlugin {
+export class OWStatsProfilePlugin implements IProfilesPlugin {
 
     async getSetupArgs(caller:GuildMember) {
         return await localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
@@ -133,6 +133,12 @@ export class RatingProfilePlugin implements IProfilesPlugin {
 
         str += `**${(100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.quickplay.overall_stats.level}LVL**\n`;
         
+        let atStrs = {
+            win: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_WIN"),
+            loss: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_LOSS"),
+            tie: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_TIE")
+        };
+
         str += `<:competitive:322781963943673866> __**${tStrs.competitive}**__\n`;
         if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
             str += this.getTierEmoji(null);
@@ -143,11 +149,7 @@ export class RatingProfilePlugin implements IProfilesPlugin {
             str += (await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
                 games: compOveral.games
             })) + "\n";
-            let atStrs = {
-                win: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_WIN"),
-                loss: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_LOSS"),
-                tie: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_TIE")
-            };
+
             str += ` ${atStrs.win}: ${compOveral.wins}.\n ${atStrs.loss}: ${compOveral.losses}.\n ${atStrs.tie}: ${compOveral.ties}.\n`;
             str += `  (`;
             str += (await localizeForUser(caller, "OWPROFILEPLUGIN_WINRATE", {
@@ -161,12 +163,21 @@ export class RatingProfilePlugin implements IProfilesPlugin {
             str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
         } else {
             let qpOveral = profile.stats.quickplay.overall_stats;
-            str += (await localizeForUser(caller, "OWPROFILEPLUGIN_HOURSPLAYED", {
-                hours: profile.stats.quickplay.game_stats.time_played
+            str += (await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
+                games: qpOveral.games
             })) + "\n";
-            str += await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
-                gamesWon: qpOveral.wins
-            });
+
+            str += ` ${atStrs.win}: ${qpOveral.wins}.\n ${atStrs.loss}: ${qpOveral.losses}.\n ${atStrs.tie}: ${qpOveral.ties}.\n`;
+            str += `  (`;
+            str += (await localizeForUser(caller, "OWPROFILEPLUGIN_WINRATE", {
+                winrate: qpOveral.win_rate
+            })) + ")";
+            // str += (await localizeForUser(caller, "OWPROFILEPLUGIN_HOURSPLAYED", {
+            //     hours: profile.stats.quickplay.game_stats.time_played
+            // })) + "\n";
+            // str += await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
+            //     gamesWon: qpOveral.wins
+            // });
         }
 
         return {
@@ -192,4 +203,4 @@ export class RatingProfilePlugin implements IProfilesPlugin {
     async unload() { return true; }
 }
 
-module.exports = RatingProfilePlugin;
+module.exports = OWStatsProfilePlugin;
