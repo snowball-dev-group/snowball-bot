@@ -12,10 +12,9 @@ class VerifiedUtilHandler extends Plugin implements IModule {
             "guildMemberAdd": guildMemberAddEvent,
             "guildMemberRemove": guildMemberRemoveEvent
         }, true);
-        this.initnHandle();
     }
 
-    async initnHandle() {
+    async init() {
         if(await init()) {
             this.log("ok", "Initialization done, handling events");
             this.handleEvents();
