@@ -90,7 +90,7 @@ class Colors extends Plugin implements IModule {
         super({
             "message": (msg:Message) => this.onMessage(msg)
         }, true);
-        this.init();
+        // this.init();
     }
 
     // ===========================================
