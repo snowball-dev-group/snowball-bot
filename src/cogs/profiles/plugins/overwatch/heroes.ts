@@ -11,7 +11,7 @@ const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
 const ACCEPTED_SORTS = ["playtime", "winrate"];
 const LOG = getLogger("OWRatingPlugin");
 
-type Hero = "reinhardt"|"tracer"|"zenyatta"|"junkrat"|"mccree"|"winston"|"orisa"|"hanzo"|"pharah"|"roadhog"|"zarya"|"torbjorn"|"mercy"|"mei"|"ana"|"widowmaker"|"genji"|"reaper"|"soldier76"|"bastion"|"symmetra"|"dva"|"sombra"|"lucio";
+type Hero = "reinhardt"|"tracer"|"zenyatta"|"junkrat"|"mccree"|"winston"|"orisa"|"hanzo"|"pharah"|"roadhog"|"zarya"|"torbjorn"|"mercy"|"mei"|"ana"|"widowmaker"|"genji"|"reaper"|"soldier76"|"bastion"|"symmetra"|"dva"|"sombra"|"lucio"|"doomfist";
 type Sorts = "playtime"|"winrate";
 type HeroStats = Array<{
         hero: Hero,
@@ -314,6 +314,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
             case "genji": return "<:genji:322800138550771713>";
             case "dva": return "<:dva:322800138391257099>";
             case "bastion": return "<:bast:322800138630201355>";
+            case "doomfist": return "<:doomfist:332697596810493963>";
             default: return "?";
         }
     }
