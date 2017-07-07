@@ -14,6 +14,7 @@ class Ping extends Plugin implements IModule {
             "message": (msg:Message) => this.onMessage(msg)
         });
     }
+
     async onMessage(msg:Message) {
         if(msg.content === "!ping") {
             await msg.react("🏃");
