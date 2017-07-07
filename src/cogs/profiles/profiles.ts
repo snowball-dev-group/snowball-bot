@@ -74,13 +74,14 @@ class Profiles extends Plugin implements IModule {
     plugLoader: ModuleLoader;
     log = getLogger("ProfilesJS");
     db = getDB();
-    
-    constructor(options:string) {
+    options:any;
+
+    constructor(options:any) {
         super({
             "message": (msg:Message) => this.onMessage(msg),
             "presenceUpdate": (oldMember:GuildMember, newMember:GuildMember) => this.onPresenseUpdate(oldMember, newMember)
         }, true);
-        this.init(options);
+        this.options = options;
     }
 
     // =====================================
@@ -690,7 +691,8 @@ class Profiles extends Plugin implements IModule {
     // PLUGIN SCRIPTS
     // =====================================
 
-    async init(options:any) {
+    async init() {
+        let options = this.options;
         try {
             this.db = getDB();
         } catch (err) {
@@ -735,9 +737,9 @@ class Profiles extends Plugin implements IModule {
      */
     _convertToModulesMap(obj:IModuleInfo[]) {
         let modulesMap = new Map();
-        obj.forEach((moduleInfo) => {
+        for(let moduleInfo of obj) {
             modulesMap.set(moduleInfo.name, moduleInfo);
-        });
+        }
         return modulesMap;
     }
 
