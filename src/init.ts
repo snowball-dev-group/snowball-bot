@@ -3,7 +3,7 @@ import { SnowballBot, IBotConfig } from "./types/SnowballBot";
 import { join as pathJoin } from "path";
 
 const coreInfo = {
-    "version": "0.9.93-rc5"
+    "version": "0.9.993-prerelease"
 };
 
 (async () => {
