@@ -114,7 +114,7 @@ interface ICustomString {
 }
 
 function isCustomString(objCt: any): objCt is ICustomString {
-    return objCt["custom"] !== undefined;
+    return "custom" in objCt && objCt["custom"] === true && "string" in objCt && !("formattingOptions" in objCt) && !("key" in objCt);
 }
 
 export async function generateLocalizedEmbed(type:EmbedType, user:identify, descriptionKey:string|ILocalizedEmbedString|ICustomString, options:IEmbedOptions = {}) {
