@@ -70,22 +70,22 @@ export class Module extends EventEmitter {
      * Function to load module
      * @returns {Promise} Promise which'll be resolved once module is loaded
      */
-    load() {
-        return new Promise((res, rej) => {
-            try {
-                let mod = require(this.info.path);
-                this.base = new mod(this.info.options);
-                this.loaded = true;
-                this.emit("loaded", this.base);
-                res(this.base);
-            } catch (err) {
-                this.emit("error", {
-                    state: "load#initialize",
-                    error: err
-                });
-                rej(err);
+    async load() {
+        try {
+            let mod = require(this.info.path);
+            this.base = new mod(this.info.options);
+            if(this.base && this.base["init"] && typeof this.base["init"] === "function") {
+                await this.base["init"]();
             }
-        });
+            this.loaded = true;
+            this.emit("loaded", this.base);
+        } catch (err) {
+            this.emit("error", {
+                state: "load#initialize",
+                error: err
+            });
+            throw err;
+        }
     }
 
     /**
@@ -95,39 +95,36 @@ export class Module extends EventEmitter {
      * @returns {Promise} Promise which'll be resolved once module is unloaded or destroyed
      */
     unload(reason:any="unload") {
-        return new Promise((res, rej) => {
-            if(!this.loaded) { return rej(new Error("Module not loaded")); };
-            if(!this.base) {
-                this.emit("error", {
-                    state: "unload",
-                    error: new Error("Module was already unloaded, base variable was undefined")
-                });
-                return res();
-            }
-            if(typeof this.base.unload !== "function") {
-                try {
-                    for (const key of Object.keys(this.base)) {
-                        this.base[key] = undefined;
-                        delete this.base[key];
-                    }
-                    this.base = undefined;
-                    this.emit("unloaded");
-                    this.emit("destroyed");
-                } catch (err) {
-                    this.emit("error", {
-                        state: "unload#destoy",
-                        error: err
-                    });
+        if(!this.loaded) { throw new Error("Module not loaded"); };
+        if(!this.base) {
+            this.emit("error", {
+                state: "unload",
+                error: new Error("Module was already unloaded, base variable was undefined")
+            });
+            return;
+        } else if(typeof this.base.unload !== "function") {
+            try {
+                for (const key of Object.keys(this.base)) {
+                    this.base[key] = undefined;
+                    delete this.base[key];
                 }
-            } else {
-                this.base.unload().then((unloaded) => {
-                    if(unloaded) {
-                        this.emit("unloaded");
-                        this.base = undefined;
-                    }
+                this.base = undefined;
+                this.emit("unloaded");
+                this.emit("destroyed");
+            } catch (err) {
+                this.emit("error", {
+                    state: "unload#destoy",
+                    error: err
                 });
             }
-        });
+        } else {
+            this.base.unload().then((unloaded) => {
+                if(unloaded) {
+                    this.emit("unloaded");
+                    this.base = undefined;
+                }
+            });
+        }
     }
 }
 
