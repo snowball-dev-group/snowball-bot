@@ -167,7 +167,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
                 games: qpOveral.games
             })) + "\n";
 
-            str += ` ${atStrs.win}: ${qpOveral.wins}.\n ${atStrs.loss}: ${qpOveral.losses}.\n ${atStrs.tie}: ${qpOveral.ties}.\n`;
+            str += ` ${atStrs.win}: ${qpOveral.wins}.\n ${atStrs.loss}: ${qpOveral.losses}.\n`;
             str += `  (`;
             str += (await localizeForUser(caller, "OWPROFILEPLUGIN_WINRATE", {
                 winrate: qpOveral.win_rate
