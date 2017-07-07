@@ -214,7 +214,7 @@ class Guilds extends Plugin implements IModule {
             "message": (msg: Message) => this.onMessage(msg)
         }, true);
 
-        this.init();
+        // this.init();
     }
 
     // ==============================
