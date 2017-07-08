@@ -457,7 +457,7 @@
     "PREMIUMCTL_META_RENEW": "Продлевает подписку",
     "PREMIUMCTL_META_RENEW_ARG0_DESC": "упоминание человека, кому нужно продлить подписку",
     "PREMIUMCTL_META_RENEW_ARG1": ", срок продления",
-    "PREMIUMCTL_META_RENEW_ARG1_DESC": "время, на которое подписка будет продлена подписка",
+    "PREMIUMCTL_META_RENEW_ARG1_DESC": "время, на которое подписка будет продлена",
     "PREMIUMCTL_META_DELETE": "Обнуляет подписку",
     "PREMIUMCTL_META_DELETE_ARG0_DESC": "упоминание человека, чью подписку требуется обнулить",
     "PREMIUMCTL_META_RESYNC": "Запускает синхронизацию Premium ролей на всех серверах",
