@@ -2,9 +2,9 @@ import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, GuildMember } from "discord.js";
 import { command, Category, IArgumentInfo } from "./utils/help";
-import { localizeForUser, getPrefsNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed } from "./utils/ez-i18n";
+import { localizeForUser, getPrefsNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed, getUserLanguage } from "./utils/ez-i18n";
 import { startsOrEqual, slice } from "./utils/text";
-import { EmbedType } from "./utils/utils";
+import { EmbedType, getLogger } from "./utils/utils";
 import { setPreferenceValue as setUserPref } from "./utils/userPrefs";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref } from "./utils/guildPrefs";
 
@@ -25,11 +25,39 @@ const CMD = {
 ]))
 class SetLanguageCommand extends Plugin implements IModule {
     prefs = getPrefsNames();
+    log = getLogger("SetLanguage");
+    noLazy = false;
 
-    constructor() {
+    constructor(options) {
         super({
             "message": (msg:Message) => this.onMessage(msg)
         });
+        if(options) {
+            this.noLazy = !!options["no_lazy"];
+        }
+    }
+
+    async init() {
+        if(!this.noLazy) {
+            this.log("warn", "Lazy loading enabled, not going to do anything");
+            return;
+        }
+        this.log("info", "Syncing...");
+        for(let g of discordBot.guilds.values()) {
+            this.log("info", `Updating language for guild "${g.name}"`);
+            await forceGuildLanguageUpdate(g);
+            this.log("info", `Updating enforcing status for guild "${g.name}"`);
+            await forceGuildEnforceUpdate(g);
+            this.log("info", `-- Started language update for ${g.members.size} members`);
+            for(let m of g.members.values()) {
+                await getUserLanguage(m);
+            }
+        }
+        this.log("info", `Started language update for ${discordBot.users.size} users`);
+        for(let m of discordBot.users.values()) {
+            await forceUserLanguageUpdate(m);
+        }
+        this.log("ok", "Sync done, poor DB");
     }
 
     async onMessage(msg:Message) {
