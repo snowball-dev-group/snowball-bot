@@ -605,11 +605,11 @@ class PremiumControl extends Plugin implements IModule {
     // MISC STUFF
     // ================================
 
-    async performGuildSync(guild:Guild) {
-        this.log("info", `Started role sync on guild "${guild.name}"`);
+    async performGuildSync(guild:Guild, noLog = false) {
+        if(!noLog) { this.log("info", `Started role sync on guild "${guild.name}"`); }
         let guildPremiumRole = await getGuildPref(guild, "premiumctl:role");
         if(!guildPremiumRole) {
-            this.log("warn", "Guild doesn't has premium role");
+            if(!noLog) { this.log("warn", "Guild doesn't has premium role"); }
             return {
                 done: false,
                 err: "noPremiumRole"
@@ -641,25 +641,25 @@ class PremiumControl extends Plugin implements IModule {
 
         let donePerc = (done / guild.members.size) * 100;
         if(donePerc < 50) {
-            this.log("warn", "Errors due syncing for more than 50% members of guild");
+            if(!noLog) { this.log("warn", "Errors due syncing for more than 50% members of guild"); }
             return {
                 done: false,
                 err: "moreThan50PercFailed"
             };
         }
 
-        this.log("ok", "Sync complete without errors");
+        if(!noLog) { this.log("ok", "Sync complete without errors"); }
         return {
             done: true,
             err: undefined
         };
     }
 
-    async performGuildsSync() {
+    async performGuildsSync(noLog = false) {
         this.log("info", "Performing role sync in guilds...");
         for(let guild of discordBot.guilds.values()) {
             try {
-                await this.performGuildSync(guild);
+                await this.performGuildSync(guild, noLog);
             } catch (err) {
                 this.log("err", `Role sync failed at guild "${guild.name}"`, err);
             }
@@ -682,7 +682,7 @@ class PremiumControl extends Plugin implements IModule {
             this.log("err", "Subplugin initalization failed");
             return;
         }
-        this.roleSyncInterval = setInterval(() => this.performGuildsSync(), 3600000);
+        this.roleSyncInterval = setInterval(() => this.performGuildsSync(true), 3600000);
         await this.performGuildsSync();
         this.handleEvents();
     }
