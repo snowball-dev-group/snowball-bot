@@ -23,7 +23,7 @@ interface IUserPreference {
 
 let initDone = false;
 
-const LOG = getLogger("Preferences");
+const LOG = getLogger("UsersPreferences");
 const DB = getDB();
 const TABLE_NAME = "users_prefs";
 
