@@ -827,7 +827,7 @@ class Guilds extends Plugin implements IModule {
         }
 
         let str = await localizeForUser(msg.member, "GUILDS_LEAVE_CONFIRMATION", {
-            guildName: escapeDiscordMarkdown(dbRow.name)
+            guildName: escapeDiscordMarkdown(dbRow.name, true)
         });
 
         if(cz.invite_only) {
@@ -891,7 +891,7 @@ class Guilds extends Plugin implements IModule {
             embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
                 key: "GUILDS_LEAVE_DONE",
                 formatOptions: {
-                    guildName: escapeDiscordMarkdown(dbRow.name)
+                    guildName: escapeDiscordMarkdown(dbRow.name, true)
                 }
             })
         });
@@ -923,30 +923,44 @@ class Guilds extends Plugin implements IModule {
 
         let _msg = (await msg.channel.send("", {
             embed: await getEmbed(await localizeForUser(msg.member, "GUILDS_JOIN_PROGRESS", {
-                guildName: escapeDiscordMarkdown(dbRow.name)
+                guildName: escapeDiscordMarkdown(dbRow.name, true)
             }))
         })) as Message;
 
         if(cz.rules) {
             let code = (Math.round((20000 + (Math.random() * (100000 - 20000)))).toString(16) + Math.round((20000 + (Math.random() * (100000 - 20000)))).toString(16)).toUpperCase();
 
-            let __msg = await (msg.author.send("", {
-                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-                    custom: true,
-                    string: cz.rules
-                }, {
-                    title: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_TITLE"),
-                    fields: [{
-                        name: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FIELDS_CODE"),
-                        value: code
-                    }],
-                    footerText: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FOOTER_TEXT")
-                })
-            })) as Message;
+            let __msg:Message|undefined = undefined;
+
+            try {
+                __msg = await (msg.author.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                        custom: true,
+                        string: cz.rules
+                    }, {
+                        title: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_TITLE"),
+                        fields: [{
+                            name: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FIELDS_CODE"),
+                            value: code
+                        }],
+                        footerText: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FOOTER_TEXT")
+                    })
+                })) as Message;
+            } catch (err) {
+                await _msg.edit("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                        key: "GUILDS_JOIN_FAILED_DM",
+                        formatOptions: {
+                            guildName: escapeDiscordMarkdown(dbRow.name, true)
+                        }
+                    })
+                });
+                return;
+            }
 
             await _msg.edit("", {
                 embed: await getEmbed(await localizeForUser(msg.member, "GUILDS_JOIN_PROGRESS_RULES", {
-                    guildName: escapeDiscordMarkdown(dbRow.name)
+                    guildName: escapeDiscordMarkdown(dbRow.name, true)
                 }))
             });
 
@@ -970,7 +984,7 @@ class Guilds extends Plugin implements IModule {
                     embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
                         key: "GUILDS_JOIN_FAILED_RULES",
                         formatOptions: {
-                            guildName: escapeDiscordMarkdown(dbRow.name)
+                            guildName: escapeDiscordMarkdown(dbRow.name, true)
                         }
                     })
                 });
@@ -1024,7 +1038,7 @@ class Guilds extends Plugin implements IModule {
             if(!channel || channel.type !== "text") {
                 return;
             }
-            (channel as TextChannel).send(cz.welcome_msg.replace("{usermention}", `<@${msg.author.id}>`).replace("{username}", escapeDiscordMarkdown(msg.author.username)));
+            (channel as TextChannel).send(cz.welcome_msg.replace("{usermention}", `<@${msg.author.id}>`).replace("{username}", escapeDiscordMarkdown(msg.author.username, true)));
         }
 
         if(cz.invite_only) {
@@ -1039,7 +1053,7 @@ class Guilds extends Plugin implements IModule {
             embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, {
                 key: "GUILDS_JOIN_DONE",
                 formatOptions: {
-                    guildName: escapeDiscordMarkdown(dbRow.name)
+                    guildName: escapeDiscordMarkdown(dbRow.name, true)
                 }
             }, {
                 author: {
