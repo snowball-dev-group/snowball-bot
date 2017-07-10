@@ -194,7 +194,7 @@ class Whitelist extends Plugin implements IModule {
             await this.leaveGuild(guild, "WHITELIST_LEAVE_MANYMEMBERS");
             return;
         }
-        await setGuildPref(guild, "whitelist:status", "trial");
+        await setGuildPref(guild, "whitelist:status", GUILD_STATE.TRIAL);
         let endDate = Date.now() + 86400000;
         await setGuildPref(guild, "whitelist:until", endDate);
         this.log("info", `Activated trial on guild "${guild.name}"`);
