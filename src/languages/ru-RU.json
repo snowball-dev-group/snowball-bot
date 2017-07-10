@@ -381,6 +381,7 @@
     "EMBED_TADA": "Та-да!",
     "EMBED_PROGRESS": "Загрузка...",
     "EMBED_QUESTION": "Подтверждение...",
+    "EMBED_WARNING": "Предупреждение!",
     "8BALL_META_DEFAULT": "Спросить магический шар 8",
     "8BALL_META_DEFAULT_ARG0": "вопрос",
     "8BALL_META_DEFAULT_ARG0_DESC": "вопрос, на который можно ответить только положительно или отрицательно",
