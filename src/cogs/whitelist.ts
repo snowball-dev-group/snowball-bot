@@ -212,9 +212,9 @@ class Whitelist extends Plugin implements IModule {
 
         if(chToSendMessage) {
             try {
-                chToSendMessage.send("", { embed });
+                await chToSendMessage.send("", { embed });
             } catch (err) {
-                //
+                this.log("warn", `Failed to send message to channel ${chToSendMessage.name} (${chToSendMessage.id})`);
             }
         }
     }
