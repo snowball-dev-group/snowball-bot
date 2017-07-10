@@ -211,7 +211,11 @@ class Whitelist extends Plugin implements IModule {
         }
 
         if(chToSendMessage) {
-            chToSendMessage.send("", { embed });
+            try {
+                chToSendMessage.send("", { embed });
+            } catch (err) {
+                //
+            }
         }
     }
 
@@ -234,40 +238,40 @@ class Whitelist extends Plugin implements IModule {
     }
 
     async onMessage(msg:Message) {
-        if(msg.author.id !== botConfig.botOwner) {
-            if(msg.content === "!sb_pstatus" && this.isAdmin(msg.member)) {
-                let whitelistInfo = await this.isWhitelisted(msg.guild);
-                let str = "#" + (await localizeForUser(msg.member, "WHITELIST_INFO_HEADER", {
-                    guildName: escapeDiscordMarkdown(msg.guild.name, true)
-                })) + "\n";
-                str += (await localizeForUser(msg.member, "WHITELIST_INFO_STATUS")) + " ";
-                switch(whitelistInfo.state) {
-                    case GUILD_STATE.BANNED: {
-                        str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BANNED");
-                    } break;
-                    case GUILD_STATE.IMMORTAL: {
-                        str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_IMMORTAL");
-                    } break;
-                    case GUILD_STATE.LIMITED: {
-                        str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_LIMITED");
-                    } break;
-                    case GUILD_STATE.TRIAL: {
-                        str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_TRIAL");
-                    } break;
-                }
-                if(whitelistInfo.state === GUILD_STATE.LIMITED || whitelistInfo.state === GUILD_STATE.TRIAL) {
-                    str += "\n";
-                    let endString = moment(whitelistInfo.state, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-                    str += await localizeForUser(msg.member, "WHITELIST_INFO_UNTIL", {
-                        endDate: endString
-                    });
-                }
-                await msg.channel.send(str, {
-                    code: "md"
+        if(msg.content === "!sb_pstatus" && this.isAdmin(msg.member)) {
+            let whitelistInfo = await this.isWhitelisted(msg.guild);
+            let str = "#" + (await localizeForUser(msg.member, "WHITELIST_INFO_HEADER", {
+                guildName: escapeDiscordMarkdown(msg.guild.name, true)
+            })) + "\n";
+            str += (await localizeForUser(msg.member, "WHITELIST_INFO_STATUS")) + " ";
+            switch(whitelistInfo.state) {
+                case GUILD_STATE.BANNED: {
+                    str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BANNED");
+                } break;
+                case GUILD_STATE.IMMORTAL: {
+                    str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_IMMORTAL");
+                } break;
+                case GUILD_STATE.LIMITED: {
+                    str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_LIMITED");
+                } break;
+                case GUILD_STATE.TRIAL: {
+                    str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_TRIAL");
+                } break;
+            }
+            if(whitelistInfo.state === GUILD_STATE.LIMITED || whitelistInfo.state === GUILD_STATE.TRIAL) {
+                str += "\n";
+                let endString = moment(whitelistInfo.state, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+                str += await localizeForUser(msg.member, "WHITELIST_INFO_UNTIL", {
+                    endDate: endString
                 });
             }
+            await msg.channel.send(str, {
+                code: "md"
+            });
             return;
         }
+
+        if(msg.author.id !== botConfig.botOwner) { return; }
 
         let cmd = simpleCmdParse(msg.content);
 
