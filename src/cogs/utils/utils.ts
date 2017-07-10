@@ -58,7 +58,8 @@ export enum EmbedType {
     Progress,
     Empty,
     Tada,
-    Question
+    Question,
+    Warning
 }
 // customFooter?:string
 
@@ -88,6 +89,7 @@ export interface IEmbedOptions {
     tadaTitle?:string;
     progressTitle?:string;
     questionTitle?:string;
+    warningTitle?:string;
     imageUrl?:string;
     clearFooter?:boolean;
     thumbUrl?:string;
@@ -131,6 +133,25 @@ export interface IEmbed {
     fields?:IEmbedOptionsField[];
 }
 
+export const ICONS = {
+    ERROR: "https://i.imgur.com/9IwsjHS.png",
+    INFO: "https://i.imgur.com/cztrSSi.png",
+    OK: "https://i.imgur.com/FcnCpHL.png",
+    PROGRESS: "https://i.imgur.com/Lb04Jg0.gif",
+    CONFIRMATION: "https://i.imgur.com/CFzVpVt.png",
+    WARNING: "https://i.imgur.com/Lhq89ac.png",
+    TADA: "https://i.imgur.com/EkYEqfC.png"
+};
+
+export const COLORS = {
+    ERROR: 0xe53935,
+    INFO: 0x2196F3,
+    OK: 0x43A047,
+    PROGRESS: 0x546E7A,
+    CONFIRMATION: 0x3F51B5,
+    WARNING: 0xFF9800
+};
+
 export function generateEmbed(type:EmbedType, description:string, options?:IEmbedOptions) {
     let embed:any = {};
     // embed pre-fill 
@@ -139,34 +160,44 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
     switch(type) {
         case EmbedType.Error: {
             embed.author.name = "Ошибка";
-            embed.author.icon_url = "https://i.imgur.com/9IwsjHS.png";
-            embed.color = 0xe53935;
+            embed.author.icon_url = ICONS.ERROR;
+            embed.color = COLORS.ERROR;
         } break;
         case EmbedType.Information: {
             embed.author.name = "Информация";
-            embed.author.icon_url = "https://i.imgur.com/cztrSSi.png";
-            embed.color = 0x2196F3;
+            embed.author.icon_url = ICONS.INFO;
+            embed.color = COLORS.INFO;
         } break;
         case EmbedType.OK: {
             embed.author.name = "Успех!";
-            embed.author.icon_url = "https://i.imgur.com/FcnCpHL.png";
-            embed.color = 0x43A047;
+            embed.author.icon_url = ICONS.OK;
+            embed.color = COLORS.OK;
         } break;
         case EmbedType.Tada: {
             embed.author.name = "Та-да!";
-            embed.author.icon_url = "https://i.imgur.com/FcnCpHL.png";
+            embed.author.icon_url = ICONS.OK;
             embed.thumbnail = {
-                url: "https://i.imgur.com/EkYEqfC.png"
+                url: ICONS.TADA
             };
+            embed.color = COLORS.OK;
         } break;
         case EmbedType.Progress: {
             embed.author.name = "Загрузка...";
-            embed.author.icon_url = "https://i.imgur.com/Lb04Jg0.gif";
-            embed.color = 0x546E7A;
+            embed.author.icon_url = ICONS.PROGRESS;
+            embed.color = COLORS.PROGRESS;
         } break;
         case EmbedType.Question: {
             embed.author.name = "Подтверждение...";
-            embed.author.icon_url = "https://i.imgur.com/CFzVpVt.png";
+            embed.author.icon_url = ICONS.CONFIRMATION;
+            embed.color = COLORS.CONFIRMATION;
+        } break;
+        case EmbedType.Warning: {
+            embed.author.name = "Предупреждение!";
+            embed.author.icon_url = ICONS.WARNING;
+            embed.thumbnail = {
+                url: ICONS.WARNING
+            };
+            embed.colors = COLORS.WARNING;
         } break;
         case EmbedType.Empty: break;
     }
@@ -190,6 +221,8 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
             embed.author.name = options.progressTitle;
         } else if(type === EmbedType.Question && options.questionTitle) {
             embed.author.name = options.questionTitle;
+        } else if(type === EmbedType.Warning && options.warningTitle) {
+            embed.author.name = options.warningTitle;
         }
         if(options.author) {
             // full override
