@@ -5,7 +5,7 @@ module.exports = function(grunt) {
             default: {
                 tsconfig: true,
                 options: {
-                    fast: "always"
+                    fast: "never"
                 }
             }
         },
