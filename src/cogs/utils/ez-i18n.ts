@@ -149,6 +149,10 @@ export async function generateLocalizedEmbed(type:EmbedType, user:identify, desc
             if(options.questionTitle) { break; }
             options.questionTitle = await localizeForUser(user, "EMBED_QUESTION");
         } break;
+        case EmbedType.Warning: {
+            if(options.warningTitle) { break; }
+            options.warningTitle = await localizeForUser(user, "EMBED_WARNING");
+        } break;
     }
     if(typeof descriptionKey === "string" && descriptionKey.startsWith("custom:")) {
         descriptionKey = descriptionKey.slice("custom:".length);
