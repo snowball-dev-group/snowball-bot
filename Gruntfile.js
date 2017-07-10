@@ -4,7 +4,9 @@ module.exports = function(grunt) {
         ts: {
             default: {
                 tsconfig: true,
-                fast: false
+                options: {
+                    fast: "always"
+                }
             }
         },
         copy: {
