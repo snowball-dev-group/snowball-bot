@@ -586,7 +586,12 @@ class Guilds extends Plugin implements IModule {
                     });
                     return;
                 }
-                let confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Question, msg.member, "GUILDS_EDIT_TRANSFERCONFIRMATION"), msg);
+                let confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+                    key: "GUILDS_EDIT_TRANSFERCONFIRMATION",
+                    formatOptions: {
+                        username: escapeDiscordMarkdown(member.displayName, true)
+                    }
+                }), msg);
                 if(!confirmation) {
                     msg.channel.send("", {
                         embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CANCELED")
