@@ -281,7 +281,7 @@ class Whitelist extends Plugin implements IModule {
 
         if(cmd.subCommand === "activate") {
             if(cmd.args && cmd.args.length === 2) {
-                if(canBeSnowflake(cmd.args[0])) {
+                if(!canBeSnowflake(cmd.args[0])) {
                     msg.channel.send("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
                     });
@@ -340,7 +340,7 @@ class Whitelist extends Plugin implements IModule {
             }
         } else if(cmd.subCommand === "deactivate") {
             if(cmd.args && cmd.args.length === 2) {
-                if(canBeSnowflake(cmd.args[0])) {
+                if(!canBeSnowflake(cmd.args[0])) {
                     msg.channel.send("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
                     });
@@ -379,7 +379,7 @@ class Whitelist extends Plugin implements IModule {
             }
         } else if(cmd.subCommand === "ban") {
             if(cmd.args && cmd.args.length === 2) {
-                if(canBeSnowflake(cmd.args[0])) {
+                if(!canBeSnowflake(cmd.args[0])) {
                     msg.channel.send("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
                     });
