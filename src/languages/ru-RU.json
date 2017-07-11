@@ -487,7 +487,7 @@
     "WHITELIST_INFO_STATUS_LIMITED": "Лимитированное партнерство",
     "WHITELIST_INFO_STATUS_TRIAL": "Триал (1 день)",
     "WHITELIST_INFO_UNTIL": "Бот доступен до: {endDate}",
-    "WHITELIST_ACTIVATED": "Гильдия с ID {serverId} был активирован",
+    "WHITELIST_ACTIVATED": "Сервер с ID {serverId} был активирован",
     "WHITELIST_DEACTIVATED": "Сервер с ID {serverId} был деактивирован",
     "WHITELIST_BANNED": "Сервер с ID {serverId} был заблокирован",
     "WHITELIST_ACTIVATE_CONFIRM_LIMITED": "Вы действительно хотите активировать сервер с ID {serverId} до {timeString}?",
