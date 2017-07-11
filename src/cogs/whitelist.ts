@@ -365,7 +365,7 @@ class Whitelist extends Plugin implements IModule {
                 await delGuildPref(cmd.args[0], "whitelist:status");
 
                 msg.channel.send("", {
-                    embed: await generateLocalizedEmbed(EmbedType.Error, u, {
+                    embed: await generateLocalizedEmbed(EmbedType.OK, u, {
                         key: "WHITELIST_DEACTIVATED",
                         formatOptions: {
                             serverId: cmd.args[0]
@@ -409,7 +409,7 @@ class Whitelist extends Plugin implements IModule {
                 }
 
                 msg.channel.send("", {
-                    embed: await generateLocalizedEmbed(EmbedType.Error, u, {
+                    embed: await generateLocalizedEmbed(EmbedType.OK, u, {
                         key: "WHITELIST_BANNED",
                         formatOptions: {
                             serverId: cmd.args[0]
