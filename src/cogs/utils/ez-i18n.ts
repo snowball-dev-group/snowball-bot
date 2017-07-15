@@ -24,27 +24,27 @@ export function getPrefsNames() {
     };
 }
 
+export async function getGuildLanguage(guild:Guild) {
+    let cached = gCache.get(guild.id);
+    let gLang = cached !== undefined ? cached : await forceGuildLanguageUpdate(guild);
+    return gLang;
+}
+
+export async function isGuildEnforceEnabled(guild:Guild) {
+    let cached = gECache.get(guild.id);
+    let guildEnforcing = cached !== undefined ? cached : await forceGuildEnforceUpdate(guild);
+    return guildEnforcing;
+}
+
 export async function getUserLanguage(u:identify) {
     let lang:string|undefined = undefined;
     if(u instanceof GuildMember) {
         // let's check if guild enforces language
-        let guildEnforcing = gECache.get(u.guild.id);
-        if(guildEnforcing === undefined) {
-            // guild enforcing status not cached yet, updating!
-            guildEnforcing = await forceGuildEnforceUpdate(u.guild);
-        }
-        // now it should be tru boolean value
+        let guildEnforcing = await isGuildEnforceEnabled(u.guild);
         if(guildEnforcing) {
             // yh, guild enforces language
             // getting guild lang
-            let gLang = gCache.get(u.guild.id);
-            if(gLang === undefined) {
-                // guild language is unknown, fetching from db
-                gLang = await forceGuildLanguageUpdate(u.guild);
-            }
-            if(gLang) {
-                lang = gLang;
-            }
+            lang = await getGuildLanguage(u.guild);
         }
     } 
     if(!lang) {
@@ -59,7 +59,7 @@ export async function localizeForUser(u:identify, str:string, formatOpts?:any) {
     return formatOpts ? localizer.getFormattedString(lang, str, formatOpts) : localizer.getString(lang, str);
 }
 
-export async function forceGuildEnforceUpdate(guild:Guild) {
+export async function forceGuildEnforceUpdate(guild:Guild) : Promise<boolean> {
     let enforcingSt = await getGuildPreferenceValue(guild, guildEnforcePref, true);
     if(enforcingSt === undefined) {
         // no enforcing status, fixing it...
@@ -72,7 +72,7 @@ export async function forceGuildEnforceUpdate(guild:Guild) {
     }
 }
 
-export async function forceUserLanguageUpdate(u:identify) {
+export async function forceUserLanguageUpdate(u:identify) : Promise<string> {
     let preferableLang:string|undefined = await getUserPreferenceValue(u, languagePref);
     if(preferableLang === undefined) {
         if(u instanceof GuildMember) {
@@ -88,10 +88,10 @@ export async function forceUserLanguageUpdate(u:identify) {
         }
     }
     uCache.set(u.id, preferableLang);
-    return uCache.get(u.id);
+    return uCache.get(u.id) as string;
 }
 
-export async function forceGuildLanguageUpdate(guild:Guild) {
+export async function forceGuildLanguageUpdate(guild:Guild) : Promise<string> {
     let gLang = await getGuildPreferenceValue(guild, guildLangPref);
     if(gLang === undefined) {
         await setGuildPreferenceValue(guild, guildLangPref, defLanguage);
@@ -118,12 +118,6 @@ function isCustomString(objCt: any): objCt is ICustomString {
 }
 
 export async function generateLocalizedEmbed(type:EmbedType, user:identify, descriptionKey:string|ILocalizedEmbedString|ICustomString, options:IEmbedOptions = {}) {
-    // EMBED_ERROR
-    // EMBED_INFORMATION
-    // EMBED_SUCCESS
-    // EMBED_TADA
-    // EMBED_PROGRESS
-    // EMBED_QUESTION
     switch(type) {
         case EmbedType.Error: {
             if(options.errorTitle) { break; }
