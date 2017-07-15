@@ -4,7 +4,7 @@ import { replaceAll } from "./text";
 
 export function stringifyError(err, filter = null, space = 2) {
     let plainObject = {};
-    Object.getOwnPropertyNames(err).forEach(function(key) {
+    Object.getOwnPropertyNames(err).forEach(function (key) {
         plainObject[key] = err[key];
     });
     return JSON.stringify(plainObject, filter, space);
@@ -12,7 +12,7 @@ export function stringifyError(err, filter = null, space = 2) {
 
 export function colorNumberToHex(color) {
     let hex = color.toString(16);
-    while (hex.length < 6) {
+    while(hex.length < 6) {
         hex = `0${hex}`;
     };
     return `${hex}`.toUpperCase();
@@ -26,7 +26,7 @@ export function objectToMap<T>(obj) {
     return map;
 }
 
-export function commandRedirect(content:string, redirects:Map<string, Function>) {
+export function commandRedirect(content: string, redirects: Map<string, Function>) {
     redirects.forEach((val, key) => {
         let keySpaced = `${key} `;
         let itsStarts = content.startsWith(keySpaced);
@@ -36,7 +36,7 @@ export function commandRedirect(content:string, redirects:Map<string, Function>)
     });
 }
 
-export function escapeDiscordMarkdown(str:string, usernames:boolean = false) {
+export function escapeDiscordMarkdown(str: string, usernames: boolean = false) {
     str = replaceAll(str, "`", "'");
     str = replaceAll(str, "*", "\\*");
     str = replaceAll(str, "[", "\\[");
@@ -64,73 +64,73 @@ export enum EmbedType {
 // customFooter?:string
 
 export interface IEmbedOptionsField {
-    name:string;
-    value:string;
-    inline?:boolean;
+    name: string;
+    value: string;
+    inline?: boolean;
 }
 
 export interface IEmbedOptions {
-    footerText?:string;
-    footer?:{
-        text:string;
-        icon_url?:string;
+    footerText?: string;
+    footer?: {
+        text: string;
+        icon_url?: string;
     };
-    color?:number;
-    author?:{
-        name:string,
-        icon_url?:string,
-        url?:string
+    color?: number;
+    author?: {
+        name: string,
+        icon_url?: string,
+        url?: string
     };
-    fields?:IEmbedOptionsField[];
-    title?:string;
-    errorTitle?:string;
-    okTitle?:string;
-    informationTitle?:string;
-    tadaTitle?:string;
-    progressTitle?:string;
-    questionTitle?:string;
-    warningTitle?:string;
-    imageUrl?:string;
-    clearFooter?:boolean;
-    thumbUrl?:string;
-    ts?:Date;
+    fields?: IEmbedOptionsField[];
+    title?: string;
+    errorTitle?: string;
+    okTitle?: string;
+    informationTitle?: string;
+    tadaTitle?: string;
+    progressTitle?: string;
+    questionTitle?: string;
+    warningTitle?: string;
+    imageUrl?: string;
+    clearFooter?: boolean;
+    thumbUrl?: string;
+    ts?: Date;
 }
 
 export interface IEmbed {
-    title?:string;
-    description?:string;
-    url?:string;
-    timestamp:string|number;
-    color?:number;
+    title?: string;
+    description?: string;
+    url?: string;
+    timestamp?: string | number;
+    color?: number;
     footer?: {
-        text:string;
-        icon_url?:string;
+        text: string;
+        icon_url?: string;
     };
     image?: {
-        url:string;
-        height?:number;
-        width?:number;
+        url: string;
+        height?: number;
+        width?: number;
     };
-    thumbnail?:{
-        url:string;
-        height?:number;
-        width?:number;
+    thumbnail?: {
+        url: string;
+        height?: number;
+        width?: number;
     };
-    video?:{
-        url:string;
-        height?:number;
-        width?:number;
+    video?: {
+        url: string;
+        height?: number;
+        width?: number;
     };
-    provider:{
-        name:string;
-        url?:string;
+    provider?: {
+        name: string;
+        url?: string;
     };
     author?: {
-        icon_url?:string;
-        name:string;
-        url?:string;
+        icon_url?: string;
+        name: string;
+        url?: string;
     };
-    fields?:IEmbedOptionsField[];
+    fields?: IEmbedOptionsField[];
 }
 
 export const ICONS = {
@@ -152,8 +152,8 @@ export const COLORS = {
     WARNING: 0xFF9800
 };
 
-export function generateEmbed(type:EmbedType, description:string, options?:IEmbedOptions) {
-    let embed:any = {};
+export function generateEmbed(type: EmbedType, description: string, options?: IEmbedOptions) {
+    let embed: any = {};
     // embed pre-fill 
     embed.author = {};
     embed.description = description;
@@ -238,7 +238,7 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
                 text: options.footerText
             };
         } else {
-            if(type !== EmbedType.Empty){
+            if(type !== EmbedType.Empty) {
                 embed.footer = {
                     text: discordBot.user.username,
                     icon_url: discordBot.user.displayAvatarURL
@@ -269,20 +269,20 @@ export function generateEmbed(type:EmbedType, description:string, options?:IEmbe
 }
 
 export interface ILoggerFunction {
-    (type:"log"|"info"|"ok"|"warn"|"err"|"error"|"warning"|"trace"|"info_trace"|"warn_trace"|"err_trace", arg, ...args:any[]):ILogger;
+    (type: "log" | "info" | "ok" | "warn" | "err" | "error" | "warning" | "trace" | "info_trace" | "warn_trace" | "err_trace", arg, ...args: any[]): ILogger;
 }
 
 export interface ILogger {
-    name:string;
-    log:ILoggerFunction;
+    name: string;
+    log: ILoggerFunction;
 }
 
-export function getLogger(name:string):ILoggerFunction {
+export function getLogger(name: string): ILoggerFunction {
     if(!name) { throw new Error("No logger name provided"); }
     return createLogger(name);
 }
 
-export function resolveGuildRole(nameOrID:string, guild:Guild, strict=true) {
+export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true) {
     if(/[0-9]+/.test(nameOrID)) {
         // it's can be ID
         let role = guild.roles.get(nameOrID);
@@ -295,7 +295,7 @@ export function resolveGuildRole(nameOrID:string, guild:Guild, strict=true) {
     }); // it can return undefined, it's okay
 }
 
-export function resolveGuildChannel(nameOrID:string, guild:Guild, strict=true) {
+export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true) {
     if(/[0-9]+/.test(nameOrID)) {
         let ch = guild.channels.get(nameOrID);
         if(ch) { return ch; }
@@ -307,10 +307,10 @@ export function resolveGuildChannel(nameOrID:string, guild:Guild, strict=true) {
     });
 }
 
-export function sleep<T>(delay: number=1000, value?: T): Promise<T> {
-  return new Promise<T>((resolve) => {
-      setTimeout(() => {
-        resolve(value);
-      }, delay);
-  });
+export function sleep<T>(delay: number = 1000, value?: T): Promise<T> {
+    return new Promise<T>((resolve) => {
+        setTimeout(() => {
+            resolve(value);
+        }, delay);
+    });
 }
