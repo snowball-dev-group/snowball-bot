@@ -269,7 +269,7 @@ class PremiumControl extends Plugin implements IModule {
         if(currentPremium) {
             let dtString = moment(currentPremium.due_to, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
             let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
-                key: "",
+                key: "PREMIUMCTL_GIVE_CONFIRMATION",
                 formatOptions: {
                     untilDate: dtString,
                     prefix: PREMIUMCTRL_PREFIX
