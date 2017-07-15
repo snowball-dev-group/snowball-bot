@@ -34,3 +34,40 @@ export function simpleCmdParse(str:string) {
 export function canBeSnowflake(str:string) {
     return /[0-9]{16,20}/.test(str);
 }
+
+// from https://github.com/danakt/uuid-by-string/blob/master/uuid-by-string.js
+
+function _getHex(str:string, key:number, maxlen:number) : string {
+    let n:number, i:number, count:number;
+    n = i = count = 1;
+    str = str.trim();
+    // NOTE: 14-digit number in hex is 16-digit in base-10,
+    // In turn, the js rounds everything that comes after the 16th sign among
+    maxlen = Math.min(maxlen || 14, 14);
+    for (; true; i++) {
+        if (count++ >= str.length && n.toString(16).length >= maxlen) { break; }
+        if (str[i] === undefined) { i = 0; }
+        n *= (str.charCodeAt(i) + (i * str.length)) * key;
+        n = Number(String(n).replace(/0+$/g, ""));
+        while (n.toString(16).length > maxlen) { n = Math.floor(n / 10); }
+    }
+    return n.toString(16);
+}
+
+function _makeUUID(p:string[]) {
+    let s = [
+        p[0],
+        p[1].substr(0, 4),
+        4 + p[1].substr(4, 3), (Number("0x" + p[1][7]) & 0x3 | 0x8).toString(16) + p[1].substr(8, 3),
+        p[2]
+    ];
+    return s.join("-").toUpperCase();
+}
+
+export function getUUIDByString(str:string) {
+    return _makeUUID([
+        _getHex(str, 0xf6, 8),
+        _getHex(str, 0x51c, 11),
+        _getHex(str, 0xd7a, 12)
+    ]);
+}
