@@ -436,14 +436,14 @@ class VoiceRole extends Plugin implements IModule {
         let hasPermissionToChange = msg.member.hasPermission(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"]) || msg.member.hasPermission("ADMINISTRATOR");
 
         if(!hasPermissionToChange) {
-            msg.channel.sendMessage(":warning: У вас недостаточно прав для изменения параметров 'голосовой роли' на этом сервере.");
+            msg.channel.send(":warning: У вас недостаточно прав для изменения параметров 'голосовой роли' на этом сервере.");
             return;
         }
 
         let cmd = msg.content.slice(PREFIX.length + 1);
         if(cmd === "" || cmd === "help") {
             const SPECIFIC_CMD = "\n• `specific set [канал], [роль]` - установить специальную голосовую роль\n• `specific delete [канал], [роль]` - удалить специальную голосовую роль";
-            msg.channel.sendMessage("Доступные настройки:\n• `set [роль]` - установить голосовую роль\n• `delete` - сбросить роль" + SPECIFIC_CMD);
+            msg.channel.send("Доступные настройки:\n• `set [роль]` - установить голосовую роль\n• `delete` - сбросить роль" + SPECIFIC_CMD);
             return;
         }
 
@@ -455,14 +455,14 @@ class VoiceRole extends Plugin implements IModule {
             // #SetGuildVoiceRole
             let resolvableRole = resolveGuildRole(cmd.slice("set ".length), msg.guild);
             if(!resolvableRole) {
-                msg.channel.sendMessage(ROLE_NOT_FOUND);
+                msg.channel.send(ROLE_NOT_FOUND);
                 return;
             }
 
             let row = await this.getGuildRow(msg.guild);
 
             if(!row) {
-                msg.channel.sendMessage(ERROR_HAPPENED);
+                msg.channel.send(ERROR_HAPPENED);
                 return;
             }
 
@@ -500,14 +500,14 @@ class VoiceRole extends Plugin implements IModule {
             // #DeleteGuildVoiceRole
             let resolvableRole = resolveGuildRole(cmd.slice("delete ".length), msg.guild);
             if(!resolvableRole) {
-                msg.channel.sendMessage(ROLE_NOT_FOUND);
+                msg.channel.send(ROLE_NOT_FOUND);
                 return;
             }
 
             let row = await this.getGuildRow(msg.guild);
 
             if(!row) {
-                msg.channel.sendMessage(ERROR_HAPPENED);
+                msg.channel.send(ERROR_HAPPENED);
                 return;
             }
 
