@@ -1,6 +1,6 @@
 # Snowball - Mei's friend [![Discord](https://discordapp.com/api/guilds/283995293190455296/embed.png?style=shield)](https://discord.gg/WvNjZEW) [![Crowdin](https://d322cqt584bo4o.cloudfront.net/snowball-bot/localized.svg)](https://crowdin.com/project/snowball-bot)
 
-Mei has beautiful friend called Snowball, which used to make a Blizzard and cease enemy resistance.
+Mei has beautiful friend called Snowball, which used to make a Blizzard and cease enemy resistance. Actually, this bot don't used to be in fights, it's just good friend that helps you with your server.
 
 ## Installing
 
@@ -22,13 +22,13 @@ yarn global add typescript
 yarn install
 ```
 
-Then try to run compilation into good Javascript code by running this command:
+Then try to run grunt build using this command:
 
 ```bash
-tsc
+grunt
 ```
 
-All compiled files will stay in directory named `out`. Clone `package.json` there, you'll get why later.
+All compiled files will stay in directory named `out`.
 
 ### Setup
 
@@ -105,7 +105,7 @@ I really appreciate your contribution to this project. You can fix my errors, cr
 - Use my universal APIs. I created `db`, `letters`, `utils`, `cacheResponse`, `time`, be sure you using them, they pretty simple
 - Make plugin for all servers, not yours one. To be honest, you can create cog for `shib channel` - that's fine (I included same cogs in source just for fun), but you should provide support for other servers if you making *serious* plugins like `Overwatch statistic`.
 
-Don't be scared of making Pull Requests! Make it! I will suggest you what to change, what to not and etc. :)
+Don't be scared of making Pull Requests! Make it! I will suggest you what to change, what to not and etc :)
 
 ### Issues
 
