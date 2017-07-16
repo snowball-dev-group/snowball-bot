@@ -182,8 +182,7 @@ class VoiceRole extends Plugin implements IModule {
         if(!element) {
             await this.db(TABLE_NAME).insert({
                 guild_id: guild.id,
-                voice_role: "-",
-                specific_roles: "{}"
+                voice_role: "-"
             });
         } else {
             return element;
