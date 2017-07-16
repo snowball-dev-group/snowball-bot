@@ -196,7 +196,7 @@ class VoiceRole extends Plugin implements IModule {
             guild_id: guild.id
         })) || []) as ISpecificRoleRow[];
         let map = new Map<string, ISpecificRoleRow|ISpecificRoleRow[]>();
-        rows.forEach(r => {
+        for(let r of rows) {
             if(method === "channel") {
                 map.set(r.channel_id, r);
             } else {
@@ -205,7 +205,7 @@ class VoiceRole extends Plugin implements IModule {
                     map.set(r.voice_role, ([] as ISpecificRoleRow[]).concat(current).concat(r));
                 }
             }
-        });
+        }
         return map;
     }
 
