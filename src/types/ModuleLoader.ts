@@ -252,3 +252,15 @@ export class ModuleLoader {
         }
     }
 }
+
+/**
+* Convert modules object to Map object
+* @param obj {Array} Array of module info entries
+*/
+export function convertToModulesMap(obj:IModuleInfo[]) {
+    let modulesMap = new Map();
+    for(let moduleInfo of obj) {
+        modulesMap.set(moduleInfo.name, moduleInfo);
+    }
+    return modulesMap;
+}
