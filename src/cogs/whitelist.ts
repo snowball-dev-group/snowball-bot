@@ -303,14 +303,15 @@ class Whitelist extends Plugin implements IModule {
                     await setGuildPref(cmd.args[0], "whitelist:status", GUILD_STATE.UNLIMITED);
                 } else {
                     let time = parseTime(cmd.args[1], "ms");
-                    let endTime = Date.now() + time;
+                    let endTime = new Date(Date.now() + time);
 
                     let endString = moment(endTime, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 
                     let confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
                         key: "WHITELIST_ACTIVATE_CONFIRM_LIMITED",
                         formatOptions: {
-                            timeString: endString
+                            timeString: endString,
+                            serverId: cmd.args[0]
                         }
                     }), msg);
 
