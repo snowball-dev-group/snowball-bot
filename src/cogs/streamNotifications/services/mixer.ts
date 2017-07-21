@@ -55,7 +55,7 @@ class MixerStreamingService implements IStreamingService {
         }
     }
 
-    async makeRequest(uri: string, attempt: number = 0): Promise<any> {
+    private async makeRequest(uri: string, attempt: number = 0): Promise<any> {
         let resp = await fetch(uri);
         if(resp.status === 429) {
             let delay = parseInt(resp.headers.get("retry-after"), 10);
@@ -68,11 +68,11 @@ class MixerStreamingService implements IStreamingService {
         return (await resp.json());
     }
 
-    async fetchChannel(uid: string): Promise<IMixerChannel> {
+    public async fetchChannel(uid: string): Promise<IMixerChannel> {
         return (await this.makeRequest(this.getAPIURL_Channel(uid))) as IMixerChannel;
     };
 
-    async getStreamStartTime(uid: string): Promise<number> {
+    public async getStreamStartTime(uid: string): Promise<number> {
         return new Date(((await this.makeRequest(`${this.getAPIURL_Channel(uid)}/manifest.light2`)) as {
             now: string,
             startedAt: string
