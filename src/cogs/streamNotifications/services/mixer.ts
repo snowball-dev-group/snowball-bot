@@ -151,7 +151,7 @@ class MixerStreamingService implements IStreamingService {
         };
     }
 
-    freed(uid:string) {
+    public freed(uid:string) {
         let listener = this.listeners.get(uid);
         if(listener) {
             this.ca.unsubscribe(`channel:${uid}:update`);
@@ -159,11 +159,7 @@ class MixerStreamingService implements IStreamingService {
         }
     }
 
-    // private getAPIURL_Channels(ids:string[]) {
-    //     return `https://beam.pro/api/v1/channels?where=online:eq:true,id:in:${ids.join(";")}`;
-    // }
-
-    private getAPIURL_Channel(username:string) {
+    public getAPIURL_Channel(username:string) {
         return `https://mixer.com/api/v1/channels/${username}`;
     }
 
