@@ -55,38 +55,26 @@ class MixerStreamingService implements IStreamingService {
         }
     }
 
-    async fetchChannel(uid:string, attempt:number = 0) : Promise<IMixerChannel> {
-        if(attempt > 3) {
-            throw new StreamingServiceError("MIXER_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
-        }
-        let resp = await fetch(this.getAPIURL_Channel(uid));
+    async makeRequest(uri:string, attempt:number = 0) : Promise<any> {
+        let resp = await fetch(uri);
         if(resp.status === 429) {
             let delay = parseInt(resp.headers.get("retry-after"), 10);
             this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
             await sleep(delay);
-            return await this.fetchChannel(uid, attempt + 1);
+            return await this.makeRequest(uri, attempt + 1);
         } else if(resp.status === 404) {
-            throw new StreamingServiceError("MIXER_NOTFOUND", "Channel with this name not found");
+            throw new StreamingServiceError("MIXER_NOTFOUND", "Resource not found");
         }
-        return (await resp.json()) as IMixerChannel;
+        return (await resp.json());
+    }
+
+
+    async fetchChannel(uid:string) : Promise<IMixerChannel> {
+        return (await this.makeRequest(this.getAPIURL_Channel(uid))) as IMixerChannel;
     };
 
-    async getStreamStartTime(uid:string, attempt:number = 0) : Promise<number> {
-        if(attempt > 3) {
-            throw new StreamingServiceError("MIXER_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
-        }
-
-        let resp = await fetch(`${this.getAPIURL_Channel(uid)}/manifest.light2`);
-        if(resp.status === 429) {
-            let delay = parseInt(resp.headers.get("retry-after"), 10);
-            this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
-            await sleep(delay);
-            return await this.getStreamStartTime(uid, attempt + 1);
-        } else if(resp.status === 404) {
-            throw new StreamingServiceError("MIXER_NOTFOUND", "Channel with this name not found");
-        }
-        
-        return new Date(((await resp.json()) as {
+    async getStreamStartTime(uid:string) : Promise<number> {
+        return new Date(((await this.makeRequest(`${this.getAPIURL_Channel(uid)}/manifest.light2`)) as {
             now: string,
             startedAt: string
         }).startedAt).getTime();
@@ -122,7 +110,9 @@ class MixerStreamingService implements IStreamingService {
 
     public async getEmbed(stream:IStreamStatus, lang:string) : Promise<IEmbed> {
         let cache = this.cache.get(stream.streamer.uid);
-        if(!cache) { throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure"); }
+        if(!cache) {
+            throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure");
+        }
         return {
             footer: {
                 icon_url: MIXER_ICON,
@@ -178,20 +168,8 @@ class MixerStreamingService implements IStreamingService {
         return `https://mixer.com/api/v1/channels/${username}`;
     }
 
-    public async getStreamer(username:string, attempt=0) : Promise<IStreamingServiceStreamer> {
-        if(attempt > 3) {
-            throw new StreamingServiceError("MIXER_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
-        }
-        let resp = await fetch(this.getAPIURL_Channel(username));
-        if(resp.status === 429) {
-            let delay = parseInt(resp.headers.get("retry-after"), 10);
-            this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
-            await sleep(delay);
-            return await this.getStreamer(username, attempt++);
-        } else if(resp.status === 404) {
-            throw new StreamingServiceError("MIXER_NOTFOUND", "Channel with this name not found");
-        }
-        let json = (await resp.json()) as IMixerChannel;
+    public async getStreamer(username:string) : Promise<IStreamingServiceStreamer> {
+        let json = (await this.makeRequest(this.getAPIURL_Channel(username))) as IMixerChannel;
         return {
             serviceName: this.name,
             uid: json.id + "",
