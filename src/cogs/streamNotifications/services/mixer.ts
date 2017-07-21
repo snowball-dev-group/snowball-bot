@@ -132,16 +132,15 @@ class MixerStreamingService implements IStreamingService {
             description: localizer.getFormattedString(lang, "STREAMING_DESCRIPTION", {
                 username: escapeDiscordMarkdown(cache.channel.user.username, true)
             }),
+            title: cache.channel.name,
             color: MIXER_COLOR,
             image: {
                 url: `https://thumbs.beam.pro/channel/${cache.channel.id}.big.jpg?ts=${Date.now()}`
             },
             fields: [{
                 inline: true,
-                name: localizer.getString(lang, "STREAMING_VIEWERS_NAME"),
-                value: localizer.getFormattedString(lang, "STREAMING_VIEWERS_VALUE", {
-                    viewers: cache.channel.viewersCurrent
-                })
+                name: localizer.getString(lang, "STREAMING_GAME_NAME"),
+                value: cache.channel.type ? cache.channel.type.name : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
             }, {
                 inline: true,
                 name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
