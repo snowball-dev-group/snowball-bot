@@ -97,6 +97,7 @@ class TwitchStreamingService implements IStreamingService {
                 url: stream.value.channel.url
             },
             title: stream.value.channel.status,
+            url: stream.value.channel.url,
             color: TWITCH_COLOR,
             image: {
                 url: stream.value.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}`
