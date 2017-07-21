@@ -867,10 +867,12 @@ class StreamNotifications extends Plugin implements IModule {
             await this.servicesLoader.load(serviceName);
         }
 
-        this.handleEvents();
+        await this.checknNotify();
 
         this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
         this.checknNotifyInterval = setInterval(() => this.checknNotify(), 60000);
+
+        this.handleEvents();
     }
 
     async unload() {
