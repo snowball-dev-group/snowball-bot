@@ -1,6 +1,15 @@
 {
   "dependencies": {
+    "@types/async": "^2.0.40",
+    "@types/bluebird": "^3.5.8",
+    "@types/crypto-js": "^3.1.33",
+    "@types/knex": "^0.0.56",
+    "@types/lodash": "^4.14.70",
+    "@types/mz": "^0.0.31",
+    "@types/node": "^8.0.14",
+    "@types/node-fetch": "^1.6.7",
     "bluebird": "^3.5.0",
+    "carina": "^0.9.0",
     "crypto-js": "^3.1.9-1",
     "discord.js": "^11.1.0",
     "format-message": "^5.2.0",
@@ -19,7 +28,8 @@
     "random-js": "^1.0.8",
     "sqlite3": "^3.1.8",
     "timestring": "^4.0.0",
-    "universal-analytics": "^0.4.13"
+    "universal-analytics": "^0.4.13",
+    "ws": "^3.0.0"
   },
   "name": "snowballbot-discord",
   "displayName": "Discord Snowball bot",
