@@ -133,9 +133,9 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
             if(typeInfo.default) {
                 cb.defaultTo(typeInfo.default);
             }
-            if(typeInfo.collate) {
-                cb.collate(typeInfo.collate);
-            }
+            // if(typeInfo.collate) {
+            //     cb.collate(typeInfo.collate);
+            // }
         });
     });
 }
