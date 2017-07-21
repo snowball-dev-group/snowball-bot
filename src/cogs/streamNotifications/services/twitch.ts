@@ -112,16 +112,15 @@ class TwitchStreamingService implements IStreamingService {
                 name: cachedStream.value.channel.display_name || cachedStream.value.channel.name,
                 url: cachedStream.value.channel.url
             },
+            title: cachedStream.value.channel.status,
             color: TWITCH_COLOR,
             image: {
                 url: cachedStream.value.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}`
             },
             fields: [{
                 inline: true,
-                name: localizer.getString(lang, "STREAMING_VIEWERS_NAME"),
-                value: localizer.getFormattedString(lang, "STREAMING_VIEWERS_VALUE", {
-                    viewers: cachedStream.value.viewers
-                })
+                name: localizer.getString(lang, "STREAMING_GAME_NAME"),
+                value: cachedStream.value.game ? cachedStream.value.game : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
             }, {
                 inline: true,
                 name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
