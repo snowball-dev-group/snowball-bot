@@ -2,65 +2,85 @@ import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingS
 import { IEmbed, sleep, getLogger, escapeDiscordMarkdown } from "../../utils/utils";
 import { getUUIDByString } from "../../utils/text";
 import { default as fetch } from "node-fetch";
+import { Carina } from "carina";
+import * as ws from "ws";
 
-const MAX_CACHE_LIFE = 180000; // ms
+Carina.WebSocket = ws;
+
+// const MAX_CACHE_LIFE = 180000; // ms
 const MIXER_ICON = "https://i.imgur.com/fQsQPkd.png";
 const MIXER_COLOR = 0x1FBAED;
 
 class MixerStreamingService implements IStreamingService {
     public name = "mixer";
-
     private log = getLogger("MixerStreamingService");
-
     private cache = new Map<string, {
         cachedAt:number,
-        value: IMixerChannel
+        channel: IMixerChannel
     }>();
+    private ca:Carina;
+
+    constructor(apiKey) {
+        this.ca = new Carina({
+            isBot: true,
+            authToken: apiKey,
+            autoReconnect: true
+        }).open();
+    }
+
+    private listeners = new Map<string, (data) => void>();
+
+    public async subscribeTo(uid:string) {
+        let listener = async (data:IMixerChannel) => {
+            if(data.online === true) {
+                // fetching channel, stream has begun
+                this.cache.set(uid, {
+                    cachedAt: Date.now(),
+                    channel: await this.fetchChannel(uid)
+                });
+            } else if (data.online === false) {
+                this.cache.delete(uid);
+            }
+        };
+        this.listeners.set(uid, listener);
+        this.ca.subscribe(`channel:${uid}:update`, listener);
+        // fetching channel to see if it online
+        let ch = await this.fetchChannel(uid);
+        if(ch.online) {
+            this.cache.set(uid, {
+                cachedAt: Date.now(),
+                channel: await this.fetchChannel(uid)
+            });
+        }
+    }
+
+    async fetchChannel(uid:string, attempt:number = 0) : Promise<IMixerChannel> {
+        if(attempt > 3) {
+            throw new StreamingServiceError("MIXER_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
+        }
+        let resp = await fetch(this.getAPIURL_Channel(uid));
+        if(resp.status === 429) {
+            let delay = parseInt(resp.headers.get("retry-after"), 10);
+            this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
+            await sleep(delay);
+            return await this.fetchChannel(uid, attempt + 1);
+        } else if(resp.status === 404) {
+            throw new StreamingServiceError("MIXER_NOTFOUND", "Channel with this name not found");
+        }
+        return (await resp.json()) as IMixerChannel;
+    };
 
     public async fetch(streamers:IStreamingServiceStreamer[]) {
         // should return only online streams
-        
-        // don't updating for cached streams
-        let reqDate = Date.now();
-        let notCachedYet = streamers.filter(s => {
-            // {} is not cached?
-            let cached = this.cache.get(s.uid);
-            if(!cached) { return true; }
-            if((reqDate - cached.cachedAt) > MAX_CACHE_LIFE) { return true; }
-            return false;
-        });
-        
+
         let result:IStreamStatus[] = [];
-        
-        if(notCachedYet.length > 0) {
-            let loop = async (attempt) => { 
-                if(attempt > 3) {
-                    throw new StreamingServiceError("MIXER_TOOMANYATTEMPTS", "Too many attempts. Please, try again later");
-                }
-
-                let resp = await fetch(this.getAPIURL_Channels(notCachedYet.map(c => c.uid)));
-                if(resp.status === 429) {
-                    await sleep(parseInt(resp.headers.get("retry-after"), 10));
-                    return await loop(attempt++);
-                } else if(resp.status !== 200) {
-                    throw new StreamingServiceError("MIXER_SOMETHINGWRONG", "Something wrong with Mixer. Please, try again later");
-                }
-                
-                let arr = (await resp.json()) as IMixerChannel[];
-
-                for(let ch of arr) {
-                    this.cache.set(ch.id + "", {
-                        cachedAt: Date.now(),
-                        value: ch
-                    });
-                }
-            };
-            await loop(0);
-        }
 
         for(let streamer of streamers) {
+            if(!this.listeners.has(streamer.uid)) {
+                await this.subscribeTo(streamer.uid);
+            }
             let cached = this.cache.get(streamer.uid);
-            if(!cached || !cached.value.online) {
+            if(!cached || !cached.channel.online) {
                 result.push({
                     status: "offline",
                     streamer,
@@ -71,7 +91,7 @@ class MixerStreamingService implements IStreamingService {
             result.push({
                 status: "online",
                 streamer,
-                id: getUUIDByString(`${this.name}::${cached.value.token}::{{${cached.value.name}}, {${cached.value.updatedAt}}}`)
+                id: getUUIDByString(`mixer::${streamer.uid}::${cached.cachedAt}`)
             });
         }
 
@@ -86,43 +106,51 @@ class MixerStreamingService implements IStreamingService {
                 icon_url: MIXER_ICON,
                 text: "Mixer"
             },
-            timestamp: cache.value.updatedAt,
+            timestamp: cache.channel.updatedAt,
             author: {
-                icon_url: cache.value.user.avatarUrl,
-                name: cache.value.user.username,
-                url: `https://mixer.com/${cache.value.token}`
+                icon_url: cache.channel.user.avatarUrl,
+                name: cache.channel.user.username,
+                url: `https://mixer.com/${cache.channel.token}`
             },
             thumbnail: {
                 width: 128,
                 height: 128,
-                url: cache.value.user.avatarUrl || MIXER_ICON
+                url: cache.channel.user.avatarUrl || MIXER_ICON
             },
             description: localizer.getFormattedString(lang, "STREAMING_DESCRIPTION", {
-                username: escapeDiscordMarkdown(cache.value.user.username, true)
+                username: escapeDiscordMarkdown(cache.channel.user.username, true)
             }),
             color: MIXER_COLOR,
             image: {
-                url: `https://thumbs.beam.pro/channel/${cache.value.id}.big.jpg?ts=${Date.now()}`
+                url: `https://thumbs.beam.pro/channel/${cache.channel.id}.big.jpg?ts=${Date.now()}`
             },
             fields: [{
                 inline: true,
                 name: localizer.getString(lang, "STREAMING_VIEWERS_NAME"),
                 value: localizer.getFormattedString(lang, "STREAMING_VIEWERS_VALUE", {
-                    viewers: cache.value.viewersCurrent
+                    viewers: cache.channel.viewersCurrent
                 })
             }, {
                 inline: true,
                 name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
                 value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_MIXER", {
-                    audience: cache.value.audience
+                    audience: cache.channel.audience
                 })
             }]
         };
     }
 
-    private getAPIURL_Channels(ids:string[]) {
-        return `https://beam.pro/api/v1/channels?where=online:eq:true,id:in:${ids.join(";")}`;
+    freed(uid:string) {
+        let listener = this.listeners.get(uid);
+        if(listener) {
+            this.ca.unsubscribe(`channel:${uid}:update`);
+            this.listeners.delete(uid);
+        }
     }
+
+    // private getAPIURL_Channels(ids:string[]) {
+    //     return `https://beam.pro/api/v1/channels?where=online:eq:true,id:in:${ids.join(";")}`;
+    // }
 
     private getAPIURL_Channel(username:string) {
         return `https://mixer.com/api/v1/channels/${username}`;
@@ -150,6 +178,9 @@ class MixerStreamingService implements IStreamingService {
     }
 
     async unload() {
+        for(let [uid, listener] of this.listeners) {
+            this.ca.unsubscribe(`channel:${uid}:update`, listener);
+        }
         this.cache.clear();
         return true;
     }
