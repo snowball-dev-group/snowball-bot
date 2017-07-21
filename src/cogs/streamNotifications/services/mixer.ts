@@ -15,7 +15,7 @@ class MixerStreamingService implements IStreamingService {
     public name = "mixer";
     private log = getLogger("MixerStreamingService");
     private cache = new Map<string, {
-        cachedAt:number,
+        startedAt:number,
         channel: IMixerChannel
     }>();
     private ca:Carina;
@@ -34,9 +34,10 @@ class MixerStreamingService implements IStreamingService {
         let listener = async (data:IMixerChannel) => {
             if(data.online === true) {
                 // fetching channel, stream has begun
+                let channel = await this.fetchChannel(uid);
                 this.cache.set(uid, {
-                    cachedAt: Date.now(),
-                    channel: await this.fetchChannel(uid)
+                    startedAt: await this.getStreamStartTime(channel.id),
+                    channel: channel
                 });
             } else if (data.online === false) {
                 this.cache.delete(uid);
@@ -45,11 +46,11 @@ class MixerStreamingService implements IStreamingService {
         this.listeners.set(uid, listener);
         this.ca.subscribe(`channel:${uid}:update`, listener);
         // fetching channel to see if it online
-        let ch = await this.fetchChannel(uid);
-        if(ch.online) {
+        let channel = await this.fetchChannel(uid);
+        if(channel.online) {
             this.cache.set(uid, {
-                cachedAt: Date.now(),
-                channel: await this.fetchChannel(uid)
+                startedAt: await this.getStreamStartTime(channel.id),
+                channel: channel
             });
         }
     }
@@ -69,6 +70,27 @@ class MixerStreamingService implements IStreamingService {
         }
         return (await resp.json()) as IMixerChannel;
     };
+
+    async getStreamStartTime(uid:string, attempt:number = 0) : Promise<number> {
+        if(attempt > 3) {
+            throw new StreamingServiceError("MIXER_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
+        }
+
+        let resp = await fetch(`${this.getAPIURL_Channel(uid)}/manifest.light2`);
+        if(resp.status === 429) {
+            let delay = parseInt(resp.headers.get("retry-after"), 10);
+            this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
+            await sleep(delay);
+            return await this.getStreamStartTime(uid, attempt + 1);
+        } else if(resp.status === 404) {
+            throw new StreamingServiceError("MIXER_NOTFOUND", "Channel with this name not found");
+        }
+        
+        return new Date(((await resp.json()) as {
+            now: string,
+            startedAt: string
+        }).startedAt).getTime();
+    }
 
     public async fetch(streamers:IStreamingServiceStreamer[]) {
         // should return only online streams
@@ -91,7 +113,7 @@ class MixerStreamingService implements IStreamingService {
             result.push({
                 status: "online",
                 streamer,
-                id: getUUIDByString(`mixer::${streamer.uid}::${cached.cachedAt}`)
+                id: getUUIDByString(`mixer::${streamer.uid}::${cached.startedAt}`)
             });
         }
 
