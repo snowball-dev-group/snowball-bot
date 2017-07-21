@@ -15,10 +15,10 @@ class MixerStreamingService implements IStreamingService {
     public name = "mixer";
     private log = getLogger("MixerStreamingService");
     private cache = new Map<string, {
-        startedAt:number,
+        startedAt: number,
         channel: IMixerChannel
     }>();
-    private ca:Carina;
+    private ca: Carina;
 
     constructor(apiKey) {
         this.ca = new Carina({
@@ -30,8 +30,8 @@ class MixerStreamingService implements IStreamingService {
 
     private listeners = new Map<string, (data) => void>();
 
-    public async subscribeTo(uid:string) {
-        let listener = async (data:IMixerChannel) => {
+    public async subscribeTo(uid: string) {
+        let listener = async (data: IMixerChannel) => {
             if(data.online === true) {
                 // fetching channel, stream has begun
                 let channel = await this.fetchChannel(uid);
@@ -39,7 +39,7 @@ class MixerStreamingService implements IStreamingService {
                     startedAt: await this.getStreamStartTime(channel.id),
                     channel: channel
                 });
-            } else if (data.online === false) {
+            } else if(data.online === false) {
                 this.cache.delete(uid);
             }
         };
@@ -55,7 +55,7 @@ class MixerStreamingService implements IStreamingService {
         }
     }
 
-    async makeRequest(uri:string, attempt:number = 0) : Promise<any> {
+    async makeRequest(uri: string, attempt: number = 0): Promise<any> {
         let resp = await fetch(uri);
         if(resp.status === 429) {
             let delay = parseInt(resp.headers.get("retry-after"), 10);
@@ -68,22 +68,19 @@ class MixerStreamingService implements IStreamingService {
         return (await resp.json());
     }
 
-
-    async fetchChannel(uid:string) : Promise<IMixerChannel> {
+    async fetchChannel(uid: string): Promise<IMixerChannel> {
         return (await this.makeRequest(this.getAPIURL_Channel(uid))) as IMixerChannel;
     };
 
-    async getStreamStartTime(uid:string) : Promise<number> {
+    async getStreamStartTime(uid: string): Promise<number> {
         return new Date(((await this.makeRequest(`${this.getAPIURL_Channel(uid)}/manifest.light2`)) as {
             now: string,
             startedAt: string
         }).startedAt).getTime();
     }
 
-    public async fetch(streamers:IStreamingServiceStreamer[]) {
-        // should return only online streams
-
-        let result:IStreamStatus[] = [];
+    public async fetch(streamers: IStreamingServiceStreamer[]) {
+        let result: IStreamStatus[] = [];
 
         for(let streamer of streamers) {
             if(!this.listeners.has(streamer.uid)) {
@@ -108,7 +105,7 @@ class MixerStreamingService implements IStreamingService {
         return result;
     }
 
-    public async getEmbed(stream:IStreamStatus, lang:string) : Promise<IEmbed> {
+    public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
         let cache = this.cache.get(stream.streamer.uid);
         if(!cache) {
             throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure");
@@ -151,7 +148,7 @@ class MixerStreamingService implements IStreamingService {
         };
     }
 
-    public freed(uid:string) {
+    public freed(uid: string) {
         let listener = this.listeners.get(uid);
         if(listener) {
             this.ca.unsubscribe(`channel:${uid}:update`);
@@ -159,11 +156,11 @@ class MixerStreamingService implements IStreamingService {
         }
     }
 
-    public getAPIURL_Channel(username:string) {
+    public getAPIURL_Channel(username: string) {
         return `https://mixer.com/api/v1/channels/${username}`;
     }
 
-    public async getStreamer(username:string) : Promise<IStreamingServiceStreamer> {
+    public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
         let json = (await this.makeRequest(this.getAPIURL_Channel(username))) as IMixerChannel;
         return {
             serviceName: this.name,
@@ -185,31 +182,31 @@ interface IMixerChannel {
     /**
      * Channel ID
      */
-    id:string;
+    id: string;
     /**
      * Channel name
      */
-    token:string;
+    token: string;
     /**
      * Name of the stream
      */
-    name:string;
+    name: string;
     /**
      * Viewers (current)
      */
-    viewersCurrent:number;
+    viewersCurrent: number;
     /**
      * Viewers (total)
      */
-    viewersTotal:number;
+    viewersTotal: number;
     /**
      * Followers
      */
-    numFollowers:number;
+    numFollowers: number;
     /**
      * Latest time channel was updated (streaming also updates it)
      */
-    updatedAt:string;
+    updatedAt: string;
     /**
      * Details about game
      */
@@ -217,12 +214,12 @@ interface IMixerChannel {
         /**
          * Name of game
          */
-        name:string
+        name: string
     };
     /**
      * Online?
      */
-    online:boolean;
+    online: boolean;
     /**
      * User info
      */
@@ -230,16 +227,16 @@ interface IMixerChannel {
         /**
          * Avy url
          */
-        avatarUrl?:string;
+        avatarUrl?: string;
         /**
          * Username
          */
-        username:string;
+        username: string;
     };
     /**
      * Audience of stream
      */
-    audience:"teen"|"18+"|"family";
+    audience: "teen" | "18+" | "family";
 }
 
 module.exports = MixerStreamingService;
