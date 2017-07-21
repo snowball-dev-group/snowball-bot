@@ -1,5 +1,5 @@
 export class Plugin {
-    private events:Map<string, Function> = new Map<string, Function>();
+    private events:Map<string, any> = new Map<string, any>();
 
     constructor(events:Object, dontAutoHandle = false) {
         for(let key of Object.keys(events)) {
