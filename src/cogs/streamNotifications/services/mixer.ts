@@ -130,6 +130,7 @@ class MixerStreamingService implements IStreamingService {
                 username: escapeDiscordMarkdown(cache.channel.user.username, true)
             }),
             title: cache.channel.name,
+            url: `https://mixer.com/${cache.channel.token}`,
             color: MIXER_COLOR,
             image: {
                 url: `https://thumbs.beam.pro/channel/${cache.channel.id}.big.jpg?ts=${Date.now()}`
