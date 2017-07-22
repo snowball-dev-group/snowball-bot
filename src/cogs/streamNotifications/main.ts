@@ -669,7 +669,12 @@ class StreamNotifications extends Plugin implements IModule {
                 return;
             }
         } else if(!args) {
-            page = parseInt(calledAs, 10);
+            if(/^[0-9]+$/.test(calledAs)) {
+                page = parseInt(calledAs, 10);
+            } else {
+                page = 1;
+                provider = calledAs.toLowerCase();
+            }
         }
 
         let offset = (10 * page) - 10;
