@@ -220,7 +220,7 @@
     "GUILDS_EDIT_MEMBERNOTFOUND": "Участник сервера не найден",
     "GUILDS_EDIT_TRANSFEROWNERSHIPTOOWNER": "Вы не можете передать гильдию её текущему владельцу",
     "GUILDS_EDIT_TRANSFERCONFIRMATION": "Вы действительно хотите передать гильдию {username}? Вы больше не сможете редактировать её.",
-    "GUILDS_EDIT_TRANSFERDONE": "Передача владения гильдией заверешна. Вы лишены прав модификации",
+    "GUILDS_EDIT_TRANSFERDONE": "Передача владения гильдией завершена. Вы лишены прав модификации",
     "GUILDS_EDIT_NOPERMS": "Изменять этот параметр может только создатель гильдии или админ сервера",
     "GUILDS_EDIT_GOOGLEUAWRONGCODE": "Неверный код GA",
     "GUILDS_EDIT_GOOGLEUADONE": "Код Google Analytics установлен",
