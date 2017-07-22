@@ -173,9 +173,6 @@ class StreamNotifications extends Plugin implements IModule {
     async onMessage(msg:Message) {
         if(!msg.content.startsWith(PREFIX)) { return; }
         let cmd = simpleCmdParse(msg.content);
-        if(!cmd.subCommand) {
-            return;
-        }
         try {
             switch(cmd.subCommand) {
                 case "edit": await this.edit(msg, cmd.args); break;
@@ -705,7 +702,7 @@ class StreamNotifications extends Plugin implements IModule {
         }
 
         let fields:IEmbedOptionsField[] = [];
-        let c = 0;
+        let c = 1;
         for(let result of results) {
             fields.push({
                 inline: false,
