@@ -23,7 +23,7 @@ export function simpleCmdParse(str:string) {
     let args = str.split(" ");
     let cmd = args.shift(); // !cmd
     let subCmd = args.shift(); // subcmd / undefined
-    args = args.join(" ").split(",").map(arg => arg.trim());
+    args = args.join(" ").split(",").map(arg => arg.trim()).filter(arg => arg.trim() !== "");
     return {
         command: cmd,
         subCommand: subCmd,
