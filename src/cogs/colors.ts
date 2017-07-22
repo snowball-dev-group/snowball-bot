@@ -701,56 +701,59 @@ class Colors extends Plugin implements IModule {
             str += `**${escapeDiscordMarkdown(name)}**\n`;
             if(colorInfo.required_role) {
                 if(colorInfo.required_role instanceof Array) {
-                    str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLES");
+                    str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLES")) + "\n";
                     let foundOne = !!colorInfo.required_role.find(roleId => msg.guild.roles.has(roleId));
                     let notFoundOne = false;
-                    str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLESSEARCH");
+                    str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLESSEARCH")) + "\n";
                     for(let roleId of colorInfo.required_role) {
                         let role = msg.guild.roles.get(roleId);
                         if(!role) {
                             if(!notFoundOne) { notFoundOne = true; }
-                            str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLENOTFOUND", {
+                            str += "      " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLENOTFOUND", {
                                 roleId: roleId
-                            });
+                            }));
                         } else {
-                            str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEROW", {
+                            str += "      " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEROW", {
                                 roleName: role.name, 
                                 roleId: role.id
-                            });
+                            })) + "\n";
                         }
                     }
                     if(!foundOne) {
-                        str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_BAD_HEALTH");
+                        str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_BAD_HEALTH"));
                     } else if(notFoundOne) {
-                        str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_MED_HEALTH");
+                        str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_MED_HEALTH"));
                     } else {
-                        str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_GOOD_HEALTH");
+                        str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_GOOD_HEALTH"));
                     }
+                    str += "\n";
                 } else {
-                    str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLE", {
+                    str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLE", {
                         roleId: colorInfo.required_role
-                    });
+                    })) + "\n";
                     let role = msg.guild.roles.get(colorInfo.required_role);
                     if(!role) {
-                        str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEDELETED");
+                        str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEDELETED"));
                     } else {
-                        str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEFOUND", {
+                        str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEFOUND", {
                             roleName: role.name
-                        });
+                        }));
                     }
+                    str += "\n";
                 }
             }
-            str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLE", {
+            str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLE", {
                 roleId: colorInfo.role
-            });
+            })) + "\n";
             let role = msg.guild.roles.get(colorInfo.role);
             if(!role) {
-                str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEDELETED");
+                str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEDELETED"));
             } else {
-                str += await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEFOUND", {
+                str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEFOUND", {
                     roleName: role.name
-                });
+                }));
             }
+            str += "\n";
         }
 
         msg.channel.send(str, {
