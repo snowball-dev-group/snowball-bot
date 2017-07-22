@@ -5,7 +5,7 @@ import { getLogger } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import { simpleCmdParse } from "../utils/text";
 import { generateLocalizedEmbed, getGuildLanguage } from "../utils/ez-i18n";
-import { EmbedType, sleep } from "../utils/utils";
+import { EmbedType, sleep, IEmbedOptionsField } from "../utils/utils";
 import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError } from "./baseService";
 import { createConfirmationMessage } from "../utils/interactive";
 import { command, Category as CommandCategory, IArgumentInfo } from "../utils/help";
@@ -33,12 +33,14 @@ interface ISettingsRow {
      * JSON with Array<IStreamingServiceStreamer>
      */
     mentionsEveryone:string;
+    subscribedTo:string;
 }
 
 interface ISettingsParsedRow {
     channelId:string|null;
     guild:string;
     mentionsEveryone:IStreamingServiceStreamer[];
+    subscribedTo:IStreamingServiceStreamer[];
 }
 
 interface ISubscriptionRow {
@@ -133,6 +135,16 @@ function helpCheck(msg:Message) {
         optional: false
     }]
 ]), helpCheck)
+@command(CommandCategory.Helpful, `${PREFIX.slice(1)}`, `loc:${LOCALIZED("META_LIST")}`, new Map<string, IArgumentInfo>([
+    ["loc:STREAMING_META_ADD_ARG0", {
+        description: "loc:STREAMING_META_LIST_ARG0_DESC",
+        optional: true
+    }],
+    ["loc:STREAMING_META_LIST_ARG1", {
+        description: "loc:STREAMING_META_LIST_ARG1_DESC",
+        optional: false
+    }]
+]), helpCheck)
 class StreamNotifications extends Plugin implements IModule {
     log = getLogger("StreamNotifications");
     db = getDB();
@@ -170,7 +182,7 @@ class StreamNotifications extends Plugin implements IModule {
                 case "add": await this.add(msg, cmd.args); break;
                 case "remove": await this.remove(msg, cmd.args); break;
                 case "set_channel": await this.setChannel(msg, cmd.args); break;
-                default: break;
+                default: await this.list(msg, cmd.subCommand, cmd.args); break;
             }
         } catch (err) {
             msg.channel.send("", {
@@ -464,6 +476,25 @@ class StreamNotifications extends Plugin implements IModule {
         subscribers.push(msg.guild.id);
         subscription.subscribers = JSON.stringify(subscribers);
 
+        let rawSettings = await this.getSettings(msg.guild);
+        let settings = rawSettings ? await this.convertToNormalSettings(rawSettings) : undefined;
+
+        if(settings) {
+            let index = settings.subscribedTo.findIndex((streamer) => {
+                return !!subscription && streamer.serviceName === providerName && streamer.uid === subscription.uid;
+            });
+            if(index === -1) {
+                settings.subscribedTo.push({
+                    serviceName: providerName,
+                    uid: subscription.uid,
+                    username: subscription.username
+                });
+
+                rawSettings = this.convertToRawSettings(settings);
+                await this.updateSettings(rawSettings);
+            }
+        }
+
         await this.updateSubscription(subscription);
 
         msg.channel.send("", {
@@ -500,9 +531,12 @@ class StreamNotifications extends Plugin implements IModule {
             return;
         }
 
+        let providerName = args[0].toLowerCase();
+        let suid = args[1];
+
         let rawSubscription = await this.getSubscription({
-            provider: args[0].toLowerCase(),
-            uid: args[1].toLowerCase()
+            provider: providerName,
+            uid: suid
         });
 
         if(!rawSubscription) {
@@ -539,8 +573,8 @@ class StreamNotifications extends Plugin implements IModule {
         }
 
         rawSubscription = await this.getSubscription({
-            provider: args[0].toLowerCase(),
-            uid: args[1].toLowerCase()
+            provider: providerName,
+            uid: suid
         });
 
         if(!rawSubscription) {
@@ -563,9 +597,31 @@ class StreamNotifications extends Plugin implements IModule {
 
         subscription.subscribers.splice(index, 1);
 
+        let rawSettings = await this.getSettings(msg.guild);
+        let settings = rawSettings ? await this.convertToNormalSettings(rawSettings) : undefined;
+
+        if(settings) {
+            let index = settings.subscribedTo.findIndex((streamer) => {
+                return streamer.serviceName === providerName && streamer.uid === suid;
+            });
+            if(index !== -1) {
+                settings.subscribedTo.splice(index);
+                rawSettings = this.convertToRawSettings(settings);
+                await this.updateSettings(rawSettings);
+            }
+        }
+
         if(subscription.subscribers.length === 0) {
             // delete subscription
             await this.removeSubscription(rawSubscription);
+
+            // we'll gonna notify provider that it can free cache for this subscription
+            let providerModule = this.servicesLoader.loadedModulesRegistry.get(args[0].toLowerCase());
+            if(providerModule) {
+                // well, provider isn't loaded
+                let provider = providerModule.base as IStreamingService;
+                if(provider.freed) { provider.freed(rawSubscription.uid); }
+            }
         } else {
             // updating subscription
             rawSubscription = this.convertToRawSubscription(subscription);
@@ -574,6 +630,100 @@ class StreamNotifications extends Plugin implements IModule {
 
         msg.channel.send("", {
             embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("REMOVE_DONE"))
+        });
+    }
+
+    async list(msg:Message, calledAs:string|undefined, args:string[]|undefined) {
+        // !streams 2
+        // !streams YouTube 2
+
+        if(!rightsCheck(msg.member)) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
+            });
+            return;
+        }
+
+        if(!calledAs) {
+            calledAs = "1";
+            args = undefined;
+        }
+
+        let page = 1;
+        let provider = "any";
+        
+        if(args && args.length > 1) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                    key: LOCALIZED("LIST_USAGE"),
+                    formatOptions: {
+                        prefix: PREFIX
+                    }
+                })
+            });
+            return;
+        } else if(args) {
+            page = parseInt(args[0], 10);
+            provider = calledAs.toLowerCase();
+            if(isNaN(page) || page < 1) {
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("LIST_INVALIDPAGE"))
+                });
+                return;
+            }
+        } else if(!args) {
+            page = parseInt(calledAs, 10);
+        }
+
+        let offset = (10 * page) - 10;
+        let end = offset + 10;
+
+        let rawSettings = await this.getSettings(msg.guild);
+        if(!rawSettings) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("LIST_ISEMPTY"))
+            });
+            return;
+        }
+        let normalSettings = await this.convertToNormalSettings(rawSettings);
+        
+        let results = normalSettings.subscribedTo;
+
+        if(provider !== "any") {
+            results = results.filter(r => {
+                return r.serviceName === provider;
+            });
+        }
+
+        results = results.slice(offset, end);
+
+        if(results.length === 0) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("LIST_ISEMPTY"))
+            });
+            return;
+        }
+
+        let fields:IEmbedOptionsField[] = [];
+        let c = 0;
+        for(let result of results) {
+            fields.push({
+                inline: false,
+                name: `${c++}. ${result.username}`,
+                value: `${result.serviceName}, ID: \`${result.uid}\``
+            });
+        }
+
+        msg.channel.send("", {
+            embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                key: LOCALIZED("LIST_DESCRIPTION"),
+                formatOptions: {
+                    count: results.length,
+                    page
+                }
+            }, {
+                fields
+            })
         });
     }
 
@@ -704,7 +854,8 @@ class StreamNotifications extends Plugin implements IModule {
             settings = await this.createSettings({
                 channelId: null,
                 guild: guild.id,
-                mentionsEveryone: "[]"
+                mentionsEveryone: "[]",
+                subscribedTo: "[]"
             });
         }
         return settings;
@@ -718,7 +869,8 @@ class StreamNotifications extends Plugin implements IModule {
         return {
             channelId: raw.channelId,
             guild: raw.guild,
-            mentionsEveryone: JSON.parse(raw.mentionsEveryone)
+            mentionsEveryone: JSON.parse(raw.mentionsEveryone),
+            subscribedTo: JSON.parse(raw.subscribedTo)
         };
     }
 
@@ -726,7 +878,8 @@ class StreamNotifications extends Plugin implements IModule {
         return {
             channelId: normal.channelId,
             guild: normal.guild,
-            mentionsEveryone: JSON.stringify(normal.mentionsEveryone)
+            mentionsEveryone: JSON.stringify(normal.mentionsEveryone),
+            subscribedTo: JSON.stringify(normal.subscribedTo)
         };
     }
 
@@ -858,6 +1011,9 @@ class StreamNotifications extends Plugin implements IModule {
                 guild: "string",
                 channelId: "string",
                 mentionsEveryone: {
+                    type: "TEXT"
+                },
+                subscribedTo: {
                     type: "TEXT"
                 }
             });
