@@ -110,7 +110,7 @@ class TwitchStreamingService implements IStreamingService {
                 inline: true,
                 name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
                 value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
-                    mature: stream.value.channel.mature
+                    mature: stream.value.channel.mature + ""
                 })
             }]
         };
