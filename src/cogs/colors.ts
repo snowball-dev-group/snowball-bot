@@ -340,17 +340,17 @@ class Colors extends Plugin implements IModule {
 
         // Вы собираетесь добавить цвет {colorName}, роль которого - `{colorRoleName}` ({colorHEX}, цвет показан справа)
 
-        let _confirmationString = await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION", {
+        let _confirmationString = (await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION", {
             colorName: namedArgs.name,
             colorRoleName: colorRole.name,
             colorHEX: colorRole.hexColor.toUpperCase()
-        });
+        })) + ".\n";
 
         if(requiredRoles) {
             if(requiredRoles instanceof Role) {
-                _confirmationString += await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_REQUIREDROLE", {
+                _confirmationString += (await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_REQUIREDROLE", {
                     requiredRoleName: escapeDiscordMarkdown(requiredRoles.name)
-                });
+                }));
             } else {
                 _confirmationString += await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_REQUIREDROLES");
                 for(let requiredRole of requiredRoles) {
