@@ -5,6 +5,7 @@ out/config/*
 !out/config/configuration.example.json
 node_modules
 yarn*
+.bin
 
 # Private cogs
 src/cogs/private_cogs
