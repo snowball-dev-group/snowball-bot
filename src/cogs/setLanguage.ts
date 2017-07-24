@@ -1,7 +1,7 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, GuildMember } from "discord.js";
-import { command, Category, IArgumentInfo } from "./utils/help";
+import { command, Category } from "./utils/help";
 import { localizeForUser, getPrefsNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed, getUserLanguage } from "./utils/ez-i18n";
 import { startsOrEqual, slice } from "./utils/text";
 import { EmbedType, getLogger } from "./utils/utils";
@@ -17,12 +17,12 @@ const CMD = {
 };
 
 @command(Category.Language, slice(BASE_PREFIX, 1), "loc:LANGUAGE_META_DEFAULT")
-@command(Category.Language, slice(CMD.SWITCH, 1), "loc:LANGUAGE_META_SWITCH", new Map<string, IArgumentInfo>([
-    ["loc:LANGUAGE_META_SWITCH_ARG0", {
+@command(Category.Language, slice(CMD.SWITCH, 1), "loc:LANGUAGE_META_SWITCH", {
+    "loc:LANGUAGE_META_SWITCH_ARG0": {
         optional: false,
         description: "loc:LANGUAGE_META_SWITCH_ARG0_DESC"
-    }]
-]))
+    }
+})
 class SetLanguageCommand extends Plugin implements IModule {
     prefs = getPrefsNames();
     log = getLogger("SetLanguage");

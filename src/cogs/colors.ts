@@ -3,7 +3,7 @@ import { Plugin } from "./plugin";
 import { Message, Guild, Role, GuildMember } from "discord.js"; 
 import { getLogger, EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "./utils/utils";
 import { getDB } from "./utils/db";
-import { command as cmd, Category, IArgumentInfo } from "./utils/help";
+import { command as cmd, Category } from "./utils/help";
 import { createConfirmationMessage } from "./utils/interactive";
 import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
 
@@ -29,54 +29,54 @@ function isChat(msg:Message) {
     return msg.channel.type === "text";
 }
 
-@cmd(Category.Colors, COLORFUL_HELP_PREFIX, "loc:COLORS_META_ASSIGN", new Map<string, IArgumentInfo>([
-    ["loc:COLORS_META_COLORNAME", {
+@cmd(Category.Colors, COLORFUL_HELP_PREFIX, "loc:COLORS_META_ASSIGN", {
+    "loc:COLORS_META_COLORNAME": {
         optional: false,
         description: "loc:COLORS_META_ASSIGN_ARG_DESC"
-    }]
-]), isChat)
+    }
+}, isChat)
 @cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} list`, "loc:COLORS_META_LIST", undefined, isChat)
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} info`, "loc:COLORS_META_INFO", new Map<string, IArgumentInfo>([
-    ["loc:COLORS_META_COLORNAME", {
+@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} info`, "loc:COLORS_META_INFO", {
+    "loc:COLORS_META_COLORNAME": {
         optional: false,
         description: "loc:COLORS_META_INFO_ARG_DESC"
-    }]
-]), isChat)
+    }
+}, isChat)
 @cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} reset`, "loc:COLORS_META_RESET", undefined, isChat)
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} add`, "loc:COLORS_META_ADD", new Map<string, IArgumentInfo>([
-    ["loc:COLORS_META_COLORNAME", {
+@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} add`, "loc:COLORS_META_ADD", {
+    "loc:COLORS_META_COLORNAME": {
         optional: false,
         description: "loc:COLORS_META_ADD_ARG0_DESC"
-    }],
-    ["loc:COLORS_META_ADD_ARG1", {
+    },
+    "loc:COLORS_META_ADD_ARG1": {
         optional: true,
         description: "loc:COLORS_META_ADD_ARG1_DESC"
-    }],
-    ["loc:COLORS_META_ADD_ARG2", {
+    },
+    "loc:COLORS_META_ADD_ARG2": {
         optional: false,
         description: "loc:COLORS_META_ADD_ARG2"
-    }]
-]), (msg: Message) => {
+    }
+}, (msg: Message) => {
     return isChat(msg) && checkPerms(msg.member);
 })
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} rename`, "loc:COLORS_META_RENAME", new Map<string, IArgumentInfo>([
-    ["loc:COLORS_META_RENAME_ARG0", {
+@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} rename`, "loc:COLORS_META_RENAME", {
+    "loc:COLORS_META_RENAME_ARG0": {
         optional: false,
         description: "loc:COLORS_META_RENAME_ARG0_DESC"
-    }],
-    ["loc:COLORS_META_RENAME_ARG1", {
+    },
+    "loc:COLORS_META_RENAME_ARG1": {
         optional: false,
         description: "loc:COLORS_META_RENAME_ARG1_DESC"
-    }]
-]), (msg:Message) => {
+    }
+}, (msg:Message) => {
     return isChat(msg) && checkPerms(msg.member);
 })
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} delete`, "loc:COLORS_META_DELETE", new Map<string, IArgumentInfo>([
-    ["loc:COLORS_META_COLORNAME", {
+@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} delete`, "loc:COLORS_META_DELETE", {
+    "loc:COLORS_META_COLORNAME": {
         optional: false,
         description: "loc:COLORS_META_DELETE_ARG_DESC"
-    }]
-]), (msg: Message) => {
+    }
+}, (msg: Message) => {
     return isChat(msg) && checkPerms(msg.member);
 })
 class Colors extends Plugin implements IModule {

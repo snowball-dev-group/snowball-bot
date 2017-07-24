@@ -1,7 +1,7 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, Guild } from "discord.js"; 
-import { command, Category, IArgumentInfo } from "./utils/help";
+import { command, Category } from "./utils/help";
 import { init, checkPremium, givePremium, deletePremium, isPremium as isPremiumUser } from "./utils/premium";
 import { getLogger, EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "./utils/utils";
 import { generateLocalizedEmbed, localizeForUser } from "./utils/ez-i18n";
@@ -31,46 +31,46 @@ interface IPlgCfg {
     whoCanGive:string[];
 }
 
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} checkout`, "loc:PREMIUMCTL_META_CHECKOUT", new Map<string, IArgumentInfo>([
-    ["loc:PREMIUMCTL_META_MENTION", {
+@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} checkout`, "loc:PREMIUMCTL_META_CHECKOUT", {
+    "loc:PREMIUMCTL_META_MENTION": {
         optional: true,
         description: "loc:PREMIUMCTL_META_CHECKOUT_ARG0_DESC",
         specialCheck: isAdm
-    }]
-]), isChat)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} give`, "", new Map<string, IArgumentInfo>([
-    ["loc:PREMIUMCTL_META_MENTION", {
+    }
+}, isChat)
+@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} give`, "", {
+    "loc:PREMIUMCTL_META_MENTION": {
         optional: false,
         description: "loc:PREMIUMCTL_META_GIVE_ARG0_DESC"
-    }],
-    ["loc:PREMIUMCTL_META_GIVE_ARG1", {
+    },
+    "loc:PREMIUMCTL_META_GIVE_ARG1": {
         optional: false,
         description: "loc:PREMIUMCTL_META_GIVE_ARG1_DESC"
-    }]
-]), isAdm)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} renew`, "loc:PREMIUMCTL_META_RENEW", new Map<string, IArgumentInfo>([
-    ["loc:PREMIUMCTL_META_MENTION", {
+    }
+}, isAdm)
+@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} renew`, "loc:PREMIUMCTL_META_RENEW", {
+    "loc:PREMIUMCTL_META_MENTION": {
         optional: false,
         description: "loc:PREMIUMCTL_META_RENEW_ARG0_DESC"
-    }],
-    ["loc:PREMIUMCTL_META_RENEW_ARG1", {
+    },
+    "loc:PREMIUMCTL_META_RENEW_ARG1": {
         optional: false,
         description: "loc:PREMIUMCTL_META_RENEW_ARG1_DESC"
-    }]
-]), isAdm)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} delete`, "loc:PREMIUMCTL_META_DELETE", new Map<string, IArgumentInfo>([
-    ["loc:PREMIUMCTL_META_MENTION", {
+    }
+}, isAdm)
+@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} delete`, "loc:PREMIUMCTL_META_DELETE", {
+    "loc:PREMIUMCTL_META_MENTION": {
         optional: false,
         description: "loc:PREMIUMCTL_META_DELETE_ARG0_DESC"
-    }]
-]), isAdm)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} role`, "loc:PREMIUMCTL_META_ROLE", new Map<string, IArgumentInfo>([
-    ["loc:PREMIUMCTL_META_ROLE_ARG0", {
+    }
+}, isAdm)
+@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} role`, "loc:PREMIUMCTL_META_ROLE", {
+    "loc:PREMIUMCTL_META_ROLE_ARG0": {
         optional: false,
         description: "loc:PREMIUMCTL_META_ROLE_ARG0_DESC",
         values: ["loc:PREMIUMCTL_META_ROLE_ARG0_VALUES0", "none"]
-    }]
-]), checkServerAdmin)
+    }
+}, checkServerAdmin)
 @command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} resync`, "loc:PREMIUMCTL_META_RESYNC", undefined, isAdm)
 class PremiumControl extends Plugin implements IModule {
     log = getLogger("PremiumControl");

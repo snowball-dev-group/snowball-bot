@@ -8,7 +8,7 @@ import { generateLocalizedEmbed, getGuildLanguage } from "../utils/ez-i18n";
 import { EmbedType, sleep, IEmbedOptionsField } from "../utils/utils";
 import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError } from "./baseService";
 import { createConfirmationMessage } from "../utils/interactive";
-import { command, Category as CommandCategory, IArgumentInfo } from "../utils/help";
+import { command, Category as CommandCategory } from "../utils/help";
 
 const PREFIX = "!streams";
 const MAX_NOTIFIED_LIFE = 86400000; // ms
@@ -91,60 +91,60 @@ function helpCheck(msg:Message) {
     return msg.channel.type === "text" && rightsCheck(msg.member);
 }
 
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_ADD")}`, new Map<string, IArgumentInfo>([
-    ["loc:STREAMING_META_ADD_ARG0", {
+@command(CommandCategory.Helpful, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_ADD")}`, {
+    "loc:STREAMING_META_ADD_ARG0": {
         description: "loc:STREAMING_META_ADD_ARG0_DESC",
         optional: false
-    }],
-    ["loc:STREAMING_META_ADD_ARG1", {
+    },
+    "loc:STREAMING_META_ADD_ARG1": {
         description: "loc:STREAMING_META_ADD_ARG1_DESC",
         optional: false
-    }]
-]), helpCheck)
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)} remove`, `loc:${LOCALIZED("META_REMOVE")}`, new Map<string, IArgumentInfo>([
-    ["loc:STREAMING_META_ADD_ARG0", {
+    }
+}, helpCheck)
+@command(CommandCategory.Helpful, `${PREFIX.slice(1)} remove`, `loc:${LOCALIZED("META_REMOVE")}`, {
+    "loc:STREAMING_META_ADD_ARG0": {
         description: "loc:STREAMING_META_ADD_ARG0_DESC",
         optional: false
-    }],
-    ["loc:STREAMING_META_ADD_ARG1", {
+    },
+    "loc:STREAMING_META_ADD_ARG1": {
         description: "loc:STREAMING_META_ADD_ARG1_DESC",
         optional: false
-    }]
-]), helpCheck)
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)} edit`, `loc:${LOCALIZED("META_EDIT")}`, new Map<string, IArgumentInfo>([
-    ["loc:STREAMING_META_ADD_ARG0", {
+    }
+}, helpCheck)
+@command(CommandCategory.Helpful, `${PREFIX.slice(1)} edit`, `loc:${LOCALIZED("META_EDIT")}`, {
+    "loc:STREAMING_META_ADD_ARG0": {
         description: "loc:STREAMING_META_ADD_ARG0_DESC",
         optional: false
-    }],
-    ["loc:STREAMING_META_ADD_ARG1", {
+    },
+    "loc:STREAMING_META_ADD_ARG1": {
         description: "loc:STREAMING_META_ADD_ARG1_DESC",
         optional: false
-    }],
-    ["loc:STREAMING_META_EDIT_ARG2", {
+    },
+    "loc:STREAMING_META_EDIT_ARG2": {
         description: "loc:STREAMING_META_EDIT_ARG2_DESC",
         optional: false
-    }],
-    ["loc:STREAMING_META_EDIT_ARG3", {
+    },
+    "loc:STREAMING_META_EDIT_ARG3": {
         description: "loc:STREAMING_META_EDIT_ARG3_DESC",
         optional: false
-    }]
-]), helpCheck)
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_SETCHANNEL")}`, new Map<string, IArgumentInfo>([
-    ["loc:STREAMING_META_ADD_ARG0", {
+    }
+}, helpCheck)
+@command(CommandCategory.Helpful, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_SETCHANNEL")}`, {
+    "loc:STREAMING_META_ADD_ARG0": {
         description: "loc:STREAMING_META_SETCHANNEL_ARG0_DESC",
         optional: false
-    }]
-]), helpCheck)
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)}`, `loc:${LOCALIZED("META_LIST")}`, new Map<string, IArgumentInfo>([
-    ["loc:STREAMING_META_ADD_ARG0", {
+    }
+}, helpCheck)
+@command(CommandCategory.Helpful, `${PREFIX.slice(1)}`, `loc:${LOCALIZED("META_LIST")}`, {
+    "loc:STREAMING_META_ADD_ARG0": {
         description: "loc:STREAMING_META_LIST_ARG0_DESC",
         optional: true
-    }],
-    ["loc:STREAMING_META_LIST_ARG1", {
+    },
+    "loc:STREAMING_META_LIST_ARG1": {
         description: "loc:STREAMING_META_LIST_ARG1_DESC",
         optional: false
-    }]
-]), helpCheck)
+    }
+}, helpCheck)
 class StreamNotifications extends Plugin implements IModule {
     log = getLogger("StreamNotifications");
     db = getDB();

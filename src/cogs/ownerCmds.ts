@@ -53,8 +53,6 @@ class OwnerCommands extends Plugin implements IModule {
         }));
     }
 
-
-
     async unload() {
         this.unhandleEvents();
         return true;
