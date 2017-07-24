@@ -23,7 +23,7 @@ export interface IArgumentInfo {
 // Arguments
 //  - name? => [optional, ]
 export interface IHelpfulObject {
-    arguments?:Map<string, IArgumentInfo>;
+    arguments?:ArgumentsMap;
     description:string;
     specialCheck?:(msg:Message) => boolean;
 }
@@ -39,7 +39,11 @@ function init() {
     return dict;
 }
 
-export function command(category:Category, command:string, description:string, args?:Map<string, IArgumentInfo>, specialCheck?:(msg:Message)=>boolean) {
+interface ArgumentsMap {
+    [argName: string]: IArgumentInfo;
+}
+
+export function command(category:Category, command:string, description:string, args?:ArgumentsMap, specialCheck?:(msg:Message)=>boolean) {
     return (target) => {
         let d = init();
         
@@ -72,7 +76,8 @@ export async function getHelp(msg:Message) {
             }
             str += `\n- ${command}`;
             if(target.arguments) {
-                for (let [argName, argInfo] of target.arguments) {
+                for (let argName in target.arguments) {
+                    let argInfo = target.arguments[argName];
                     if(argName.startsWith("loc:")) {
                         argName = await localizeForUser(user, argName.slice("loc:".length));
                     }
@@ -100,7 +105,8 @@ export async function getHelp(msg:Message) {
             }
             str += `: ${desc}\n`;
             if(target.arguments) {
-                for(let [argName, argInfo] of target.arguments) {
+                for (let argName in target.arguments) {
+                    let argInfo = target.arguments[argName];
                     if(argName.startsWith("loc:")) {
                         argName = await localizeForUser(user, argName.slice("loc:".length));
                     }

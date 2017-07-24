@@ -3,7 +3,7 @@ import { Plugin } from "./plugin";
 import { Message, GuildMember, User } from "discord.js"; 
 import * as Random from "random-js";
 import { getLogger, generateEmbed, EmbedType, sleep } from "./utils/utils";
-import { command, Category, IArgumentInfo } from "./utils/help";
+import { command, Category } from "./utils/help";
 import { localizeForUser } from "./utils/ez-i18n";
 
 const ICONS = {
@@ -12,12 +12,12 @@ const ICONS = {
 };
 
 
-@command(Category.Fun, "8ball", "loc:8BALL_META_DEFAULT", new Map<string, IArgumentInfo>([
-    ["loc:8BALL_META_DEFAULT_ARG0", {
+@command(Category.Fun, "8ball", "loc:8BALL_META_DEFAULT", {
+    "loc:8BALL_META_DEFAULT_ARG0": {
         optional: false,
         description: "loc:8BALL_META_DEFAULT_ARG0_DESC"
-    }]
-]))
+    }
+})
 class Ball8 extends Plugin implements IModule {
     log = getLogger("8Ball");
     responses = {
