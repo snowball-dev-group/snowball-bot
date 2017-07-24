@@ -1,7 +1,7 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, Guild, TextChannel, GuildMember } from "discord.js";
-import { command, Category, IArgumentInfo } from "./utils/help";
+import { command, Category } from "./utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
 import { simpleCmdParse, canBeSnowflake } from "./utils/text";
 import { EmbedType, getLogger, escapeDiscordMarkdown } from "./utils/utils";
@@ -56,17 +56,17 @@ function isServerAdmin(msg:Message) {
 }
 
 @command(Category.Helpful, "sb_pstatus", "loc:WHITELIST_META_PSTATUS", undefined, isServerAdmin)
-@command(Category.Helpful, "whitelist", "loc:WHITELIST_META_WHITELIST", new Map<string, IArgumentInfo>([
-    ["loc:WHITELIST_META_WHITELIST_ARG0", {
+@command(Category.Helpful, "whitelist", "loc:WHITELIST_META_WHITELIST", {
+    "loc:WHITELIST_META_WHITELIST_ARG0": {
         optional: false,
         description: "loc:WHITELIST_META_WHITELIST_ARG0_DESC",
         values: ["ban", "activate", "deactivate"]
-    }],
-    ["loc:WHITELIST_META_WHITELIST_ARG1", {
+    },
+    "loc:WHITELIST_META_WHITELIST_ARG1": {
         optional: false,
         description: "loc:WHITELIST_META_WHITELIST_ARG1_DESC"
-    }]
-]), isBotAdmin)
+    }
+}, isBotAdmin)
 class Whitelist extends Plugin implements IModule {
     log = getLogger("Whitelist");
     alwaysWhitelisted:string[] = [];

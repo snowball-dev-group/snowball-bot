@@ -8,7 +8,7 @@ import { createConfirmationMessage, waitForMessages } from "./utils/interactive"
 import * as ua from "universal-analytics";
 import { parse as parseURI } from "url";
 import { replaceAll } from "./utils/text";
-import { IArgumentInfo, Category, command } from "./utils/help";
+import { Category, command } from "./utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
 
 const TABLE_NAME = "guilds";
@@ -143,68 +143,68 @@ function defHelpCheck(msg:Message) {
     return msg.channel.type === "text";
 }
 
-@command(Category.Guilds, BASE_PREFIX.slice(1), "loc:GUILDS_META_JOINLEAVE", new Map<string, IArgumentInfo>([
-    ["loc:GUILDS_META_GUILDNAME", {
+@command(Category.Guilds, BASE_PREFIX.slice(1), "loc:GUILDS_META_JOINLEAVE", {
+    "loc:GUILDS_META_GUILDNAME": {
         optional: false,
         description: "loc:GUILDS_META_JOINLEAVE_ARG0_DESC"
-    }]
-]), defHelpCheck)
-@command(Category.Guilds, CMD_GUILDS_CREATE.slice(1), "создать новую гильдию", new Map<string, IArgumentInfo>([
-    ["loc:GUILDS_META_GUILDNAME", {
+    }
+}, defHelpCheck)
+@command(Category.Guilds, CMD_GUILDS_CREATE.slice(1), "создать новую гильдию", {
+    "loc:GUILDS_META_GUILDNAME": {
         optional: false,
         description: "loc:GUILDS_META_CREATE_ARG0_DESC"
-    }],
-    ["loc:GUILDS_META_CREATE_ARG1", {
+    },
+    "loc:GUILDS_META_CREATE_ARG1": {
         optional: true,
         description: "loc:GUILDS_META_CREATE_ARG1_DESC"
-    }]
-]), helpCheck)
-@command(Category.Guilds, CMD_GUILDS_EDIT.slice(1), "loc:GUILDS_META_EDIT", new Map<string, IArgumentInfo>([
-    ["loc:GUILDS_META_GUILDNAME", {
+    }
+}, helpCheck)
+@command(Category.Guilds, CMD_GUILDS_EDIT.slice(1), "loc:GUILDS_META_EDIT", {
+    "loc:GUILDS_META_GUILDNAME": {
         optional: false,
         description: "loc:GUILDS_META_EDIT_ARG0_DESC"
-    }],
-    ["loc:GUILDS_META_EDIT_ARG1", {
+    },
+    "loc:GUILDS_META_EDIT_ARG1": {
         optional: false,
         description: "loc:GUILDS_META_EDIT_ARG1_DESC"
-    }],
-    ["loc:GUILDS_META_EDIT_ARG2", {
+    },
+    "loc:GUILDS_META_EDIT_ARG2": {
         optional: false,
         description: "loc:GUILDS_META_EDIT_ARG2_DESC"
-    }]
-]), helpCheck)
-@command(Category.Guilds, CMD_GUILDS_INVITE.slice(1), "loc:GUILDS_META_INVITE", new Map<string, IArgumentInfo>([
-    ["loc:GUILDS_META_GUILDNAME", {
+    }
+}, helpCheck)
+@command(Category.Guilds, CMD_GUILDS_INVITE.slice(1), "loc:GUILDS_META_INVITE", {
+    "loc:GUILDS_META_GUILDNAME": {
         optional: false,
         description: "loc:GUILDS_META_INVITE_ARG0_DESC"
-    }],
-    ["loc:GUILDS_META_INVITE_ARG1", {
+    },
+    "loc:GUILDS_META_INVITE_ARG1": {
         optional: true,
         description: "loc:GUILDS_META_INVITE_ARG1_DESC"
-    }],
-    ["loc:GUILDS_META_INVITE_ARG2", {
+    },
+    "loc:GUILDS_META_INVITE_ARG2": {
         optional: false,
         description: "loc:GUILDS_META_INVITE_ARG2_DESC"
-    }]
-]))
-@command(Category.Guilds, CMD_GUILDS_DELETE.slice(1), "loc:GUILDS_META_DELETE", new Map<string, IArgumentInfo>([
-    ["loc:GUILDS_META_GUILDNAME", {
+    }
+})
+@command(Category.Guilds, CMD_GUILDS_DELETE.slice(1), "loc:GUILDS_META_DELETE", {
+    "loc:GUILDS_META_GUILDNAME": {
         optional: false,
         description: "loc:GUILDS_META_DELETE_ARG0_DESC"
-    }]
-]), helpCheck)
-@command(Category.Guilds, CMD_GUILDS_LIST.slice(1), "loc:GUILDS_META_LIST", new Map<string, IArgumentInfo>([
-    ["loc:GUILDS_META_LIST_ARG0", {
+    }
+}, helpCheck)
+@command(Category.Guilds, CMD_GUILDS_LIST.slice(1), "loc:GUILDS_META_LIST", {
+    "loc:GUILDS_META_LIST_ARG0": {
         optional: true,
         description: "loc:GUILDS_META_LIST_ARG0_DESC"
-    }]
-]), defHelpCheck)
-@command(Category.Guilds, CMD_GUILDS_INFO.slice(1), "loc:GUILDS_META_INFO", new Map<string, IArgumentInfo>([
-    ["loc:GUILDS_META_GUILDNAME", {
+    }
+}, defHelpCheck)
+@command(Category.Guilds, CMD_GUILDS_INFO.slice(1), "loc:GUILDS_META_INFO", {
+    "loc:GUILDS_META_GUILDNAME": {
         optional: true,
         description: "loc:GUILDS_META_INFO_ARG0_DESC"
-    }]
-]), defHelpCheck)
+    }
+}, defHelpCheck)
 class Guilds extends Plugin implements IModule {
     log = getLogger("Guilds");
     db = getDB();
