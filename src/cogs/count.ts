@@ -110,7 +110,7 @@ class Count extends Plugin implements IModule {
         }
 
         if(Math.floor(Math.random() * 6) > 4 && row.author !== msg.client.user.id) {
-            msg.channel.sendMessage((mNumber+1).toString());
+            msg.channel.send((mNumber+1).toString());
         }
     }
 
