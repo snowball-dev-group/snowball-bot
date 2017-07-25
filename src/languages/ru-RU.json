@@ -579,6 +579,7 @@
     "OWNERCMDS_CHANGEAVY_DONE": "Аватарка успешно изменена",
     "OWNERCMDS_CHANGEAVY_FAULT_SETFAILED": "Не получилось изменить аватарку",
     "OWNERCMDS_CHANGEAVY_FAULT_REQERROR": "Ошибка отправки запроса:\n{errMessage}",
+    "TEST_STRING": "Тестовая строка",
     "+NAME": "Русский",
     "+COUNTRY": "Россия",
     "+SHORT_CODE": "ru"
