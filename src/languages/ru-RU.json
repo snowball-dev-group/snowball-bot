@@ -571,6 +571,12 @@
     "STREAMING_META_LIST_ARG0_DESC": "сервис, чьи подписки нужно отобразить",
     "STREAMING_META_LIST_ARG1": "страница",
     "STREAMING_META_LIST_ARG1_DESC": "номер страницы к отображению",
+    "OWNERCMDS_CHANGENAME_DONE": "Имя успешно изменено с {oldName} на {newName}",
+    "OWNERCMDS_CHANGENAME_FAULT": "Возникла ошибка при смене имени:\n{errMessage}",
+    "OWNERCMDS_CHANGEAVY_FAULT_RESPERR": "Сервер с изображением вернул ошибку",
+    "OWNERCMDS_CHANGEAVY_DONE": "Аватарка успешно изменена",
+    "OWNERCMDS_CHANGEAVY_FAULT_SETFAILED": "Не получилось изменить аватарку",
+    "OWNERCMDS_CHANGEAVY_FAULT_REQERROR": "Ошибка отправки запроса:\n{errMessage}",
     "+NAME": "Русский",
     "+COUNTRY": "Россия",
     "+SHORT_CODE": "ru"
