@@ -30,7 +30,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
     async setup(str: string, member: GuildMember, msg: Message) {
         let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING"), prevStatus = status;
 
-        let statusMsg = await msg.channel.sendMessage("", {
+        let statusMsg = await msg.channel.send("", {
             embed: generateEmbed(EmbedType.Progress, status)
         }) as Message;
 
