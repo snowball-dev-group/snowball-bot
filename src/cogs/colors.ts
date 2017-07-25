@@ -283,6 +283,13 @@ class Colors extends Plugin implements IModule {
 
         let colorfulInfo = await this.getInfo(msg.guild);
 
+        if(["list", "info", "reset", "add", "rename", "delete"].includes(args[0].toLowerCase())) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_NAMERESERVED")
+            });
+            return;
+        }
+
         if(colorfulInfo.rolePrefixes.has(args[0])) {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ALREADYEXISTS")
