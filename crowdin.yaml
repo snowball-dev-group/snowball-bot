@@ -1,6 +1,0 @@
-"files": [
-  {
-    "source" : "/src/languages/ru-RU.json",
-    "translation" : "/src/languages/%locale%.json"
-  }
-]
