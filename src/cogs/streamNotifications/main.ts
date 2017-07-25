@@ -926,7 +926,7 @@ class StreamNotifications extends Plugin implements IModule {
     // =======================================
 
     async getAllSubscriptions() {
-        return (await this.db(TABLE.subscriptions).select().all()) as ISubscriptionRawRow[];
+        return (await this.db(TABLE.subscriptions).select()) as ISubscriptionRawRow[];
     }
 
     async getSubscriptionsForService(service:string) {
