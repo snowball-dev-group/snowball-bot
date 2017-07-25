@@ -36,9 +36,16 @@ class TwitchStreamingService implements IStreamingService {
 
         if(notFetchedYet.length > 0) {
             let processChunk = async (toFetch: IStreamingServiceStreamer[]) => {
-                let streamsResp = (await this.makeRequest(this.getAPIURL_Streams(toFetch.map(s => s.uid)))) as {
+                let streamsResp: {
                     streams?: ITwitchStream[]
-                };
+                } = {};
+
+                try {
+                    streamsResp = (await this.makeRequest(this.getAPIURL_Streams(toFetch.map(s => s.uid))));
+                } catch (err) {
+                    this.log("err", "Error has been received while tried to update online streams", err);
+                    return;
+                }
 
                 if(!streamsResp.streams) {
                     this.log("warn", "Got empty response from Twitch", streamsResp);
