@@ -578,7 +578,7 @@
     "OWNERCMDS_CHANGEAVY_FAULT_RESPERR": "Сервер с изображением вернул ошибку",
     "OWNERCMDS_CHANGEAVY_DONE": "Аватарка успешно изменена",
     "OWNERCMDS_CHANGEAVY_FAULT_SETFAILED": "Не получилось изменить аватарку",
-    "OWNERCMDS_CHANGEAVY_FAULT_REQERROR": "Ошибка отправки запроса:\n{errMessage}"
+    "OWNERCMDS_CHANGEAVY_FAULT_REQERROR": "Ошибка отправки запроса:\n{errMessage}",
     "+NAME": "Русский",
     "+COUNTRY": "Россия",
     "+SHORT_CODE": "ru"
