@@ -264,7 +264,7 @@ class Colors extends Plugin implements IModule {
 
     async addColor(msg:Message, args:string[]) {
         if(!checkPerms(msg.member)) {
-            msg.channel.sendMessage("", {
+            msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOPERMISSION")
             });
             return;
