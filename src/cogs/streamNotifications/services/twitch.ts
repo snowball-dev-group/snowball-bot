@@ -37,8 +37,13 @@ class TwitchStreamingService implements IStreamingService {
         if(notFetchedYet.length > 0) {
             let processChunk = async (toFetch: IStreamingServiceStreamer[]) => {
                 let streamsResp = (await this.makeRequest(this.getAPIURL_Streams(toFetch.map(s => s.uid)))) as {
-                    streams: ITwitchStream[]
+                    streams?: ITwitchStream[]
                 };
+
+                if(!streamsResp.streams) {
+                    this.log("warn", "Got empty response from Twitch", streamsResp);
+                    return;
+                }
 
                 for(let stream of streamsResp.streams) {
                     this.streamsMap.set(stream.channel._id + "", {
@@ -165,6 +170,8 @@ class TwitchStreamingService implements IStreamingService {
                 this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
                 await sleep(delay);
                 return await loop(attempt + 1);
+            } else if(resp.status !== 200) {
+                throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch");
             }
             return await resp.json();
         };
