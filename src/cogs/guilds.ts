@@ -343,6 +343,13 @@ class Guilds extends Plugin implements IModule {
             return;
         }
 
+        if(["create", "edit", "invite", "delete", "list", "info"].includes(args[0].toLowerCase())) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_RESERVEDNAME")
+            });
+            return;
+        }
+
         // search if we already having role with this name
         let dbRow:IGuildRow|undefined = await this.getGuildRow(msg.guild, args[0]);
 
