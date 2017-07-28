@@ -100,8 +100,6 @@ chmod +x ./run.sh
 
 Я действительно очень ценю ваш вклад в этот проект. Вы можете исправить мои ошибки, создать новые шестерни, но следуйте этим стилям:
 
-I created `db`, `letters`, `utils`, `cacheResponse`, `time`, be sure you using them, they pretty simple
-
 - Используйте [Visual Studio Code](https://code.visualstudio.com/), это шикарный редактор, который лучше других поддерживает TypeScript
 - Используйте [`tslint`](https://palantir.github.io/tslint/), он предупредит вас об ошибках в коде. [**РАСШИРЕНИЕ ДЛЯ VISUAL STUDIO CODE**](https://marketplace.visualstudio.com/items?itemName=eg2.tslint)
 - Используйте мои универсальные API. Я создал `db`, `letters`, `utils`, `cacheResponse`, `time`. Убедитесь, что вы их используете, они довольно простые
