@@ -505,7 +505,7 @@ class PremiumControl extends Plugin implements IModule {
 
         let dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
         let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-        let durString = this.humanize(currentPremium.due_to.getTime() - Date.now());
+        let durString = this.humanize(currentPremium.due_to.getTime() - Date.now(), await localizeForUser(msg.member, "+SHORT_CODE"));
 
         let msgStr = "";
         msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
@@ -556,7 +556,7 @@ class PremiumControl extends Plugin implements IModule {
 
         let dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
         let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-        let durString = this.humanize(currentPremium.due_to.getTime() - Date.now());
+        let durString = this.humanize(currentPremium.due_to.getTime() - Date.now(), await localizeForUser(msg.member, "+SHORT_CODE"));
 
         let sep = "----------------";
         let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n${sep}\n`;
@@ -670,8 +670,8 @@ class PremiumControl extends Plugin implements IModule {
     // PLUGIN FUNCTIONS
     // ================================
 
-    humanize(duration:number, largest:number = 2, round:boolean = true) {
-        return humanizeDuration(duration, { language: "ru", largest, round: true });
+    humanize(duration:number, language = "ru", largest:number = 2, round:boolean = true) {
+        return humanizeDuration(duration, { language, largest, round: true });
     }
 
     roleSyncInterval:NodeJS.Timer;
