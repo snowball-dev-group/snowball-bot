@@ -85,7 +85,7 @@ class SetLanguageCommand extends Plugin implements IModule {
             lang: `${await localizeForUser(u, "+NAME")} (${await localizeForUser(u, "+COUNTRY")})`,
             coverage: await localizeForUser(u, "+COVERAGE")
         });
-        if(await localizeForUser(u, "+COMMUNITY_MANAGED")) {
+        if(!(await localizeForUser(u, "+COMMUNITY_MANAGED") === "false")) {
             let userLangCode = await getUserLanguage(u);
             str += "\n\n";
             str += await localizeForUser(u, "LANGUAGE_COMMUNITYMANAGED", {
@@ -151,7 +151,7 @@ class SetLanguageCommand extends Plugin implements IModule {
             str += await localizer.getString(lang, "+NAME");
             str += ` (${await localizer.getString(lang, "+COUNTRY")})`;
             str += ` - ${(await localizer.getString(lang, "+COVERAGE"))}%`;
-            str += `${await localizer.getString(lang, "+COMMUNITY_MANAGED") ? ` ${await localizeForUser(u, "LANGUAGE_CODES_ITEM_CM")}` : ""}\n`;
+            str += `${!(await localizer.getString(lang, "+COMMUNITY_MANAGED") === "false") ? ` ${await localizeForUser(u, "LANGUAGE_CODES_ITEM_CM")}` : ""}\n`;
         }
         msg.channel.send(str, {
             code: "md",
