@@ -23,6 +23,12 @@ module.exports = function(grunt) {
                     dest: "out/",
                     flatten: true,
                     filter: "isFile"
+                }, {
+                    expand: true,
+                    src: ["package.json"],
+                    dest: "out/",
+                    flatten: true,
+                    filter: 'isFile'
                 }]
             }
         }
