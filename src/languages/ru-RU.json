@@ -310,7 +310,9 @@
     "LANGUAGE_META_SWITCH": "Сменить язык",
     "LANGUAGE_META_SWITCH_ARG0": "язык",
     "LANGUAGE_META_SWITCH_ARG0_DESC": "код языка",
-    "LANGUAGE_CURRENTLANG": "Текущий язык - {lang}.\nПроцесс перевода: {coverage, number}",
+    "LANGUAGE_CURRENTLANG": "Текущий язык - {lang}.\nПроцесс перевода: {coverage, number}%",
+    "LANGUAGE_COMMUNITYMANAGED": "Перевод выполняется с помощью сообщества.\nЗнаете Русский язык? [Присоединяйтесь к переводу]({crowdinLink}), помогите сделать Snowball доступным для всех",
+    "LANGUAGE_CODES_ITEM_CM": "[перевод сообщества]",
     "LANGUAGE_CODES_HEADER": "Доступные языки:",
     "LANGUAGE_SWITCH_DONE": "Переключение языка завершено. Теперь ваш язык - {lang}",
     "LANGUAGE_GUILD_ONLYGUILDS": "Это работает только на серверах",
@@ -581,5 +583,6 @@
     "OWNERCMDS_CHANGEAVY_FAULT_REQERROR": "Ошибка отправки запроса:\n{errMessage}",
     "+NAME": "Русский",
     "+COUNTRY": "Россия",
-    "+SHORT_CODE": "ru"
+    "+SHORT_CODE": "ru",
+    "+COMMUNITY_MANAGED": "false"
 }
