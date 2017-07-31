@@ -27,6 +27,7 @@ class SetLanguageCommand extends Plugin implements IModule {
     prefs = getPrefsNames();
     log = getLogger("SetLanguage");
     noLazy = false;
+    crowdinLink:string;
 
     constructor(options) {
         super({
@@ -34,7 +35,8 @@ class SetLanguageCommand extends Plugin implements IModule {
         });
         if(options) {
             this.noLazy = !!options["no_lazy"];
-        }
+            this.crowdinLink = options.crowdinLink;
+        } else { throw new Error("No options found"); }
     }
 
     async init() {
@@ -79,13 +81,21 @@ class SetLanguageCommand extends Plugin implements IModule {
 
     async getCurrentLang(msg:Message) {
         let u = msg.member || msg.author;
+        let str = await localizeForUser(u, "LANGUAGE_CURRENTLANG", {
+            lang: `${await localizeForUser(u, "+NAME")} (${await localizeForUser(u, "+COUNTRY")})`,
+            coverage: await localizeForUser(u, "+COVERAGE")
+        });
+        if(await localizeForUser(u, "+COMMUNITY_MANAGED")) {
+            let userLangCode = await getUserLanguage(u);
+            str += "\n\n";
+            str += await localizeForUser(u, "LANGUAGE_COMMUNITYMANAGED", {
+                crowdinLink: `${this.crowdinLink}/${userLangCode}`
+            });
+        }
         msg.channel.send("", {
             embed: await generateLocalizedEmbed(EmbedType.Information, u, {
-                key: "LANGUAGE_CURRENTLANG",
-                formatOptions: {
-                    lang: `${await localizeForUser(u, "+NAME")} (${await localizeForUser(u, "+COUNTRY")})`,
-                    coverage: await localizeForUser(u, "+COVERAGE")
-                }
+                custom: true,
+                string: str
             })
         });
     }
@@ -133,13 +143,15 @@ class SetLanguageCommand extends Plugin implements IModule {
     }
 
     async getCodes(msg:Message) {
-        let str = `# ${await localizeForUser(msg.member, "LANGUAGE_CODES_HEADER")}\n\n`;
+        let u = msg.member || msg.author;
+        let str = `# ${await localizeForUser(u, "LANGUAGE_CODES_HEADER")}\n\n`;
         let langs = localizer.loadedLanguages;
         for(let lang of langs) {
             str += `* ${lang}: `;
             str += await localizer.getString(lang, "+NAME");
             str += ` (${await localizer.getString(lang, "+COUNTRY")})`;
-            str += ` - ${(await localizer.getString(lang, "+COVERAGE"))}%\n`;
+            str += ` - ${(await localizer.getString(lang, "+COVERAGE"))}%`;
+            str += `${await localizer.getString(lang, "+COMMUNITY_MANAGED") ? ` ${await localizeForUser(u, "LANGUAGE_CODES_ITEM_CM")}` : ""}\n`;
         }
         msg.channel.send(str, {
             code: "md",
