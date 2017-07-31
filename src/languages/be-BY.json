@@ -311,6 +311,8 @@
   "LANGUAGE_META_SWITCH_ARG0":"мова",
   "LANGUAGE_META_SWITCH_ARG0_DESC":"код мовы",
   "LANGUAGE_CURRENTLANG":"Цяперашняя мова - {lang}.\nПрацэс перакладу: {coverage, number}",
+  "LANGUAGE_COMMUNITYMANAGED":"",
+  "LANGUAGE_CODES_ITEM_CM":"",
   "LANGUAGE_CODES_HEADER":"Даступныя мовы:",
   "LANGUAGE_SWITCH_DONE":"Пераключэнне мовы завершана. Цяпер ваша мова - {lang}",
   "LANGUAGE_GUILD_ONLYGUILDS":"",
@@ -581,5 +583,6 @@
   "OWNERCMDS_CHANGEAVY_FAULT_REQERROR":"",
   "+NAME":"Беларуская",
   "+COUNTRY":"Беларусь",
-  "+SHORT_CODE":"ru"
+  "+SHORT_CODE":"ru",
+  "+COMMUNITY_MANAGED":""
 }

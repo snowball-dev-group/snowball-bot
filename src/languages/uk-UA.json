@@ -311,6 +311,8 @@
   "LANGUAGE_META_SWITCH_ARG0":"мова",
   "LANGUAGE_META_SWITCH_ARG0_DESC":"код мови",
   "LANGUAGE_CURRENTLANG":"Поточна мова - {lang}.\nПроцес перекладу: {coverage, number}",
+  "LANGUAGE_COMMUNITYMANAGED":"",
+  "LANGUAGE_CODES_ITEM_CM":"[переклад співтовариства]",
   "LANGUAGE_CODES_HEADER":"Доступні мови:",
   "LANGUAGE_SWITCH_DONE":"Перемикання мови завершено. Тепер ваша мова - {lang}",
   "LANGUAGE_GUILD_ONLYGUILDS":"Це працює тільки на серверах",
@@ -581,5 +583,6 @@
   "OWNERCMDS_CHANGEAVY_FAULT_REQERROR":"Помилка відправки запиту:\n{errMessage}",
   "+NAME":"Українська",
   "+COUNTRY":"Україна",
-  "+SHORT_CODE":"uk"
+  "+SHORT_CODE":"uk",
+  "+COMMUNITY_MANAGED":"true"
 }

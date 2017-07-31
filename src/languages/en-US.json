@@ -311,6 +311,8 @@
   "LANGUAGE_META_SWITCH_ARG0":"language",
   "LANGUAGE_META_SWITCH_ARG0_DESC":"the language code",
   "LANGUAGE_CURRENTLANG":"Current language - {lang}.\nTranslation process: {coverage, number}",
+  "LANGUAGE_COMMUNITYMANAGED":"The translation is done with the help of the community.\nDo you know Russian language? [Join the translation]({crowdinLink}) to help make Snowball accessible to all",
+  "LANGUAGE_CODES_ITEM_CM":"[community translation]",
   "LANGUAGE_CODES_HEADER":"Available languages:",
   "LANGUAGE_SWITCH_DONE":"The language has been switched. Now your language is {lang}",
   "LANGUAGE_GUILD_ONLYGUILDS":"This works only on servers",
@@ -581,5 +583,6 @@
   "OWNERCMDS_CHANGEAVY_FAULT_REQERROR":"An error occurred while sending request:\n{errMessage}",
   "+NAME":"English",
   "+COUNTRY":"USA",
-  "+SHORT_CODE":"en"
+  "+SHORT_CODE":"en",
+  "+COMMUNITY_MANAGED":"true"
 }
