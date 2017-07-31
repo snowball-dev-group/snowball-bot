@@ -2,9 +2,9 @@ import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, GuildMember, User } from "discord.js"; 
 import * as Random from "random-js";
-import { getLogger, generateEmbed, EmbedType, sleep } from "./utils/utils";
+import { getLogger, EmbedType, sleep } from "./utils/utils";
 import { command, Category } from "./utils/help";
-import { localizeForUser } from "./utils/ez-i18n";
+import { generateLocalizedEmbed, localizeForUser } from "./utils/ez-i18n";
 
 const ICONS = {
     THINKING: "https://i.imgur.com/hIuSpIl.png",
@@ -71,18 +71,22 @@ class Ball8 extends Plugin implements IModule {
 
         let random = new Random(Random.engines.mt19937().autoSeed());
 
+        let localName = await localizeForUser(u, "8BALL_NAME");
+
         let message:Message;
         try {
-            message = await msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Empty, await localizeForUser(u, "8BALL_THINKING"), {
+            message = (await msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Empty, u, "8BALL_THINKING", {
                     author: {
-                        icon_url: ICONS.THINKING,
-                        name: await localizeForUser(u, "8BALL_NAME")
-                    },
-                    clearFooter: true,
-                    thumbUrl: ICONS.THINKING
+                        name: localName,
+                        icon_url: ICONS.THINKING
+                    }, 
+                    thumbUrl: ICONS.THINKING,
+                    thumbWidth: 64,
+                    thumbHeight: 64,
+                    clearFooter: true
                 })
-            }) as Message;
+            })) as Message;
         } catch (err) {
             this.log("err", "Damn! 8Ball can't send message", err);
             return;
@@ -90,24 +94,24 @@ class Ball8 extends Plugin implements IModule {
         
         await sleep(random.integer(1500, 3000));
 
-        let category = random.pick(this.categories);
+        let category = random.pick<string>(this.categories);
 
-        let answer = random.pick(this.responses[category].variants);
+        let answer = random.pick<string>(this.responses[category].variants);
 
         try {
             await message.edit("", {
-                embed: generateEmbed(EmbedType.Empty, await localizeForUser(u, answer), {
+                embed: await generateLocalizedEmbed(EmbedType.Empty, u, answer, {
                     author: {
                         icon_url: ICONS.RESPONSE,
-                        name: await localizeForUser(u, "8BALL_NAME")
+                        name: localName
                     },
                     color: this.responses[category].color,
-                    footer: {
-                        text: await localizeForUser(u, "8BALL_INREPLY", {
-                            username: u instanceof GuildMember ? u.displayName : (u as User).username
-                        })
-                    },
-                    thumbUrl: ICONS.RESPONSE
+                    footerText: await localizeForUser(u, "8BALL_INREPLY", {
+                        username: u instanceof GuildMember ? u.displayName : (u as User).username
+                    }),
+                    thumbUrl: ICONS.RESPONSE,
+                    thumbWidth: 64,
+                    thumbHeight: 64
                 })
             });
         } catch (err) {
