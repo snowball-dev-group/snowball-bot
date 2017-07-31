@@ -15,10 +15,16 @@ export class Localizer {
     private langMaps:Map<string, any>;
     private initDone:boolean = false;
     private log:ILoggerFunction;
+    private _defaultLang:string;
+    
+    get defaultLanguage() {
+        return this._defaultLang;
+    }
 
     constructor(name:string, opts:ILocalizerOptions) {
         this.opts = opts;
         this.log = getLogger(name);
+        this._defaultLang = opts.default_language;
     }
 
     public async init() {
@@ -49,6 +55,7 @@ export class Localizer {
                     continue;
                 }
                 langFile["+COVERAGE"] = await this.testCoverage(langFile, defLang);
+                langFile["+COMMUNITY_MANAGED"] = langFile["+COMMUNITY_MANAGED"] === "true" ? true : false;
                 this.langMaps.set(langName, langFile);
                 this.log("ok", `- ${langName} ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${langFile["+COVERAGE"]}`);
             }
