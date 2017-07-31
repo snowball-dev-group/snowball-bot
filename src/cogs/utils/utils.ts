@@ -93,6 +93,8 @@ export interface IEmbedOptions {
     imageUrl?: string;
     clearFooter?: boolean;
     thumbUrl?: string;
+    thumbWidth?: number;
+    thumbHeight?: number;
     ts?: Date;
 }
 
@@ -257,6 +259,12 @@ export function generateEmbed(type: EmbedType, description: string, options?: IE
             embed.thumbnail = {
                 url: options.thumbUrl
             };
+            if(options.thumbWidth && options.thumbWidth > 0) {
+                embed.thumbnail.width = options.thumbWidth;
+            }
+            if(options.thumbHeight && options.thumbHeight > 0) {
+                embed.thumbnail.height = options.thumbHeight;
+            }
         }
         if(options.color) {
             embed.color = options.color;
