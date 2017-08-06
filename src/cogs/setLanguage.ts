@@ -202,7 +202,7 @@ class SetLanguageCommand extends Plugin implements IModule {
             embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
                 key: enforcingEnabled ? "LANGUAGE_GUILD_SWITCH_DONE" : "LANGUAGE_GUILD_SWITCH_DONE_ENFORCING",
                 formatOptions: {
-                    lang: `${await localizeForUser(msg.member, "+NAME")} (${await localizeForUser(msg.member, "+COUNTRY")})`
+                    lang: `${localizer.getString(lang, "+NAME")} (${localizer.getString(lang, "+COUNTRY")})`
                 }
             })
         });
