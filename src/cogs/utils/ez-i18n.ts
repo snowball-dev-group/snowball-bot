@@ -105,7 +105,9 @@ export async function forceGuildLanguageUpdate(guild:Guild) : Promise<string> {
 
 interface ILocalizedEmbedString {
     key:string;
-    formatOptions:any;
+    formatOptions:{
+        [name: string]: string|number|boolean;
+    };
 }
 
 interface ICustomString {
