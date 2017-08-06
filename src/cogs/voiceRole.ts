@@ -1,10 +1,12 @@
+import { generateLocalizedEmbed, localizeForUser } from "./utils/ez-i18n";
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, Guild, Role, GuildMember, VoiceChannel } from "discord.js";
 import { getDB } from "./utils/db";
-import { getLogger, generateEmbed, EmbedType, resolveGuildRole, resolveGuildChannel } from "./utils/utils";
+import { getLogger, EmbedType, resolveGuildRole, resolveGuildChannel } from "./utils/utils";
 import { isVerified } from "./utils/verified";
 import * as knex from "knex";
+import { replaceAll } from "./utils/text";
 
 const TABLE_NAME = "voice_role";
 const SPECIFIC_TABLE_NAME = "specificvoicerole";
@@ -436,33 +438,36 @@ class VoiceRole extends Plugin implements IModule {
         let hasPermissionToChange = msg.member.hasPermission(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"]) || msg.member.hasPermission("ADMINISTRATOR");
 
         if(!hasPermissionToChange) {
-            msg.channel.send(":warning: У вас недостаточно прав для изменения параметров 'голосовой роли' на этом сервере.");
+            msg.channel.send(await localizeForUser(msg.member, "VOICEROLE_NOPERMS"));
             return;
         }
 
         let cmd = msg.content.slice(PREFIX.length + 1);
         if(cmd === "" || cmd === "help") {
-            const SPECIFIC_CMD = "\n• `specific set [канал], [роль]` - установить специальную голосовую роль\n• `specific delete [канал], [роль]` - удалить специальную голосовую роль";
-            msg.channel.send("Доступные настройки:\n• `set [роль]` - установить голосовую роль\n• `delete` - сбросить роль" + SPECIFIC_CMD);
+            msg.channel.send((
+                await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_TITLE")) + 
+                "\n" + (await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP")) + 
+                "\n" + (await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_SPECIFIC")
+            ));
             return;
         }
-
-        const ROLE_NOT_FOUND = ":warning: Роль с таким именем / ID не найдена на сервере.";
-        const ERROR_HAPPENED = ":warning: Произошла ошибка.";
-        const DATA_NOT_SAVED = ":warning: Невозможно сохранить новые данные.";
 
         if(cmd.startsWith("set ")) {
             // #SetGuildVoiceRole
             let resolvableRole = resolveGuildRole(cmd.slice("set ".length), msg.guild);
             if(!resolvableRole) {
-                msg.channel.send(ROLE_NOT_FOUND);
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
+                });
                 return;
             }
 
             let row = await this.getGuildRow(msg.guild);
 
             if(!row) {
-                msg.channel.send(ERROR_HAPPENED);
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND")
+                });
                 return;
             }
 
@@ -483,15 +488,19 @@ class VoiceRole extends Plugin implements IModule {
                 msg.react("👍");
             } catch (err) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, DATA_NOT_SAVED)
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_SAVING")
                 });
             }
 
             return;
         } else if(cmd === "set") {
             // #HelpSetGuildVoiceRole
+
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, "• `set [роль]` - установить 'голосовую роль'\n\t○ `роль` может быть названием реальной роли на сервере, её ID\n\t:warning: Голосовая роль на сервере может быть всего одна.")
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                    custom: true,
+                    string: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_SET"), "\n", "\n\t")
+                }) 
             });
             return;
         }
@@ -500,14 +509,18 @@ class VoiceRole extends Plugin implements IModule {
             // #DeleteGuildVoiceRole
             let resolvableRole = resolveGuildRole(cmd.slice("delete ".length), msg.guild);
             if(!resolvableRole) {
-                msg.channel.send(ROLE_NOT_FOUND);
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
+                });
                 return;
             }
 
             let row = await this.getGuildRow(msg.guild);
 
             if(!row) {
-                msg.channel.send(ERROR_HAPPENED);
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND")
+                });
                 return;
             }
 
@@ -528,46 +541,48 @@ class VoiceRole extends Plugin implements IModule {
                 msg.react("👍");
             } catch (err) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, DATA_NOT_SAVED)
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
                 });
             }
 
             return;
         } else if(cmd === "delete") {
             // #HelpDeleteGuildVoiceRole
+
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, "• `delete` - убрать 'голосовую роль'\n\t○ `роль` может быть названием реальной роли на сервере, её ID")
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                    custom: true,
+                    string: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_DELETE"), "\n", "\n\t")
+                })
             });
             return;
         }
-
-        const SPECIFIC_ARGS_DESCRIPTION = "\n\t○ `канал` может быть названием голосового канала, его ID\n\t○ `роль` может быть названием реальной роли на сервере, её ID";
 
         if(cmd.startsWith("specific set")) {
             let args = cmd.slice("specific set".length).split(",").map(arg => arg.trim());
             if(args.length > 2) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, "Неправильное количество аргументов. Если роль или название каналов содержат пробелы, то используйте их ID в качестве аргументов или только часть имени")
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ARGERR")
                 });
                 return;
             }
             let resolvedChannel = resolveGuildChannel(args[0], msg.guild, false);
             if(!resolvedChannel) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, "Такой канал не найден. Если Вы уверены, что он существует, то используйте его ID или особую часть имени")
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELERR")
                 });
                 return;
             }
             if(resolvedChannel.type !== "voice") {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, "Найденный канал - текстовый.")
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELTYPEERR")
                 });
                 return;
             }
             let resolvedRole = resolveGuildRole(args[1], msg.guild, false);
             if(!resolvedRole) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, "Такая роль не найдена. Если Вы уверены, что она существает, то используйте её ID или особую часть имени")
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
                 });
                 return;
             }
@@ -577,7 +592,7 @@ class VoiceRole extends Plugin implements IModule {
                 let oldRole = current.voice_role;
                 current.voice_role = resolvedRole.id;
                 let progMsg = (await msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.Progress, "Идёт сохранение данных и удаление ролей...")
+                        embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
                 })) as Message;
                 try {
                     for(let member of msg.guild.members.values()) {
@@ -588,12 +603,12 @@ class VoiceRole extends Plugin implements IModule {
                     await this.updateSpecificRole(current);
                     await this.VCR_Cleanup(msg.guild);
                     progMsg.edit("", {
-                        embed: generateEmbed(EmbedType.OK, "Изменение специальной 'голосовой роли' завершено")
+                        embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SAVING_DONE")
                     });
                     msg.react("👍");
                 } catch (err) {
                     msg.channel.send("", {
-                        embed: generateEmbed(EmbedType.Error, DATA_NOT_SAVED)
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
                     });
                 }
                 return;
@@ -606,19 +621,19 @@ class VoiceRole extends Plugin implements IModule {
             };
 
             let progMsg = (await msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Progress, "Идёт сохранение данных и выдача ролей...")
+                    embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_SAVING")
             })) as Message;
             try {
                 await this.updateSpecificRole(newRow);
                 await this.VCR_Cleanup(msg.guild);
             } catch(err) {
                 progMsg.edit("", {
-                    embed: generateEmbed(EmbedType.Error, DATA_NOT_SAVED)
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
                 });
             }
 
             progMsg.edit("", {
-                embed: generateEmbed(EmbedType.OK, "Новая специальная 'голосовая роль' установлена")
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SETTINGDONE")
             });
             msg.react("👍");
 
@@ -626,7 +641,12 @@ class VoiceRole extends Plugin implements IModule {
         } else if(cmd === "specific set") {
             // #HelpSpecificSetGuildVoiceRole
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, "• `specific set [канал], [роль]` - установить специальную 'голосовую роль'" + SPECIFIC_ARGS_DESCRIPTION + "\n:warning: Канал может иметь только одну специальную 'голосовую роль'!")
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                    key: "VOICEROLE_SETTING_HELP_SPECIFIC_SET",
+                    formatOptions: {
+                        argInfo: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_ARGINFO_SPECIFIC"), "\n", "\n\t")
+                    }
+                })
             });
             return;
         }
@@ -635,14 +655,14 @@ class VoiceRole extends Plugin implements IModule {
             let resolvedChannel = resolveGuildChannel(msg.content.slice("specific delete".length), msg.guild);
             if(!resolvedChannel) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, "Такой канал не найден. Если Вы уверены, что он существует, то используйте его ID или особую часть имени")
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELERR")
                 });
                 return;
             }
 
             if(resolvedChannel.type !== "voice") {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, "Найденный канал - текстовый.")
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELTYPEERR")
                 });
                 return;
             }
@@ -651,13 +671,13 @@ class VoiceRole extends Plugin implements IModule {
             
             if(!current) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Information, "У этого канала уже нет специальной 'голосовой роли'.")
+                    embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_FAULT_NOSPECIFICROLE")
                 });
                 return;
             }
 
             let progMsg = (await msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Progress, "Идёт сохранение данных и удаление ролей...")
+                    embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
             })) as Message;
             try {
                 await this.deleteSpecificRow(current);
@@ -669,13 +689,13 @@ class VoiceRole extends Plugin implements IModule {
                 await this.VCR_Cleanup(msg.guild);
             } catch (err) {
                 msg.channel.send("", {
-                    embed: generateEmbed(EmbedType.Error, DATA_NOT_SAVED)
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
                 });
                 return;
             }
             
             progMsg.edit("", {
-                embed: generateEmbed(EmbedType.OK, "Специальная 'голосовая роль' удалена")
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SPEFIC_DELETED")
             });
             msg.react("👍");
 
@@ -683,7 +703,12 @@ class VoiceRole extends Plugin implements IModule {
         } else if(cmd === "specific delete") {
             // #HelpSpecificDeleteGuildVoiceRole
             msg.channel.send("", {
-                embed: generateEmbed(EmbedType.Information, "• `specific delete [канал]` - убрать специальную 'голосовую роль'" + SPECIFIC_ARGS_DESCRIPTION)
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                    key: "VOICEROLE_SETTING_HELP_SPECIFIC_DELETE", 
+                    formatOptions: {
+                        argInfo: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_ARGINFO_SPECIFIC"), "\n", "\n\t")
+                    }
+                })
             });
         }
     }
