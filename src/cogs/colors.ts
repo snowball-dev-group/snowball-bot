@@ -369,7 +369,7 @@ class Colors extends Plugin implements IModule {
             }
         }
 
-        _confirmationString += localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_RIGHTSWARNING");
+        _confirmationString += await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_RIGHTSWARNING");
 
         let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
             custom: true,
