@@ -437,7 +437,7 @@ class Guilds extends Plugin implements IModule {
             return;
         }
 
-        let args = msg.content.slice(CMD_GUILDS_EDIT.length).split(",").map(arg => arg.trim());
+        let args = msg.content.slice(CMD_GUILDS_EDIT.length).split(",");
 
         let guildName = "", editableParam = "", content = "";
         // due to issues w/ typescript I made them ""
