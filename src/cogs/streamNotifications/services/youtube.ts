@@ -114,8 +114,10 @@ class TwitchStreamingService implements IStreamingService {
             author: {
                 icon_url: channel.snippet.thumbnails.default.url,
                 name: channel.snippet.title,
-                url: channel.snippet.customUrl
+                url: `https://youtube.com/channel/${channel.id}`
             },
+            title: cachedStream.value.snippet.title,
+            url: `https://youtu.be/${cachedStream.value.id.videoId}`,
             description: localizer.getFormattedString(lang, "STREAMING_DESCRIPTION", {
                 username: escapeDiscordMarkdown(channel.snippet.title, true)
             }),
