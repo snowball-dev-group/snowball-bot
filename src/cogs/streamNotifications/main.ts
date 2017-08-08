@@ -5,8 +5,8 @@ import { getLogger } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import { simpleCmdParse } from "../utils/text";
 import { generateLocalizedEmbed, getGuildLanguage } from "../utils/ez-i18n";
-import { EmbedType, sleep, IEmbedOptionsField } from "../utils/utils";
-import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError } from "./baseService";
+import { EmbedType, sleep, IEmbedOptionsField, IEmbed } from "../utils/utils";
+import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IStreamStatus } from "./baseService";
 import { createConfirmationMessage } from "../utils/interactive";
 import { command, Category as CommandCategory } from "../utils/help";
 
@@ -19,43 +19,43 @@ const TABLE = {
 };
 
 interface ISubscriptionRawRow {
-    provider:string;
-    uid:string;
-    username:string;
-    subscribers:string;
-    notified:string;
+    provider: string;
+    uid: string;
+    username: string;
+    subscribers: string;
+    notified: string;
 }
 
 interface ISettingsRow {
-    guild:string;
-    channelId:string|"-"|null;
+    guild: string;
+    channelId: string | "-" | null;
     /**
      * JSON with Array<IStreamingServiceStreamer>
      */
-    mentionsEveryone:string;
-    subscribedTo:string;
+    mentionsEveryone: string;
+    subscribedTo: string;
 }
 
 interface ISettingsParsedRow {
-    channelId:string|null;
-    guild:string;
-    mentionsEveryone:IStreamingServiceStreamer[];
-    subscribedTo:IStreamingServiceStreamer[];
+    channelId: string | null;
+    guild: string;
+    mentionsEveryone: IStreamingServiceStreamer[];
+    subscribedTo: IStreamingServiceStreamer[];
 }
 
 interface ISubscriptionRow {
     /**
      * Provider if talking about module that fetches it, otherwise streaming service name
      */
-    provider:string;
+    provider: string;
     /**
      * UID of the streamer
      */
-    uid:string;
+    uid: string;
     /**
      * Username of the streamer
      */
-    username:string;
+    username: string;
     /**
      * Array of Guild IDs that subscribed to this channel
      */
@@ -63,31 +63,31 @@ interface ISubscriptionRow {
     /**
      * Array of NotificationStatus'es
      */
-    notified:INotificationStatus[];
+    notified: INotificationStatus[];
 }
 
 interface INotificationStatus {
     /**
      * ID of the stream
      */
-    id:string;
+    id: string;
     /**
      * Date when notification arrived (only use to cleanup)
      */
-    notifiedAt:number;
+    notifiedAt: number;
     /**
      * Notified guilds IDs
      */
-    notifiedGuilds:string[];
+    notifiedGuilds: string[];
 }
 
-const LOCALIZED = (str:string) => `STREAMING_${str.toUpperCase()}`;
+const LOCALIZED = (str: string) => `STREAMING_${str.toUpperCase()}`;
 
-function rightsCheck(member:GuildMember) {
+function rightsCheck(member: GuildMember) {
     return member.hasPermission(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.hasPermission(["ADMINISTRATOR"]) || member.id === botConfig.botOwner;
 }
 
-function helpCheck(msg:Message) {
+function helpCheck(msg: Message) {
     return msg.channel.type === "text" && rightsCheck(msg.member);
 }
 
@@ -149,11 +149,11 @@ class StreamNotifications extends Plugin implements IModule {
     log = getLogger("StreamNotifications");
     db = getDB();
     servicesLoader: ModuleLoader;
-    servicesList:Map<string, IModuleInfo>;
+    servicesList: Map<string, IModuleInfo>;
 
     constructor(options) {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg: Message) => this.onMessage(msg)
         }, true);
 
         this.servicesList = new Map<string, IModuleInfo>(convertToModulesMap(options));
@@ -170,7 +170,7 @@ class StreamNotifications extends Plugin implements IModule {
     //  Message handling
     // =======================================
 
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         if(!msg.content.startsWith(PREFIX)) { return; }
         let cmd = simpleCmdParse(msg.content);
         try {
@@ -181,7 +181,7 @@ class StreamNotifications extends Plugin implements IModule {
                 case "set_channel": await this.setChannel(msg, cmd.args); break;
                 default: await this.list(msg, cmd.subCommand, cmd.args); break;
             }
-        } catch (err) {
+        } catch(err) {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("CMD_ERROR"))
             });
@@ -194,7 +194,7 @@ class StreamNotifications extends Plugin implements IModule {
     // Command handling
     // =======================================
 
-    async setChannel(msg:Message, args:string[]|undefined) {
+    async setChannel(msg: Message, args: string[] | undefined) {
         // !streams set_channel <#228174260307230721>
         // args at this point: ["<#228174260307230721>"]
 
@@ -258,7 +258,7 @@ class StreamNotifications extends Plugin implements IModule {
         });
     }
 
-    async edit(msg:Message, args:string[]|undefined) {
+    async edit(msg: Message, args: string[] | undefined) {
         // !streams edit YouTube, ID, mention_everyone, true
         // args at this point: ["YouTube", "ID", "mention_everyone", "true"]
 
@@ -369,7 +369,7 @@ class StreamNotifications extends Plugin implements IModule {
         });
     }
 
-    async add(msg:Message, args:string[]|undefined) {
+    async add(msg: Message, args: string[] | undefined) {
         // !streams add YouTube, BlackSilverUfa
         // args at this point: ["YouTube", "BlackSilverUfa"]
 
@@ -406,11 +406,11 @@ class StreamNotifications extends Plugin implements IModule {
             username: args[1]
         });
 
-        let streamer:IStreamingServiceStreamer|undefined = undefined;
+        let streamer: IStreamingServiceStreamer | undefined = undefined;
         if(!subscription) {
             try {
                 streamer = await provider.getStreamer(args[1]);
-            } catch (err) {
+            } catch(err) {
                 if(err instanceof StreamingServiceError) {
                     msg.channel.send("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED(err.stringKey))
@@ -448,10 +448,11 @@ class StreamNotifications extends Plugin implements IModule {
                 streamerId: subscription.uid
             }
         });
+
         let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
         if(!confirmation) {
             msg.channel.send("", {
-                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("CANCELED"))
+                embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, LOCALIZED("CANCELED"))
             });
             return;
         }
@@ -470,6 +471,14 @@ class StreamNotifications extends Plugin implements IModule {
         }
 
         let subscribers = JSON.parse(subscription.subscribers) as string[];
+
+        if(subscribers.includes(msg.guild.id)) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("ADD_FAULT_ALREADYSUBBED"))
+            });
+            return;
+        }
+
         subscribers.push(msg.guild.id);
         subscription.subscribers = JSON.stringify(subscribers);
 
@@ -505,7 +514,7 @@ class StreamNotifications extends Plugin implements IModule {
         });
     }
 
-    async remove(msg:Message, args:string[]|undefined) {
+    async remove(msg: Message, args: string[] | undefined) {
         // !streams remove YouTube, ID
         // args at this point: ["YouTube", "ID"]
 
@@ -564,7 +573,7 @@ class StreamNotifications extends Plugin implements IModule {
 
         if(!confirmation) {
             msg.channel.send("", {
-                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("REMOVE_CANCELED"))
+                embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, LOCALIZED("REMOVE_CANCELED"))
             });
             return;
         }
@@ -630,7 +639,7 @@ class StreamNotifications extends Plugin implements IModule {
         });
     }
 
-    async list(msg:Message, calledAs:string|undefined, args:string[]|undefined) {
+    async list(msg: Message, calledAs: string | undefined, args: string[] | undefined) {
         // !streams 2
         // !streams YouTube 2
 
@@ -648,7 +657,7 @@ class StreamNotifications extends Plugin implements IModule {
 
         let page = 1;
         let provider = "any";
-        
+
         if(args && args.length > 1) {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
@@ -688,7 +697,7 @@ class StreamNotifications extends Plugin implements IModule {
             return;
         }
         let normalSettings = await this.convertToNormalSettings(rawSettings);
-        
+
         let results = normalSettings.subscribedTo;
 
         if(provider !== "any") {
@@ -706,7 +715,7 @@ class StreamNotifications extends Plugin implements IModule {
             return;
         }
 
-        let fields:IEmbedOptionsField[] = [];
+        let fields: IEmbedOptionsField[] = [];
         let c = 1;
         for(let result of results) {
             fields.push({
@@ -724,8 +733,8 @@ class StreamNotifications extends Plugin implements IModule {
                     page
                 }
             }, {
-                fields
-            })
+                    fields
+                })
         });
     }
 
@@ -733,20 +742,20 @@ class StreamNotifications extends Plugin implements IModule {
     // Interval functions
     // =======================================
 
-    cleanupPromise:undefined|Promise<void> = undefined;
+    cleanupPromise: undefined | Promise<void> = undefined;
 
-    cleanupInterval:NodeJS.Timer;
+    cleanupInterval: NodeJS.Timer;
 
     async notificationsCleanup() {
         let subscriptions = await this.getAllSubscriptions();
-        let resolveFunction:undefined|Function = undefined;
+        let resolveFunction: undefined | Function = undefined;
         this.cleanupPromise = new Promise((r) => {
             resolveFunction = r;
         });
         await sleep(100);
         for(let rawSubscription of subscriptions) {
             let subscription = this.convertToNormalSubscription(rawSubscription);
-            let toRemove:INotificationStatus[] = [];
+            let toRemove: INotificationStatus[] = [];
             for(let notifiedStatus of subscription.notified) {
                 if((Date.now() - notifiedStatus.notifiedAt) > MAX_NOTIFIED_LIFE) {
                     toRemove.push(notifiedStatus);
@@ -756,6 +765,17 @@ class StreamNotifications extends Plugin implements IModule {
                 let index = subscription.notified.indexOf(notifiedStatusToRemove);
                 subscription.notified.splice(index, 1);
             }
+
+            let uniqueSubscribers: string[] = [];
+            for(let subscriber of subscription.subscribers.sort()) {
+                if(uniqueSubscribers.indexOf(subscriber) !== -1) {
+                    continue;
+                }
+                uniqueSubscribers.push(subscriber);
+            }
+
+            subscription.subscribers = uniqueSubscribers;
+
             rawSubscription = this.convertToRawSubscription(subscription);
             await this.updateSubscription(rawSubscription);
         }
@@ -767,28 +787,41 @@ class StreamNotifications extends Plugin implements IModule {
 
     guildSettingsCache = new Map<string, ISettingsParsedRow>();
 
-    checknNotifyInterval:NodeJS.Timer;
+    checknNotifyInterval: NodeJS.Timer;
+
+    private performingStreamsCheck = false;
 
     async checknNotify() {
-        // 1) for (all providers)
-        //   1.1) get all subscriptions for provider (WHERE provider=twitch)
-        //   1.2) for (all subscriptions)
-        //     1.2.1) provider#fetch(subscription)
-        //     1.2.2) check who not notified => Array:notNotified
-        //     1.2.3) generateEmbed(stream) ->
-        //       1.2.3.1) notify(notNotified) ->
-        //         1.2.3.1.1) put into notified array
-
         if(this.cleanupPromise) {
             await this.cleanupPromise;
         }
 
+        if(this.performingStreamsCheck) {
+            // for cases if checking goes for long time
+            // by some reason it could happen in future
+            // unlike cleanup this is not the Promise because we won't do check-after-check
+            return;
+        }
+
+        this.performingStreamsCheck = true;
+
         for(let [providerName, mod] of this.servicesLoader.loadedModulesRegistry) {
-            if(!mod.base) { continue; }
+            if(!mod.base) {
+                this.log("warn", "Not found streaming service with name", providerName);
+                continue;
+            }
             let service = mod.base as IStreamingService;
             let subscriptions = (await this.getSubscriptionsForService(providerName)).map(this.convertToNormalSubscription);
             let toFetch = subscriptions.map(this.convertToStreamer);
-            let results = await service.fetch(toFetch);
+            let results: IStreamStatus[] = [];
+
+            try {
+                results = await service.fetch(toFetch);
+            } catch(err) {
+                this.log("err", "Failed to fetch streams from", providerName);
+                continue;
+            }
+
             for(let result of results) {
                 if(result.status === "offline") { continue; }
                 let streamerSubscriptions = subscriptions.filter(sub => {
@@ -796,20 +829,47 @@ class StreamNotifications extends Plugin implements IModule {
                 });
 
                 for(let subscription of streamerSubscriptions) {
-                    for(let subscribedGuild of subscription.subscribers) {
-                        let isNotified = subscription.notified.find((ns) => {
+                    if(subscription.username !== result.streamer.username) {
+                        // for cases if streamer changed username (Twitch/Mixer)
+                        subscription.username = result.streamer.username;
+                    }
+
+                    for(let subscribedGuildId of subscription.subscribers) {
+                        let notification = subscription.notified.find((ns) => {
                             return ns.id === result.id;
                         });
-                        if(isNotified && isNotified.notifiedGuilds.includes(subscribedGuild)) { continue; }
 
-                        let guild = discordBot.guilds.get(subscribedGuild);
-                        if(!guild) { continue; }
-                        let embed = await service.getEmbed(result, await getGuildLanguage(guild));
+                        if(notification && notification.notifiedGuilds.includes(subscribedGuildId)) {
+                            // the guild was already notified
+                            continue;
+                        }
+
+                        let guild = discordBot.guilds.get(subscribedGuildId);
+                        if(!guild) {
+                            this.log("err", "Not found subscribed guild with ID", subscribedGuildId, "of subscription", subscription.provider, subscription.uid);
+                            continue;
+                        }
+
+                        let embed: IEmbed | undefined = undefined;
+
+                        try {
+                            embed = await service.getEmbed(result, await getGuildLanguage(guild));
+                        } catch(err) {
+                            this.log("err", "Failed to get embed for stream of", `${subscription.uid} (${providerName})`, err);
+                        }
+
+                        if(!embed) {
+                            // we got no embed for some reason: error or not, we'll skip it for now
+                            continue;
+                        }
 
                         let settings = this.guildSettingsCache.get(guild.id);
                         if(!settings) {
                             let dbSettings = await this.getSettings(guild);
-                            if(!dbSettings) { continue; }
+                            if(!dbSettings) {
+                                this.log("err", "Not found `dbSettings` for subscribed guild", subscribedGuildId, "to subscription", subscription.provider, subscription.uid);
+                                continue;
+                            }
                             settings = this.convertToNormalSettings(dbSettings);
                             this.guildSettingsCache.set(guild.id, settings);
                         }
@@ -817,23 +877,31 @@ class StreamNotifications extends Plugin implements IModule {
                         if(!settings.channelId || settings.channelId === "-") { continue; }
 
                         let channel = guild.channels.get(settings.channelId);
-                        if(!channel) { continue; }
+                        if(!channel) {
+                            this.log("err", "Not found channel for subscribed guild", subscribedGuildId, "to subscription", subscription.provider, subscription.uid);
+                            continue;
+                        }
 
                         let mentionsEveryone = !!settings.mentionsEveryone.find(s => {
-                            return s.serviceName === providerName && (s.uid === result.streamer.uid || s.username === result.streamer.username);
+                            return s.serviceName === providerName && (s.uid === subscription.uid || s.username === subscription.username);
                         });
 
-                        await (channel as TextChannel).send(mentionsEveryone ? "@everyone" : "", {
-                            embed: embed as any
-                        });
+                        try {
+                            await (channel as TextChannel).send(mentionsEveryone ? "@everyone" : "", {
+                                embed: embed as any
+                            });
+                        } catch(err) {
+                            this.log("err", "Failed to send notification for stream of", `${subscription.uid} (${providerName})`, "to channel", `${channel.id}.`, "Error ocurred", err);
+                            continue;
+                        }
 
-                        if(isNotified) {
-                            isNotified.notifiedGuilds.push(subscribedGuild);
+                        if(notification) {
+                            notification.notifiedGuilds.push(subscribedGuildId);
                         } else {
                             subscription.notified.push({
                                 id: result.id,
                                 notifiedAt: Date.now(),
-                                notifiedGuilds: [subscribedGuild]
+                                notifiedGuilds: [subscribedGuildId]
                             });
                         }
                     }
@@ -844,13 +912,15 @@ class StreamNotifications extends Plugin implements IModule {
                 await this.updateSubscription(rSubscription);
             }
         }
+
+        this.performingStreamsCheck = false;
     }
 
     // =======================================
     // Additional bridge functions
     // =======================================
 
-    async createOrGetSettings(guild:Guild) {
+    async createOrGetSettings(guild: Guild) {
         let settings = await this.getSettings(guild);
         if(!settings) {
             settings = await this.createSettings({
@@ -867,7 +937,7 @@ class StreamNotifications extends Plugin implements IModule {
     // Converting
     // =======================================
 
-    convertToNormalSettings(raw:ISettingsRow) : ISettingsParsedRow {
+    convertToNormalSettings(raw: ISettingsRow): ISettingsParsedRow {
         return {
             channelId: raw.channelId,
             guild: raw.guild,
@@ -876,7 +946,7 @@ class StreamNotifications extends Plugin implements IModule {
         };
     }
 
-    convertToRawSettings(normal:ISettingsParsedRow) : ISettingsRow {
+    convertToRawSettings(normal: ISettingsParsedRow): ISettingsRow {
         return {
             channelId: normal.channelId,
             guild: normal.guild,
@@ -885,7 +955,7 @@ class StreamNotifications extends Plugin implements IModule {
         };
     }
 
-    convertToMap<T>(toConvert:T[], key:string) : Map<string, T> {
+    convertToMap<T>(toConvert: T[], key: string): Map<string, T> {
         let map = new Map<string, T>();
         for(let elem of toConvert) {
             map.set(elem[key], elem);
@@ -893,7 +963,7 @@ class StreamNotifications extends Plugin implements IModule {
         return map;
     }
 
-    convertToNormalSubscription(raw:ISubscriptionRawRow) : ISubscriptionRow {
+    convertToNormalSubscription(raw: ISubscriptionRawRow): ISubscriptionRow {
         return {
             username: raw.username,
             uid: raw.uid,
@@ -903,7 +973,7 @@ class StreamNotifications extends Plugin implements IModule {
         };
     }
 
-    convertToRawSubscription(normal:ISubscriptionRow) : ISubscriptionRawRow  {
+    convertToRawSubscription(normal: ISubscriptionRow): ISubscriptionRawRow {
         return {
             username: normal.username,
             uid: normal.uid,
@@ -913,7 +983,7 @@ class StreamNotifications extends Plugin implements IModule {
         };
     }
 
-    convertToStreamer(subscription:ISubscriptionRow) : IStreamingServiceStreamer {
+    convertToStreamer(subscription: ISubscriptionRow): IStreamingServiceStreamer {
         return {
             serviceName: subscription.provider,
             uid: subscription.uid,
@@ -929,30 +999,30 @@ class StreamNotifications extends Plugin implements IModule {
         return (await this.db(TABLE.subscriptions).select()) as ISubscriptionRawRow[];
     }
 
-    async getSubscriptionsForService(service:string) {
+    async getSubscriptionsForService(service: string) {
         return (await this.db(TABLE.subscriptions).select().where({
             provider: service
         })) as ISubscriptionRawRow[];
     }
 
-    async getSubscription(filter:{
-        provider:string,
-        uid?:string,
-        username?:string
-    }) : Promise<ISubscriptionRawRow|undefined> {
+    async getSubscription(filter: {
+        provider: string,
+        uid?: string,
+        username?: string
+    }): Promise<ISubscriptionRawRow | undefined> {
         if(!filter.uid && !filter.username) {
             throw new Error("Nor uid nor username provided");
         }
         return await this.db(TABLE.subscriptions).where(filter).first() as ISubscriptionRawRow;
     }
 
-    async createSubscription(row:ISubscriptionRawRow) {
+    async createSubscription(row: ISubscriptionRawRow) {
         row.notified = "[]";
         await this.db(TABLE.subscriptions).insert(row);
         return row;
     }
 
-    async updateSubscription(newSubscription:ISubscriptionRawRow) {
+    async updateSubscription(newSubscription: ISubscriptionRawRow) {
         return await this.db(TABLE.subscriptions).where({
             provider: newSubscription.provider,
             uid: newSubscription.uid,
@@ -960,7 +1030,7 @@ class StreamNotifications extends Plugin implements IModule {
         }).update(newSubscription);
     }
 
-    async removeSubscription(subscription:ISubscriptionRawRow) {
+    async removeSubscription(subscription: ISubscriptionRawRow) {
         return await this.db(TABLE.subscriptions).where({
             provider: subscription.provider,
             uid: subscription.uid,
@@ -968,18 +1038,18 @@ class StreamNotifications extends Plugin implements IModule {
         }).delete();
     }
 
-    async getSettings(guild:Guild) : Promise<ISettingsRow|undefined> {
+    async getSettings(guild: Guild): Promise<ISettingsRow | undefined> {
         return await this.db(TABLE.settings).where({
             guild: guild.id
         }).first() as ISettingsRow;
     }
 
-    async createSettings(row:ISettingsRow) {
+    async createSettings(row: ISettingsRow) {
         await this.db(TABLE.settings).insert(row);
         return row;
     }
 
-    async updateSettings(newSettings:ISettingsRow) {
+    async updateSettings(newSettings: ISettingsRow) {
         return this.db(TABLE.settings).where({
             guild: newSettings.guild
         }).update(newSettings);
