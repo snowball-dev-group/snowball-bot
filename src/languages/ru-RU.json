@@ -543,6 +543,7 @@
     "STREAMING_ADD_FAULT_PROVIDERNOTFOUND": "Такой сервис не найден",
     "STREAMING_ADD_FAULT_UNKNOWN": "Неизвестная ошибка",
     "STREAMING_ADD_CONFIRMATION": "Вы действительно хотите добавить канал `{streamerName}` (ID: `{streamerId}`) для оповещения?",
+    "STREAMING_ADD_FAULT_ALREADYSUBBED": "Вы уже подписаны на этот канал!",
     "STREAMING_CANCELED": "Действие отменено",
     "STREAMING_ADD_FAULT_DESTROYED": "Подписка была уничтожена пока ожидалось подтверждение",
     "STREAMING_ADD_DONE": "Добавление канала для оповещения завершено",
