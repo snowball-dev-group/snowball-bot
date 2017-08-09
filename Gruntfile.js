@@ -9,6 +9,18 @@ module.exports = function(grunt) {
                 }
             }
         },
+        tslint: {
+            default: {
+                options: {
+                    configuration: "tslint.json",
+                    force: false,
+                    fix: false
+                },
+                files: {
+                    src: ["src/**/*.ts"]
+                }
+            }
+        },
         copy: {
             default: {
                 files: [{
@@ -35,6 +47,8 @@ module.exports = function(grunt) {
     });
 
     grunt.loadNpmTasks("grunt-ts");
+    grunt.loadNpmTasks("grunt-tslint");
     grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.registerTask("default", ["ts", "copy"]);
+
+    grunt.registerTask("default", ["ts", "tslint", "copy"]);
 };

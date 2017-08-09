@@ -9,13 +9,7 @@ before_script:
   - yarn install
 
 stages:
-  - lint
   - build
-
-linting:
-  stage: lint
-  script:
-    - tslint .
 
 compiling:
   stage: build
