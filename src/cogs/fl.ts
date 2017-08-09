@@ -1,12 +1,12 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
-import { Message, GuildMember, User, TextChannel } from "discord.js";
+import { Message, GuildMember, TextChannel } from "discord.js";
 import { getLogger, EmbedType, generateEmbed } from "./utils/utils";
 import { command, Category } from "./utils/help";
 import { generateLocalizedEmbed, localizeForUser } from "./utils/ez-i18n";
 
-const ICON = "http://i.imgur.com/Aby4Pt4.png";
-
+const FL_ICON = "http://i.imgur.com/Aby4Pt4.png";
+const FL_COLOR = 0x1E88E5;
 
 @command(Category.Utilites, "fl", "loc:FL_META_NAME")
 class ReverseLayout extends Plugin implements IModule {
@@ -61,7 +61,7 @@ class ReverseLayout extends Plugin implements IModule {
         }
 
         // find last message by this author
-        const originalMessage = messages.find(x => (x.member || x.author).id == user.id);
+        const originalMessage = messages.find(x => (x.member || x.author).id === user.id);
         if (!originalMessage) {
             await msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_NOMESSAGES")
@@ -79,7 +79,7 @@ class ReverseLayout extends Plugin implements IModule {
         // fetch replace lines
         let lineLanguage = await localizeForUser(user, "+FL_REPLACELINE_LOCALIZED");
         let lineEnglish = await localizeForUser(user, "+FL_REPLACELINE_ENGLISH");
-        if (lineLanguage.length != lineEnglish.length) {
+        if (lineLanguage.length !== lineEnglish.length) {
             let newLength = Math.min(lineLanguage.length, lineEnglish.length);
             lineLanguage = lineLanguage.substring(0, newLength);
             lineEnglish = lineEnglish.substring(0, newLength);
@@ -94,7 +94,7 @@ class ReverseLayout extends Plugin implements IModule {
         // reverse whole message
         reversed = this.reverse(reversed, lineLanguage, lineEnglish);
 
-        //send reversed message
+        // send reversed message
         try {
             await msg.channel.send("", {
                 embed: await generateEmbed(EmbedType.Empty, reversed, {
@@ -102,7 +102,7 @@ class ReverseLayout extends Plugin implements IModule {
                         name: user.displayName,
                         icon_url: (user instanceof GuildMember ? user.user : user).displayAvatarURL
                     },
-                    thumbUrl: ICON,
+                    thumbUrl: FL_ICON,
                     thumbWidth: 32,
                     thumbHeight: 32,
                     footer: {
@@ -111,7 +111,7 @@ class ReverseLayout extends Plugin implements IModule {
                             botname: discordBot.user.username
                         })
                     },
-                    color: 0x2196F3,
+                    color: FL_COLOR,
                     ts: msg.createdAt
                 })
             });
