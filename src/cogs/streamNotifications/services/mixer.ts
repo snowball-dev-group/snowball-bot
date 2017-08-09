@@ -70,7 +70,7 @@ class MixerStreamingService implements IStreamingService {
 
     public async fetchChannel(uid: string): Promise<IMixerChannel> {
         return (await this.makeRequest(this.getAPIURL_Channel(uid))) as IMixerChannel;
-    };
+    }
 
     public async getStreamStartTime(uid: string): Promise<number> {
         return new Date(((await this.makeRequest(`${this.getAPIURL_Channel(uid)}/manifest.light2`)) as {

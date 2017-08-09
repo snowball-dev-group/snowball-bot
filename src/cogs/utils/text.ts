@@ -17,7 +17,7 @@ export function escapeRegExp(str:string) {
 export function replaceAll(str:string, search:string, replacement:string) {
     search = escapeRegExp(search);
     return str.replace(new RegExp(search, "g"), replacement);
-};
+}
 
 export function simpleCmdParse(str:string) {
     let args = str.split(" ");

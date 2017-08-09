@@ -11,7 +11,7 @@ export enum Category {
     Premium,
     Guilds,
     Language
-};
+}
 
 export interface IArgumentInfo {
     description: string;

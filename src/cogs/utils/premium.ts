@@ -80,7 +80,7 @@ export async function deletePremium(person:GuildMember|User) : Promise<boolean> 
     let currentPremium = await checkPremium(person, INTERNALCALLSIGN);
 
     if(!currentPremium) {
-        let str = "Nothing to delete";;
+        let str = "Nothing to delete";
         LOG("info", logPrefix, str);
         let err = new Error(str);
         err.name = "PREMIUM_ALRDYNTSUB";

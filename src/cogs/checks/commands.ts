@@ -77,7 +77,7 @@ export function command(cmd:string, aliases?:string[], eq:CommandEquality = Comm
             }
         };
     };
-};
+}
 
 /**
  * Message in channel
@@ -99,7 +99,7 @@ export function inChannel(channelId:string) {
             }
         };
     };
-};
+}
 
 /**
  * Owner decorator

@@ -15,7 +15,7 @@ export interface ICustoms {
 export interface IAddedProfilePlugin {
     json: string;
     type: AddedProfilePluginType;
-};
+}
 
 export interface IProfilesPlugin extends IModule {
     getCustoms?(info, caller:GuildMember): Promise<ICustoms>;

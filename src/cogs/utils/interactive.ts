@@ -56,7 +56,7 @@ interface ICustomConfirmationRules {
     variants:string[]; time:number;
 
     whoCanReact?:Array<User|GuildMember>;
-};
+}
 
 export async function createCustomizeConfirmationMessage(embed, channel:TextChannel, rules:ICustomConfirmationRules) {
     let _confirmationMessage:Message = await channel.send("", {
@@ -84,7 +84,7 @@ export async function createCustomizeConfirmationMessage(embed, channel:TextChan
 interface ICustomWaitMessageOptions {
     variants:string[]; time:number;
     max?:number; maxMatches:number; authors:string[];
-};
+}
 
 export async function waitForMessages(channel:TextChannel|DMChannel, rules:ICustomWaitMessageOptions) {
     return await channel.awaitMessages((msg:Message) => {

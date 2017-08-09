@@ -19,7 +19,7 @@ export function getDB() {
         });
     }
     return connection;
-};
+}
 
 interface TypeInfo {
     unique:boolean;

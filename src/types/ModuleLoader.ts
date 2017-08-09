@@ -95,7 +95,7 @@ export class Module extends EventEmitter {
      * @returns {Promise} Promise which'll be resolved once module is unloaded or destroyed
      */
     unload(reason:any="unload") {
-        if(!this.loaded) { throw new Error("Module not loaded"); };
+        if(!this.loaded) { throw new Error("Module not loaded"); }
         if(!this.base) {
             this.emit("error", {
                 state: "unload",

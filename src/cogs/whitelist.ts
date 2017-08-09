@@ -45,7 +45,7 @@ enum GUILD_STATE {
      * Guild has unknown status, so bot deciding to leave or stay on guild
      */
     UNKNOWN
-};
+}
 
 function isBotAdmin(msg:Message) {
     return msg.author.id === botConfig.botOwner;
