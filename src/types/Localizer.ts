@@ -10,13 +10,24 @@ export interface ILocalizerOptions {
     directory:string;
 }
 
+export interface IStringsMap {
+    [key:string]: string|undefined;
+}
+
+export interface IStringsMapsMap {
+    [langCode:string]: IStringsMap|undefined;
+}
+
+const REQUIRED_META_KEYS = ["+NAME", "+COUNTRY"];
+
 export class Localizer {
     private opts:ILocalizerOptions;
-    private langMaps:Map<string, any>;
+    private langMaps:IStringsMapsMap = {};
     private initDone:boolean = false;
     private log:ILoggerFunction;
     private _defaultLang:string;
-    
+    private _loadedLanguages:string[] = [];
+
     get defaultLanguage() {
         return this._defaultLang;
     }
@@ -30,33 +41,55 @@ export class Localizer {
     public async init() {
         if(this.initDone) { return; }
         try {
-            this.langMaps = new Map<string, any>();
+            this.langMaps = {};
             this.log("info", "Started loading of language files");
             for(let lang of this.opts.languages) {
-                if(this.langMaps.has(lang)) {
+                if(!!this.langMaps[lang]) {
                     throw new Error(`Language "${lang}" is already registered`);
                 }
-                let content = await fs.readFile(pathJoin(this.opts.directory, `${lang}.json`), { "encoding": "utf8" });
-                let z = JSON.parse(content);
-                this.langMaps.set(lang, z);
+
+                let z:IStringsMap = {};
+                try {
+                    let content = await fs.readFile(pathJoin(this.opts.directory, `${lang}.json`), { "encoding": "utf8" });
+                    z = JSON.parse(content);
+                } catch (err) {
+                    this.log("err", "Could not read", lang, "language file");
+                }
+
+                let shouldNotLoad = false, requiredMetaKey = "";
+                for(requiredMetaKey of REQUIRED_META_KEYS) {
+                    if(!z[requiredMetaKey]) {
+                        shouldNotLoad = true;
+                        break;
+                    }
+                }
+
+                if(shouldNotLoad) {
+                    this.log("err", "Could not load", lang," language file. It misses", requiredMetaKey, "meta key, which is required");
+                    continue;
+                }
+
+                this.langMaps[lang] = z;
             }
 
             this.log("info", "Requesting default language");
-            let defLang = this.langMaps.get(this.opts.default_language);
+            let defLang = this.langMaps[this.opts.default_language];
             if(!defLang) {
                 throw new Error("Default language not found");
             }
 
             this.log("info", "Calculating language files coverages");
-            for(let [langName, langFile] of this.langMaps) {
+            for(let langName of Object.keys(this.langMaps)) {
+                let langFile = this.langMaps[langName];
+                if(!langFile) { continue; }
                 if(langName === this.opts.default_language) { 
-                    langFile["+COVERAGE"] = 100;
-                    this.langMaps.set(langName, langFile);
+                    langFile["+COVERAGE"] = "100";
+                    this.langMaps[langName] = langFile;
                     continue;
                 }
-                langFile["+COVERAGE"] = await this.testCoverage(langFile, defLang);
-                langFile["+COMMUNITY_MANAGED"] = langFile["+COMMUNITY_MANAGED"] === "true" ? true : false;
-                this.langMaps.set(langName, langFile);
+                langFile["+COVERAGE"] = (await this.testCoverage(langFile, defLang)) + "";
+                langFile["+COMMUNITY_MANAGED"] = langFile["+COMMUNITY_MANAGED"] === "true" ? "true" : "false";
+                this.langMaps[langName] = langFile;
                 this.log("ok", `- ${langName} ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${langFile["+COVERAGE"]}`);
             }
         } catch (err) {
@@ -64,10 +97,17 @@ export class Localizer {
             return;
         }
 
+        if(!this.langMaps[this.opts.default_language]) {
+            let estr = "Could not find default (fallback) language";
+            this.log("err", estr);
+            throw new Error(estr);
+        }
+
+        this._loadedLanguages = Object.keys(this.langMaps);
         this.initDone = true;
     }
 
-    private async testCoverage(langFile, defLang = this.langMaps.get(this.opts.default_language)) {
+    private async testCoverage(langFile, defLang = this.langMaps[this.opts.default_language]) {
         let unique = 0;
         for(let key of Object.keys(defLang)) {
             // ignored keys
@@ -84,17 +124,24 @@ export class Localizer {
     }
 
     public get loadedLanguages() {
-        return Array.from(this.langMaps.keys());
+        return this._loadedLanguages.slice(0);
     }
 
     public languageExists(lang:string) {
-        return this.langMaps.has(lang);
+        return this.langMaps;
     }
 
     public getString(lang:string = this.opts.default_language, str:string) {
-        let l = this.langMaps.get(lang)[str];
+        let lf = this.langMaps[lang];
+        if(!lf) {
+            let estr = "Could not find required language";
+            this.log("err", estr);
+            throw new Error(estr);
+        }
+        let l = lf[str];
         if((!l || l === "") && lang !== this.opts.default_language) {
-            l = this.langMaps.get(this.opts.default_language)[str];
+            // we already know that default language exists
+            l = (this.langMaps[this.opts.default_language] as IStringsMap)[str];
             if(!l) {
                 let estr = `String "${str}" not found nor in prefered language nor in language by default.`;
                 this.log("err", estr);
