@@ -14,11 +14,21 @@ const NUMBERS = [
 const REGIONAL_CHAR = String.fromCharCode(0xD83C);
 const REGIONAL_SUBCHAR_START = 56806;
 
-export function toRegionalIndicators(str:string, unknownCharReplacer:(s:string) => string) : string {
+export enum Stances {
+    NoCaseSwitching = 2
+}
+
+export function toRegionalIndicators(str:string, stances?:Stances, unknownCharReplacer?:(s:string) => string) : string {
     let arr = str.split("");
+    let allowCaseSwitching = false;
+    if(stances && stances > 0) {
+        allowCaseSwitching = !((stances & Stances.NoCaseSwitching) === Stances.NoCaseSwitching);
+    }
     arr = arr.map((s) => {
         let oS = s;
-        s = s.toLowerCase();
+        if(allowCaseSwitching) {
+            s = s.toLowerCase();
+        }
         if(/^[a-z]{1}$/.test(s)) {
             let letPos = s.charCodeAt(0) - 97;
             return `${REGIONAL_CHAR}${String.fromCharCode(REGIONAL_SUBCHAR_START + letPos)}`;
