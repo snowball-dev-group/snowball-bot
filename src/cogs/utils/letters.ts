@@ -34,14 +34,15 @@ export function toRegionalIndicators(str:string, stances?:Stances, unknownCharRe
     return arr.join("");
 }
 
-export function convertNumbers(number:string|number) {
+export function convertNumbers(number:string|number, unknownCharReplacer?:(s:string) => string) {
     let str = number + "";
     str = str.replace(/([0-9])/ig, (s) => {
         if(/^[0-9]{1}$/.test(s)) {
             return `${s}${KEYCAP_SUBCHAR}`;
-        } else {
-            return s;
+        } else if(!!unknownCharReplacer) {
+            return unknownCharReplacer(s);
         }
+        return s;
     });
     return str;
 }
