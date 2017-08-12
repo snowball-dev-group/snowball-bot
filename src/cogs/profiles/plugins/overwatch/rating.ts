@@ -11,11 +11,11 @@ const LOG = getLogger("OWRatingPlugin");
 
 export class OWStatsProfilePlugin implements IProfilesPlugin {
 
-    async getSetupArgs(caller:GuildMember) {
+    async getSetupArgs(caller: GuildMember) {
         return await localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
     }
 
-    async setup(str:string, member:GuildMember, msg:Message) {
+    async setup(str: string, member: GuildMember, msg: Message) {
         let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING"), prevStatus = status;
 
         let statusMsg = await msg.channel.send("", {
@@ -77,10 +77,10 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
         status = await localizeForUser(member, "OWPROFILEPLUGIN_FETCHINGPROFILE");
         postStatus();
-        let profile:IRegionalProfile|null = null;
+        let profile: IRegionalProfile | null = null;
         try {
             profile = await getProfile(info.battletag, info.region, info.platform);
-        } catch (err) {
+        } catch(err) {
             await statusMsg.edit("", {
                 embed: generateEmbed(EmbedType.Error, err.message)
             });
@@ -106,15 +106,15 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
         };
     }
 
-    async getEmbed(info:string|IOverwatchProfilePluginInfo, caller:GuildMember) : Promise<IEmbedOptionsField> {
+    async getEmbed(info: string | IOverwatchProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
         if(typeof info !== "object") {
             info = JSON.parse(info) as IOverwatchProfilePluginInfo;
         }
 
-        let profile:IRegionalProfile|undefined = undefined;
+        let profile: IRegionalProfile | undefined = undefined;
         try {
             profile = await getProfile(info.battletag, info.region, info.platform);
-        } catch (err) {
+        } catch(err) {
             LOG("err", "Error during getting profile", err, info);
             throw new Error("Can't get profile");
         }
@@ -132,7 +132,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
         };
 
         str += `**${(100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.quickplay.overall_stats.level}LVL**\n`;
-        
+
         let atStrs = {
             win: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_WIN"),
             loss: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_LOSS"),
@@ -158,7 +158,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
         }
 
         str += `\n<:quick:322781693205282816> __**${tStrs.quickplay}**__\n`;
-        
+
         if(!profile.stats.quickplay || !profile.stats.quickplay.overall_stats.games) {
             str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
         } else {
@@ -187,7 +187,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
         };
     }
 
-    getTierEmoji(tier:"bronze"|"silver"|"gold"|"platinum"|"diamond"|"master"|"grandmaster"|null) {
+    getTierEmoji(tier: "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master" | "grandmaster" | null) {
         switch(tier) {
             default: return "<:bronze:306194850796273665>";
             case null: return "<:no_rating:322361682460672000>";

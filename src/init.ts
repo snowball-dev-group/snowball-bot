@@ -9,11 +9,11 @@ const coreInfo = {
 (async () => {
     let log = logger(":init");
 
-    let config:IBotConfig;
+    let config: IBotConfig;
     try {
         log("info", "Loading config...");
         config = require("./config/configuration.json");
-    } catch (err) {
+    } catch(err) {
         log("err", err);
         log("err", "Exiting due we can't start bot without proper config");
         return process.exit(-1);
@@ -33,7 +33,7 @@ const coreInfo = {
     log("info", "Preparing our Discord client");
     Snowball.prepareDiscordClient();
 
-    
+
 
     log("info", "Connecting...");
     try {
@@ -45,7 +45,7 @@ const coreInfo = {
         Snowball.prepareModLoader();
 
         log("ok", "====== DONE ======");
-    } catch (err) {
+    } catch(err) {
         log("err", "Can't connect to Discord", err);
         log("err", "Exiting due we can't work without bot connected to Discord");
         process.exit(1);

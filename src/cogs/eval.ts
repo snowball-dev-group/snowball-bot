@@ -21,7 +21,7 @@ class EvalJS extends Plugin implements IModule {
         });
     }
 
-    safeEval(script:string, context:Context) {
+    safeEval(script: string, context: Context) {
         let s = new VM.Script(script);
         let c = VM.createContext(context);
         return s.runInContext(c, {
@@ -38,7 +38,7 @@ class EvalJS extends Plugin implements IModule {
         return () => {
             try {
                 cb();
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Safe function calling thrown an error", err);
             }
         };
@@ -46,7 +46,7 @@ class EvalJS extends Plugin implements IModule {
 
     @isOwner
     @command("!eval", ["!e", "!ev"], cmdEquality.NotEqual)
-    async onMessage(message:Message, usedPrefix?:string) {
+    async onMessage(message: Message, usedPrefix?: string) {
         let afterCmd = message.content.slice(`${usedPrefix} `.length).trim();
         if(!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
 
@@ -69,23 +69,23 @@ class EvalJS extends Plugin implements IModule {
             });
             let diff = Date.now() - startTime;
 
-            let outputMsg:Message;
+            let outputMsg: Message;
             try {
                 outputMsg = await message.channel.send("", {
                     embed: await generateLocalizedEmbed(EmbedType.Information, message.member, {
                         custom: true,
                         string: "Generating output. Please, wait..."
                     }, {
-                        informationTitle: "Busy"
-                    })
+                            informationTitle: "Busy"
+                        })
                 }) as Message;
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Can't send message with output:", err);
                 return;
             }
 
             let depth = 5;
-            let outputInsp:string = replaceAll(util.inspect(output, false, depth), "`", "'");
+            let outputInsp: string = replaceAll(util.inspect(output, false, depth), "`", "'");
             while(outputInsp.length > 2000 && depth > 0) {
                 outputInsp = replaceAll(util.inspect(output, false, --depth), "`", "'");
             }
@@ -96,8 +96,8 @@ class EvalJS extends Plugin implements IModule {
                         custom: true,
                         string: "Can't send output, it's longer than 2000 chars"
                     }, {
-                        errorTitle: "There's an error"
-                    })
+                            errorTitle: "There's an error"
+                        })
                 });
                 return;
             }
@@ -105,30 +105,30 @@ class EvalJS extends Plugin implements IModule {
             outputMsg.edit(undefined, {
                 embed: await generateLocalizedEmbed(EmbedType.OK, message.member, {
                     custom: true,
-                    string: "```js\n"+ outputInsp + "\n```"
+                    string: "```js\n" + outputInsp + "\n```"
                 }, {
-                    okTitle: "Executed",
-                    fields: [{
-                        inline: false,
-                        name: "Time spent",
-                        value: `${diff}ms`
-                    }]
-                })
+                        okTitle: "Executed",
+                        fields: [{
+                            inline: false,
+                            name: "Time spent",
+                            value: `${diff}ms`
+                        }]
+                    })
             });
-        } catch (err) {
+        } catch(err) {
             let diff = Date.now() - startTime;
             message.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, message.member, {
                     custom: true,
                     string: "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```"
                 }, {
-                    errorTitle: "Fault.",
-                    fields: [{
-                        inline: false,
-                        name: "Time spent",
-                        value: `${diff}ms`
-                    }]
-                })
+                        errorTitle: "Fault.",
+                        fields: [{
+                            inline: false,
+                            name: "Time spent",
+                            value: `${diff}ms`
+                        }]
+                    })
             });
         }
     }

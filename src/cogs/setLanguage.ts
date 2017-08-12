@@ -27,11 +27,11 @@ class SetLanguageCommand extends Plugin implements IModule {
     prefs = getPrefsNames();
     log = getLogger("SetLanguage");
     noLazy = false;
-    crowdinLink:string;
+    crowdinLink: string;
 
     constructor(options) {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg: Message) => this.onMessage(msg)
         });
         if(options) {
             this.noLazy = !!options["no_lazy"];
@@ -62,7 +62,7 @@ class SetLanguageCommand extends Plugin implements IModule {
         this.log("ok", "Sync done, poor DB");
     }
 
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         if(msg.channel.type !== "dm" && msg.channel.type !== "text") {
             return;
         }
@@ -79,7 +79,7 @@ class SetLanguageCommand extends Plugin implements IModule {
         }
     }
 
-    async getCurrentLang(msg:Message) {
+    async getCurrentLang(msg: Message) {
         let u = msg.member || msg.author;
         let str = await localizeForUser(u, "LANGUAGE_CURRENTLANG", {
             lang: `${await localizeForUser(u, "+NAME")} (${await localizeForUser(u, "+COUNTRY")})`,
@@ -100,7 +100,7 @@ class SetLanguageCommand extends Plugin implements IModule {
         });
     }
 
-    async switchLanguage(msg:Message) {
+    async switchLanguage(msg: Message) {
         let u = msg.member || msg.author;
         if(msg.content === CMD.SWITCH) {
             msg.channel.send("", {
@@ -142,7 +142,7 @@ class SetLanguageCommand extends Plugin implements IModule {
         });
     }
 
-    async getCodes(msg:Message) {
+    async getCodes(msg: Message) {
         let u = msg.member || msg.author;
         let str = `# ${await localizeForUser(u, "LANGUAGE_CODES_HEADER")}\n\n`;
         let langs = localizer.loadedLanguages;
@@ -159,11 +159,11 @@ class SetLanguageCommand extends Plugin implements IModule {
         });
     }
 
-    isAdmin(member:GuildMember) {
+    isAdmin(member: GuildMember) {
         return member.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"], true, true, true);
     }
 
-    async guildSwitch(msg:Message) {
+    async guildSwitch(msg: Message) {
         if(msg.channel.type !== "text") {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
@@ -208,7 +208,7 @@ class SetLanguageCommand extends Plugin implements IModule {
         });
     }
 
-    async guildEnforce(msg:Message) {
+    async guildEnforce(msg: Message) {
         if(msg.channel.type !== "text") {
             msg.channel.send("", {
                 // LANGUAGE_GUILD_SWITCH_ONLYGUILDS => "Это работает только в гильдиях"

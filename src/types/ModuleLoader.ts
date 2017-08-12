@@ -49,7 +49,7 @@ export class Module extends EventEmitter {
     /**
      * Base information about module
      */
-    info:IModuleInfo;
+    info: IModuleInfo;
     /**
      * Loaded module
      * Will be empty if module isn't loaded yet
@@ -59,7 +59,7 @@ export class Module extends EventEmitter {
      * State of module loading
      * @returns {Boolean} true if loaded, else false
      */
-    loaded:boolean = false;
+    loaded: boolean = false;
 
     constructor(info: IModuleInfo) {
         super();
@@ -79,7 +79,7 @@ export class Module extends EventEmitter {
             }
             this.loaded = true;
             this.emit("loaded", this.base);
-        } catch (err) {
+        } catch(err) {
             this.emit("error", {
                 state: "load#initialize",
                 error: err
@@ -94,7 +94,7 @@ export class Module extends EventEmitter {
      * @param reason Reason of unloading which'll be transmitted to module, by default "unload"
      * @returns {Promise} Promise which'll be resolved once module is unloaded or destroyed
      */
-    unload(reason:any="unload") {
+    unload(reason: any = "unload") {
         if(!this.loaded) { throw new Error("Module not loaded"); }
         if(!this.base) {
             this.emit("error", {
@@ -104,14 +104,14 @@ export class Module extends EventEmitter {
             return;
         } else if(typeof this.base.unload !== "function") {
             try {
-                for (const key of Object.keys(this.base)) {
+                for(const key of Object.keys(this.base)) {
                     this.base[key] = undefined;
                     delete this.base[key];
                 }
                 this.base = undefined;
                 this.emit("unloaded");
                 this.emit("destroyed");
-            } catch (err) {
+            } catch(err) {
                 this.emit("error", {
                     state: "unload#destoy",
                     error: err
@@ -132,22 +132,22 @@ export class ModuleLoader {
     /**
      * Basic configuration used at loader initialization
      */
-    config:IConfig;
+    config: IConfig;
     /**
      * Registry with modules
      */
-    registry:Map<string, IModuleInfo> = new Map<string, IModuleInfo>();
+    registry: Map<string, IModuleInfo> = new Map<string, IModuleInfo>();
     /**
      * Registry with currently loaded modules
      */
-    loadedModulesRegistry:Map<string, Module> = new Map<string, Module>();
+    loadedModulesRegistry: Map<string, Module> = new Map<string, Module>();
 
-    log:Function;
+    log: Function;
 
     constructor(config: IConfig) {
         this.config = config;
         this.log = logger(config.name);
-        
+
         this.log("info", "Registering modules");
         for(let value of config.registry.values()) {
             this.register(value);
@@ -163,7 +163,7 @@ export class ModuleLoader {
      * Add new module to registry
      * @param info Information about module
      */
-    register(info:IModuleInfo) {
+    register(info: IModuleInfo) {
         this.registry.set(info.name, info);
         this.log("info", "Registered new module", info);
     }
@@ -174,7 +174,7 @@ export class ModuleLoader {
      * @param name Name in registry
      * @returns {Promise} Promise which'll be resolved once module is loaded
      */
-    async load(name:string) {
+    async load(name: string) {
         if(!this.registry.has(name)) {
             let reason = "Module not found in registry. Use `ModuleLoader#register` to put your module in registry";
             this.log("err", "#load: attempt to load module", name, "failed:", reason);
@@ -191,11 +191,11 @@ export class ModuleLoader {
             throw new Error("No module info");
         }
         moduleInfo.path = __dirname + "/../" + this.config.basePath + moduleInfo.path;
-        
+
         try {
             moduleInfo.path = require.resolve(moduleInfo.path);
             this.log("info", "#load: path converted:", moduleInfo.path, "(module can be loaded)");
-        } catch (err) {
+        } catch(err) {
             this.log("err", "#load: path conversation failed (module can't be loaded)");
             throw err;
         }
@@ -203,7 +203,7 @@ export class ModuleLoader {
         let module = new Module(moduleInfo);
         try {
             await module.load();
-        } catch (err) {
+        } catch(err) {
             this.log("err", "#load: module", module.info.name, " rejected loading:", err);
             throw err;
         }
@@ -216,7 +216,7 @@ export class ModuleLoader {
      * @param name Name of loaded module
      * @returns {Promise} Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
      */
-    async unload(name:string, skipCallingUnload:boolean = false) {
+    async unload(name: string, skipCallingUnload: boolean = false) {
         if(!this.loadedModulesRegistry.has(name)) {
             let reason = "Module not found or not loaded yet";
             this.log("err", "#unload: check failed: ", reason);
@@ -234,7 +234,7 @@ export class ModuleLoader {
             }
             try {
                 await m.unload();
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "#unload: module", name, "rejected to unload:", err);
                 throw err;
             }
@@ -257,7 +257,7 @@ export class ModuleLoader {
 * Convert modules object to Map object
 * @param obj {Array} Array of module info entries
 */
-export function convertToModulesMap(obj:IModuleInfo[]) {
+export function convertToModulesMap(obj: IModuleInfo[]) {
     let modulesMap = new Map();
     for(let moduleInfo of obj) {
         modulesMap.set(moduleInfo.name, moduleInfo);

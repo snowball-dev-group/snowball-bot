@@ -9,7 +9,7 @@ const LOG = getLogger("OWApi");
 
 let alreadyFetching = new Map<string, Promise<IBlobResponse>>();
 
-export async function fetchBlobProfile(battletag:string, platform?:string) : Promise<IBlobResponse> {
+export async function fetchBlobProfile(battletag: string, platform?: string): Promise<IBlobResponse> {
     let context = `${battletag}//${platform}`;
     if(alreadyFetching.has(context)) {
         let previousContextPromise = alreadyFetching.get(context);
@@ -18,22 +18,22 @@ export async function fetchBlobProfile(battletag:string, platform?:string) : Pro
         }
     }
     let contextFunction: {
-        resolve?:(obj:IBlobResponse) => void;
-        reject?:(obj:any) => void
-    } = { };
+        resolve?: (obj: IBlobResponse) => void;
+        reject?: (obj: any) => void
+    } = {};
     let contextPromise = new Promise<IBlobResponse>((res, rej) => {
         contextFunction.resolve = res;
         contextFunction.reject = rej;
     });
     alreadyFetching.set(context, contextPromise);
 
-    let resp:Response|undefined = undefined;
+    let resp: Response | undefined = undefined;
     let logPrefix = `fetching (${battletag}, ${platform})`;
     let uri = `https://owapi.net/api/v3/u/${battletag}/blob${platform ? `?platform=${platform}` : ""}`;
     try {
         LOG("info", logPrefix, "Fetching URL", uri);
         resp = await fetch(uri);
-    } catch (err) {
+    } catch(err) {
         LOG("err", logPrefix, "Errored response", err);
         if(err.status === 404) {
             let _err = new Error("Profile not found.");
@@ -52,11 +52,11 @@ export async function fetchBlobProfile(battletag:string, platform?:string) : Pro
         throw _err;
     }
 
-    let parsed:IBlobResponse|undefined = undefined;
+    let parsed: IBlobResponse | undefined = undefined;
     try {
         LOG("info", logPrefix, "Parsing JSON...");
         parsed = await resp.json();
-    } catch (err) {
+    } catch(err) {
         LOG("info", logPrefix, "Parsing failed", err, await resp.text());
         let _err = new Error("Can't parse API response");
         if(contextFunction.reject) { contextFunction.reject(_err); }
@@ -90,20 +90,20 @@ export async function fetchBlobProfile(battletag:string, platform?:string) : Pro
     return parsed;
 }
 
-export async function getProfile(battletag:string, region:string = "eu", platform:string = "pc") : Promise<IRegionalProfile> {
+export async function getProfile(battletag: string, region: string = "eu", platform: string = "pc"): Promise<IRegionalProfile> {
     let logPrefix = `${battletag}(${region}, ${platform}): `;
-    let cached:ICachedRow|undefined = undefined;
+    let cached: ICachedRow | undefined = undefined;
     try {
         cached = await getFromCache(CACHE_OWNER, battletag);
-    } catch (err) {
+    } catch(err) {
         LOG("warn", "Failed to get cache for profile:", ...arguments);
     }
     if(!cached) {
-        let p:IBlobResponse|undefined = undefined;
+        let p: IBlobResponse | undefined = undefined;
         try {
             LOG("info", logPrefix, "There's no cache version, fetching profile");
             p = await fetchBlobProfile(battletag, platform);
-        } catch (err) {
+        } catch(err) {
             LOG("err", logPrefix, "Failed to fetch profile (no cache):");
             throw new Error("Failed to fetch profile (without cache)");
         }
@@ -114,15 +114,15 @@ export async function getProfile(battletag:string, region:string = "eu", platfor
             try {
                 LOG("info", logPrefix, "Clearing old cache record");
                 await clearCache(CACHE_OWNER, battletag);
-            } catch (err) {
+            } catch(err) {
                 LOG("warn", "Failed to clear old cache", ...arguments);
             }
-            
-            let p:IBlobResponse|undefined = undefined;
+
+            let p: IBlobResponse | undefined = undefined;
             try {
                 LOG("info", logPrefix, "Fetching profile");
                 p = await fetchBlobProfile(battletag, platform);
-            } catch (err) {
+            } catch(err) {
                 LOG("err", logPrefix, "Failed to fetch profile:");
                 throw new Error("Failed to fetch profile");
             }
@@ -135,8 +135,8 @@ export async function getProfile(battletag:string, region:string = "eu", platfor
 }
 
 export interface IOverwatchProfilePluginInfo {
-    platform:string;
-    region:string;
-    battletag:string;
-    verifed:boolean;
+    platform: string;
+    region: string;
+    battletag: string;
+    verifed: boolean;
 }

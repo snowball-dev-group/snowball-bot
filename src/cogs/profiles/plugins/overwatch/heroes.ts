@@ -11,19 +11,19 @@ const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
 const ACCEPTED_SORTS = ["playtime", "winrate"];
 const LOG = getLogger("OWRatingPlugin");
 
-type Hero = "reinhardt"|"tracer"|"zenyatta"|"junkrat"|"mccree"|"winston"|"orisa"|"hanzo"|"pharah"|"roadhog"|"zarya"|"torbjorn"|"mercy"|"mei"|"ana"|"widowmaker"|"genji"|"reaper"|"soldier76"|"bastion"|"symmetra"|"dva"|"sombra"|"lucio"|"doomfist";
-type Sorts = "playtime"|"winrate";
+type Hero = "reinhardt" | "tracer" | "zenyatta" | "junkrat" | "mccree" | "winston" | "orisa" | "hanzo" | "pharah" | "roadhog" | "zarya" | "torbjorn" | "mercy" | "mei" | "ana" | "widowmaker" | "genji" | "reaper" | "soldier76" | "bastion" | "symmetra" | "dva" | "sombra" | "lucio" | "doomfist";
+type Sorts = "playtime" | "winrate";
 type HeroStats = Array<{
-        hero: Hero,
-        stat: string
-    }>;
+    hero: Hero,
+    stat: string
+}>;
 
 interface IOverwatchHeroesProfilePluginInfo extends IOverwatchProfilePluginInfo {
-    sortBy:Sorts;
+    sortBy: Sorts;
 }
 
 export class OWHeroesProfilePlugin implements IProfilesPlugin {
-    async getSetupArgs(caller:GuildMember) {
+    async getSetupArgs(caller: GuildMember) {
         return await localizeForUser(caller, "OWPROFILEPLUGIN_HEROES_ARGS");
     }
 
@@ -135,7 +135,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
         };
     }
 
-    async getEmbed(info: string | IOverwatchHeroesProfilePluginInfo, caller:GuildMember): Promise<IEmbedOptionsField> {
+    async getEmbed(info: string | IOverwatchHeroesProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
         if(typeof info !== "object") {
             info = JSON.parse(info) as IOverwatchHeroesProfilePluginInfo;
         }
@@ -167,39 +167,39 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
         } else {
             let compOveral = profile.stats.competitive.overall_stats;
             str += `${this.getTierEmoji(compOveral.tier)} __**${tStrs.competitive}**__\n`;
-            let stats:HeroStats = [];
+            let stats: HeroStats = [];
             if(info.sortBy === "playtime") {
                 let heroesStats = profile.heroes.stats.competitive;
-                let sorted = Object.keys(heroesStats).map((heroName:Hero) => {
+                let sorted = Object.keys(heroesStats).map((heroName: Hero) => {
                     return {
                         hero: heroName,
                         playtime: heroesStats[heroName].general_stats.time_played
                     };
-                }).sort((a,b) => {
+                }).sort((a, b) => {
                     return b.playtime - a.playtime;
                 });
                 for(let heroPlaytime of sorted) {
                     if(heroPlaytime.playtime > 0 && stats.length < 3) {
                         stats.push({
-                            hero: heroPlaytime.hero, 
+                            hero: heroPlaytime.hero,
                             stat: this.getPlaytimeStr(heroPlaytime.playtime, await localizeForUser(caller, "+SHORT_CODE"))
                         });
                     }
                 }
             } else if(info.sortBy === "winrate") {
                 let heroesStats = profile.heroes.stats.competitive;
-                let sorted = Object.keys(heroesStats).map((heroName:Hero) => {
+                let sorted = Object.keys(heroesStats).map((heroName: Hero) => {
                     return {
                         hero: heroName,
                         games_won: heroesStats[heroName].general_stats.games_won
                     };
-                }).sort((a,b) => {
+                }).sort((a, b) => {
                     return b.games_won - a.games_won;
                 });
                 for(let heroWins of sorted) {
                     if(heroWins.games_won > 0 && stats.length < 3) {
                         stats.push({
-                            hero: heroWins.hero, 
+                            hero: heroWins.hero,
                             stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
                                 gamesWon: heroWins.games_won
                             })
@@ -215,39 +215,39 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
         if(!profile.stats.quickplay || !profile.stats.quickplay.overall_stats.games) {
             str += "- no stats -\n";
         } else {
-            let stats:HeroStats = [];
+            let stats: HeroStats = [];
             if(info.sortBy === "playtime") {
                 let heroesStats = profile.heroes.stats.quickplay;
-                let sorted = Object.keys(heroesStats).map((heroName:Hero) => {
+                let sorted = Object.keys(heroesStats).map((heroName: Hero) => {
                     return {
                         hero: heroName,
                         playtime: heroesStats[heroName].general_stats.time_played
                     };
-                }).sort((a,b) => {
+                }).sort((a, b) => {
                     return b.playtime - a.playtime;
                 });
                 for(let heroPlaytime of sorted) {
                     if(heroPlaytime.playtime > 0 && stats.length < 3) {
                         stats.push({
-                            hero: heroPlaytime.hero, 
+                            hero: heroPlaytime.hero,
                             stat: this.getPlaytimeStr(heroPlaytime.playtime, await localizeForUser(caller, "+SHORT_CODE"))
                         });
                     }
                 }
             } else if(info.sortBy === "winrate") {
                 let heroesStats = profile.heroes.stats.quickplay;
-                let sorted = Object.keys(heroesStats).map((heroName:Hero) => {
+                let sorted = Object.keys(heroesStats).map((heroName: Hero) => {
                     return {
                         hero: heroName,
                         games_won: heroesStats[heroName].general_stats.games_won
                     };
-                }).sort((a,b) => {
+                }).sort((a, b) => {
                     return b.games_won - a.games_won;
                 });
                 for(let heroWins of sorted) {
                     if(heroWins.games_won > 0 && stats.length < 3) {
                         stats.push({
-                            hero: heroWins.hero, 
+                            hero: heroWins.hero,
                             stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
                                 gamesWon: heroWins.games_won
                             })
@@ -278,7 +278,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
         }
     }
 
-    async getString(heroesStats:HeroStats, caller:GuildMember) {
+    async getString(heroesStats: HeroStats, caller: GuildMember) {
         let str = "";
         for(let stat of heroesStats) {
             str += `${this.getHeroIcon(stat.hero)} `;
@@ -288,8 +288,8 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
         return str;
     }
 
-    getHeroIcon(hero:Hero) : string {
-        switch (hero) {
+    getHeroIcon(hero: Hero): string {
+        switch(hero) {
             case "ana": return "<:ana:322800139402084352>";
             case "zenyatta": return "<:zen:322800138168827905>";
             case "zarya": return "<:zarya:322800138944774144>";
@@ -319,7 +319,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
         }
     }
 
-    getPlaytimeStr(playtime:number, lang:string) {
+    getPlaytimeStr(playtime: number, lang: string) {
         let ms = ((playtime * 60) * 60) * 1000;
         return humanizeDuration(ms, {
             largest: 2,
@@ -329,15 +329,15 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
         });
     }
 
-    async getHeroString(hero:Hero, caller:GuildMember) {
+    async getHeroString(hero: Hero, caller: GuildMember) {
         try {
             return await localizeForUser(caller, `OWPROFILEPLUGIN_HERO_${hero}`.toUpperCase());
-        } catch (err) {
+        } catch(err) {
             return this.getFallbackHeroString(hero);
         }
     }
 
-    getFallbackHeroString(hero:Hero) {
+    getFallbackHeroString(hero: Hero) {
         switch(hero) {
             default: return hero.charAt(0).toUpperCase() + hero.slice(1);
             case "lucio": return "Lúcio";

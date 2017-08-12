@@ -1,21 +1,21 @@
 import { IModule } from "../types/ModuleLoader";
 import logger = require("loggy");
 import { Plugin } from "./plugin";
-import { Message, TextChannel } from "discord.js"; 
+import { Message, TextChannel } from "discord.js";
 import { inChannel, shouldHaveAuthor } from "./checks/commands";
 import { getDB } from "./utils/db";
 import * as knex from "knex";
 import { convertNumbers } from "./utils/letters";
 
 class Count extends Plugin implements IModule {
-    log:Function = logger("CountChannel");
-    dbClient:knex;
-    countRegex:RegExp;
-    dbInitialized:boolean = false;
+    log: Function = logger("CountChannel");
+    dbClient: knex;
+    countRegex: RegExp;
+    dbInitialized: boolean = false;
 
     constructor() {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg: Message) => this.onMessage(msg)
         });
         this.dbClient = getDB();
 
@@ -43,13 +43,13 @@ class Count extends Plugin implements IModule {
 
     @inChannel("295643316610007050")
     @shouldHaveAuthor
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         if(!this.dbInitialized) { return; }
         if(msg.channel.type === "dm") { return; }
         if(!msg.content) { msg.delete(); return; }
         let override = msg.content.startsWith("!");
         if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
-        
+
         if(override) {
             if(msg.author.id === botConfig.botOwner) {
                 let mNumber = parseInt(msg.content.slice(1), 10);
@@ -88,7 +88,7 @@ class Count extends Plugin implements IModule {
                 count: mNumber,
                 date: Date.now() + ""
             });
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Can't push number to DB", err);
             try {
                 await msg.react("❌");
@@ -96,7 +96,7 @@ class Count extends Plugin implements IModule {
                     topic: ":warning: База данных не отвечает..."
                 });
                 this.log("ok", "Successfully written error message to description and reacted to message");
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Cannot react to message or edit description of channel: ", err);
             }
         }
@@ -105,12 +105,12 @@ class Count extends Plugin implements IModule {
             await (msg.channel as TextChannel).edit({
                 topic: ":v: Последнее число: " + convertNumbers(mNumber)
             });
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Can't change description of channel", err);
         }
 
         if(Math.floor(Math.random() * 6) > 4 && row.author !== msg.client.user.id) {
-            msg.channel.send((mNumber+1).toString());
+            msg.channel.send((mNumber + 1).toString());
         }
     }
 

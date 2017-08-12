@@ -1,6 +1,6 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
-import { Message, TextChannel, GuildMember } from "discord.js"; 
+import { Message, TextChannel, GuildMember } from "discord.js";
 import { inChannel, shouldHaveAuthor } from "./checks/commands";
 import { getDB } from "./utils/db";
 import * as knex from "knex";
@@ -21,31 +21,31 @@ enum XPOperation {
 }
 
 interface CountOperationRow {
-    count:number;
-    author:string;
-    date:number;
-    operation:"-"|"+";
-    number:string;
+    count: number;
+    author: string;
+    date: number;
+    operation: "-" | "+";
+    number: string;
     /**
      * JSON
      */
-    answered_by:string;
-    in_queue:string;
+    answered_by: string;
+    in_queue: string;
 }
 
 interface ScoreboardUserRow {
-    user:string;
-    exp:number;
-    streak:number;
+    user: string;
+    exp: number;
+    streak: number;
 }
 
 interface ScoreboardUserUpdateInfo {
-    user:string;
-    addition:number;
-    xp:number;
-    streak:number;
-    member:GuildMember;
-    operation:XPOperation;
+    user: string;
+    addition: number;
+    xp: number;
+    streak: number;
+    member: GuildMember;
+    operation: XPOperation;
 }
 
 const TABLENAME_MAIN = "countv2";
@@ -64,10 +64,10 @@ const STRINGS = {
 
 
 class CountV2 extends Plugin implements IModule {
-    log:Function = getLogger("CountV2Channel");
-    dbClient:knex;
-    countRegex:RegExp;
-    dbInitialized:number = DBInitializationState.NotInitialized;
+    log: Function = getLogger("CountV2Channel");
+    dbClient: knex;
+    countRegex: RegExp;
+    dbInitialized: number = DBInitializationState.NotInitialized;
     scoreboardMessages: {
         top10?: Message,
         latestChanges?: Message
@@ -79,7 +79,7 @@ class CountV2 extends Plugin implements IModule {
 
     constructor() {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg: Message) => this.onMessage(msg)
         });
         this.dbClient = getDB();
 
@@ -121,7 +121,7 @@ class CountV2 extends Plugin implements IModule {
             this.dbClient.schema.createTable(TABLENAME_SCOREBOARD, (tb) => {
                 tb.string("user").notNullable();
                 tb.integer("exp").notNullable();
-                tb.integer("streak").notNullable(); 
+                tb.integer("streak").notNullable();
             }).catch(err => {
                 this.log("err", "DB: we can't prepare DB", err);
             }).then(() => {
@@ -159,23 +159,23 @@ class CountV2 extends Plugin implements IModule {
             operation: "+"
         };
 
-        let ch:TextChannel;
+        let ch: TextChannel;
         if(!(ch = discordBot.channels.get(CHANNELID_MAIN) as TextChannel)) {
             return false;
         }
 
         try {
             await this.dbClient(TABLENAME_MAIN).insert(elem);
-        } catch (err) {
+        } catch(err) {
             this.log("err", "First start: Can't but element into database", err);
         }
-        
+
         ch.send("**Первый запуск!**\n__Число__: 1322.\n__Далее__: **+15**");
     }
 
     @inChannel(CHANNELID_MAIN)
     @shouldHaveAuthor
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         if(this.dbInitialized !== DBInitializationState.FullyInitialized) { return; }
         if(msg.channel.type === "dm") { return; } // never reply in direct messages
         if(!msg.content) { msg.delete(); return; }
@@ -183,7 +183,7 @@ class CountV2 extends Plugin implements IModule {
 
         let override = msg.content.startsWith("!");
         if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
-        
+
         if(override && msg.author.id === botConfig.botOwner) {
             msg.react("⏳");
             let nNumber = parseInt(msg.content.slice("!".length), 10);
@@ -199,7 +199,7 @@ class CountV2 extends Plugin implements IModule {
                 });
                 msg.react("✅");
                 msg.channel.send("✅ Перезапись числа завершена. Теперь введите это число.");
-            } catch (err) {
+            } catch(err) {
                 msg.react("❌");
                 msg.channel.send("❌ Ошибка перезаписи числа: `" + err.message + "`.");
                 this.log("err", "Can't insert new number into database", err);
@@ -212,25 +212,25 @@ class CountV2 extends Plugin implements IModule {
 
         let nNumber = parseInt(msg.content, 10);
 
-        let latestRow:CountOperationRow|undefined = undefined;
+        let latestRow: CountOperationRow | undefined = undefined;
         try {
             latestRow = await this.dbClient(TABLENAME_MAIN).orderBy("date", "DESC").first("count", "author", "date", "operation", "number", "answered_by", "in_queue");
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Can't get latest row from database", err);
             latestRow = undefined;
         }
-        
+
         if(!latestRow) { return; }
-        
+
         let rRowNumber = parseInt(latestRow.number, 10);
         let rRowQueueTime = parseInt(latestRow.in_queue, 10);
 
-        let rRowAnsweredBy:string[]|undefined;
+        let rRowAnsweredBy: string[] | undefined;
 
         if(latestRow.answered_by !== "null") {
             try {
                 rRowAnsweredBy = JSON.parse(latestRow.answered_by);
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Can't parse latest row `answered_by` column");
                 return;
             }
@@ -280,7 +280,7 @@ class CountV2 extends Plugin implements IModule {
             }
         }
 
-        let t:NodeJS.Timer|undefined = undefined;
+        let t: NodeJS.Timer | undefined = undefined;
         if(rRowQueueTime === -1 || (secondsSinceTimerAdded > 15)) { // more than 15 seconds, timer died?
             let deadTimer = (rRowQueueTime !== -1 && (secondsSinceTimerAdded > 15));
             t = setTimeout(async () => {
@@ -303,7 +303,7 @@ class CountV2 extends Plugin implements IModule {
                         answered_by: "[]",
                         in_queue: "-1"
                     });
-                } catch (err) {
+                } catch(err) {
                     this.log("err", "Can't put element into database", err);
                     msg.channel.send(":frowning: К сожалению, возникли проблемы с базой данных.");
                     return;
@@ -313,7 +313,7 @@ class CountV2 extends Plugin implements IModule {
                 } else {
                     msg.channel.send(`😱 **Ой!** Я случайно заснул... Извиняюсь. Итак, на чем мы остановились?\n*Внимательно читает историю чисел* Ах, вот! Было число **${rRowNumber}**. Далее.. (хмммм) Вот же, чего это я... Далее: **${operation}** ${diffNumber}`);
                 }
-                
+
             }, deadTimer ? 500 : 10000);
             latestRow.in_queue = Date.now() + "";
         }
@@ -326,7 +326,7 @@ class CountV2 extends Plugin implements IModule {
             if(!messageDeleted) {
                 msg.react("👁");
             }
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Can't update element in database");
             if(t) {
                 this.log("err", "Timer should not be called, clearing...");
@@ -336,14 +336,14 @@ class CountV2 extends Plugin implements IModule {
         }
     }
 
-    async giveXP(member:GuildMember, xpOperation:XPOperation) : Promise<ScoreboardUserUpdateInfo|undefined> {
-        let userRow:ScoreboardUserRow|undefined = undefined;
+    async giveXP(member: GuildMember, xpOperation: XPOperation): Promise<ScoreboardUserUpdateInfo | undefined> {
+        let userRow: ScoreboardUserRow | undefined = undefined;
 
         try {
             userRow = await this.dbClient(TABLENAME_SCOREBOARD).where({
                 user: member.id
             }).first("user", "exp", "streak");
-        } catch (err) {
+        } catch(err) {
             this.log("warn", "Can't poll user out'a DB");
             userRow = undefined;
         }
@@ -356,7 +356,7 @@ class CountV2 extends Plugin implements IModule {
             };
             try {
                 await this.dbClient(TABLENAME_SCOREBOARD).insert(userRow);
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Can't insert new user row to database", err);
                 return undefined;
             }
@@ -396,13 +396,13 @@ class CountV2 extends Plugin implements IModule {
             } else {
                 pointsGain = 0;
             }
-            
+
 
             try {
                 await this.dbClient(TABLENAME_SCOREBOARD).where({
                     user: userRow.user
                 }).update(userRow);
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Can't update element in database");
                 return undefined;
             }
@@ -454,37 +454,37 @@ class CountV2 extends Plugin implements IModule {
         if(!this.scoreboardMessages.latestChanges) {
             let msg = await ch.send("", {
                 embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
-                    footerText: STRINGS.LATEST_CHANGES 
+                    footerText: STRINGS.LATEST_CHANGES
                 })
             }) as Message;
             this.scoreboardMessages.latestChanges = msg;
         }
     }
 
-    async updateScoreboardMessages(playerUpdate?:ScoreboardUserUpdateInfo) {
+    async updateScoreboardMessages(playerUpdate?: ScoreboardUserUpdateInfo) {
         if(!this.scoreboardMessages.latestChanges || !this.scoreboardMessages.top10) {
             try {
                 this.log("info", "Probably cache was purged or plugin just started working, fetching messages from channel...");
                 await this.newScoreboardMessage();
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Can't update scoreboard messages, can't update scoreboard.", err);
                 return;
             }
         }
 
         if(this.scoreboardMessages.latestChanges && playerUpdate) {
-            let lines = this.scoreboardMessages.latestChanges.embeds[0].description.split("\n").filter(l => l!==STRINGS.LOADING);
+            let lines = this.scoreboardMessages.latestChanges.embeds[0].description.split("\n").filter(l => l !== STRINGS.LOADING);
             if(lines.length === 10) {
                 lines.splice(0, 1); // adding one line
             }
 
             // sorry, sorry... i'm sorry: 
             // https://hydra-media.cursecdn.com/overwatch.gamepedia.com/e/e4/Mei_-_Sorry%2C_Sorry%2C_I%27m_Sorry_Sorry.mp3
-            let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} \`${playerUpdate.member.displayName}\`: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : "+"+POINTS_RAISED} | ${playerUpdate.xp} ${playerUpdate.streak !== 0 ? `(**${playerUpdate.addition > 0 ? "+" + playerUpdate.addition : playerUpdate.addition}** - ${playerUpdate.streak > 0 ? "бонус за правильные ответы" : "штраф за неправильные ответы"})` : ""}`;
+            let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} \`${playerUpdate.member.displayName}\`: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : "+" + POINTS_RAISED} | ${playerUpdate.xp} ${playerUpdate.streak !== 0 ? `(**${playerUpdate.addition > 0 ? "+" + playerUpdate.addition : playerUpdate.addition}** - ${playerUpdate.streak > 0 ? "бонус за правильные ответы" : "штраф за неправильные ответы"})` : ""}`;
 
             lines.push(newLine);
 
-            let embed:any = {};
+            let embed: any = {};
             embed.description = lines.join("\n");
             embed.footer = { text: STRINGS.LATEST_CHANGES };
 
@@ -494,15 +494,15 @@ class CountV2 extends Plugin implements IModule {
         }
 
         if(this.scoreboardMessages.top10) {
-            let top10:ScoreboardUserRow[];
+            let top10: ScoreboardUserRow[];
             try {
                 top10 = await this.dbClient(TABLENAME_SCOREBOARD).orderBy("exp", "DESC").limit(15);
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Can't get top 10 from database");
                 return;
             }
 
-            let lines:string[] = [];
+            let lines: string[] = [];
             let pos = 0;
             top10.forEach((row) => {
                 if(row.exp < 10) { return; }
@@ -510,7 +510,7 @@ class CountV2 extends Plugin implements IModule {
                 if(!this.scoreboardMessages.top10) {
                     return;
                 } else {
-                    let member:GuildMember|undefined;
+                    let member: GuildMember | undefined;
                     if(!(member = this.scoreboardMessages.top10.guild.members.get(row.user))) {
                         return;
                     } else {
@@ -522,7 +522,7 @@ class CountV2 extends Plugin implements IModule {
                 }
             });
 
-            let embed:any = {};
+            let embed: any = {};
             embed.description = lines.join("\n");
             embed.footer = { text: STRINGS.TOP_10 };
 

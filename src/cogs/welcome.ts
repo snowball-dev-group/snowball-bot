@@ -1,6 +1,6 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
-import { Message } from "discord.js"; 
+import { Message } from "discord.js";
 // import { command, Category } from "./utils/help";
 import { getLogger } from "./utils/utils";
 
@@ -10,11 +10,11 @@ class Welcome extends Plugin implements IModule {
 
     constructor() {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg: Message) => this.onMessage(msg)
         });
     }
 
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         // handling commands
     }
 

@@ -5,34 +5,34 @@ import * as formatMsg from "format-message";
 import { getLogger, ILoggerFunction } from "../cogs/utils/utils";
 
 export interface ILocalizerOptions {
-    languages:string[];
-    default_language:string;
-    directory:string;
+    languages: string[];
+    default_language: string;
+    directory: string;
 }
 
 export interface IStringsMap {
-    [key:string]: string|undefined;
+    [key: string]: string | undefined;
 }
 
 export interface IStringsMapsMap {
-    [langCode:string]: IStringsMap|undefined;
+    [langCode: string]: IStringsMap | undefined;
 }
 
 const REQUIRED_META_KEYS = ["+NAME", "+COUNTRY"];
 
 export class Localizer {
-    private opts:ILocalizerOptions;
-    private langMaps:IStringsMapsMap = {};
-    private initDone:boolean = false;
-    private log:ILoggerFunction;
-    private _defaultLang:string;
-    private _loadedLanguages:string[] = [];
+    private opts: ILocalizerOptions;
+    private langMaps: IStringsMapsMap = {};
+    private initDone: boolean = false;
+    private log: ILoggerFunction;
+    private _defaultLang: string;
+    private _loadedLanguages: string[] = [];
 
     get defaultLanguage() {
         return this._defaultLang;
     }
 
-    constructor(name:string, opts:ILocalizerOptions) {
+    constructor(name: string, opts: ILocalizerOptions) {
         this.opts = opts;
         this.log = getLogger(name);
         this._defaultLang = opts.default_language;
@@ -48,11 +48,11 @@ export class Localizer {
                     throw new Error(`Language "${lang}" is already registered`);
                 }
 
-                let z:IStringsMap = {};
+                let z: IStringsMap = {};
                 try {
                     let content = await fs.readFile(pathJoin(this.opts.directory, `${lang}.json`), { "encoding": "utf8" });
                     z = JSON.parse(content);
-                } catch (err) {
+                } catch(err) {
                     this.log("err", "Could not read", lang, "language file");
                 }
 
@@ -65,7 +65,7 @@ export class Localizer {
                 }
 
                 if(shouldNotLoad) {
-                    this.log("err", "Could not load", lang," language file. It misses", requiredMetaKey, "meta key, which is required");
+                    this.log("err", "Could not load", lang, " language file. It misses", requiredMetaKey, "meta key, which is required");
                     continue;
                 }
 
@@ -82,7 +82,7 @@ export class Localizer {
             for(let langName of Object.keys(this.langMaps)) {
                 let langFile = this.langMaps[langName];
                 if(!langFile) { continue; }
-                if(langName === this.opts.default_language) { 
+                if(langName === this.opts.default_language) {
                     langFile["+COVERAGE"] = "100";
                     this.langMaps[langName] = langFile;
                     continue;
@@ -92,7 +92,7 @@ export class Localizer {
                 this.langMaps[langName] = langFile;
                 this.log("ok", `- ${langName} ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${langFile["+COVERAGE"]}`);
             }
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Error at initializing localizer", err);
             return;
         }
@@ -120,18 +120,18 @@ export class Localizer {
             }
         }
         let coverage = (100 * (unique / Object.keys(defLang).length));
-        return Math.round(coverage * 1e2 ) / 1e2; // 99.99%
+        return Math.round(coverage * 1e2) / 1e2; // 99.99%
     }
 
     public get loadedLanguages() {
         return this._loadedLanguages.slice(0);
     }
 
-    public languageExists(lang:string) {
+    public languageExists(lang: string) {
         return this.langMaps;
     }
 
-    public getString(lang:string = this.opts.default_language, str:string) {
+    public getString(lang: string = this.opts.default_language, str: string) {
         let lf = this.langMaps[lang];
         if(!lf) {
             let estr = "Could not find required language";
@@ -155,7 +155,7 @@ export class Localizer {
         return l;
     }
 
-    public getFormattedString(lang:string = this.opts.default_language, str:string, defs:any) {
+    public getFormattedString(lang: string = this.opts.default_language, str: string, defs: any) {
         let ns = this.getString(lang, str);
         return formatMsg(ns, defs, lang);
     }

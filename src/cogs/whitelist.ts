@@ -47,11 +47,11 @@ enum GUILD_STATE {
     UNKNOWN
 }
 
-function isBotAdmin(msg:Message) {
+function isBotAdmin(msg: Message) {
     return msg.author.id === botConfig.botOwner;
 }
 
-function isServerAdmin(msg:Message) {
+function isServerAdmin(msg: Message) {
     return msg.channel.type === "text" && (msg.member.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === botConfig.botOwner);
 }
 
@@ -69,23 +69,23 @@ function isServerAdmin(msg:Message) {
 }, isBotAdmin)
 class Whitelist extends Plugin implements IModule {
     log = getLogger("Whitelist");
-    alwaysWhitelisted:string[] = [];
+    alwaysWhitelisted: string[] = [];
 
     constructor(options) {
         super({
-            "message": (msg:Message) => this.onMessage(msg),
-            "guildCreate": (guild:Guild) => this.joinedGuild(guild)
+            "message": (msg: Message) => this.onMessage(msg),
+            "guildCreate": (guild: Guild) => this.joinedGuild(guild)
         });
         if(options) {
             if(options["always_whitelisted"] && options["always_whitelisted"] instanceof Array) {
-                for(let g of (options["always_whitelisted"] as string[])) {
+                for(let g of(options["always_whitelisted"] as string[])) {
                     this.alwaysWhitelisted.push(g);
                 }
             }
         }
     }
 
-    async joinedGuild(guild:Guild) {
+    async joinedGuild(guild: Guild) {
         this.log("info", `Joined guild "${guild.name}" (${guild.members.size} members)`);
         let whitelistStatus = await this.isWhitelisted(guild);
         if(whitelistStatus.state === GUILD_STATE.UNKNOWN) {
@@ -100,10 +100,10 @@ class Whitelist extends Plugin implements IModule {
         }
     }
 
-    async isWhitelisted(guild:Guild) : Promise<{
-        ok:boolean,
-        state:GUILD_STATE,
-        until:null|number;
+    async isWhitelisted(guild: Guild): Promise<{
+        ok: boolean,
+        state: GUILD_STATE,
+        until: null | number;
     }> {
         if(this.alwaysWhitelisted.includes(guild.id)) {
             return {
@@ -113,7 +113,7 @@ class Whitelist extends Plugin implements IModule {
             };
         }
         let whitelistStatus = await getGuildPref(guild, "whitelist:status", true) as GUILD_STATE;
-        let whitelistedUntil = await getGuildPref(guild, "whitelist:until", true) as number|null;
+        let whitelistedUntil = await getGuildPref(guild, "whitelist:until", true) as number | null;
         if(!whitelistStatus) {
             return {
                 ok: false,
@@ -148,7 +148,7 @@ class Whitelist extends Plugin implements IModule {
         };
     }
 
-    checkInterval:NodeJS.Timer;
+    checkInterval: NodeJS.Timer;
 
     async init() {
         this.checkInterval = setInterval(() => this.checkGuilds(), 1800000);
@@ -170,17 +170,17 @@ class Whitelist extends Plugin implements IModule {
         }
     }
 
-    calculateBotsPercentage(guild:Guild) {
+    calculateBotsPercentage(guild: Guild) {
         let bots = 0;
-        
-        for (let member of guild.members.values()) {
+
+        for(let member of guild.members.values()) {
             if(member.user.bot) { bots++; }
         }
 
         return (bots / guild.members.size) * 100;
     }
 
-    async tryToGiveTrial(guild:Guild) {
+    async tryToGiveTrial(guild: Guild) {
         let botPerc = this.calculateBotsPercentage(guild);
         if(botPerc > 70) {
             await this.leaveGuild(guild, "WHITELIST_LEAVE_BOTFARM");
@@ -200,9 +200,9 @@ class Whitelist extends Plugin implements IModule {
         this.log("info", `Activated trial on guild "${guild.name}"`);
     }
 
-    async sendMsg(guild:Guild, embed) {
-        let chToSendMessage:TextChannel|undefined = undefined;
-        
+    async sendMsg(guild: Guild, embed) {
+        let chToSendMessage: TextChannel | undefined = undefined;
+
         for(let toCheck of POSSIBLE_CHAT_ROOMS) {
             chToSendMessage = (guild.channels.find((ch) => {
                 return ch.name.includes(toCheck) && ch.type === "text";
@@ -213,13 +213,13 @@ class Whitelist extends Plugin implements IModule {
         if(chToSendMessage) {
             try {
                 await chToSendMessage.send("", { embed });
-            } catch (err) {
+            } catch(err) {
                 this.log("warn", `Failed to send message to channel ${chToSendMessage.name} (${chToSendMessage.id})`);
             }
         }
     }
 
-    async leaveGuild(guild:Guild, reason?:string) {
+    async leaveGuild(guild: Guild, reason?: string) {
         if(reason) {
             await this.sendMsg(guild, await generateLocalizedEmbed(EmbedType.Warning, guild.owner, {
                 key: reason,
@@ -233,11 +233,11 @@ class Whitelist extends Plugin implements IModule {
         this.log("ok", `Left guild "${guild.name}"`);
     }
 
-    isAdmin(m:GuildMember) {
+    isAdmin(m: GuildMember) {
         return m.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || m.id === botConfig.botOwner;
     }
 
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         if(msg.content === "!sb_pstatus" && this.isAdmin(msg.member)) {
             let whitelistInfo = await this.isWhitelisted(msg.guild);
             let str = "#" + (await localizeForUser(msg.member, "WHITELIST_INFO_HEADER", {
@@ -296,7 +296,7 @@ class Whitelist extends Plugin implements IModule {
                     }), msg);
                     if(!confirmation) {
                         msg.channel.send("", {
-                            embed: await generateLocalizedEmbed(EmbedType.OK, u,  "WHITELIST_CANCELED")
+                            embed: await generateLocalizedEmbed(EmbedType.OK, u, "WHITELIST_CANCELED")
                         });
                         return;
                     }
@@ -317,7 +317,7 @@ class Whitelist extends Plugin implements IModule {
 
                     if(!confirmation) {
                         msg.channel.send("", {
-                            embed: await generateLocalizedEmbed(EmbedType.OK, u,  "WHITELIST_CANCELED")
+                            embed: await generateLocalizedEmbed(EmbedType.OK, u, "WHITELIST_CANCELED")
                         });
                         return;
                     }
@@ -357,7 +357,7 @@ class Whitelist extends Plugin implements IModule {
 
                 if(!confirmation) {
                     msg.channel.send("", {
-                        embed: await generateLocalizedEmbed(EmbedType.OK, u,  "WHITELIST_CANCELED")
+                        embed: await generateLocalizedEmbed(EmbedType.OK, u, "WHITELIST_CANCELED")
                     });
                     return;
                 }
@@ -396,7 +396,7 @@ class Whitelist extends Plugin implements IModule {
 
                 if(!confirmation) {
                     msg.channel.send("", {
-                        embed: await generateLocalizedEmbed(EmbedType.OK, u,  "WHITELIST_CANCELED")
+                        embed: await generateLocalizedEmbed(EmbedType.OK, u, "WHITELIST_CANCELED")
                     });
                     return;
                 }

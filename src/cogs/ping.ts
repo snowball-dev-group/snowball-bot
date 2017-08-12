@@ -1,21 +1,21 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
-import { Message } from "discord.js"; 
+import { Message } from "discord.js";
 import { command, Category } from "./utils/help";
 import { getLogger } from "./utils/utils";
 
 @command(Category.Utilites, "ping", "loc:PING_CMDMETA_DEFAULT_DESCRIPTION")
 @command(Category.Utilites, "ping_embed", "loc:PING_CMDMETA_EMBED_DESCRIPTION")
 class Ping extends Plugin implements IModule {
-    log:Function = getLogger("PingJS");
+    log: Function = getLogger("PingJS");
 
     constructor() {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg: Message) => this.onMessage(msg)
         });
     }
 
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         if(msg.content === "!ping") {
             await msg.react("🏃");
             let startDate = Date.now();
@@ -39,7 +39,7 @@ class Ping extends Plugin implements IModule {
                 }
             });
         }
-        
+
     }
 
     async unload() {

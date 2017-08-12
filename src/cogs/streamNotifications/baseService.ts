@@ -2,8 +2,8 @@ import { IEmbed } from "../utils/utils";
 import { IModule } from "../../types/ModuleLoader";
 
 export class StreamingServiceError extends Error {
-    public stringKey:string;
-    constructor(stringKey:string, message:string) {
+    public stringKey: string;
+    constructor(stringKey: string, message: string) {
         super(message);
         this.stringKey = stringKey;
     }
@@ -13,46 +13,46 @@ export interface IStreamingService extends IModule {
     /**
     * Stream service name
     */
-    name:string;
+    name: string;
 
     /**
     * Batch fetching
     */
-    fetch(streams:IStreamingServiceStreamer[]) : Promise<IStreamStatus[]>;
+    fetch(streams: IStreamingServiceStreamer[]): Promise<IStreamStatus[]>;
 
     /**
     * Get embed style for stream
     */
-    getEmbed(stream:IStreamStatus, language:string) : Promise<IEmbed>;
+    getEmbed(stream: IStreamStatus, language: string): Promise<IEmbed>;
 
     /**
     * Get streamer info
     */
-    getStreamer(username:string) : Promise<IStreamingServiceStreamer>;
+    getStreamer(username: string): Promise<IStreamingServiceStreamer>;
 
     /**
      * Free cache if streamer got deleted
      */
-    freed?(uid:string):void;
+    freed?(uid: string): void;
 }
 
-export type StreamStatusString = "online"|"offline";
+export type StreamStatusString = "online" | "offline";
 
 export interface IStreamStatus {
     /**
     * Current status of streamer
     */
-    status:StreamStatusString;
+    status: StreamStatusString;
 
     /**
     * Info about streamer
     */
-    streamer:IStreamingServiceStreamer;
+    streamer: IStreamingServiceStreamer;
 
     /**
      * Stream ID
      */
-    id:string;
+    id: string;
 }
 
 export interface IStreamingServiceStreamer {
@@ -60,13 +60,13 @@ export interface IStreamingServiceStreamer {
     * Name of streaming service
     * Should be equal to name of IStreamingService
     */
-    serviceName:string;
+    serviceName: string;
     /**
     * Username
     */
-    username:string;
+    username: string;
     /**
     * ID (probably gonna be used for next calls)
     */
-    uid:string;
+    uid: string;
 }

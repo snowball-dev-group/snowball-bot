@@ -3,7 +3,7 @@ import * as knex from "knex";
 
 // TODO: MySQL DB intregration
 class DisabledCommands {
-    db:knex;
+    db: knex;
     constructor() {
         this.db = knex({
             client: "sqlite3",
@@ -19,8 +19,8 @@ class DisabledCommands {
      * Creates DB table for specific Discord server
      * @param guild {Guild} Discord Guild ID
      */
-    async createDBfor(guild:string) {
-        await this.db.schema.createTable("g"+guild, (tBuilder) => {
+    async createDBfor(guild: string) {
+        await this.db.schema.createTable("g" + guild, (tBuilder) => {
             // tBuilder.string("name").unique().notNullable();
             // tBuilder.string("description").notNullable();
             // tBuilder.string("roleId").unique().notNullable();
@@ -39,8 +39,8 @@ class DisabledCommands {
      * @param commandPath {String} Path to command
      * @example Command path may be: "discord.reply.*"
      */
-    async checkIfDisabled(guild:string, commandPath:string) {
-        let tableStatus = await this.db.schema.hasTable("g"+guild);
+    async checkIfDisabled(guild: string, commandPath: string) {
+        let tableStatus = await this.db.schema.hasTable("g" + guild);
         if(!tableStatus) { await this.createDBfor(guild); return false; }
     }
 }

@@ -2,236 +2,236 @@ export type Tier = "bronze" | "silver" | "gold" | "platinum" | "diamond" | "mast
 
 export interface IAchievementsStatus {
     defense: {
-        armor_up:boolean;
-        charge:boolean;
-        cold_snap:boolean;
-        did_that_string:boolean;
-        ice_blocked:boolean;
-        mine_like_a_steel_trap:boolean;
-        raid_wipe:boolean;
-        roadkill:boolean;
-        simple_geometry:boolean;
-        smooth_as_silk:boolean;
-        the_dragon_is_sated:boolean;
-        triple_threat:boolean;
+        armor_up: boolean;
+        charge: boolean;
+        cold_snap: boolean;
+        did_that_string: boolean;
+        ice_blocked: boolean;
+        mine_like_a_steel_trap: boolean;
+        raid_wipe: boolean;
+        roadkill: boolean;
+        simple_geometry: boolean;
+        smooth_as_silk: boolean;
+        the_dragon_is_sated: boolean;
+        triple_threat: boolean;
     };
     general: {
-        blackjack:boolean;
-        centenary:boolean;
-        decked_out:boolean;
-        decorated:boolean;
-        level_10:boolean;
-        level_25:boolean;
-        level_50:boolean;
-        survival_expert:boolean;
-        the_friend_zone:boolean;
-        the_path_is_closed:boolean;
-        undying:boolean;
+        blackjack: boolean;
+        centenary: boolean;
+        decked_out: boolean;
+        decorated: boolean;
+        level_10: boolean;
+        level_25: boolean;
+        level_50: boolean;
+        survival_expert: boolean;
+        the_friend_zone: boolean;
+        the_path_is_closed: boolean;
+        undying: boolean;
     };
     maps: {
-        cant_touch_this:boolean;
-        double_cap:boolean;
-        escort_duty:boolean;
-        lockdown:boolean;
-        shutout:boolean;
-        world_traveler:boolean;
+        cant_touch_this: boolean;
+        double_cap: boolean;
+        escort_duty: boolean;
+        lockdown: boolean;
+        shutout: boolean;
+        world_traveler: boolean;
     };
     offense: {
-        clearing_the_area:boolean;
-        death_from_above:boolean;
-        die_die_die_die:boolean;
-        hack_the_planet:boolean;
-        its_high_noon:boolean;
-        power_outage:boolean;
-        rocket_man:boolean;
-        slice_and_dice:boolean;
-        special_delivery:boolean;
-        target_rich_environment:boolean;
-        their_own_worst_enemy:boolean;
-        total_recall:boolean;
-        waste_not_want_not:boolean;
-        whoa_there:boolean;
+        clearing_the_area: boolean;
+        death_from_above: boolean;
+        die_die_die_die: boolean;
+        hack_the_planet: boolean;
+        its_high_noon: boolean;
+        power_outage: boolean;
+        rocket_man: boolean;
+        slice_and_dice: boolean;
+        special_delivery: boolean;
+        target_rich_environment: boolean;
+        their_own_worst_enemy: boolean;
+        total_recall: boolean;
+        waste_not_want_not: boolean;
+        whoa_there: boolean;
     };
     special: {
-        ambush:boolean;
-        cleanup_duty:boolean;
-        cool_as_ice:boolean;
-        flagbearer:boolean;
-        four_they_were:boolean;
-        held_the_door:boolean;
-        not_a_scratch:boolean;
-        snowed_in:boolean;
-        survived_the_night:boolean;
-        whap:boolean;
+        ambush: boolean;
+        cleanup_duty: boolean;
+        cool_as_ice: boolean;
+        flagbearer: boolean;
+        four_they_were: boolean;
+        held_the_door: boolean;
+        not_a_scratch: boolean;
+        snowed_in: boolean;
+        survived_the_night: boolean;
+        whap: boolean;
     };
     support: {
-        enabler:boolean;
-        group_health_plan:boolean;
-        huge_rez:boolean;
-        huge_success:boolean;
-        naptime:boolean;
-        rapid_discord:boolean;
-        supersonic:boolean;
-        the_car_wash:boolean;
-        the_floor_is_lava:boolean;
-        the_iris_embraces_you:boolean;
+        enabler: boolean;
+        group_health_plan: boolean;
+        huge_rez: boolean;
+        huge_success: boolean;
+        naptime: boolean;
+        rapid_discord: boolean;
+        supersonic: boolean;
+        the_car_wash: boolean;
+        the_floor_is_lava: boolean;
+        the_iris_embraces_you: boolean;
     };
     tank: {
-        anger_management:boolean;
-        game_over:boolean;
-        giving_you_the_hook:boolean;
-        halt_state:boolean;
-        hog_wild:boolean;
-        i_am_your_shield:boolean;
-        mine_sweeper:boolean;
-        overclocked:boolean;
-        power_overwhelming:boolean;
-        shot_down:boolean;
-        storm_earth_and_fire:boolean;
-        the_power_of_attraction:boolean;
+        anger_management: boolean;
+        game_over: boolean;
+        giving_you_the_hook: boolean;
+        halt_state: boolean;
+        hog_wild: boolean;
+        i_am_your_shield: boolean;
+        mine_sweeper: boolean;
+        overclocked: boolean;
+        power_overwhelming: boolean;
+        shot_down: boolean;
+        storm_earth_and_fire: boolean;
+        the_power_of_attraction: boolean;
     };
 }
 
 export interface IHeroesInfo<T> {
-    ana:T;
-    bastion:T;
-    dva:T;
-    genji:T;
-    hanzo:T;
-    junkrat:T;
-    lucio:T;
-    mccree:T;
-    mei:T;
-    mercy:T;
-    orisa:T;
-    pharah:T;
-    reaper:T;
-    reinhardt:T;
-    roadhog:T;
-    soldier76:T;
-    sombra:T;
-    symmetra:T;
-    torbjorn:T;
-    tracer:T;
-    widowmaker:T;
-    winston:T;
-    zarya:T;
-    zenyatta:T;   
+    ana: T;
+    bastion: T;
+    dva: T;
+    genji: T;
+    hanzo: T;
+    junkrat: T;
+    lucio: T;
+    mccree: T;
+    mei: T;
+    mercy: T;
+    orisa: T;
+    pharah: T;
+    reaper: T;
+    reinhardt: T;
+    roadhog: T;
+    soldier76: T;
+    sombra: T;
+    symmetra: T;
+    torbjorn: T;
+    tracer: T;
+    widowmaker: T;
+    winston: T;
+    zarya: T;
+    zenyatta: T;
 }
 
 export interface ICompAndQuick<T> {
-    quickplay:T;
-    competitive:T;
+    quickplay: T;
+    competitive: T;
 }
 
 export interface IPlaytimeInfo {
-    quickplay?:IHeroesInfo<number>;
-    competitive?:IHeroesInfo<number>;
+    quickplay?: IHeroesInfo<number>;
+    competitive?: IHeroesInfo<number>;
 }
 
 export interface IProfileHeroesInfo {
-    playtime:IPlaytimeInfo;
-    stats:ICompAndQuick<IHeroesStats>;
+    playtime: IPlaytimeInfo;
+    stats: ICompAndQuick<IHeroesStats>;
 }
 
 export interface IRegionalProfile {
-    achievements:IAchievementsStatus;
-    heroes:IProfileHeroesInfo;
-    stats:ICompAndQuick<IStats>;
+    achievements: IAchievementsStatus;
+    heroes: IProfileHeroesInfo;
+    stats: ICompAndQuick<IStats>;
 }
 
 export interface IBlobResponse {
-    eu?:IRegionalProfile;
-    kr?:IRegionalProfile;
-    us?:IRegionalProfile;
-    retry:number;
+    eu?: IRegionalProfile;
+    kr?: IRegionalProfile;
+    us?: IRegionalProfile;
+    retry: number;
 }
 
 export interface IAverageStats {
-    damage_done_avg:number;
-    deaths_avg:number;
-    eliminations_avg:number;
-    final_blows_avg:number;
-    healing_done_avg:number;
-    melee_final_blows_avg:number;
-    objective_kills_avg:number;
-    objective_time_avg:number;
-    solo_kills_avg:number;
-    time_spent_on_fire_avg:number;
+    damage_done_avg: number;
+    deaths_avg: number;
+    eliminations_avg: number;
+    final_blows_avg: number;
+    healing_done_avg: number;
+    melee_final_blows_avg: number;
+    objective_kills_avg: number;
+    objective_time_avg: number;
+    solo_kills_avg: number;
+    time_spent_on_fire_avg: number;
 }
 
 export interface IGameStats {
-    cards:number;
-    damage_done:number;
-    damage_done_most_in_game:number;
-    deaths:number;
-    defensive_assists:number;
-    defensive_assists_most_in_game:number;
-    eliminations:number;
-    eliminations_most_in_game:number;
-    environmental_deaths:number;
-    environmental_kills:number;
-    environmental_kills_most_in_game:number;
-    final_blows:number;
-    final_blows_most_in_game:number;
-    games_won:number;
-    healing_done:number;
-    healing_done_most_in_game:number;
-    kill_streak_best:number;
-    kpd:number;
-    medals:number;
-    medals_bronze:number;
-    medals_gold:number;
-    medals_silver:number;
-    melee_final_blows:number;
-    melee_final_blows_most_in_game:number;
-    multikill_best:number;
-    multikills:number;
-    objective_kills:number;
-    objective_kills_most_in_game:number;
-    objective_time:number;
-    objective_time_most_in_game:number;
-    offensive_assists:number;
-    offensive_assists_most_in_game:number;
-    recon_assists:number;
-    recon_assists_most_in_game:number;
-    shield_generator_destroyed:number;
-    shield_generator_destroyed_most_in_game:number;
-    solo_kills:number;
-    solo_kills_most_in_game:number;
-    teleporter_pad_destroyed_most_in_game:number;
-    teleporter_pads_destroyed:number;
-    time_played:number;
-    time_spent_on_fire:number;
-    time_spent_on_fire_most_in_game:number;
-    turrets_destroyed:number;
-    turrets_destroyed_most_in_game:number;
+    cards: number;
+    damage_done: number;
+    damage_done_most_in_game: number;
+    deaths: number;
+    defensive_assists: number;
+    defensive_assists_most_in_game: number;
+    eliminations: number;
+    eliminations_most_in_game: number;
+    environmental_deaths: number;
+    environmental_kills: number;
+    environmental_kills_most_in_game: number;
+    final_blows: number;
+    final_blows_most_in_game: number;
+    games_won: number;
+    healing_done: number;
+    healing_done_most_in_game: number;
+    kill_streak_best: number;
+    kpd: number;
+    medals: number;
+    medals_bronze: number;
+    medals_gold: number;
+    medals_silver: number;
+    melee_final_blows: number;
+    melee_final_blows_most_in_game: number;
+    multikill_best: number;
+    multikills: number;
+    objective_kills: number;
+    objective_kills_most_in_game: number;
+    objective_time: number;
+    objective_time_most_in_game: number;
+    offensive_assists: number;
+    offensive_assists_most_in_game: number;
+    recon_assists: number;
+    recon_assists_most_in_game: number;
+    shield_generator_destroyed: number;
+    shield_generator_destroyed_most_in_game: number;
+    solo_kills: number;
+    solo_kills_most_in_game: number;
+    teleporter_pad_destroyed_most_in_game: number;
+    teleporter_pads_destroyed: number;
+    time_played: number;
+    time_spent_on_fire: number;
+    time_spent_on_fire_most_in_game: number;
+    turrets_destroyed: number;
+    turrets_destroyed_most_in_game: number;
 }
 
 export interface IOverallStats {
-    avatar:string;
-    comprank:string;
-    games:number;
-    level:number;
-    losses:number;
-    prestige:number;
-    rank_image:string;
-    tier:Tier;
-    ties:number;
-    win_rate:number;
-    wins:number;
+    avatar: string;
+    comprank: string;
+    games: number;
+    level: number;
+    losses: number;
+    prestige: number;
+    rank_image: string;
+    tier: Tier;
+    ties: number;
+    win_rate: number;
+    wins: number;
 }
 
 export interface IStats {
-    competitive:boolean;
-    average_stats:IAverageStats;
-    game_stats:IGameStats;
-    overall_stats:IOverallStats;
+    competitive: boolean;
+    average_stats: IAverageStats;
+    game_stats: IGameStats;
+    overall_stats: IOverallStats;
 }
 
 export interface IStatsInfo {
-    competitive:IStats;
-    quickplay:IStats;
+    competitive: IStats;
+    quickplay: IStats;
 }
 
 export interface IHeroesStats {

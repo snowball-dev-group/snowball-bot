@@ -1,7 +1,7 @@
 export class Plugin {
-    private events:Map<string, any> = new Map<string, any>();
+    private events: Map<string, any> = new Map<string, any>();
 
-    constructor(events:Object, dontAutoHandle = false) {
+    constructor(events: Object, dontAutoHandle = false) {
         for(let key of Object.keys(events)) {
             this.events.set(key, events[key]);
         }
@@ -11,7 +11,7 @@ export class Plugin {
     }
 
     handleEvents() {
-        for (let [key, value] of this.events) {
+        for(let [key, value] of this.events) {
             discordBot.on(key, value);
         }
     }

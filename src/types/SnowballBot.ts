@@ -7,23 +7,23 @@ export interface IBotConfig {
     /**
      * Bot token
      */
-    token:string;
+    token: string;
     /**
      * Name of bot
      */
-    name:string;
+    name: string;
     /**
      * discord's Snowflake ID of bot owner
      */
-    botOwner:string;
+    botOwner: string;
     /**
      * Modules to automatic load
      */
-    autoLoad:string[];
+    autoLoad: string[];
     /**
      * Array of modules info
      */
-    modules:IModuleInfo[];
+    modules: IModuleInfo[];
     /**
      * Discord Client's config
      */
@@ -31,18 +31,18 @@ export interface IBotConfig {
     /**
      * Localizator options
      */
-    localizerOptions:ILocalizerOptions;
+    localizerOptions: ILocalizerOptions;
 }
 
 export interface IPublicBotConfig {
     /**
      * Name of bot
      */
-    name:string;
+    name: string;
     /**
      * ID of bot owner
      */
-    botOwner:string;
+    botOwner: string;
 }
 
 declare global {
@@ -50,35 +50,35 @@ declare global {
      * Bot itself
      */
     // tslint:disable-next-line:no-unused-variable
-    let discordBot:djs.Client;
+    let discordBot: djs.Client;
     /**
      * Public bot config visible to all modules
      */
     // tslint:disable-next-line:no-unused-variable
-    let botConfig:IPublicBotConfig;
+    let botConfig: IPublicBotConfig;
 
     /**
      * Localizer
      */
     // tslint:disable-next-line:no-unused-variable
-    let localizer:Localizer;
+    let localizer: Localizer;
 }
 
 export class SnowballBot extends EventEmitter {
     /**
      * Module loader
      */
-    modLoader:ModuleLoader;
+    modLoader: ModuleLoader;
     /**
      * Configuration
      */
-    config:IBotConfig;
+    config: IBotConfig;
     /**
      * DiscordBot
      */
-    discordBot:djs.Client;
+    discordBot: djs.Client;
 
-    constructor(config:IBotConfig) {
+    constructor(config: IBotConfig) {
         super();
         this.config = config;
     }
@@ -87,7 +87,7 @@ export class SnowballBot extends EventEmitter {
      * Convert modules object to Map object
      * @param obj {Array} Array of module info entries
      */
-    _convertToModulesMap(obj:IModuleInfo[]) {
+    _convertToModulesMap(obj: IModuleInfo[]) {
         let modulesMap = new Map();
         obj.forEach((moduleInfo) => {
             modulesMap.set(moduleInfo.name, moduleInfo);

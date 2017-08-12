@@ -1,6 +1,6 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
-import { Message, GuildMember, User } from "discord.js"; 
+import { Message, GuildMember, User } from "discord.js";
 import * as Random from "random-js";
 import { getLogger, EmbedType, sleep } from "./utils/utils";
 import { command, Category } from "./utils/help";
@@ -54,15 +54,15 @@ class Ball8 extends Plugin implements IModule {
 
     constructor() {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg: Message) => this.onMessage(msg)
         });
         this.log("ok", "8Ball is loaded");
     }
 
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         if(!msg.content) { return; }
         if(!msg.content.startsWith("!8ball")) { return; }
-        
+
         if(msg.content === "!8ball") {
             return;
         }
@@ -73,25 +73,25 @@ class Ball8 extends Plugin implements IModule {
 
         let localName = await localizeForUser(u, "8BALL_NAME");
 
-        let message:Message;
+        let message: Message;
         try {
             message = (await msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Empty, u, "8BALL_THINKING", {
                     author: {
                         name: localName,
                         icon_url: ICONS.THINKING
-                    }, 
+                    },
                     thumbUrl: ICONS.THINKING,
                     thumbWidth: 64,
                     thumbHeight: 64,
                     clearFooter: true
                 })
             })) as Message;
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Damn! 8Ball can't send message", err);
             return;
         }
-        
+
         await sleep(random.integer(1500, 3000));
 
         let category = random.pick<string>(this.categories);
@@ -114,9 +114,9 @@ class Ball8 extends Plugin implements IModule {
                     thumbHeight: 64
                 })
             });
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Bummer! We can't update message, trying to delete our message", err);
-            try { await message.delete(); } catch (err) { this.log("err", "Message also can't be removed...", err); }
+            try { await message.delete(); } catch(err) { this.log("err", "Message also can't be removed...", err); }
         }
     }
 
@@ -126,4 +126,4 @@ class Ball8 extends Plugin implements IModule {
     }
 }
 
-module.exports =  Ball8;
+module.exports = Ball8;

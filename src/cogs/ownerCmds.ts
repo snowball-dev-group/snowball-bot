@@ -1,23 +1,23 @@
 import { IModule } from "../types/ModuleLoader";
 import logger = require("loggy");
 import { Plugin } from "./plugin";
-import { Message } from "discord.js"; 
+import { Message } from "discord.js";
 import { isOwner } from "./checks/commands";
 import { generateLocalizedEmbed } from "./utils/ez-i18n";
 import { commandRedirect, objectToMap, EmbedType, escapeDiscordMarkdown } from "./utils/utils";
 import { default as fetch } from "node-fetch";
 
 class OwnerCommands extends Plugin implements IModule {
-    log:Function = logger("OwnerCMDs");
+    log: Function = logger("OwnerCMDs");
 
     constructor() {
         super({
-            "message": (msg:Message) => this.onMessage(msg)
+            "message": (msg: Message) => this.onMessage(msg)
         });
     }
 
     @isOwner
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         let u = msg.member || msg.author;
         commandRedirect(msg.content, objectToMap<Function>({
             "!change_name": async (username) => {
@@ -34,7 +34,7 @@ class OwnerCommands extends Plugin implements IModule {
                             }
                         })
                     });
-                } catch (err) {
+                } catch(err) {
                     msg.react("🚫");
                     msg.channel.send("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, u, {
@@ -62,7 +62,7 @@ class OwnerCommands extends Plugin implements IModule {
                                 imageUrl: newUser.displayAvatarURL
                             })
                         });
-                    } catch (err) {
+                    } catch(err) {
                         msg.channel.send("", {
                             embed: await generateLocalizedEmbed(EmbedType.Error, u, {
                                 key: "OWNERCMDS_CHANGEAVY_FAULT_SETFAILED",
@@ -72,7 +72,7 @@ class OwnerCommands extends Plugin implements IModule {
                             })
                         });
                     }
-                } catch (err) {
+                } catch(err) {
                     this.log("err", "Error downloading avy");
                     msg.channel.send("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, u, {

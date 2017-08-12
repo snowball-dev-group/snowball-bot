@@ -42,7 +42,7 @@ class TwitchStreamingService implements IStreamingService {
 
                 try {
                     streamsResp = (await this.makeRequest(this.getAPIURL_Streams(toFetch.map(s => s.uid))));
-                } catch (err) {
+                } catch(err) {
                     this.log("err", "Error has been received while tried to update online streams", err);
                     return;
                 }

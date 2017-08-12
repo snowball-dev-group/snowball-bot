@@ -10,12 +10,12 @@ let db = getDB(),
     complete = false,
     retry = true;
 
-let cache = new Map<string, IPremiumRow|"nope">();
+let cache = new Map<string, IPremiumRow | "nope">();
 
 export interface IPremiumRow {
-    id:string;
-    subscribed_at:Date;
-    due_to:Date;
+    id: string;
+    subscribed_at: Date;
+    due_to: Date;
 }
 
 interface IPremiumRawRow {
@@ -32,7 +32,7 @@ export async function getAllSubs() {
     });
 }
 
-export async function init() : Promise<boolean> {
+export async function init(): Promise<boolean> {
     if(complete) { return true; }
     if(!retry) { return false; }
 
@@ -46,7 +46,7 @@ export async function init() : Promise<boolean> {
                 "subscribed_at": "number",
                 "due_to": "number"
             });
-        } catch (err) {
+        } catch(err) {
             LOG("err", "Table creation failed", err);
             retry = false;
             return false;
@@ -62,11 +62,11 @@ export async function init() : Promise<boolean> {
     return status;
 }
 
-export async function isPremium(person:GuildMember|User) : Promise<boolean> {
+export async function isPremium(person: GuildMember | User): Promise<boolean> {
     return !!(await checkPremium(person));
 }
 
-export async function deletePremium(person:GuildMember|User) : Promise<boolean> {
+export async function deletePremium(person: GuildMember | User): Promise<boolean> {
     if(!(await init())) { throw new Error("Initialization failed"); }
 
     LOG("info", "Premium deleting action registered", {
@@ -76,7 +76,7 @@ export async function deletePremium(person:GuildMember|User) : Promise<boolean> 
     let logPrefix = `deletePremium(${person.id})`;
 
     LOG("info", logPrefix, "Checking current premium");
-    
+
     let currentPremium = await checkPremium(person, INTERNALCALLSIGN);
 
     if(!currentPremium) {
@@ -90,7 +90,7 @@ export async function deletePremium(person:GuildMember|User) : Promise<boolean> 
     try {
         await db(PREMIUM_TABLE).where(toRaw(currentPremium)).delete();
         cache.set(person.id, "nope");
-    } catch (err) {
+    } catch(err) {
         LOG("err", logPrefix, "DB calling failed", err);
         throw err;
     }
@@ -98,11 +98,11 @@ export async function deletePremium(person:GuildMember|User) : Promise<boolean> 
     return true;
 }
 
-export async function checkPremium(person:GuildMember|User, internalCallSign?:string) : Promise<IPremiumRow|undefined> {
+export async function checkPremium(person: GuildMember | User, internalCallSign?: string): Promise<IPremiumRow | undefined> {
     if(!(await init())) { throw new Error("Initialization failed"); }
 
     let cached = cache.get(person.id);
-    let premiumRow:IPremiumRawRow|undefined = undefined;
+    let premiumRow: IPremiumRawRow | undefined = undefined;
     if(cached !== "nope" && cached !== undefined) {
         premiumRow = toRaw(cached);
     } else {
@@ -110,7 +110,7 @@ export async function checkPremium(person:GuildMember|User, internalCallSign?:st
             "id": person.id
         }).first() as IPremiumRawRow;
     }
-    
+
     if(!premiumRow) { return; }
     else if(premiumRow) {
         if(internalCallSign && internalCallSign !== INTERNALCALLSIGN) {
@@ -131,7 +131,7 @@ export async function checkPremium(person:GuildMember|User, internalCallSign?:st
     return standard;
 }
 
-function toStandard(row:IPremiumRawRow) : IPremiumRow {
+function toStandard(row: IPremiumRawRow): IPremiumRow {
     return {
         due_to: new Date(row.due_to),
         subscribed_at: new Date(row.subscribed_at),
@@ -139,7 +139,7 @@ function toStandard(row:IPremiumRawRow) : IPremiumRow {
     };
 }
 
-function toRaw(row:IPremiumRow) : IPremiumRawRow {
+function toRaw(row: IPremiumRow): IPremiumRawRow {
     return {
         id: row.id,
         due_to: row.due_to.getTime(),
@@ -147,7 +147,7 @@ function toRaw(row:IPremiumRow) : IPremiumRawRow {
     };
 }
 
-export async function givePremium(person:GuildMember|User, dueTo:Date, override = false) : Promise<boolean> {
+export async function givePremium(person: GuildMember | User, dueTo: Date, override = false): Promise<boolean> {
     if(!(await init())) { throw new Error("Initialization failed"); }
 
     LOG("info", "Premium giving action registered", {
@@ -159,11 +159,11 @@ export async function givePremium(person:GuildMember|User, dueTo:Date, override 
     let logPrefix = `#givePremium(${person.id}): `;
 
     if(currentPremium && override) {
-        LOG("info", logPrefix,"Premium exists, override present, row deleting...");
+        LOG("info", logPrefix, "Premium exists, override present, row deleting...");
         try {
             await db(PREMIUM_TABLE).where(toRaw(currentPremium)).delete();
-        } catch (err) {
-            LOG("err", logPrefix,"Row deletion failure");
+        } catch(err) {
+            LOG("err", logPrefix, "Row deletion failure");
             throw err;
         }
     } else if(currentPremium) {
@@ -179,14 +179,14 @@ export async function givePremium(person:GuildMember|User, dueTo:Date, override 
         let nDate = currentPremium.due_to.getTime() + diff;
         LOG("info", logPrefix, "Adding new premium subscription");
         try {
-            let raw:IPremiumRawRow = {
+            let raw: IPremiumRawRow = {
                 id: person.id,
                 subscribed_at: Date.now(),
                 due_to: nDate
             };
             await db(PREMIUM_TABLE).where(toRaw(currentPremium)).update(raw);
             cache.set(person.id, toStandard(raw));
-        } catch (err) {
+        } catch(err) {
             LOG("err", logPrefix, "Updating failed", err);
             throw err;
         }
@@ -194,14 +194,14 @@ export async function givePremium(person:GuildMember|User, dueTo:Date, override 
     }
 
     try {
-        let raw:IPremiumRawRow = {
+        let raw: IPremiumRawRow = {
             id: person.id,
             subscribed_at: Date.now(),
             due_to: dueTo.getTime()
         };
         await db(PREMIUM_TABLE).insert(raw);
         cache.set(person.id, toStandard(raw));
-    } catch (err) {
+    } catch(err) {
         LOG("err", logPrefix, "Inserting failed", err);
         throw err;
     }

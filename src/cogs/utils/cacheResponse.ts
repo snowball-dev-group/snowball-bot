@@ -17,7 +17,7 @@ const CACHE_TABLE_ROW_SCHEME = {
 const CACHE_TABLE_ROW_KEYS = Object.keys(CACHE_TABLE_ROW_SCHEME);
 const LOG = getLogger("CachingUtil");
 
-let db:knex|undefined = undefined;
+let db: knex | undefined = undefined;
 let initialized = false;
 
 // you should perform initialization here!
@@ -27,7 +27,7 @@ LOG("info", "Loading...");
 async function init() {
     try {
         db = getDB();
-    } catch (err) {
+    } catch(err) {
         LOG("err", "Can't get database connection", err);
         return;
     }
@@ -35,7 +35,7 @@ async function init() {
     let status = false;
     try {
         status = await db.schema.hasTable(CACHE_TABLE_NAME);
-    } catch (err) {
+    } catch(err) {
         LOG("err", "Can't check cache table status:", err);
         return;
     }
@@ -44,7 +44,7 @@ async function init() {
         try {
             await createTableBySchema(CACHE_TABLE_NAME, CACHE_TABLE_ROW_SCHEME);
             status = await db.schema.hasTable(CACHE_TABLE_NAME);
-        } catch (err) {
+        } catch(err) {
             LOG("err", "Can't create table:", err);
             return;
         }
@@ -54,39 +54,39 @@ async function init() {
 }
 
 export interface ICachedRow {
-    cache_owner:String;
-    key:string;
-    value:string;
-    timestamp:number;
-    code:string;
+    cache_owner: String;
+    key: string;
+    value: string;
+    timestamp: number;
+    code: string;
 }
 
 export interface ICachingResponse {
     /**
      * Says if it's new recording in cache, because not throws 'putInCache' error if you not use argument called 'onlyNew'
      */
-    new:boolean;
+    new: boolean;
     /**
      * Cached row (or what you just did put in cache)
      */
-    row:ICachedRow|null;
+    row: ICachedRow | null;
 }
 
-export async function getFromCache(cache_owner:string, key:string) : Promise<ICachedRow|undefined> {
-    if(!initialized || !db) { 
+export async function getFromCache(cache_owner: string, key: string): Promise<ICachedRow | undefined> {
+    if(!initialized || !db) {
         await init();
         if(!db) {
             throw new Error("Initialization not completed");
         }
     }
     let logPrefix = `${cache_owner}:${key} (getFromCache)|`;
-    let elem:ICachedRow|undefined = undefined;
+    let elem: ICachedRow | undefined = undefined;
     try {
         elem = await db(CACHE_TABLE_NAME).where({
             cache_owner, key
         }).first(...CACHE_TABLE_ROW_KEYS);
         LOG("ok", logPrefix, "Got element from cache");
-    } catch (err) {
+    } catch(err) {
         LOG("err", logPrefix, "Failed to get element from cache");
         throw new Error("Failed to get element from cache");
     }
@@ -99,18 +99,18 @@ function getCode() {
 }
 
 // never wait!
-export async function cache(cache_owner:string, key:string, value:string, noWait:boolean = true, onlyNew:boolean = false) : Promise<ICachingResponse> {
+export async function cache(cache_owner: string, key: string, value: string, noWait: boolean = true, onlyNew: boolean = false): Promise<ICachingResponse> {
     if(!initialized || !db) {
         await init();
         if(!db) {
             throw new Error("Initialization not completed");
         }
     }
-    let current:ICachedRow|undefined = undefined;
+    let current: ICachedRow | undefined = undefined;
     let logPrefix = `${cache_owner}:${key} (cache)|`;
     try {
         current = await getFromCache(cache_owner, key);
-    } catch (err) {
+    } catch(err) {
         LOG("err", logPrefix, "Failed to get current version", err);
     }
     if(current) {
@@ -130,7 +130,7 @@ export async function cache(cache_owner:string, key:string, value:string, noWait
             code: getCode()
         });
         LOG("ok", logPrefix, "Inserting done");
-    } catch (err) {
+    } catch(err) {
         LOG("err", logPrefix, "Caching failed", err);
         throw new Error("Failed to write in DB. Caching cancelled");
     }
@@ -144,7 +144,7 @@ export async function cache(cache_owner:string, key:string, value:string, noWait
     try {
         current = await getFromCache(cache_owner, key);
         LOG("ok", logPrefix, "Got current version from DB");
-    } catch (err) {
+    } catch(err) {
         LOG("err", logPrefix, "Failed to check if element was inserted", err);
         throw new Error("Failed to get element from database");
     }
@@ -157,7 +157,7 @@ export async function cache(cache_owner:string, key:string, value:string, noWait
     };
 }
 
-export async function clearCache(cache_owner:string, key:string, noWait:boolean = true, notEmpty:boolean = false) : Promise<boolean> {
+export async function clearCache(cache_owner: string, key: string, noWait: boolean = true, notEmpty: boolean = false): Promise<boolean> {
     if(!initialized || !db) {
         await init();
         if(!db) {
@@ -166,14 +166,14 @@ export async function clearCache(cache_owner:string, key:string, noWait:boolean 
     }
     let logPrefix = `${cache_owner}:${key} (clearCache)|`;
 
-    let current:ICachedRow|undefined = undefined;
+    let current: ICachedRow | undefined = undefined;
     try {
         current = await getFromCache(cache_owner, key);
         LOG("ok", logPrefix, "Got current element from DB");
-    } catch (err) {
+    } catch(err) {
         LOG("err", logPrefix, "Can't get cache from DB");
     }
-    
+
     if(!current) {
         if(notEmpty) {
             LOG("err", logPrefix, "notEmpty passed, but no value - throwing exception");
@@ -190,7 +190,7 @@ export async function clearCache(cache_owner:string, key:string, noWait:boolean 
         try {
             current = await getFromCache(cache_owner, key);
             LOG("ok", logPrefix, "Got current element from DB");
-        } catch (err) {
+        } catch(err) {
             LOG("err", logPrefix, "Failed to get current element from DB");
         }
         if(!current) {

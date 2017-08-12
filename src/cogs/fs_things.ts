@@ -29,7 +29,7 @@ interface IOptions {
      */
     texts: ISubText[];
 
-    subAncChannel:string;
+    subAncChannel: string;
 
     /**
      * Admins roles
@@ -41,8 +41,8 @@ interface IOptions {
     modRoles: string[];
 
     nickRegexp: string;
-    
-    wrongNickFallback:string;
+
+    wrongNickFallback: string;
 }
 
 /**
@@ -50,14 +50,14 @@ interface IOptions {
  * Partnered until 01.01.2019
  */
 class FanServerThings extends Plugin implements IModule {
-    options:IOptions;
-    nickRegexp:RegExp;
+    options: IOptions;
+    nickRegexp: RegExp;
     log = getLogger("FSofBSaDW");
 
-    constructor(options:IOptions) {
+    constructor(options: IOptions) {
         super({
-            "guildMemberUpdate": (oldMember:GuildMember, newMember:GuildMember) => this.onUpdate(oldMember, newMember),
-            "guildMemberAdd": (member:GuildMember) => this.newMember(member)
+            "guildMemberUpdate": (oldMember: GuildMember, newMember: GuildMember) => this.onUpdate(oldMember, newMember),
+            "guildMemberAdd": (member: GuildMember) => this.newMember(member)
         }, true);
 
         this.options = options;
@@ -70,13 +70,13 @@ class FanServerThings extends Plugin implements IModule {
         this.handleEvents();
     }
 
-    async onUpdate(oldMember:GuildMember, newMember:GuildMember) {
+    async onUpdate(oldMember: GuildMember, newMember: GuildMember) {
         if(oldMember.guild.id === this.options.fsGuildId) {
             await this.onFSUpdate(oldMember, newMember);
         }
     }
 
-    async newMember(member:GuildMember) {
+    async newMember(member: GuildMember) {
         if(member.guild.id !== this.options.fsGuildId) {
             return;
         }
@@ -84,7 +84,7 @@ class FanServerThings extends Plugin implements IModule {
         await this.nickCheck(member);
     }
 
-    async nickCheck(member:GuildMember, oldMember?:GuildMember) {
+    async nickCheck(member: GuildMember, oldMember?: GuildMember) {
         if(member.hasPermission(["ADMINISTRATOR"]) || member.hasPermission(["MANAGE_MESSAGES", "BAN_MEMBERS", "KICK_MEMBERS"])) {
             // admin / moderator
             return;
@@ -102,7 +102,7 @@ class FanServerThings extends Plugin implements IModule {
         }
     }
 
-    async onFSUpdate(oldMember:GuildMember, newMember:GuildMember) {
+    async onFSUpdate(oldMember: GuildMember, newMember: GuildMember) {
         await this.nickCheck(newMember, oldMember);
 
         // checking if member has atleast one sub role
@@ -123,7 +123,7 @@ class FanServerThings extends Plugin implements IModule {
             if(!!ancChannel) {
                 for(let nSubRole of newSubRoles.keys()) {
                     let texts = this.options.texts.filter(r => r.roleId === nSubRole);
-                    let randText:ISubText = random.pick(texts);
+                    let randText: ISubText = random.pick(texts);
                     (ancChannel as TextChannel).send(randText.text.replace("++", newMember.toString()));
                 }
             }

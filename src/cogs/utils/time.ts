@@ -1,4 +1,4 @@
-export function currentTimestamp(returning:"ms"|"s" = "ms") {
+export function currentTimestamp(returning: "ms" | "s" = "ms") {
     let ts = Date.now();
     switch(returning) {
         default: return ts;
@@ -6,7 +6,7 @@ export function currentTimestamp(returning:"ms"|"s" = "ms") {
     }
 }
 
-export function parseDate(t1:string) : number|undefined {
+export function parseDate(t1: string): number | undefined {
     if(/$[0-9]+^/.test(t1)) {
         // trying to parse
         let t = parseInt(t1, 10);
@@ -22,11 +22,11 @@ export function parseDate(t1:string) : number|undefined {
     }
 }
 
-export function timeDiff(t1:Date|number|string, t2:Date|number|string = Date.now(), returning:"ms"|"s" = "s") {
+export function timeDiff(t1: Date | number | string, t2: Date | number | string = Date.now(), returning: "ms" | "s" = "s") {
     if(t1 instanceof Date) {
         t1 = t1.getTime();
     } else if(typeof t1 === "string") {
-        let parsed =  parseDate(t1);
+        let parsed = parseDate(t1);
         if(typeof parsed !== "number") {
             throw new Error("Invalid `t1` argument");
         }
@@ -38,7 +38,7 @@ export function timeDiff(t1:Date|number|string, t2:Date|number|string = Date.now
     if(t2 instanceof Date) {
         t2 = t2.getTime();
     } else if(typeof t2 === "string") {
-        let parsed =  parseDate(t2);
+        let parsed = parseDate(t2);
         if(typeof parsed !== "string") {
             throw new Error("Invalid `t2` argument");
         }

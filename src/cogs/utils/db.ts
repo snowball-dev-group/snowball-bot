@@ -1,6 +1,6 @@
 import * as knex from "knex";
 
-let connection:knex;
+let connection: knex;
 
 export function getDB() {
     if(!connection) {
@@ -22,17 +22,17 @@ export function getDB() {
 }
 
 interface TypeInfo {
-    unique:boolean;
-    nullable:boolean;
-    notNullable:boolean;
-    type:string;
-    length?:number;
-    default?:string;
-    collate?:string;
+    unique: boolean;
+    nullable: boolean;
+    notNullable: boolean;
+    type: string;
+    length?: number;
+    default?: string;
+    collate?: string;
 }
 
-function getTypeInfo(type:string) {
-    let t:TypeInfo = {
+function getTypeInfo(type: string) {
+    let t: TypeInfo = {
         unique: false,
         nullable: false,
         notNullable: false,
@@ -73,14 +73,14 @@ function getTypeInfo(type:string) {
     return t;
 }
 
-export async function createTableBySchema(tableName:string, schema:any, dropExist = false) {
+export async function createTableBySchema(tableName: string, schema: any, dropExist = false) {
     if(!schema) {
         throw new Error("There's no scheme!");
     }
     if(!connection) {
         throw new Error("No connection to database!");
     }
-    
+
     let creationStatus = await connection.schema.hasTable(tableName);
     if(creationStatus && !dropExist) {
         throw new Error("Table is already created!");
@@ -93,7 +93,7 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
         let keys = Object.keys(schema);
         keys.forEach(key => {
             let info = schema[key];
-            let typeInfo:TypeInfo;
+            let typeInfo: TypeInfo;
 
             if(typeof info === "string") {
                 typeInfo = getTypeInfo(info);
@@ -103,7 +103,7 @@ export async function createTableBySchema(tableName:string, schema:any, dropExis
                 throw new Error(`Invalid information about column`);
             }
 
-            let cb:knex.ColumnBuilder;
+            let cb: knex.ColumnBuilder;
             switch(typeInfo.type) {
                 case "string": {
                     cb = tb.string(key, typeInfo.length);

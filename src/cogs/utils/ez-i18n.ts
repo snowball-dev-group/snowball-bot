@@ -24,20 +24,20 @@ export function getPrefsNames() {
     };
 }
 
-export async function getGuildLanguage(guild:Guild) {
+export async function getGuildLanguage(guild: Guild) {
     let cached = gCache.get(guild.id);
     let gLang = cached !== undefined ? cached : await forceGuildLanguageUpdate(guild);
     return gLang;
 }
 
-export async function isGuildEnforceEnabled(guild:Guild) {
+export async function isGuildEnforceEnabled(guild: Guild) {
     let cached = gECache.get(guild.id);
     let guildEnforcing = cached !== undefined ? cached : await forceGuildEnforceUpdate(guild);
     return guildEnforcing;
 }
 
-export async function getUserLanguage(u:identify) {
-    let lang:string|undefined = undefined;
+export async function getUserLanguage(u: identify) {
+    let lang: string | undefined = undefined;
     if(u instanceof GuildMember) {
         // let's check if guild enforces language
         let guildEnforcing = await isGuildEnforceEnabled(u.guild);
@@ -46,7 +46,7 @@ export async function getUserLanguage(u:identify) {
             // getting guild lang
             lang = await getGuildLanguage(u.guild);
         }
-    } 
+    }
     if(!lang) {
         // no guild / lang not set / guild not enforces language
         lang = uCache.get(u.id) || await forceUserLanguageUpdate(u);
@@ -54,12 +54,12 @@ export async function getUserLanguage(u:identify) {
     return lang;
 }
 
-export async function localizeForUser(u:identify, str:string, formatOpts?:any) {
+export async function localizeForUser(u: identify, str: string, formatOpts?: any) {
     let lang = await getUserLanguage(u);
     return formatOpts ? localizer.getFormattedString(lang, str, formatOpts) : localizer.getString(lang, str);
 }
 
-export async function forceGuildEnforceUpdate(guild:Guild) : Promise<boolean> {
+export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
     let enforcingSt = await getGuildPreferenceValue(guild, guildEnforcePref, true);
     if(enforcingSt === undefined) {
         // no enforcing status, fixing it...
@@ -72,8 +72,8 @@ export async function forceGuildEnforceUpdate(guild:Guild) : Promise<boolean> {
     }
 }
 
-export async function forceUserLanguageUpdate(u:identify) : Promise<string> {
-    let preferableLang:string|undefined = await getUserPreferenceValue(u, languagePref);
+export async function forceUserLanguageUpdate(u: identify): Promise<string> {
+    let preferableLang: string | undefined = await getUserPreferenceValue(u, languagePref);
     if(preferableLang === undefined) {
         if(u instanceof GuildMember) {
             let gLang = gCache.get(u.guild.id);
@@ -91,7 +91,7 @@ export async function forceUserLanguageUpdate(u:identify) : Promise<string> {
     return uCache.get(u.id) as string;
 }
 
-export async function forceGuildLanguageUpdate(guild:Guild) : Promise<string> {
+export async function forceGuildLanguageUpdate(guild: Guild): Promise<string> {
     let gLang = await getGuildPreferenceValue(guild, guildLangPref);
     if(gLang === undefined) {
         await setGuildPreferenceValue(guild, guildLangPref, defLanguage);
@@ -104,22 +104,22 @@ export async function forceGuildLanguageUpdate(guild:Guild) : Promise<string> {
 }
 
 interface ILocalizedEmbedString {
-    key:string;
-    formatOptions:{
-        [name: string]: string|number|boolean;
+    key: string;
+    formatOptions: {
+        [name: string]: string | number | boolean;
     };
 }
 
 interface ICustomString {
-    custom:boolean;
-    string:string;
+    custom: boolean;
+    string: string;
 }
 
 function isCustomString(objCt: any): objCt is ICustomString {
     return "custom" in objCt && objCt["custom"] === true && "string" in objCt && !("formattingOptions" in objCt) && !("key" in objCt);
 }
 
-export async function generateLocalizedEmbed(type:EmbedType, user:identify, descriptionKey:string|ILocalizedEmbedString|ICustomString, options:IEmbedOptions = {}) {
+export async function generateLocalizedEmbed(type: EmbedType, user: identify, descriptionKey: string | ILocalizedEmbedString | ICustomString, options: IEmbedOptions = {}) {
     switch(type) {
         case EmbedType.Error: {
             if(options.errorTitle) { break; }

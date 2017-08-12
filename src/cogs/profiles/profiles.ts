@@ -1,6 +1,6 @@
 import { IModule, ModuleLoader, IModuleInfo, Module } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
-import { Message, GuildMember, User, Guild } from "discord.js"; 
+import { Message, GuildMember, User, Guild } from "discord.js";
 import { getLogger, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import * as humanizeDuration from "humanize-duration";
@@ -13,14 +13,14 @@ import { isPremium } from "../utils/premium";
 import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
 
 interface IDBUserProfile {
-    real_name?:string;
-    activity?:string;
-    bio?:string;
-    customize:string;
-    guild_id:string;
-    uid:string;
-    joined:string;
-    status_changed?:string;
+    real_name?: string;
+    activity?: string;
+    bio?: string;
+    customize: string;
+    guild_id: string;
+    uid: string;
+    joined: string;
+    status_changed?: string;
 }
 
 const TABLE_NAME = "profiles";
@@ -38,7 +38,7 @@ const DB_PROFILE_PROPS = {
     status_changed: "string"
 };
 
-function isChat(msg:Message) {
+function isChat(msg: Message) {
     return msg.channel.type === "text";
 }
 
@@ -74,12 +74,12 @@ class Profiles extends Plugin implements IModule {
     plugLoader: ModuleLoader;
     log = getLogger("ProfilesJS");
     db = getDB();
-    options:any;
+    options: any;
 
-    constructor(options:any) {
+    constructor(options: any) {
         super({
-            "message": (msg:Message) => this.onMessage(msg),
-            "presenceUpdate": (oldMember:GuildMember, newMember:GuildMember) => this.onPresenseUpdate(oldMember, newMember)
+            "message": (msg: Message) => this.onMessage(msg),
+            "presenceUpdate": (oldMember: GuildMember, newMember: GuildMember) => this.onPresenseUpdate(oldMember, newMember)
         }, true);
         this.options = options;
     }
@@ -88,7 +88,7 @@ class Profiles extends Plugin implements IModule {
     // MESSAGES HANDLING
     // =====================================
 
-    async onMessage(msg:Message) {
+    async onMessage(msg: Message) {
         if(msg.channel.type !== "text") { return; }
         if(msg.content === "!profile_plugins") {
             this.sendPluginsList(msg);
@@ -104,7 +104,7 @@ class Profiles extends Plugin implements IModule {
         // }
     }
 
-    async onPresenseUpdate(old:GuildMember, member:GuildMember) {
+    async onPresenseUpdate(old: GuildMember, member: GuildMember) {
         let profile = await this.getOrCreateProfile(member, member.guild);
         if(old.presence.status !== member.presence.status) {
             if(old.presence.game && member.presence.game) {
@@ -125,10 +125,10 @@ class Profiles extends Plugin implements IModule {
     // MAIN FUNCTIONS
     // =====================================
 
-    async sendPluginsList(msg:Message) {
+    async sendPluginsList(msg: Message) {
         let str = "# " + await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE");
 
-        for (let [name, plugin] of this.plugLoader.loadedModulesRegistry) {
+        for(let [name, plugin] of this.plugLoader.loadedModulesRegistry) {
             str += `\n- ${name}`;
             if(!plugin.base) { return; }
             let plug = plugin.base as IProfilesPlugin;
@@ -143,8 +143,8 @@ class Profiles extends Plugin implements IModule {
         });
     }
 
-    async showProfile(msg:Message) {
-        let profileOwner:GuildMember|undefined;
+    async showProfile(msg: Message) {
+        let profileOwner: GuildMember | undefined;
         if(msg.content === "!profile") {
             profileOwner = msg.member;
         } else if(msg.content.startsWith("!profile ") && msg.mentions.users.size === 1) {
@@ -160,11 +160,11 @@ class Profiles extends Plugin implements IModule {
         }
 
         let profile = await this.getOrCreateProfile(profileOwner, msg.guild);
-        
+
         await this.sendProfile(msg, profile, profileOwner);
     }
 
-    async addBadge(msg:Message) {
+    async addBadge(msg: Message) {
         if(msg.author.id !== botConfig.botOwner) {
             return;
         }
@@ -178,7 +178,7 @@ class Profiles extends Plugin implements IModule {
         }
     }
 
-    async editProfile(msg:Message) {
+    async editProfile(msg: Message) {
         if(msg.content === "!edit_profile") {
             await msg.channel.send("", {
                 embed: {
@@ -206,13 +206,13 @@ class Profiles extends Plugin implements IModule {
                     }
                     try {
                         await fetch(encodeURI(arg));
-                    } catch (err) {
+                    } catch(err) {
                         await msg.channel.send("", {
                             embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_DOWNLOAD_FAILED")
                         });
                         return;
                     }
-                    
+
                     customize["image_url"] = encodeURI(arg);
                     await msg.channel.send("", {
                         embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PROFILES_PROFILE_IMAGE_SET", {
@@ -230,7 +230,7 @@ class Profiles extends Plugin implements IModule {
                 return;
             }
 
-            let mod:Module|undefined = undefined;
+            let mod: Module | undefined = undefined;
 
             if(!(mod = this.plugLoader.loadedModulesRegistry.get(param))) {
                 await msg.channel.send("", {
@@ -248,15 +248,15 @@ class Profiles extends Plugin implements IModule {
 
             let plugin = mod.base as IProfilesPlugin;
 
-            let completeInfo:IAddedProfilePlugin|undefined = undefined;
+            let completeInfo: IAddedProfilePlugin | undefined = undefined;
             try {
                 completeInfo = await plugin.setup(arg, msg.member, msg);
-            } catch (err) {
+            } catch(err) {
                 await msg.channel.send("", {
                     embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_SETUP_FAILED", {
                         fields: [{
                             name: "Подробности",
-                            value: "\`\`\`js\n"+ util.inspect(err) + "\`\`\`"
+                            value: "\`\`\`js\n" + util.inspect(err) + "\`\`\`"
                         }]
                     })
                 });
@@ -362,7 +362,7 @@ class Profiles extends Plugin implements IModule {
         }
     }
 
-    async editBio(msg:Message) {
+    async editBio(msg: Message) {
         if(msg.content === "!set_bio") {
             let strs = {
                 aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME"),
@@ -401,7 +401,7 @@ class Profiles extends Plugin implements IModule {
     // async editActivity(msg:Message) {
     // }
 
-    getUserStatusEmoji(user:User|GuildMember|string) {
+    getUserStatusEmoji(user: User | GuildMember | string) {
         switch(typeof user !== "string" ? user.presence.status : user) {
             case "online": { return "<:online:313949006864711680>"; }
             case "idle": { return "<:away:313949134954561536>"; }
@@ -411,8 +411,8 @@ class Profiles extends Plugin implements IModule {
         }
     }
 
-    async getUserStatusString(user:User|GuildMember|string, localizingFor: GuildMember | User) {
-        let lF = async (str:string) => { return await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`); };
+    async getUserStatusString(user: User | GuildMember | string, localizingFor: GuildMember | User) {
+        let lF = async (str: string) => { return await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`); };
         switch(typeof user !== "string" ? user.presence.status : user) {
             case "online": { return await lF("online"); }
             case "idle": { return await lF("idle"); }
@@ -423,11 +423,11 @@ class Profiles extends Plugin implements IModule {
         }
     }
 
-    humanize(duration:number, largest:number = 2, round:boolean = true, lang = "ru") {
+    humanize(duration: number, largest: number = 2, round: boolean = true, lang = "ru") {
         return humanizeDuration(duration, { language: lang, largest, round: true });
     }
 
-    async sendProfile(msg:Message, dbProfile:IDBUserProfile, member:GuildMember) {
+    async sendProfile(msg: Message, dbProfile: IDBUserProfile, member: GuildMember) {
         let statusString = "";
         statusString += await this.getUserStatusEmoji(member) + " ";
         statusString += await this.getUserStatusString(member, msg.member);
@@ -459,7 +459,7 @@ class Profiles extends Plugin implements IModule {
             statusString += ` (${sDiff})`;
         }
 
-        let fields:IEmbedOptionsField[] = [];
+        let fields: IEmbedOptionsField[] = [];
 
         if(dbProfile.bio) {
             fields.push({
@@ -469,7 +469,7 @@ class Profiles extends Plugin implements IModule {
             });
         }
 
-        let pushedMessage:Message|undefined = undefined;
+        let pushedMessage: Message | undefined = undefined;
 
         let joinedDate = new Date(dbProfile.joined).getTime();
 
@@ -525,7 +525,7 @@ class Profiles extends Plugin implements IModule {
                     embed: embed as any
                 }) as Message);
                 pushing = false;
-            } catch (err) {
+            } catch(err) {
                 repushAfterPush = true;
             }
 
@@ -549,7 +549,7 @@ class Profiles extends Plugin implements IModule {
 
             if(customize.plugins) {
                 for(let pluginName of Object.keys(customize.plugins)) {
-                    let mod:Module|undefined = undefined;
+                    let mod: Module | undefined = undefined;
                     if(!(mod = this.plugLoader.loadedModulesRegistry.get(pluginName))) {
                         // not found, skipping
                         continue;
@@ -578,7 +578,7 @@ class Profiles extends Plugin implements IModule {
                         let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
 
                         let canEdit = true;
-                        let t:NodeJS.Timer = setTimeout(async () => {
+                        let t: NodeJS.Timer = setTimeout(async () => {
                             this.log("err", pluginLogPrefix, "timed out.");
                             canEdit = false;
                             fields[fNum] = {
@@ -588,7 +588,7 @@ class Profiles extends Plugin implements IModule {
                             };
                             pushUpdate();
                         }, 20000);
-                        
+
                         plugin.getEmbed(addedPlugin.json, msg.member).then(field => {
                             if(!canEdit) { return; }
                             if(t) { clearTimeout(t); }
@@ -615,7 +615,7 @@ class Profiles extends Plugin implements IModule {
                         let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
 
                         let canEdit = true;
-                        let t:NodeJS.Timer = setTimeout(() => {
+                        let t: NodeJS.Timer = setTimeout(() => {
                             this.log("err", pluginLogPrefix, "timed out.");
                             canEdit = false;
                         }, 20000);
@@ -624,10 +624,10 @@ class Profiles extends Plugin implements IModule {
                             if(!canEdit) { return; }
                             if(t) { clearTimeout(t); }
                             if(customs.image_url) {
-                                embed.image = {url: customs.image_url};
+                                embed.image = { url: customs.image_url };
                             }
                             if(customs.thumbnail_url) {
-                                embed.thumbnail = {url: customs.thumbnail_url};
+                                embed.thumbnail = { url: customs.thumbnail_url };
                             }
                             pushUpdate();
                         }).catch(err => {
@@ -645,7 +645,7 @@ class Profiles extends Plugin implements IModule {
     // WORKING WITH DATABASE
     // =====================================
 
-    async createProfile(member:GuildMember, guild:Guild) {
+    async createProfile(member: GuildMember, guild: Guild) {
         return await this.db(TABLE_NAME).insert({
             uid: member.id,
             real_name: null,
@@ -658,21 +658,21 @@ class Profiles extends Plugin implements IModule {
         });
     }
 
-    async updateProfile(dbProfile:IDBUserProfile) {
+    async updateProfile(dbProfile: IDBUserProfile) {
         return await this.db(TABLE_NAME).where({
             uid: dbProfile.uid,
             guild_id: dbProfile.guild_id
         }).update(dbProfile);
     }
 
-    async getProfile(member:GuildMember, guild:Guild) : Promise<IDBUserProfile> {
+    async getProfile(member: GuildMember, guild: Guild): Promise<IDBUserProfile> {
         return await this.db(TABLE_NAME).where({
             guild_id: guild.id,
             uid: member.id
         }).first(...Object.keys(DB_PROFILE_PROPS));
     }
 
-    async getOrCreateProfile(member:GuildMember, guild:Guild) {
+    async getOrCreateProfile(member: GuildMember, guild: Guild) {
         let currentUser = await this.getProfile(member, guild);
         if(!currentUser) {
             await this.createProfile(member, guild);
@@ -695,15 +695,15 @@ class Profiles extends Plugin implements IModule {
         let options = this.options;
         try {
             this.db = getDB();
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Cannot connect to database");
             return;
         }
-        
+
         let status = false;
         try {
             status = await this.db.schema.hasTable(TABLE_NAME);
-        } catch (err) {
+        } catch(err) {
             this.log("err", "Can't check table status: ", err);
             return;
         }
@@ -713,7 +713,7 @@ class Profiles extends Plugin implements IModule {
             try {
                 await createTableBySchema(TABLE_NAME, DB_PROFILE_PROPS);
                 this.log("ok", "Table is created!");
-            } catch (err) {
+            } catch(err) {
                 this.log("err", "Cannot create table right now", err);
                 return;
             }
@@ -735,7 +735,7 @@ class Profiles extends Plugin implements IModule {
      * Convert modules object to Map object
      * @param obj {Array} Array of module info entries
      */
-    _convertToModulesMap(obj:IModuleInfo[]) {
+    _convertToModulesMap(obj: IModuleInfo[]) {
         let modulesMap = new Map();
         for(let moduleInfo of obj) {
             modulesMap.set(moduleInfo.name, moduleInfo);
