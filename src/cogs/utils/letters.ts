@@ -8,7 +8,7 @@ export enum Stances {
     ConvertNumbers = 4
 }
 
-export function toRegionalIndicators(str:string, stances?:Stances, unknownCharReplacer?:(s:string) => string) : string {
+export function toRegionalIndicators(str: string, stances?: Stances, unknownCharReplacer?: (s: string) => string): string {
     let arr = str.split("");
     let allowCaseSwitching = false;
     let numbersConversion = true;
@@ -34,7 +34,7 @@ export function toRegionalIndicators(str:string, stances?:Stances, unknownCharRe
     return arr.join("");
 }
 
-export function convertNumbers(number:string|number, unknownCharReplacer?:(s:string) => string) {
+export function convertNumbers(number: string | number, unknownCharReplacer?: (s: string) => string) {
     let str = number + "";
     str = str.replace(/([0-9])/ig, (s) => {
         if(/^[0-9]{1}$/.test(s)) {
