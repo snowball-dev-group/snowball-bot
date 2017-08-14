@@ -6,6 +6,7 @@ import { getLogger, ILoggerFunction } from "../cogs/utils/utils";
 
 export interface ILocalizerOptions {
     languages: string[];
+    source_language: string;
     default_language: string;
     directory: string;
 }
@@ -25,17 +26,24 @@ export class Localizer {
     private langMaps: IStringsMapsMap = {};
     private initDone: boolean = false;
     private log: ILoggerFunction;
-    private _defaultLang: string;
+    private _sourceLang: string;
     private _loadedLanguages: string[] = [];
 
     get defaultLanguage() {
-        return this._defaultLang;
+        return this.opts.default_language;
+    }
+
+    get sourceLanguage() {
+        return this._sourceLang;
     }
 
     constructor(name: string, opts: ILocalizerOptions) {
         this.opts = opts;
         this.log = getLogger(name);
-        this._defaultLang = opts.default_language;
+        this._sourceLang = opts.source_language;
+        if(!opts.default_language) {
+            opts.default_language = this._sourceLang;
+        }
     }
 
     public async init() {
@@ -72,17 +80,17 @@ export class Localizer {
                 this.langMaps[lang] = z;
             }
 
-            this.log("info", "Requesting default language");
-            let defLang = this.langMaps[this.opts.default_language];
+            this.log("info", "Requesting source language");
+            let defLang = this.langMaps[this.opts.source_language];
             if(!defLang) {
-                throw new Error("Default language not found");
+                throw new Error("Source language not found");
             }
 
             this.log("info", "Calculating language files coverages");
             for(let langName of Object.keys(this.langMaps)) {
                 let langFile = this.langMaps[langName];
                 if(!langFile) { continue; }
-                if(langName === this.opts.default_language) {
+                if(langName === this.opts.source_language) {
                     langFile["+COVERAGE"] = "100";
                     this.langMaps[langName] = langFile;
                     continue;
@@ -97,8 +105,8 @@ export class Localizer {
             return;
         }
 
-        if(!this.langMaps[this.opts.default_language]) {
-            let estr = "Could not find default (fallback) language";
+        if(!this.langMaps[this.opts.source_language]) {
+            let estr = "Could not find source (fallback) language";
             this.log("err", estr);
             throw new Error(estr);
         }
@@ -107,7 +115,7 @@ export class Localizer {
         this.initDone = true;
     }
 
-    private async testCoverage(langFile, defLang = this.langMaps[this.opts.default_language]) {
+    private async testCoverage(langFile, defLang = this.langMaps[this.opts.source_language]) {
         let unique = 0;
         for(let key of Object.keys(defLang)) {
             // ignored keys
@@ -131,7 +139,7 @@ export class Localizer {
         return this.langMaps;
     }
 
-    public getString(lang: string = this.opts.default_language, str: string) {
+    public getString(lang: string = this.opts.source_language, str: string) {
         let lf = this.langMaps[lang];
         if(!lf) {
             let estr = "Could not find required language";
@@ -139,11 +147,11 @@ export class Localizer {
             throw new Error(estr);
         }
         let l = lf[str];
-        if((!l || l === "") && lang !== this.opts.default_language) {
-            // we already know that default language exists
-            l = (this.langMaps[this.opts.default_language] as IStringsMap)[str];
+        if((!l || l === "") && lang !== this.opts.source_language) {
+            // we already know that source language exists
+            l = (this.langMaps[this.opts.source_language] as IStringsMap)[str];
             if(!l) {
-                let estr = `String "${str}" not found nor in prefered language nor in language by default.`;
+                let estr = `String "${str}" not found nor in prefered language nor in source language.`;
                 this.log("err", estr);
                 throw new Error(estr);
             }
@@ -155,7 +163,7 @@ export class Localizer {
         return l;
     }
 
-    public getFormattedString(lang: string = this.opts.default_language, str: string, defs: any) {
+    public getFormattedString(lang: string = this.opts.source_language, str: string, defs: any) {
         let ns = this.getString(lang, str);
         return formatMsg(ns, defs, lang);
     }
