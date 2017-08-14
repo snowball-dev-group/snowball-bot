@@ -198,13 +198,6 @@ class Whitelist extends Plugin implements IModule {
     }> {
         let mode = this.currentMode;
         if(!mode) { mode = await this.fetchCurrentMode(); }
-        if(!mode.whitelist) {
-            return {
-                ok: true,
-                state: GUILD_STATE.BYPASS,
-                until: null
-            };
-        }
         if(this.alwaysWhitelisted.includes(guild.id)) {
             return {
                 ok: true,
@@ -221,19 +214,25 @@ class Whitelist extends Plugin implements IModule {
                 until: null
             };
         }
-        if(whitelistStatus === GUILD_STATE.UNLIMITED) {
-            return {
-                ok: true,
-                state: GUILD_STATE.UNLIMITED,
-                until: null
-            };
-        } else if(whitelistStatus === GUILD_STATE.BANNED) {
+        if(whitelistStatus === GUILD_STATE.BANNED) {
             return {
                 ok: false,
                 state: GUILD_STATE.BANNED,
                 until: null
             };
-        }
+        } else if(!mode.whitelist) {
+            return {
+                ok: true,
+                state: GUILD_STATE.BYPASS,
+                until: null
+            };
+        } else if(whitelistStatus === GUILD_STATE.UNLIMITED) {
+            return {
+                ok: true,
+                state: GUILD_STATE.UNLIMITED,
+                until: null
+            };
+        } 
         if(whitelistedUntil && whitelistedUntil < Date.now()) {
             return {
                 ok: false,
