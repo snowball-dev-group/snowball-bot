@@ -7,7 +7,7 @@ export type identify = User | GuildMember;
 const languagePref = ":language";
 const guildLangPref = ":language";
 const guildEnforcePref = ":enforce_lang";
-const defLanguage = "ru-RU";
+const defLanguage = localizer.defaultLanguage;
 
 // <uid, language>
 let uCache = new Map<string, string>();
