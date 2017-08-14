@@ -82,7 +82,7 @@ function isServerAdmin(msg: Message) {
     "loc:WHITELIST_META_WHITELIST_ARG0": {
         optional: false,
         description: "loc:WHITELIST_META_WHITELIST_ARG0_DESC",
-        values: ["ban", "activate", "deactivate"]
+        values: ["ban", "activate", "deactivate", "mode"]
     },
     "loc:WHITELIST_META_WHITELIST_ARG1": {
         optional: false,
