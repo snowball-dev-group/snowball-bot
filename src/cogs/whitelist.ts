@@ -44,8 +44,30 @@ enum GUILD_STATE {
     /**
      * Guild has unknown status, so bot deciding to leave or stay on guild
      */
-    UNKNOWN
+    UNKNOWN,
+    /**
+     * Whitelist is disabled and guild on bypass
+     */
+    BYPASS
 }
+
+enum WhitelistModes {
+    Whitelist = 2,
+    TrialAllowed = 4,
+    NoBotFarms = 8,
+    NoLowMembers = 16,
+    NoMaxMembers = 32
+}
+
+interface IParsedMode {
+    whitelist: boolean;
+    noBotFarms: boolean;
+    trialAllowed: boolean;
+    noLowMembers: boolean;
+    noMaxMembers: boolean;
+}
+
+const allowedModes = ["whitelist", "nobotfarms", "trial", "nolowmembers", "nomaxmembers"];
 
 function isBotAdmin(msg: Message) {
     return msg.author.id === botConfig.botOwner;
@@ -69,7 +91,19 @@ function isServerAdmin(msg: Message) {
 }, isBotAdmin)
 class Whitelist extends Plugin implements IModule {
     log = getLogger("Whitelist");
+
     alwaysWhitelisted: string[] = [];
+    minMembersRequired = 50;
+    maxMembersAllowed = 25000;
+    botsThreshold = 70;
+    defaultMode = WhitelistModes.NoBotFarms
+                | WhitelistModes.NoLowMembers
+                | WhitelistModes.NoMaxMembers
+                | WhitelistModes.TrialAllowed
+                | WhitelistModes.Whitelist;
+    currentMode: IParsedMode | undefined = undefined;
+    signup_url = "no_link";
+    trialTime = 86400000;
 
     constructor(options) {
         super({
@@ -77,19 +111,76 @@ class Whitelist extends Plugin implements IModule {
             "guildCreate": (guild: Guild) => this.joinedGuild(guild)
         });
         if(options) {
-            if(options["always_whitelisted"] && options["always_whitelisted"] instanceof Array) {
-                for(let g of(options["always_whitelisted"] as string[])) {
-                    this.alwaysWhitelisted.push(g);
+            {
+                let alwaysWhitelisted = options["always_whitelisted"];
+                if(alwaysWhitelisted && alwaysWhitelisted instanceof Array) {
+                    for(let g of alwaysWhitelisted as string[]) {
+                        this.alwaysWhitelisted.push(g);
+                    }
                 }
             }
+            {
+                let minMembers = options["min_members"];
+                if(minMembers !== undefined && typeof minMembers === "number") {
+                    this.minMembersRequired = Math.max(0, minMembers);
+                }
+            }
+            {
+                let maxMembers = options["max_members"];
+                if(maxMembers !== undefined && typeof maxMembers === "number") {
+                    this.maxMembersAllowed = Math.max(0, maxMembers);
+                }
+            }
+            {
+                let botsThreshold = options["bots_threshold"];
+                if(botsThreshold !== undefined && typeof botsThreshold === "number") {
+                    this.botsThreshold = Math.max(0, Math.min(100, botsThreshold));
+                }
+            }
+            {
+                let defaultMode = options["default_mode"];
+                if(defaultMode !== undefined && typeof defaultMode === "number") {
+                    this.defaultMode = defaultMode;
+                }
+            }
+            {
+                let url = options["signup_url"];
+                if(url !== undefined && typeof url === "string") {
+                    this.signup_url = url;
+                } else { throw new Error("No sign up link provided"); }
+            }
+            {
+                let trialTime = options["trial_time"];
+                if(trialTime !== undefined && typeof trialTime === "number") {
+                    this.trialTime = options["trial_time"];
+                }
+            }
+        } else { throw new Error("Setup required"); }
+
+        this.log("info", "Whitelist module is here to protect your mod");
+        this.log("info", " Required members to stay:", this.minMembersRequired, "-", this.maxMembersAllowed);
+        this.log("info", " Always whitelisted servers:");
+        for(let whitelistedId of this.alwaysWhitelisted) {
+            let found = !!discordBot.guilds.get(whitelistedId);
+            this.log(found ? "ok" : "warn", "  -", whitelistedId, found ? "(found)" : "(not found)");
         }
+    }
+
+    async fetchCurrentMode() {
+        let mode = await getGuildPref("global", "whitelist:mode", true) as number | undefined;
+        if(typeof mode !== "number") {
+            mode = this.defaultMode;
+        }
+        this.currentMode = this.parseMode(mode);
+        return this.currentMode;
     }
 
     async joinedGuild(guild: Guild) {
         this.log("info", `Joined guild "${guild.name}" (${guild.members.size} members)`);
         let whitelistStatus = await this.isWhitelisted(guild);
-        if(whitelistStatus.state === GUILD_STATE.UNKNOWN) {
+        if(whitelistStatus.state === GUILD_STATE.UNKNOWN || whitelistStatus.state === GUILD_STATE.BYPASS) {
             // how about to give guild limited time?
+            // or check if it full of boooooooootz
             await this.tryToGiveTrial(guild);
         } else if(whitelistStatus.state === GUILD_STATE.TRIAL_EXPIRED) {
             this.leaveGuild(guild, "WHITELIST_LEAVE_TRIALEXPIRED1");
@@ -105,6 +196,15 @@ class Whitelist extends Plugin implements IModule {
         state: GUILD_STATE,
         until: null | number;
     }> {
+        let mode = this.currentMode;
+        if(!mode) { mode = await this.fetchCurrentMode(); }
+        if(!mode.whitelist) {
+            return {
+                ok: true,
+                state: GUILD_STATE.BYPASS,
+                until: null
+            };
+        }
         if(this.alwaysWhitelisted.includes(guild.id)) {
             return {
                 ok: true,
@@ -151,6 +251,7 @@ class Whitelist extends Plugin implements IModule {
     checkInterval: NodeJS.Timer;
 
     async init() {
+        this.currentMode = await this.fetchCurrentMode();
         this.checkInterval = setInterval(() => this.checkGuilds(), 1800000);
         await this.checkGuilds();
     }
@@ -177,27 +278,29 @@ class Whitelist extends Plugin implements IModule {
             if(member.user.bot) { bots++; }
         }
 
-        return (bots / guild.members.size) * 100;
+        return Math.round((bots / guild.members.size) * 100);
     }
 
     async tryToGiveTrial(guild: Guild) {
         let botPerc = this.calculateBotsPercentage(guild);
-        if(botPerc > 70) {
+        let mode = this.currentMode;
+        if(!mode) { mode = await this.fetchCurrentMode(); }
+        if(mode.noBotFarms && this.calculateBotsPercentage(guild) > this.botsThreshold) {
             await this.leaveGuild(guild, "WHITELIST_LEAVE_BOTFARM");
             return;
-        }
-        if(guild.members.size < 20) {
+        } else if(mode.noLowMembers && guild.members.size < this.minMembersRequired) {
             await this.leaveGuild(guild, "WHITELIST_LEAVE_NOMEMBERS");
             return;
-        }
-        if(guild.members.size > 1000) {
+        } else if(mode.noMaxMembers && guild.members.size > this.maxMembersAllowed) {
             await this.leaveGuild(guild, "WHITELIST_LEAVE_MANYMEMBERS");
             return;
         }
-        await setGuildPref(guild, "whitelist:status", GUILD_STATE.TRIAL);
-        let endDate = Date.now() + 86400000;
-        await setGuildPref(guild, "whitelist:until", endDate);
-        this.log("info", `Activated trial on guild "${guild.name}"`);
+        if(mode.whitelist) {
+            await setGuildPref(guild, "whitelist:status", GUILD_STATE.TRIAL);
+            let endDate = Date.now() + this.trialTime;
+            await setGuildPref(guild, "whitelist:until", endDate);
+            this.log("info", `Activated trial on guild "${guild.name}"`);
+        }
     }
 
     async sendMsg(guild: Guild, embed) {
@@ -224,7 +327,8 @@ class Whitelist extends Plugin implements IModule {
             await this.sendMsg(guild, await generateLocalizedEmbed(EmbedType.Warning, guild.owner, {
                 key: reason,
                 formatOptions: {
-                    serverName: escapeDiscordMarkdown(guild.name, true)
+                    serverName: escapeDiscordMarkdown(guild.name, true),
+                    formUrl: this.signup_url
                 }
             }));
         }
@@ -257,6 +361,12 @@ class Whitelist extends Plugin implements IModule {
                 case GUILD_STATE.TRIAL: {
                     str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_TRIAL");
                 } break;
+                case GUILD_STATE.UNLIMITED: {
+                    str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_UNLIMITED");
+                } break;
+                case GUILD_STATE.BYPASS: {
+                    str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BYPASS");
+                }
             }
             if(whitelistInfo.state === GUILD_STATE.LIMITED || whitelistInfo.state === GUILD_STATE.TRIAL) {
                 str += "\n";
@@ -422,7 +532,99 @@ class Whitelist extends Plugin implements IModule {
                     embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_BAN_USAGE")
                 });
             }
+        } else if(cmd.subCommand === "mode") {
+            let modes = await this.fetchCurrentMode();
+            if(cmd.args && cmd.args.length === 2) {
+                if(!["on", "off"].includes(cmd.args[0]) || !allowedModes.includes(cmd.args[1])) {
+                    msg.channel.send("", {
+                        embed: await generateLocalizedEmbed(EmbedType.Information, u, {
+                            key: "WHITELIST_MODE_USAGE",
+                            formatOptions: {
+                                "modes": allowedModes.join(", ")
+                            }
+                        })
+                    });
+                    return;
+                }
+
+                let modeVal = cmd.args[0] === "on";
+                let selectedMode = ((arg) => {
+                    switch(arg) {
+                        case "nobotfarms": return "noBotFarms";
+                        case "trial": return "trialAllowed";
+                        case "nolowmembers": return "noLowMembers";
+                        case "nomaxmembers": return "noMaxMembers";
+                        default: return "whitelist";
+                    }
+                })(cmd.args[1]);
+
+                if(modeVal && !!modes[selectedMode]) {
+                    msg.channel.send("", {
+                        embed: await generateLocalizedEmbed(EmbedType.Warning, u, {
+                            key: "WHITELIST_MODE_ALREADYENABLED",
+                            formatOptions: {
+                                mode: selectedMode
+                            }
+                        })
+                    });
+                    return;
+                } else if(!modeVal && !modes[selectedMode]) {
+                    msg.channel.send("", {
+                        embed: await generateLocalizedEmbed(EmbedType.Warning, u, {
+                            key: "WHITELIST_MODE_ALREADYDISABLED",
+                            formatOptions: {
+                                mode: selectedMode
+                            }
+                        })
+                    });
+                    return;
+                }
+
+                modes[selectedMode] = modeVal;
+
+                await setGuildPref("global", "whitelist:mode", this.convertToMode(modes));
+
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.OK, u, {
+                        key: "WHITELIST_MODE_CHANGED",
+                        formatOptions: {
+                            mode: selectedMode,
+                            enabled: modeVal
+                        }
+                    })
+                });
+            } else if(cmd.args && cmd.args.length < 2) {
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Information, u, {
+                        key: "WHITELIST_MODE_USAGE",
+                        formatOptions: {
+                            "modes": allowedModes.join(", ")
+                        }
+                    })
+                });
+                return;
+            }
         }
+    }
+
+    parseMode(mode: WhitelistModes): IParsedMode {
+        return {
+            whitelist: (mode & WhitelistModes.Whitelist) === WhitelistModes.Whitelist,
+            noBotFarms: (mode & WhitelistModes.NoBotFarms) === WhitelistModes.NoBotFarms,
+            trialAllowed: (mode & WhitelistModes.TrialAllowed) === WhitelistModes.TrialAllowed,
+            noLowMembers: (mode & WhitelistModes.NoLowMembers) === WhitelistModes.NoLowMembers,
+            noMaxMembers: (mode & WhitelistModes.NoMaxMembers) === WhitelistModes.NoMaxMembers
+        };
+    }
+
+    convertToMode(parsedMode: IParsedMode): WhitelistModes {
+        let m = 0;
+        if(parsedMode.whitelist) { m |= WhitelistModes.Whitelist; }
+        if(parsedMode.trialAllowed) { m |= WhitelistModes.TrialAllowed; }
+        if(parsedMode.noBotFarms) { m |= WhitelistModes.NoBotFarms; }
+        if(parsedMode.noLowMembers) { m |= WhitelistModes.NoLowMembers; }
+        if(parsedMode.noMaxMembers) { m |= WhitelistModes.NoMaxMembers; }
+        return m;
     }
 
     async unload() {
