@@ -48,7 +48,8 @@ Create file named `configuration.json` in `out/config` directory. See [`configur
 - **`botOwner`** ([`string`][string]): Your (owner) Discord ID. It gives you permission to call `eval` command and other stuff which can do damage to bot if you type wrong ID here.
 - **`localizerOptions`** ([`ILocalizerOptions`](./src/types/Localizer.ts#L7)): Configuration for your localizer
   - `languages` ([`string[]`][string]): Languages code (file names, e.g. `en-US`)
-  - `defaultLanguage` ([`string`][string]): Default language code
+  - `default_language` ([`string`][string]): Default language code (it'll be used for new servers)
+  - `source_language` ([`string`][string]): Source language code (it'll be used as fallback)
   - `directory` ([`string`][string]): Absolute path from `out` directory
 
 [string]:https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String
@@ -116,6 +117,8 @@ If you regular user, then report bugs and feedback to Issues section. You also c
 You can create private cogs without commiting them to public. Put your cog in `private_cogs` directory.
 
 ---
-**MADE WITH ♥ BY DAFRI_NOCHITEROV**.
+**BOT MADE WITH ♥ BY DAFRI_NOCHITEROV**.
 
 *Mei is hero from [Overwatch](https://playoverwatch.com/), game created by [Blizzard](blizzard.com)*.
+
+*Snowball icon originally created by [Rubious Marie](http://rubiousmarie.tumblr.com/) [?]*
