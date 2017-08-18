@@ -11,13 +11,23 @@ Carina.WebSocket = ws;
 const MIXER_ICON = "https://i.imgur.com/fQsQPkd.png";
 const MIXER_COLOR = 0x1FBAED;
 
+interface ICacheItem {
+    startedAt: number;
+    channel: IMixerChannel;
+}
+
 class MixerStreamingService implements IStreamingService {
     public name = "mixer";
     private log = getLogger("MixerStreamingService");
-    private cache = new Map<string, {
-        startedAt: number,
-        channel: IMixerChannel
-    }>();
+
+    // bad bad dafri
+    private onlineStreams = new Map<string, ICacheItem>();
+    private updatedRegistry = new Map<string, boolean>();
+    private newRegistry = new Map<string, boolean>();
+    private deadStreams = new Map<string, ICacheItem>();
+
+    // Carina
+    // ( ͡° ͜ʖ ͡°)
     private ca: Carina;
 
     constructor(apiKey) {
@@ -30,29 +40,55 @@ class MixerStreamingService implements IStreamingService {
 
     private listeners = new Map<string, (data) => void>();
 
-    public async subscribeTo(uid: string) {
-        let listener = async (data: IMixerChannel) => {
-            if(data.online === true) {
-                // fetching channel, stream has begun
-                let channel = await this.fetchChannel(uid);
-                this.cache.set(uid, {
-                    startedAt: await this.getStreamStartTime(channel.id),
-                    channel: channel
-                });
-            } else if(data.online === false) {
-                this.cache.delete(uid);
-            }
-        };
-        this.listeners.set(uid, listener);
-        this.ca.subscribe(`channel:${uid}:update`, listener);
+    private async _standardCheck(uid: string) {
         // fetching channel to see if it online
         let channel = await this.fetchChannel(uid);
         if(channel.online) {
-            this.cache.set(uid, {
+            this.onlineStreams.set(uid, {
                 startedAt: await this.getStreamStartTime(channel.id),
                 channel: channel
             });
         }
+        return channel;
+    }
+
+    public async subscribeTo(uid: string) {
+        let listener = async (data: IMixerChannel) => {
+            let cached = this.onlineStreams.get(uid);
+            // checking data updates
+            if(data.online === true) {
+                // fetching channel, stream has begun
+                await this._standardCheck(uid);
+                this.newRegistry.set(uid, true);
+            } else if(cached) {
+                if(data.online === false) {
+                    // moving from new to old cache
+                    this.deadStreams.set(uid, cached);
+                    this.onlineStreams.delete(uid);
+                } else {
+                    let oldStreamData = cached.channel;
+                    let updated = false;
+
+                    if(data.name && data.name !== oldStreamData.name) { updated = true; }
+                    if(data.type && oldStreamData.type && data.type.name !== oldStreamData.type.name) {
+                        updated = true;
+                    } else if(!data.type && oldStreamData.type) {
+                        updated = true;
+                    } else if(data.type && !oldStreamData.type) {
+                        updated = true;
+                    }
+
+                    if(updated) {
+                        await this._standardCheck(uid);
+                        this.updatedRegistry.set(uid, true);
+                    }
+                }
+            }
+        };
+        this.listeners.set(uid, listener);
+        this.ca.subscribe<IMixerChannel>(`channel:${uid}:update`, listener);
+        let chan = await this._standardCheck(uid);
+        if(chan.online) { this.newRegistry.set(uid, true); }
     }
 
     private async makeRequest(uri: string, attempt: number = 0): Promise<any> {
@@ -86,27 +122,41 @@ class MixerStreamingService implements IStreamingService {
             if(!this.listeners.has(streamer.uid)) {
                 await this.subscribeTo(streamer.uid);
             }
-            let cached = this.cache.get(streamer.uid);
-            if(!cached || !cached.channel.online) {
-                result.push({
-                    status: "offline",
-                    streamer,
-                    id: ""
-                });
+            let cached = this.onlineStreams.get(streamer.uid);
+            if(!cached) {
+                let offlineStream = this.deadStreams.get(streamer.uid);
+                if(offlineStream) {
+                    result.push({
+                        status: "offline",
+                        streamer,
+                        id: getUUIDByString(`mixer::${streamer.uid}::${offlineStream.startedAt}`)
+                    });
+                }
                 continue;
+            } else {
+                if(!!this.updatedRegistry.get(streamer.uid)) {
+                    result.push({
+                        status: "online",
+                        streamer,
+                        id: getUUIDByString(`mixer::${streamer.uid}::${cached.startedAt}`)
+                    });
+                    this.updatedRegistry.delete(streamer.uid);
+                } else if(!!this.newRegistry.get(streamer.uid)) {
+                    result.push({
+                        status: "online",
+                        streamer,
+                        id: getUUIDByString(`mixer::${streamer.uid}::${cached.startedAt}`)
+                    });
+                    this.newRegistry.delete(streamer.uid);
+                }
             }
-            result.push({
-                status: "online",
-                streamer,
-                id: getUUIDByString(`mixer::${streamer.uid}::${cached.startedAt}`)
-            });
         }
 
         return result;
     }
 
     public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-        let cache = this.cache.get(stream.streamer.uid);
+        let cache = stream.status === "online" ? this.onlineStreams.get(stream.streamer.uid) : this.deadStreams.get(stream.streamer.uid);
         if(!cache) {
             throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure");
         }
@@ -126,7 +176,7 @@ class MixerStreamingService implements IStreamingService {
                 height: 128,
                 url: cache.channel.user.avatarUrl || MIXER_ICON
             },
-            description: localizer.getFormattedString(lang, "STREAMING_DESCRIPTION", {
+            description: localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
                 username: escapeDiscordMarkdown(cache.channel.user.username, true)
             }),
             title: cache.channel.name,
@@ -149,14 +199,6 @@ class MixerStreamingService implements IStreamingService {
         };
     }
 
-    public freed(uid: string) {
-        let listener = this.listeners.get(uid);
-        if(listener) {
-            this.ca.unsubscribe(`channel:${uid}:update`);
-            this.listeners.delete(uid);
-        }
-    }
-
     public getAPIURL_Channel(username: string) {
         return `https://mixer.com/api/v1/channels/${username}`;
     }
@@ -170,11 +212,23 @@ class MixerStreamingService implements IStreamingService {
         };
     }
 
+    public flushOfflineStream(uid: string) {
+        this.deadStreams.delete(uid);
+    }
+
+    public freed(uid: string) {
+        let listener = this.listeners.get(uid);
+        if(listener) {
+            this.ca.unsubscribe(`channel:${uid}:update`);
+            this.listeners.delete(uid);
+        }
+    }
+
     async unload() {
         for(let [uid, listener] of this.listeners) {
             this.ca.unsubscribe(`channel:${uid}:update`, listener);
         }
-        this.cache.clear();
+        this.onlineStreams.clear();
         return true;
     }
 }
@@ -216,7 +270,7 @@ interface IMixerChannel {
          * Name of game
          */
         name: string
-    };
+    }|null;
     /**
      * Online?
      */
