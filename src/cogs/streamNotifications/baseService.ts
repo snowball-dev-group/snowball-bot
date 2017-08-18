@@ -3,9 +3,12 @@ import { IModule } from "../../types/ModuleLoader";
 
 export class StreamingServiceError extends Error {
     public stringKey: string;
-    constructor(stringKey: string, message: string) {
+    public additionalData:any;
+    constructor(stringKey: string, message: string, additionalData?:any) {
         super(message);
         this.stringKey = stringKey;
+        this.additionalData = additionalData;
+        Object.freeze(this);
     }
 }
 
