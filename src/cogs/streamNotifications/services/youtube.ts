@@ -8,6 +8,11 @@ const YOUTUBE_ICON = "https://i.imgur.com/7Li5Iu2.png";
 const YOUTUBE_COLOR = 0xCD201F;
 // const YOUTUBE_ID_REGEXP = /^[a-zA-Z0-9\_\-]{23,26}$/;
 
+interface ICacheItem<T> {
+    cachedAt: number;
+    value: T;
+}
+
 class TwitchStreamingService implements IStreamingService {
     public name = "youtube";
 
@@ -17,65 +22,81 @@ class TwitchStreamingService implements IStreamingService {
         this.apiKey = apiKey;
     }
 
-    private streamsCache = new Map<string, {
-        cachedAt: number,
-        value: IYouTubeVideo
-    }>();
+    private streamsCache = new Map<string, ICacheItem<IYouTubeVideo>>();
+    private oldStreamsCache = new Map<string, ICacheItem<IYouTubeVideo>>();
 
-    private channelCache = new Map<string, {
-        cachedAt: number,
-        value: IYouTubeChannel
-    }>();
+    private channelCache = new Map<string, ICacheItem<IYouTubeChannel>>();
 
     public async fetch(streamers: IStreamingServiceStreamer[]) {
-        // should return only online streams
-
         // don't updating for cached streams
         let reqDate = Date.now();
-        let notCachedYet = streamers.filter(s => {
-            // is not cached?
-            let cached = this.streamsCache.get(s.uid);
-            if(!cached) { return true; }
-            if((reqDate - cached.cachedAt) > MAX_STREAM_CACHE_LIFE) { return true; }
-            return false;
-        });
 
         let result: IStreamStatus[] = [];
 
-        for(let streamer of notCachedYet) {
+        for(let streamer of streamers) {
             let resp = await fetch(this.getAPIURL_Stream(streamer.uid));
             if(resp.status !== 200) { continue; }
             let vids = (await resp.json()) as IYouTubeListResponse<IYouTubeVideo>;
-            if(vids.items.length !== 1) { continue; }
-            this.streamsCache.set(streamer.uid, {
-                cachedAt: Date.now(),
-                value: vids.items[0]
-            });
-        }
+            if(vids.items.length === 0) {
+                // probably we had stream before
+                let cachedStream = this.streamsCache.get(streamer.uid);
+                if(cachedStream) {
+                    this.oldStreamsCache.set(streamer.uid, cachedStream);
+                    // deleting old copy
+                    this.streamsCache.delete(streamer.uid);
+                    result.push({
+                        status: "offline",
+                        streamer,
+                        id: cachedStream.value.id.videoId
+                    });
+                }
+            } else if(vids.items.length === 1) {
+                // what if we had old version?
+                let cachedVersion = this.streamsCache.get(streamer.uid);
+                let newStream = vids.items[0];
+                if(cachedVersion) {
+                    let oldStream = cachedVersion.value;
 
-        for(let streamer of streamers) {
-            let cached = this.streamsCache.get(streamer.uid);
-            if(!cached || !cached.value) {
-                result.push({
-                    status: "offline",
-                    id: "",
-                    streamer
+                    let updated = false;
+                    
+                    if(newStream.id.videoId !== oldStream.id.videoId) { updated = true; }
+                    if(newStream.snippet.title !== oldStream.snippet.title) { updated = true; }
+
+                    if(updated) {
+                        result.push({
+                            status: "online",
+                            streamer,
+                            id: newStream.id.videoId,
+                            updated: true,
+                            oldId: oldStream.id.videoId
+                        });
+                    }
+                } else {
+                    result.push({
+                        status: "online",
+                        streamer,
+                        id: newStream.id.videoId
+                    });
+                }
+
+                this.streamsCache.set(streamer.uid, {
+                    cachedAt: Date.now(),
+                    value: newStream
                 });
+            } else if(vids.items.length > 1) {
                 continue;
             }
-            result.push({
-                status: "online",
-                streamer,
-                id: cached.value.id.videoId
-            });
         }
 
         return result;
     }
 
     public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-        let cachedStream = this.streamsCache.get(stream.streamer.uid);
-        if(!cachedStream) { throw new StreamingServiceError("YOUTUBE_CACHENOTFOUND", "Cache for channel not found"); }
+        let cachedStream = stream.status === "online" ? this.streamsCache.get(stream.streamer.uid) : this.oldStreamsCache.get(stream.streamer.uid);
+        if(!cachedStream) {
+            throw new StreamingServiceError("YOUTUBE_CACHENOTFOUND", `Stream cache for channel with ID "${stream.streamer.uid}" not found`);
+        }
+
         let cachedChannel = this.channelCache.get(stream.streamer.uid);
         if(!cachedChannel || ((Date.now() - cachedChannel.cachedAt) > MAX_CHANNEL_CACHE_LIFE)) {
             let resp = await fetch(this.getAPIURL_Channels(stream.streamer.uid, false));
@@ -118,7 +139,7 @@ class TwitchStreamingService implements IStreamingService {
             },
             title: cachedStream.value.snippet.title,
             url: `https://youtu.be/${cachedStream.value.id.videoId}`,
-            description: localizer.getFormattedString(lang, "STREAMING_DESCRIPTION", {
+            description: localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
                 username: escapeDiscordMarkdown(channel.snippet.title, true)
             }),
             color: YOUTUBE_COLOR,
@@ -144,11 +165,6 @@ class TwitchStreamingService implements IStreamingService {
         str += "&part=snippet";
         str += `&key=${this.apiKey}`;
         return str;
-    }
-
-    public freed(uid: string) {
-        this.streamsCache.delete(uid);
-        this.channelCache.delete(uid);
     }
 
     public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
@@ -180,6 +196,15 @@ class TwitchStreamingService implements IStreamingService {
             uid: channel.id,
             username: channel.snippet.title
         };
+    }
+
+    public flushOfflineStream(uid: string) {
+        this.oldStreamsCache.delete(uid);
+    }
+
+    public freed(uid: string) {
+        this.streamsCache.delete(uid);
+        this.channelCache.delete(uid);
     }
 
     async unload() {
