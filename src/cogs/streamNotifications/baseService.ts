@@ -32,12 +32,22 @@ export interface IStreamingService extends IModule {
 
     /**
      * Free cache if streamer got deleted
+     * All possible cache should be cleaned
      */
     freed?(uid: string): void;
+
+    /**
+     * Flush stream from streams cache
+     * All stream cache from this user should be cleaned
+     */
+    flushOfflineStream(id:string): void;
 }
 
 export type StreamStatusString = "online" | "offline";
 
+/**
+ * Used to generate embed
+ */
 export interface IStreamStatus {
     /**
     * Current status of streamer
@@ -53,6 +63,16 @@ export interface IStreamStatus {
      * Stream ID
      */
     id: string;
+
+    /**
+     * If stream not new, but updated
+     */
+    updated?:boolean;
+
+    /**
+     * If stream updated, provide new ID!
+     */
+    oldId?: string;
 }
 
 export interface IStreamingServiceStreamer {
