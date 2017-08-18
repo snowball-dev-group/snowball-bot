@@ -582,6 +582,7 @@
     "STREAMING_MATURE_VALUE_MIXER": "{audience, select, 18+ {18+} teen {16+} other {Семейный просмотр}}",
     "STREAMING_DESCRIPTION": "{username} начал трансляцию",
     "STREAMING_DESCRIPTION_TWITCH": "{username} начал {type, select, live {трансляцию} other {vodcast}}",
+    "STREAMING_DESCRIPTION_OFFLINE": ":checkered_flag: Трансляция {username} завершена",
     "STREAMING_GAME_NAME": "Игра",
     "STREAMING_GAME_VALUE_UNKNOWN": "Не установлено",
     "STREAMING_LIST_USAGE": "Использование команды: `{prefix} <сервис> [страница]`",
