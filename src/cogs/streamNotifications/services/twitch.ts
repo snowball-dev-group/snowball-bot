@@ -3,7 +3,6 @@ import { IEmbed, sleep, getLogger, escapeDiscordMarkdown } from "../../utils/uti
 import { default as fetch } from "node-fetch";
 import { chunk } from "lodash";
 
-const MAX_STREAM_CACHE_LIFE = 180000; // ms
 const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
 const TWITCH_COLOR = 0x6441A4;
 const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
@@ -23,25 +22,19 @@ class TwitchStreamingService implements IStreamingService {
         value: ITwitchStream
     }>();
 
-    public async fetch(streamers: IStreamingServiceStreamer[]) {
+    public async fetch(streamers: IStreamingServiceStreamer[]) : Promise<IStreamStatus[]> {
         let cDate = Date.now();
-        let notFetchedYet = streamers.filter(s => {
-            let cached = this.streamsMap.get(s.uid);
-            if(!cached) { return true; }
-            if((cDate - cached.fetchedAt) > MAX_STREAM_CACHE_LIFE) { return true; }
-            return false;
-        });
 
-        let result: IStreamStatus[] = [];
+        let result:IStreamStatus[] = [];
 
-        if(notFetchedYet.length > 0) {
-            let processChunk = async (toFetch: IStreamingServiceStreamer[]) => {
+        if(streamers.length > 0) {
+            let processChunk = async (chunk: IStreamingServiceStreamer[]) => {
                 let streamsResp: {
                     streams?: ITwitchStream[]
                 } = {};
 
                 try {
-                    streamsResp = (await this.makeRequest(this.getAPIURL_Streams(toFetch.map(s => s.uid))));
+                    streamsResp = (await this.makeRequest(this.getAPIURL_Streams(chunk.map(s => s.uid))));
                 } catch(err) {
                     this.log("err", "Error has been received while tried to update online streams", err);
                     return;
@@ -52,37 +45,65 @@ class TwitchStreamingService implements IStreamingService {
                     return;
                 }
 
-                for(let stream of streamsResp.streams) {
-                    this.streamsMap.set(stream.channel._id + "", {
-                        fetchedAt: Date.now(),
-                        value: stream
+                for(let streamer of chunk) {
+                    let stream = streamsResp.streams.find((stream) => {
+                        return (stream.channel._id + "") === streamer.uid;
                     });
+                    let cachedStream = this.streamsMap.get(streamer.uid);
+                    if(stream) {
+                        if(cachedStream) {
+                            let csv = cachedStream.value;
+                            let updated = false;
+                            if(stream.game !== csv.game) { updated = true; }
+                            if(stream.stream_type !== csv.stream_type) { updated = true; }
+                            if(stream._id !== csv._id) { updated = true; }
+                            if(updated) {
+                                result.push({
+                                    status: "online",
+                                    streamer,
+                                    id: stream._id + "",
+                                    oldId: cachedStream.value._id + "",
+                                    updated: true
+                                });
+                            }
+                        } else {
+                            result.push({
+                                status: "online",
+                                streamer,
+                                id: stream._id + ""
+                            });
+                        }
+                        this.streamsMap.set(streamer.uid, {
+                            fetchedAt: Date.now(),
+                            value: stream
+                        });
+                    } else {
+                        if(cachedStream) {
+                            result.push({
+                                status: "offline",
+                                streamer,
+                                id: cachedStream.value._id + ""
+                            });
+                        }
+                    }
                 }
             };
-            let chunks = chunk(notFetchedYet, 50);
-            for(let chunk of chunks) {
-                await processChunk(chunk);
-            }
-        }
 
-        for(let streamer of streamers) {
-            let cached = this.streamsMap.get(streamer.uid);
-            if(!cached || !cached.value) {
-                result.push({
-                    status: "offline",
-                    id: "",
-                    streamer
-                });
-                continue;
+            let chunks = chunk(streamers, 50);
+            for(let chunk of chunks) {
+                try {
+                    await processChunk(chunk);
+                } catch (err) {
+                    this.log("warn", "Failed to fetch chunk", err);
+                }
             }
-            result.push({
-                status: "online",
-                streamer,
-                id: cached.value._id + ""
-            });
         }
 
         return result;
+    }
+
+    public async flushOfflineStream(uid: string) {
+        this.streamsMap.delete(uid);
     }
 
     public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
@@ -93,7 +114,7 @@ class TwitchStreamingService implements IStreamingService {
                 icon_url: TWITCH_ICON,
                 text: "Twitch"
             },
-            description: localizer.getFormattedString(lang, "STREAMING_DESCRIPTION_TWITCH", {
+            description: localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
                 username: escapeDiscordMarkdown(stream.value.channel.display_name || stream.value.channel.name, true),
                 type: stream.value.stream_type
             }),
@@ -129,7 +150,7 @@ class TwitchStreamingService implements IStreamingService {
     }
 
     private getAPIURL_Streams(ids: string[]) {
-        return `https://api.twitch.tv/kraken/streams/?channel=${ids.join(",")}&client_id=${this.clientId}&api_version=5`;
+        return `https://api.twitch.tv/kraken/streams/?channel=${ids.join(",")}&stream_type=all&client_id=${this.clientId}&api_version=5`;
     }
 
     private getAPIURL_User(username: string | string[]) {
