@@ -199,7 +199,10 @@ class TwitchStreamingService implements IStreamingService {
                 await sleep(delay);
                 return await loop(attempt + 1);
             } else if(resp.status !== 200) {
-                throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch");
+                throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch", {
+                    status: resp.status,
+                    body: (await resp.text())
+                });
             }
             return await resp.json();
         };
