@@ -63,10 +63,16 @@ interface ISubscriptionRow {
     /**
      * Array of NotificationStatus'es
      */
-    notified: INotificationStatus[];
+    notified: INotificationsStatus[];
 }
 
-interface INotificationStatus {
+interface INotification {
+    guildId: string;
+    messageId: string;
+    channelId: string;
+}
+
+interface INotificationsStatus {
     /**
      * ID of the stream
      */
@@ -78,7 +84,7 @@ interface INotificationStatus {
     /**
      * Notified guilds IDs
      */
-    notifiedGuilds: string[];
+    notifiedGuilds: INotification[];
 }
 
 const LOCALIZED = (str: string) => `STREAMING_${str.toUpperCase()}`;
@@ -755,7 +761,7 @@ class StreamNotifications extends Plugin implements IModule {
         await sleep(100);
         for(let rawSubscription of subscriptions) {
             let subscription = this.convertToNormalSubscription(rawSubscription);
-            let toRemove: INotificationStatus[] = [];
+            let toRemove: INotificationsStatus[] = [];
             for(let notifiedStatus of subscription.notified) {
                 if((Date.now() - notifiedStatus.notifiedAt) > MAX_NOTIFIED_LIFE) {
                     toRemove.push(notifiedStatus);
@@ -813,17 +819,16 @@ class StreamNotifications extends Plugin implements IModule {
             let service = mod.base as IStreamingService;
             let subscriptions = (await this.getSubscriptionsForService(providerName)).map(this.convertToNormalSubscription);
             let toFetch = subscriptions.map(this.convertToStreamer);
-            let results: IStreamStatus[] = [];
+            let results:IStreamStatus[] = [];
 
             try {
                 results = await service.fetch(toFetch);
             } catch(err) {
-                this.log("err", "Failed to fetch streams from", providerName);
+                this.log("err", "Failed to fetch streams from", providerName, err);
                 continue;
             }
 
             for(let result of results) {
-                if(result.status === "offline") { continue; }
                 let streamerSubscriptions = subscriptions.filter(sub => {
                     return sub.uid === result.streamer.uid;
                 });
@@ -835,13 +840,23 @@ class StreamNotifications extends Plugin implements IModule {
                     }
 
                     for(let subscribedGuildId of subscription.subscribers) {
-                        let notification = subscription.notified.find((ns) => {
-                            return ns.id === result.id;
+                        let notificationsStatus = subscription.notified.find((ns) => {
+                            return (result.updated && result.oldId) ? ns.id === result.oldId : ns.id === result.id;
                         });
 
-                        if(notification && notification.notifiedGuilds.includes(subscribedGuildId)) {
-                            // the guild was already notified
-                            continue;
+                        let notification:INotification|undefined = undefined;
+                        let _notificationIndex = -1;
+                        if(notificationsStatus) {
+                            let notificationInGuild = notificationsStatus.notifiedGuilds.find((n, indx) => {
+                                let q = n.guildId === subscribedGuildId;
+                                if(q) { _notificationIndex = indx; }
+                                return q;
+                            });
+                            if(!!notificationInGuild && (result.updated || result.status === "offline")) {
+                                notification = notificationInGuild;
+                            } else {
+                                continue;
+                            }
                         }
 
                         let guild = discordBot.guilds.get(subscribedGuildId);
@@ -859,7 +874,7 @@ class StreamNotifications extends Plugin implements IModule {
                         }
 
                         if(!embed) {
-                            // we got no embed for some reason: error or not, we'll skip it for now
+                            this.log("warn", "Embed was not returned for stream of", `${subscription.uid} (${providerName})`);
                             continue;
                         }
 
@@ -886,24 +901,68 @@ class StreamNotifications extends Plugin implements IModule {
                             return s.serviceName === providerName && (s.uid === subscription.uid || s.username === subscription.username);
                         });
 
-                        try {
-                            await (channel as TextChannel).send(mentionsEveryone ? "@everyone" : "", {
-                                embed: embed as any
-                            });
-                        } catch(err) {
-                            this.log("err", "Failed to send notification for stream of", `${subscription.uid} (${providerName})`, "to channel", `${channel.id}.`, "Error ocurred", err);
-                            continue;
-                        }
+                        if((result.updated || result.status === "offline") && (notification && notification.channelId === channel.id)) {
+                            let msg = await (async () => {
+                                try {
+                                    return (await (channel as TextChannel).fetchMessage(notification.messageId));
+                                } catch (err) {
+                                    this.log("err", "Could not find message with ID", notification.messageId, "to update", err);
+                                    return undefined;
+                                }
+                            })();
 
-                        if(notification) {
-                            notification.notifiedGuilds.push(subscribedGuildId);
-                        } else {
-                            subscription.notified.push({
-                                id: result.id,
-                                notifiedAt: Date.now(),
-                                notifiedGuilds: [subscribedGuildId]
-                            });
-                        }
+                            if(!msg) { continue; }
+
+                            try {
+                                await msg.edit(mentionsEveryone ? "@everyone" : "", {
+                                    embed: embed as any
+                                });
+                            } catch (err) {
+                                this.log("err", "Failed to update message with ID", notification.messageId, err);
+                            }
+
+                            if(result.status === "offline") {
+                                service.flushOfflineStream(result.streamer.uid);
+                            }
+                        } else if(result.status !== "offline") {
+                            let messageId = "";
+                            try {
+                                let msg = (await (channel as TextChannel).send(mentionsEveryone ? "@everyone" : "", {
+                                    embed: embed as any
+                                })) as Message;
+                                messageId = msg.id;
+                            } catch(err) {
+                                this.log("err", "Failed to send notification for stream of", `${subscription.uid} (${providerName})`, "to channel", `${channel.id}.`, "Error ocurred", err);
+                                continue;
+                            }
+    
+                            if(notificationsStatus) {
+                                if(notification && _notificationIndex !== -1) {
+                                    // editing old notification
+                                    notificationsStatus.notifiedGuilds[_notificationIndex] = {
+                                        guildId: subscribedGuildId,
+                                        messageId,
+                                        channelId: channel.id
+                                    };
+                                } else {
+                                    notificationsStatus.notifiedGuilds.push({
+                                        guildId: subscribedGuildId,
+                                        messageId,
+                                        channelId: channel.id
+                                    });
+                                }
+                            } else {
+                                subscription.notified.push({
+                                    id: result.id,
+                                    notifiedAt: Date.now(),
+                                    notifiedGuilds: [{
+                                        guildId: subscribedGuildId,
+                                        messageId,
+                                        channelId: channel.id
+                                    }]
+                                });
+                            }
+                        } // else ignore
                     }
                 }
             }
