@@ -917,7 +917,7 @@ class StreamNotifications extends Plugin implements IModule {
 
                             try {
                                 await msg.edit(mentionsEveryone ? 
-                                    "@everyone " + localizer.getFormattedString(guildLanguage, result.status === "offline" ? "STREAMING_NOTIFICATION_EVERYONE_OFFLINE" : "", {
+                                    "@everyone " + localizer.getFormattedString(guildLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
                                         username: subscription.username
                                     })
                                     : "", {
