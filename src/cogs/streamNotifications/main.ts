@@ -168,7 +168,7 @@ class StreamNotifications extends Plugin implements IModule {
             name: "StreamNotifications:Services",
             basePath: "./cogs/streamNotifications/services/",
             registry: this.servicesList,
-            fastLoad: []
+            defaultSet: []
         });
     }
 
@@ -865,10 +865,12 @@ class StreamNotifications extends Plugin implements IModule {
                             continue;
                         }
 
+                        let guildLanguage = await getGuildLanguage(guild);
+
                         let embed: IEmbed | undefined = undefined;
 
                         try {
-                            embed = await service.getEmbed(result, await getGuildLanguage(guild));
+                            embed = await service.getEmbed(result, guildLanguage);
                         } catch(err) {
                             this.log("err", "Failed to get embed for stream of", `${subscription.uid} (${providerName})`, err);
                         }
@@ -914,7 +916,11 @@ class StreamNotifications extends Plugin implements IModule {
                             if(!msg) { continue; }
 
                             try {
-                                await msg.edit(mentionsEveryone ? "@everyone" : "", {
+                                await msg.edit(mentionsEveryone ? 
+                                    "@everyone " + localizer.getFormattedString(guildLanguage, result.status === "offline" ? "STREAMING_NOTIFICATION_EVERYONE_OFFLINE" : "", {
+                                        username: subscription.username
+                                    })
+                                    : "", {
                                     embed: embed as any
                                 });
                             } catch (err) {
@@ -927,7 +933,11 @@ class StreamNotifications extends Plugin implements IModule {
                         } else if(result.status !== "offline") {
                             let messageId = "";
                             try {
-                                let msg = (await (channel as TextChannel).send(mentionsEveryone ? "@everyone" : "", {
+                                let msg = (await (channel as TextChannel).send(mentionsEveryone ? 
+                                    "@everyone " + localizer.getFormattedString(guildLanguage, "STREAMING_NOTIFICATION_EVERYONE", {
+                                        username: subscription.username
+                                    })
+                                : "", {
                                     embed: embed as any
                                 })) as Message;
                                 messageId = msg.id;
