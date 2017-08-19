@@ -583,7 +583,7 @@
     "STREAMING_MATURE_NAME": "18+?",
     "STREAMING_MATURE_VALUE_TWITCH": "{mature, select, true {Да} other {Нет}}",
     "STREAMING_MATURE_VALUE_MIXER": "{audience, select, 18+ {18+} teen {16+} other {Семейный просмотр}}",
-    "STREAMING_DESCRIPTION": "{username} стримит",
+    "STREAMING_DESCRIPTION": ":red_circle: {username} сейчас стримит",
     "STREAMING_DESCRIPTION_TWITCH": "{username} {type, select, live {стримит} other {производит VODCAST}}",
     "STREAMING_DESCRIPTION_OFFLINE": ":checkered_flag: Стрим {username} завершен",
     "STREAMING_GAME_NAME": "Игра",
