@@ -95,7 +95,7 @@ export class Localizer {
                     this.langMaps[langName] = langFile;
                     continue;
                 }
-                langFile["+COVERAGE"] = (await this.testCoverage(langFile, defLang)) + "";
+                langFile["+COVERAGE"] = (await this.testCoverage(langFile, defLang as IStringsMapsMap)) + "";
                 langFile["+COMMUNITY_MANAGED"] = langFile["+COMMUNITY_MANAGED"] === "true" ? "true" : "false";
                 this.langMaps[langName] = langFile;
                 this.log("ok", `- ${langName} ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${langFile["+COVERAGE"]}`);
@@ -115,7 +115,7 @@ export class Localizer {
         this.initDone = true;
     }
 
-    private async testCoverage(langFile, defLang = this.langMaps[this.opts.source_language]) {
+    private async testCoverage(langFile, defLang = this.langMaps[this.opts.source_language] as IStringsMapsMap) {
         let unique = 0;
         for(let key of Object.keys(defLang)) {
             // ignored keys
