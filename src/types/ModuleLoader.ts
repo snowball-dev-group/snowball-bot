@@ -24,9 +24,9 @@ export interface IConfig {
      */
     basePath: string;
     /**
-     * Names of modules for fast load after registry'll be filled with values
+     * Names of modules that should be loaded by default
      */
-    fastLoad: string[];
+    defaultSet: string[];
     /**
      * Pre-filled registry with info about modules
      */
@@ -152,11 +152,6 @@ export class ModuleLoader {
         for(let value of config.registry.values()) {
             this.register(value);
         }
-
-        this.log("info", "Starting fast load");
-        for(let modName of this.config.fastLoad) {
-            this.load(modName);
-        }
     }
 
     /**
@@ -165,7 +160,7 @@ export class ModuleLoader {
      */
     register(info: IModuleInfo) {
         this.registry.set(info.name, info);
-        this.log("info", "Registered new module", info);
+        this.log("info", "Registered new module", process.env["NODE_ENV"] === "development" ? info : `"${info.name}" - "${info.path}"`);
     }
 
 
@@ -243,10 +238,25 @@ export class ModuleLoader {
         }
     }
 
+    async loadModules(forceAll = false) {
+        let toLoad:string[] = [];
+        if(forceAll) {
+            toLoad = Array.from(this.config.registry.keys());
+        } else {
+            toLoad = this.config.defaultSet;
+        }
+
+        this.log("info", "Loading started");
+        for(let modName of toLoad) {
+            await this.load(modName);
+        }
+    }
+
     /**
      * Unloads ALL modules
      */
     async unloadAll() {
+        this.log("info", "Unloading started");
         for(let moduleName of this.loadedModulesRegistry.keys()) {
             await this.unload(moduleName);
         }
