@@ -3,7 +3,7 @@ import { SnowballBot, IBotConfig } from "./types/SnowballBot";
 import { join as pathJoin } from "path";
 
 const coreInfo = {
-    "version": "0.9.993-prerelease"
+    "version": "0.9.995-prerelease"
 };
 
 (async () => {
@@ -44,7 +44,7 @@ const coreInfo = {
 
         log("ok", "====== DONE ======");
     } catch(err) {
-        log("err", "Can't connect to Discord", err);
+        log("err", "Can't start bot", err);
         log("err", "Exiting due we can't work without bot connected to Discord");
         process.exit(1);
     }
