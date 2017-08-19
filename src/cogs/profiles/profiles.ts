@@ -725,8 +725,10 @@ class Profiles extends Plugin implements IModule {
             name: "Profiles:Plugins",
             basePath: "./cogs/profiles/plugins/",
             registry: plugins,
-            fastLoad: Array.from(plugins.keys())
+            defaultSet: Array.from(plugins.keys())
         });
+
+        await this.plugLoader.loadModules();
 
         this.handleEvents();
     }
