@@ -99,13 +99,14 @@ export class SnowballBot extends EventEmitter {
      * Prepare module loader
      * It will load all modules / plugins
      */
-    prepareModLoader() {
+    async prepareModLoader() {
         this.modLoader = new ModuleLoader({
             basePath: "./cogs/",
             name: `${this.config.name}:ModLoader`,
-            fastLoad: this.config.autoLoad,
+            defaultSet: this.config.autoLoad,
             registry: new Map<string, IModuleInfo>(this._convertToModulesMap(this.config.modules))
         });
+        await this.modLoader.loadModules();
     }
 
     /**
