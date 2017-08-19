@@ -13,13 +13,24 @@ interface ICacheItem<T> {
     value: T;
 }
 
+interface IServiceOptions {
+    apiKey:string;
+    fetchDifference:number;
+}
+
 class TwitchStreamingService implements IStreamingService {
     public name = "youtube";
 
     private apiKey: string;
+    private fetchDiff = 180000;
 
-    constructor(apiKey: string) {
-        this.apiKey = apiKey;
+    constructor(options: string|IServiceOptions) {
+        if(typeof options !== "string") {
+            this.apiKey = options.apiKey;
+            this.fetchDiff = options.fetchDifference;
+        } else {
+            this.apiKey = options;
+        }
     }
 
     private streamsCache = new Map<string, ICacheItem<IYouTubeVideo>>();
@@ -27,9 +38,17 @@ class TwitchStreamingService implements IStreamingService {
 
     private channelCache = new Map<string, ICacheItem<IYouTubeChannel>>();
 
+    private previousFetchTime = 0;
+
     public async fetch(streamers: IStreamingServiceStreamer[]) {
         // don't updating for cached streams
-        let reqDate = Date.now();
+        let currentTime = Date.now();
+
+        if((currentTime - this.previousFetchTime) < this.fetchDiff) {
+            // ratelimited, not going to bother API
+            // it's made to not go over quota of YouTube API :FeelsBadMan:
+            return [];
+        }
 
         let result: IStreamStatus[] = [];
 
@@ -88,6 +107,7 @@ class TwitchStreamingService implements IStreamingService {
             }
         }
 
+        this.previousFetchTime = currentTime;
         return result;
     }
 
