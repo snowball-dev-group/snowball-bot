@@ -5,7 +5,7 @@ cache:
     - node_modules
 
 before_script:
-  - yarn global add typescript grunt-cli
+  - yarn global add grunt-cli
   - yarn install
 
 stages:
