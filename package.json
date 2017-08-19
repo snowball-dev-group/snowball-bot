@@ -27,6 +27,7 @@
     "random-js": "^1.0.8",
     "timestring": "^4.0.0",
     "universal-analytics": "^0.4.13",
+    "uws": "^8.14.1",
     "ws": "^3.0.0"
   },
   "name": "snowballbot-discord",
