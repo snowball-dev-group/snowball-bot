@@ -43,11 +43,11 @@
         }, {
             "name": "tatsumaki-info",
             "path": "tatsumaki/info",
-            "options": "TATSUMAKI API KEY"
+            "options": "TATSUMAKI_API_KEY"
         }, {
             "name": "lastfm",
             "path": "lastfm/recent",
-            "options": "LAST.FM API KEY"
+            "options": "LASTFM_APIKEY"
         }, {
             "name": "overwatch-heroes",
             "path": "overwatch/heroes"
@@ -65,34 +65,43 @@
         "name": "verificationhandler",
         "path": "verifiedUtilHandler"
     }, {
-        "name": "fsthings",
-        "path": "fs_things",
+        "name": "setLanguage",
+        "path": "setLanguage",
         "options": {
-            "fsGuildId": "209767264210255883",
-            "nickRegexp": "^[A-Za-zА-Яа-я0-9ё\\-\\_\\.\\ ]{0,}$",
-            "wrongNickFallback": "💩 <change nickname>",
-            "adminRoles": ["256596153246810114"],
-            "modRoles": ["209768989511909377"],
-            "subRoles": ["210209826708389888", "240838818335293440"],
-            "subAncChannel": "209768394059153409",
-            "texts": [{
-                "roleId": "210209826708389888",
-                "text": "++, thanks for subscribing to streamer A"
-            }, {
-                "roleId": "240838818335293440",
-                "text": "++, thanks for subscribing to streamer B"
-            }],
-            "oneSubRole": "214431344355180545"
+            "crowdinLink": "https://crowdin.com/project/snowball-bot"
         }
     }, {
-        "name": "setLanguage",
-        "path": "setLanguage"
+        "name": "whitelist",
+        "path": "whitelist",
+        "options": {
+            "always_whitelisted": ["307494339662184449", "331101356205015041", "209767264210255883", "260005365289058304", "322790052008689665"],
+            "signup_url": "FORM_URL"
+        }
+    }, {
+        "name": "streamNotifications",
+        "path": "streamNotifications/main",
+        "options": [{
+            "name": "twitch",
+            "path": "twitch",
+            "options": "CLIENT_ID_HERE"
+        }, {
+            "name": "youtube",
+            "path": "youtube",
+            "options": "API_KEY"
+        }, {
+            "name": "mixer",
+            "path": "mixer"
+        }]
+    }, {
+        "name": "fl",
+        "path": "fl"
     }],
     "autoLoad": ["ping", "eval", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "premiumControl", "guilds", "verificationhandler", "fsthings", "setLanguage"],
     "botOwner": "80351110224678912",
     "localizerOptions": {
         "languages": ["ru-RU", "en-US", "uk-UA"],
-        "default_language": "ru-RU",
+        "source_language": "ru-RU",
+        "default_language": "en-US",
         "directory": "./languages/"
     }
 }
