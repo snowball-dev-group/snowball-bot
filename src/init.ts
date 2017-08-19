@@ -33,8 +33,6 @@ const coreInfo = {
     log("info", "Preparing our Discord client");
     Snowball.prepareDiscordClient();
 
-
-
     log("info", "Connecting...");
     try {
         await Snowball.connect();
@@ -42,7 +40,7 @@ const coreInfo = {
         await Snowball.prepareLocalizator();
 
         log("ok", "Localizer prepared, preparing module loader...");
-        Snowball.prepareModLoader();
+        await Snowball.prepareModLoader();
 
         log("ok", "====== DONE ======");
     } catch(err) {
