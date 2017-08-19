@@ -7,14 +7,25 @@ const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
 const TWITCH_COLOR = 0x6441A4;
 const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
 
+interface IServiceOptions {
+    clientId:string;
+    fetchDifference:number;
+}
+
 class TwitchStreamingService implements IStreamingService {
     public name = "twitch";
 
     private clientId: string;
     private log = getLogger("TwitchStreamingService");
+    private fetchDiff = 120000;
 
-    constructor(clientId: string) {
-        this.clientId = clientId;
+    constructor(options: string|IServiceOptions) {
+        if(typeof options !== "string") {
+            this.clientId = options.clientId;
+            this.fetchDiff = options.fetchDifference;
+        } else {
+            this.clientId = options;
+        }
     }
 
     private streamsMap = new Map<string, {
@@ -22,10 +33,18 @@ class TwitchStreamingService implements IStreamingService {
         value: ITwitchStream
     }>();
 
-    public async fetch(streamers: IStreamingServiceStreamer[]) : Promise<IStreamStatus[]> {
-        let cDate = Date.now();
+    private previousFetchTime = 0;
 
-        let result:IStreamStatus[] = [];
+    public async fetch(streamers: IStreamingServiceStreamer[]): Promise<IStreamStatus[]> {
+        let currentTime = Date.now();
+
+        if((currentTime - this.previousFetchTime) < this.fetchDiff) {
+            // ratelimit
+            // twitch still caches api responses for some time >_>
+            return [];
+        }
+
+        let result: IStreamStatus[] = [];
 
         if(streamers.length > 0) {
             let processChunk = async (chunk: IStreamingServiceStreamer[]) => {
@@ -49,20 +68,37 @@ class TwitchStreamingService implements IStreamingService {
                     let stream = streamsResp.streams.find((stream) => {
                         return (stream.channel._id + "") === streamer.uid;
                     });
-                    let cachedStream = this.streamsMap.get(streamer.uid);
+                    let cacheItem = this.streamsMap.get(streamer.uid);
                     if(stream) {
-                        if(cachedStream) {
-                            let csv = cachedStream.value;
+                        if(cacheItem) {
+                            let cachedStream = cacheItem.value;
                             let updated = false;
-                            if(stream.game !== csv.game) { updated = true; }
-                            if(stream.stream_type !== csv.stream_type) { updated = true; }
-                            if(stream._id !== csv._id) { updated = true; }
+                            // Stream name updated
+                            if(stream.channel.status !== cachedStream.channel.status) { updated = true; }
+                            // or game
+                            if(stream.game !== cachedStream.game) { updated = true; }
+                            // or stream_type (stream -> vodcast)
+                            if(stream.stream_type !== cachedStream.stream_type) { updated = true; }
+                            // or id???
+                            if(stream._id !== cachedStream._id) { updated = true; }
+                            // or username
+                            if((stream.channel.name !== cachedStream.channel.name) || (stream.channel.display_name !== cachedStream.channel.display_name)) {
+                                // updating username in db too
+                                streamer.username = stream.channel.display_name || stream.channel.name;
+                                updated = true;
+                            }
+                            // or logo
+                            if(stream.channel.logo !== cachedStream.channel.logo) { updated = true; }
+                            // or probably author changed stream to (/from) 18+
+                            if(stream.channel.mature !== cachedStream.channel.mature) { updated = true; }
+
+                            // if yes, we pushing update
                             if(updated) {
                                 result.push({
                                     status: "online",
                                     streamer,
                                     id: stream._id + "",
-                                    oldId: cachedStream.value._id + "",
+                                    oldId: cacheItem.value._id + "",
                                     updated: true
                                 });
                             }
@@ -78,11 +114,11 @@ class TwitchStreamingService implements IStreamingService {
                             value: stream
                         });
                     } else {
-                        if(cachedStream) {
+                        if(cacheItem) {
                             result.push({
                                 status: "offline",
                                 streamer,
-                                id: cachedStream.value._id + ""
+                                id: cacheItem.value._id + ""
                             });
                         }
                     }
@@ -93,12 +129,13 @@ class TwitchStreamingService implements IStreamingService {
             for(let chunk of chunks) {
                 try {
                     await processChunk(chunk);
-                } catch (err) {
+                } catch(err) {
                     this.log("warn", "Failed to fetch chunk", err);
                 }
             }
         }
 
+        this.previousFetchTime = currentTime;
         return result;
     }
 
@@ -183,7 +220,7 @@ class TwitchStreamingService implements IStreamingService {
         return {
             serviceName: this.name,
             uid: user._id,
-            username: user.name
+            username: user.display_name || user.name
         };
     }
 
