@@ -41,10 +41,14 @@ export async function init(): Promise<boolean> {
         LOG("info", "Table isn't created");
         try {
             LOG("info", "Creating table for premiums");
+            const BIG_INT = {
+                type: "BIGINT",
+                length: 20
+            };
             await createTableBySchema(PREMIUM_TABLE, {
                 "id": "string",
-                "subscribed_at": "number",
-                "due_to": "number"
+                "subscribed_at": BIG_INT,
+                "due_to": BIG_INT
             });
         } catch(err) {
             LOG("err", "Table creation failed", err);
