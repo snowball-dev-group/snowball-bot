@@ -21,16 +21,6 @@ export function getDB() {
     return connection;
 }
 
-interface TypeInfo {
-    unique: boolean;
-    nullable: boolean;
-    notNullable: boolean;
-    type: string;
-    length?: number;
-    default?: string;
-    collate?: string;
-}
-
 function getTypeInfo(type: string) {
     let t: TypeInfo = {
         unique: false,
@@ -73,7 +63,31 @@ function getTypeInfo(type: string) {
     return t;
 }
 
-export async function createTableBySchema(tableName: string, schema: any, dropExist = false) {
+export namespace MySQL {
+    export type NumbericTypes = "TINYINT"|"SMALLINT"|"MEDIUMINT"|"INT"|"INTEGER"|"BIGINT"|"FLOAT"|"DOUBLE"|"DECIMAL"|"BIT";
+    export type DateTimeTypes = "YEAR"|"DATE"|"TIME"|"DATETIME"|"TIMESTAMP";
+    export type StringTypes = "CHAR"|"BINARY"|"VARCHAR"|"VARBINARY"|"TINYBLOB"|"TINYTEXT"|"BLOB"|"TEXT"|"MEDIUMBLOB"|"MEDIUMTEXT"|"LONGBLOB"|"LONGTEXT"|"ENUM"|"SET"|"BOOL"|"BOOLEAN";
+    export type AdditionalTypes = "JSON";
+    export type SpatialTypes = "GEOMETRY"|"POINT"|"LINESTRING"|"POLYGON"|"MULTIPOINT"|"MULTILINESTRING"|"MYLTIPOLYGON"|"GEOMETRYCOLLECTION";
+
+    export type AllTypes = NumbericTypes|DateTimeTypes|StringTypes|AdditionalTypes;
+}
+
+interface TypeInfo {
+    unique?: boolean;
+    nullable?: boolean;
+    notNullable?: boolean;
+    type: MySQL.AllTypes|string;
+    length?: number;
+    default?: string;
+    collate?: string;
+}
+
+export interface ITableSchema {
+    [columnName:string]:MySQL.AllTypes|TypeInfo|string;
+}
+
+export async function createTableBySchema(tableName: string, schema:ITableSchema, dropExist = false) {
     if(!schema) {
         throw new Error("There's no scheme!");
     }
