@@ -18,7 +18,7 @@ interface IServiceOptions {
     fetchDifference:number;
 }
 
-class TwitchStreamingService implements IStreamingService {
+class YouTubeStreamingService implements IStreamingService {
     public name = "youtube";
 
     private apiKey: string;
@@ -303,4 +303,4 @@ interface IYouTubeVideo {
     };
 }
 
-module.exports = TwitchStreamingService;
+module.exports = YouTubeStreamingService;
