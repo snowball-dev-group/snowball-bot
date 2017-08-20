@@ -819,7 +819,7 @@ class StreamNotifications extends Plugin implements IModule {
             let service = mod.base as IStreamingService;
             let subscriptions = (await this.getSubscriptionsForService(providerName)).map(this.convertToNormalSubscription);
             let toFetch = subscriptions.map(this.convertToStreamer);
-            let results:IStreamStatus[] = [];
+            let results: IStreamStatus[] = [];
 
             try {
                 results = await service.fetch(toFetch);
@@ -844,7 +844,7 @@ class StreamNotifications extends Plugin implements IModule {
                             return (result.updated && result.oldId) ? ns.id === result.oldId : ns.id === result.id;
                         });
 
-                        let notification:INotification|undefined = undefined;
+                        let notification: INotification | undefined = undefined;
                         let _notificationIndex = -1;
                         if(notificationsStatus) {
                             let notificationInGuild = notificationsStatus.notifiedGuilds.find((n, indx) => {
@@ -907,7 +907,7 @@ class StreamNotifications extends Plugin implements IModule {
                             let msg = await (async () => {
                                 try {
                                     return (await (channel as TextChannel).fetchMessage(notification.messageId));
-                                } catch (err) {
+                                } catch(err) {
                                     this.log("err", "Could not find message with ID", notification.messageId, "to update", err);
                                     return undefined;
                                 }
@@ -916,14 +916,14 @@ class StreamNotifications extends Plugin implements IModule {
                             if(!msg) { continue; }
 
                             try {
-                                await msg.edit(mentionsEveryone ? 
+                                await msg.edit(mentionsEveryone ?
                                     "@everyone " + localizer.getFormattedString(guildLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
                                         username: subscription.username
                                     })
                                     : "", {
-                                    embed: embed as any
-                                });
-                            } catch (err) {
+                                        embed: embed as any
+                                    });
+                            } catch(err) {
                                 this.log("err", "Failed to update message with ID", notification.messageId, err);
                             }
 
@@ -933,19 +933,19 @@ class StreamNotifications extends Plugin implements IModule {
                         } else if(result.status !== "offline") {
                             let messageId = "";
                             try {
-                                let msg = (await (channel as TextChannel).send(mentionsEveryone ? 
+                                let msg = (await (channel as TextChannel).send(mentionsEveryone ?
                                     "@everyone " + localizer.getFormattedString(guildLanguage, "STREAMING_NOTIFICATION_EVERYONE", {
                                         username: subscription.username
                                     })
-                                : "", {
-                                    embed: embed as any
-                                })) as Message;
+                                    : "", {
+                                        embed: embed as any
+                                    })) as Message;
                                 messageId = msg.id;
                             } catch(err) {
                                 this.log("err", "Failed to send notification for stream of", `${subscription.uid} (${providerName})`, "to channel", `${channel.id}.`, "Error ocurred", err);
                                 continue;
                             }
-    
+
                             if(notificationsStatus) {
                                 if(notification && _notificationIndex !== -1) {
                                     // editing old notification
