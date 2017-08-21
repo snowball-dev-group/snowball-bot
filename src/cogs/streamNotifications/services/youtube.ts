@@ -2,7 +2,6 @@ import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingS
 import { IEmbed, escapeDiscordMarkdown } from "../../utils/utils";
 import { default as fetch } from "node-fetch";
 
-const MAX_STREAM_CACHE_LIFE = 180000;
 const MAX_CHANNEL_CACHE_LIFE = 600000;  // ms
 const YOUTUBE_ICON = "https://i.imgur.com/7Li5Iu2.png";
 const YOUTUBE_COLOR = 0xCD201F;
