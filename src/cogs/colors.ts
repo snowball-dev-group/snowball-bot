@@ -6,19 +6,21 @@ import { getDB } from "./utils/db";
 import { command as cmd, Category } from "./utils/help";
 import { createConfirmationMessage } from "./utils/interactive";
 import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
+import { getPreferenceValue, setPreferenceValue, removePreference } from "./utils/guildPrefs";
+import { randomPick } from "./utils/random";
 
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";
 const COLORFUL_HELP_PREFIX = COLORFUL_PREFIX.slice(1);
 
-interface ColorfulGuildColorInfo {
+interface IColorfulGuildColorInfo {
     required_role?: string[] | string;
     role: string;
 }
 
-interface ColorfulGuildInfo {
+interface IColorfulGuildInfo {
     guildId: string;
-    rolePrefixes: Map<string, ColorfulGuildColorInfo>;
+    rolePrefixes: Map<string, IColorfulGuildColorInfo>;
 }
 
 function checkPerms(member: GuildMember) {
@@ -88,7 +90,8 @@ class Colors extends Plugin implements IModule {
 
     constructor() {
         super({
-            "message": (msg: Message) => this.onMessage(msg)
+            "message": (msg) => this.onMessage(msg),
+            "guildMemberAdd": (member) => this.onMemberJoin(member)
         }, true);
         // this.init();
     }
@@ -119,6 +122,7 @@ class Colors extends Plugin implements IModule {
                 case "reset": return await this.resetColor(msg);
                 // rename Синий, blue
                 case "rename": return await this.renameColor(msg, args);
+                case "onjoin": return await this.randomColorSetting(msg, args);
                 // diag
                 case "diag": return await this.performDiag(msg);
                 // Синий
@@ -131,6 +135,42 @@ class Colors extends Plugin implements IModule {
             });
         }
     }
+
+    async onMemberJoin(member:GuildMember) {
+        let role = await getPreferenceValue(member.guild, "colors:join");
+        
+        if(typeof role !== "string") { return; }
+
+        let colorfulInfo = await this.getInfo(member.guild);
+
+        let roles = Array.from(colorfulInfo.rolePrefixes.values());
+
+        if(role === "random") {
+            // pick random
+            roles = roles.filter((r) => !r.required_role);
+            if(roles.length === 0) { return; } // no colors to give
+            
+            let randomColor = randomPick(roles);
+            try {
+                member.addRole(randomColor.role);
+            } catch (err) {
+                this.log("err", "Failed to assing random color", err, member.guild.id);
+            }
+        } else {
+            let color = roles.find(r => r.role === role);
+            if(!color) { return; } // color was removed prob
+
+            try {
+                member.addRole(color.role);
+            } catch (err) {
+                this.log("err", "Failed to assign color role", err, member.guild.id);
+            }
+        }
+    }
+
+    // ===========================================
+    // USER'S FUNCTIONS
+    // ===========================================
 
     async assignColor(msg: Message, args: string[]) {
         // Синий
@@ -852,6 +892,98 @@ class Colors extends Plugin implements IModule {
         });
     }
 
+    async randomColorSetting(msg: Message, args: string[]) {
+        if(!checkPerms(msg.member)) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOPERMISSION")
+            });
+            return;
+        }
+
+        if(moduleWhitelist) {
+            let whitelistStatus = await moduleWhitelist.isWhitelisted(msg.guild);
+            if(whitelistStatus.state !== 0 && whitelistStatus.state === 1) {
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ONLYPARTNERED")
+                });
+                return;
+            }
+        }
+
+        args.shift();
+
+        if(args.length < 1) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_RANDOM_ARGERR0")
+            });
+            return;
+        }
+
+        if(args[0] === "off") {
+            if(args.length > 1) {
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_RANDOM_ARGERR1")
+                });
+                return;
+            }
+
+            await removePreference(msg.guild, "colors:join");
+
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "COLORS_RANDOM_REMOVED")
+            });
+        } else if(args[0] === "onjoin") {
+            if(args.length > 1) {
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_RANDOM_ARGERR3")
+                });
+                return;
+            }
+            
+            await setPreferenceValue(msg.guild, "colors:join", "random");
+
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "COLORS_RANDOM_SETRANDOM")
+            });
+        } else if(args[0] === "set") {
+            if(args.length !== 2) {
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_RANDOM_ARGERR2")
+                });
+                return;
+            }
+
+            // second arg = color name
+            
+            let colorfulInfo = await this.getInfo(msg.guild);
+
+            let color = await colorfulInfo.rolePrefixes.get(args[1]);
+            if(!color) {
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOTFOUND")
+                });
+                return;
+            }
+
+            if(color.required_role) {
+                msg.channel.send("", {
+                    embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_RANDOM_REQUIRESROLE")
+                });
+                return;
+            }
+
+            await setPreferenceValue(msg.guild, "colors:join", color.role);
+
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "COLORS_RANDOM_SET")
+            });
+        } else {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_RANDOM_ARGERR0")
+            });
+        }
+    }
+
     // ===========================================
     // DATABASE FUNCTIONS
     // ===========================================
@@ -889,7 +1021,7 @@ class Colors extends Plugin implements IModule {
      * Update guild's colorful info
      * @param info Colorful information
      */
-    async updateInfo(info: ColorfulGuildInfo) {
+    async updateInfo(info: IColorfulGuildInfo) {
         let inf = info as any;
         inf.rolePrefixes = JSON.stringify([...info.rolePrefixes]);
         await this.db(TABLE_NAME).where({
@@ -901,7 +1033,7 @@ class Colors extends Plugin implements IModule {
      * Get guild's colorful information
      * @param guildId 
      */
-    async getInfo(guildId: string | Guild, deep: boolean = false): Promise<ColorfulGuildInfo> {
+    async getInfo(guildId: string | Guild, deep: boolean = false): Promise<IColorfulGuildInfo> {
         if(typeof guildId !== "string") {
             guildId = guildId.id;
         }
@@ -917,10 +1049,10 @@ class Colors extends Plugin implements IModule {
                 guildId: guildId,
                 rolePrefixes: JSON.stringify([...emptyMap])
             });
-            return await this.getInfo(guildId, true) as ColorfulGuildInfo;
+            return await this.getInfo(guildId, true) as IColorfulGuildInfo;
         }
-        prefixes.rolePrefixes = new Map(JSON.parse(prefixes.rolePrefixes)) as Map<string, ColorfulGuildColorInfo>;
-        return prefixes as ColorfulGuildInfo;
+        prefixes.rolePrefixes = new Map(JSON.parse(prefixes.rolePrefixes)) as Map<string, IColorfulGuildColorInfo>;
+        return prefixes as IColorfulGuildInfo;
     }
 
     // ===========================================
