@@ -1,4 +1,4 @@
-import { IModule } from "../types/ModuleLoader";
+/* import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message } from "discord.js";
 // import { command, Category } from "./utils/help";
@@ -28,4 +28,4 @@ class Welcome extends Plugin implements IModule {
     }
 }
 
-module.exports = Welcome;
+module.exports = Welcome; */
