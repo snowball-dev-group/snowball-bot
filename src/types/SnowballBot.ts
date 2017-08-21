@@ -85,18 +85,25 @@ declare global {
      * Bot itself
      */
     // tslint:disable-next-line:no-unused-variable
-    let discordBot: djs.Client;
+    const discordBot: djs.Client;
+
     /**
      * Public bot config visible to all modules
      */
     // tslint:disable-next-line:no-unused-variable
-    let botConfig: IPublicBotConfig;
+    const botConfig: IPublicBotConfig;
 
     /**
      * Localizer
      */
     // tslint:disable-next-line:no-unused-variable
-    let localizer: Localizer;
+    const localizer: Localizer;
+
+    /**
+     * Module Loader
+     */
+    // tslint:disable-next-line:no-unused-variable
+    const modLoader: ModuleLoader;
 }
 
 export class SnowballBot extends EventEmitter {
@@ -150,6 +157,12 @@ export class SnowballBot extends EventEmitter {
             registry: new Map<string, IModuleInfo>(this._convertToModulesMap(this.config.modules))
         });
         await this.modLoader.loadModules();
+
+        // Public module loader
+        Object.defineProperty(global, "modLoader", {
+            configurable: false, enumerable: false,
+            writable: true, value: this.modLoader
+        });
     }
 
     /**
