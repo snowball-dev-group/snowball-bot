@@ -136,7 +136,7 @@ export class Localizer {
     }
 
     public languageExists(lang: string) {
-        return this.langMaps;
+        return !!this.langMaps[lang];
     }
 
     public getString(lang: string = this.opts.source_language, str: string) {
