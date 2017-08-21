@@ -42,7 +42,7 @@ export interface IModule {
     /**
      * Unload function
      */
-    unload(reason:string): Promise<boolean>;
+    unload(reason?:string): Promise<boolean>;
 }
 
 export class Module extends EventEmitter {
