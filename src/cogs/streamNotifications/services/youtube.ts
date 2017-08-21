@@ -65,7 +65,8 @@ class YouTubeStreamingService implements IStreamingService {
                     result.push({
                         status: "offline",
                         streamer,
-                        id: cachedStream.value.id.videoId
+                        id: cachedStream.value.id.videoId,
+                        payload: cachedStream.value
                     });
                 }
             } else if(vids.items.length === 1) {
@@ -86,14 +87,16 @@ class YouTubeStreamingService implements IStreamingService {
                             streamer,
                             id: newStream.id.videoId,
                             updated: true,
-                            oldId: oldStream.id.videoId
+                            oldId: oldStream.id.videoId,
+                            payload: newStream
                         });
                     }
                 } else {
                     result.push({
                         status: "online",
                         streamer,
-                        id: newStream.id.videoId
+                        id: newStream.id.videoId,
+                        payload: newStream
                     });
                 }
 
@@ -111,7 +114,7 @@ class YouTubeStreamingService implements IStreamingService {
     }
 
     public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-        let cachedStream = stream.status === "online" ? this.streamsCache.get(stream.streamer.uid) : this.oldStreamsCache.get(stream.streamer.uid);
+        let cachedStream = stream.payload as ICacheItem<IYouTubeVideo>;
         if(!cachedStream) {
             throw new StreamingServiceError("YOUTUBE_CACHENOTFOUND", `Stream cache for channel with ID "${stream.streamer.uid}" not found`);
         }
