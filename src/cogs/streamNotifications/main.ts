@@ -14,8 +14,9 @@ const PREFIX = "!streams";
 const MAX_NOTIFIED_LIFE = 86400000; // ms
 
 const TABLE = {
-    subscriptions: "sn_subs",
-    settings: "sn_settings"
+    subscriptions: "sn_subscriptions",
+    settings: "sn_settings",
+    notifications: "sn_notifications"
 };
 
 interface ISubscriptionRawRow {
@@ -23,7 +24,6 @@ interface ISubscriptionRawRow {
     uid: string;
     username: string;
     subscribers: string;
-    notified: string;
 }
 
 interface ISettingsRow {
@@ -60,31 +60,16 @@ interface ISubscriptionRow {
      * Array of Guild IDs that subscribed to this channel
      */
     subscribers: string[];
-    /**
-     * Array of NotificationStatus'es
-     */
-    notified: INotificationsStatus[];
 }
 
 interface INotification {
-    guildId: string;
-    messageId: string;
+    guild: string;
+    provider: string;
     channelId: string;
-}
-
-interface INotificationsStatus {
-    /**
-     * ID of the stream
-     */
-    id: string;
-    /**
-     * Date when notification arrived (only use to cleanup)
-     */
-    notifiedAt: number;
-    /**
-     * Notified guilds IDs
-     */
-    notifiedGuilds: INotification[];
+    streamId: string;
+    streamerId: string;
+    messageId: string;
+    sentAt: number;
 }
 
 const LOCALIZED = (str: string) => `STREAMING_${str.toUpperCase()}`;
@@ -181,11 +166,11 @@ class StreamNotifications extends Plugin implements IModule {
         let cmd = simpleCmdParse(msg.content);
         try {
             switch(cmd.subCommand) {
-                case "edit": await this.edit(msg, cmd.args); break;
-                case "add": await this.add(msg, cmd.args); break;
-                case "remove": await this.remove(msg, cmd.args); break;
-                case "set_channel": await this.setChannel(msg, cmd.args); break;
-                default: await this.list(msg, cmd.subCommand, cmd.args); break;
+                case "edit": await this.subcmd_edit(msg, cmd.args); break;
+                case "add": await this.subcmd_add(msg, cmd.args); break;
+                case "remove": await this.subcmd_remove(msg, cmd.args); break;
+                case "set_channel": await this.subcmd_setChannel(msg, cmd.args); break;
+                default: await this.cmd_list(msg, cmd.subCommand, cmd.args); break;
             }
         } catch(err) {
             msg.channel.send("", {
@@ -200,7 +185,7 @@ class StreamNotifications extends Plugin implements IModule {
     // Command handling
     // =======================================
 
-    async setChannel(msg: Message, args: string[] | undefined) {
+    async subcmd_setChannel(msg: Message, args: string[] | undefined) {
         // !streams set_channel <#228174260307230721>
         // args at this point: ["<#228174260307230721>"]
 
@@ -264,7 +249,7 @@ class StreamNotifications extends Plugin implements IModule {
         });
     }
 
-    async edit(msg: Message, args: string[] | undefined) {
+    async subcmd_edit(msg: Message, args: string[] | undefined) {
         // !streams edit YouTube, ID, mention_everyone, true
         // args at this point: ["YouTube", "ID", "mention_everyone", "true"]
 
@@ -375,7 +360,7 @@ class StreamNotifications extends Plugin implements IModule {
         });
     }
 
-    async add(msg: Message, args: string[] | undefined) {
+    async subcmd_add(msg: Message, args: string[] | undefined) {
         // !streams add YouTube, BlackSilverUfa
         // args at this point: ["YouTube", "BlackSilverUfa"]
 
@@ -406,6 +391,7 @@ class StreamNotifications extends Plugin implements IModule {
             });
             return;
         }
+
         let provider = providerModule.base as IStreamingService;
         let subscription = await this.getSubscription({
             provider: providerName,
@@ -442,7 +428,6 @@ class StreamNotifications extends Plugin implements IModule {
                 provider: streamer.serviceName,
                 uid: streamer.uid,
                 username: streamer.username,
-                notified: "[]",
                 subscribers: "[]"
             });
         }
@@ -520,7 +505,7 @@ class StreamNotifications extends Plugin implements IModule {
         });
     }
 
-    async remove(msg: Message, args: string[] | undefined) {
+    async subcmd_remove(msg: Message, args: string[] | undefined) {
         // !streams remove YouTube, ID
         // args at this point: ["YouTube", "ID"]
 
@@ -630,9 +615,21 @@ class StreamNotifications extends Plugin implements IModule {
             // we'll gonna notify provider that it can free cache for this subscription
             let providerModule = this.servicesLoader.loadedModulesRegistry.get(args[0].toLowerCase());
             if(providerModule) {
-                // well, provider isn't loaded
                 let provider = providerModule.base as IStreamingService;
-                if(provider.freed) { provider.freed(rawSubscription.uid); }
+
+                if(botConfig.mainShard) {
+                    if(provider.freed) { provider.freed(rawSubscription.uid); }
+                } else {
+                    if(process.send) { // notifying then
+                        process.send({
+                            type: "streams:free",
+                            payload: {
+                                provider: args[0].toLowerCase(),
+                                uid: subscription.uid
+                            }
+                        });
+                    }
+                }
             }
         } else {
             // updating subscription
@@ -645,7 +642,7 @@ class StreamNotifications extends Plugin implements IModule {
         });
     }
 
-    async list(msg: Message, calledAs: string | undefined, args: string[] | undefined) {
+    async cmd_list(msg: Message, calledAs: string | undefined, args: string[] | undefined) {
         // !streams 2
         // !streams YouTube 2
 
@@ -692,8 +689,8 @@ class StreamNotifications extends Plugin implements IModule {
             }
         }
 
-        let offset = (10 * page) - 10;
-        let end = offset + 10;
+        let offset = (20 * page) - 20;
+        let end = offset + 20;
 
         let rawSettings = await this.getSettings(msg.guild);
         if(!rawSettings) {
@@ -727,7 +724,7 @@ class StreamNotifications extends Plugin implements IModule {
             fields.push({
                 inline: false,
                 name: `${c++}. ${result.username}`,
-                value: `${result.serviceName}, ID: \`${result.uid}\``
+                value: `**${result.serviceName}**, ID: **\`${result.uid}\`**`
             });
         }
 
@@ -753,38 +750,19 @@ class StreamNotifications extends Plugin implements IModule {
     cleanupInterval: NodeJS.Timer;
 
     async notificationsCleanup() {
-        let subscriptions = await this.getAllSubscriptions();
+        let notifications = await this.getAllNotifications();
         let resolveFunction: undefined | Function = undefined;
         this.cleanupPromise = new Promise((r) => {
             resolveFunction = r;
         });
         await sleep(100);
-        for(let rawSubscription of subscriptions) {
-            let subscription = this.convertToNormalSubscription(rawSubscription);
-            let toRemove: INotificationsStatus[] = [];
-            for(let notifiedStatus of subscription.notified) {
-                if((Date.now() - notifiedStatus.notifiedAt) > MAX_NOTIFIED_LIFE) {
-                    toRemove.push(notifiedStatus);
-                }
-            }
-            for(let notifiedStatusToRemove of toRemove) {
-                let index = subscription.notified.indexOf(notifiedStatusToRemove);
-                subscription.notified.splice(index, 1);
-            }
 
-            let uniqueSubscribers: string[] = [];
-            for(let subscriber of subscription.subscribers.sort()) {
-                if(uniqueSubscribers.indexOf(subscriber) !== -1) {
-                    continue;
-                }
-                uniqueSubscribers.push(subscriber);
+        for(let notification of notifications) {
+            if((Date.now() - notification.sentAt) > MAX_NOTIFIED_LIFE) {
+                await this.deleteNotification(notification);
             }
-
-            subscription.subscribers = uniqueSubscribers;
-
-            rawSubscription = this.convertToRawSubscription(subscription);
-            await this.updateSubscription(rawSubscription);
         }
+
         if(resolveFunction) {
             resolveFunction();
             this.cleanupPromise = undefined;
@@ -840,142 +818,34 @@ class StreamNotifications extends Plugin implements IModule {
                     }
 
                     for(let subscribedGuildId of subscription.subscribers) {
-                        let notificationsStatus = subscription.notified.find((ns) => {
-                            return (result.updated && result.oldId) ? ns.id === result.oldId : ns.id === result.id;
-                        });
-
-                        let notification: INotification | undefined = undefined;
-                        let _notificationIndex = -1;
-                        if(notificationsStatus) {
-                            let notificationInGuild = notificationsStatus.notifiedGuilds.find((n, indx) => {
-                                let q = n.guildId === subscribedGuildId;
-                                if(q) { _notificationIndex = indx; }
-                                return q;
-                            });
-                            if(!!notificationInGuild && (result.updated || result.status === "offline")) {
-                                notification = notificationInGuild;
-                            } else {
-                                continue;
-                            }
-                        }
+                        let notification = await this.getNotification(subscription.provider, subscription.uid, (result.updated && result.oldId ? result.oldId : result.id), subscribedGuildId);
 
                         let guild = discordBot.guilds.get(subscribedGuildId);
+
                         if(!guild) {
-                            this.log("err", "Not found subscribed guild with ID", subscribedGuildId, "of subscription", subscription.provider, subscription.uid);
-                            continue;
-                        }
-
-                        let guildLanguage = await getGuildLanguage(guild);
-
-                        let embed: IEmbed | undefined = undefined;
-
-                        try {
-                            embed = await service.getEmbed(result, guildLanguage);
-                        } catch(err) {
-                            this.log("err", "Failed to get embed for stream of", `${subscription.uid} (${providerName})`, err);
-                        }
-
-                        if(!embed) {
-                            this.log("warn", "Embed was not returned for stream of", `${subscription.uid} (${providerName})`);
-                            continue;
-                        }
-
-                        let settings = this.guildSettingsCache.get(guild.id);
-                        if(!settings) {
-                            let dbSettings = await this.getSettings(guild);
-                            if(!dbSettings) {
-                                this.log("err", "Not found `dbSettings` for subscribed guild", subscribedGuildId, "to subscription", subscription.provider, subscription.uid);
-                                continue;
-                            }
-                            settings = this.convertToNormalSettings(dbSettings);
-                            this.guildSettingsCache.set(guild.id, settings);
-                        }
-
-                        if(!settings.channelId || settings.channelId === "-") { continue; }
-
-                        let channel = guild.channels.get(settings.channelId);
-                        if(!channel) {
-                            this.log("err", "Not found channel for subscribed guild", subscribedGuildId, "to subscription", subscription.provider, subscription.uid);
-                            continue;
-                        }
-
-                        let mentionsEveryone = !!settings.mentionsEveryone.find(s => {
-                            return s.serviceName === providerName && (s.uid === subscription.uid || s.username === subscription.username);
-                        });
-
-                        if((result.updated || result.status === "offline") && (notification && notification.channelId === channel.id)) {
-                            let msg = await (async () => {
-                                try {
-                                    return (await (channel as TextChannel).fetchMessage(notification.messageId));
-                                } catch(err) {
-                                    this.log("err", "Could not find message with ID", notification.messageId, "to update", err);
-                                    return undefined;
-                                }
-                            })();
-
-                            if(!msg) { continue; }
-
-                            try {
-                                await msg.edit(mentionsEveryone ?
-                                    "@everyone " + localizer.getFormattedString(guildLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
-                                        username: subscription.username
-                                    })
-                                    : "", {
-                                        embed: embed as any
-                                    });
-                            } catch(err) {
-                                this.log("err", "Failed to update message with ID", notification.messageId, err);
-                            }
-
-                            if(result.status === "offline") {
-                                service.flushOfflineStream(result.streamer.uid);
-                            }
-                        } else if(result.status !== "offline") {
-                            let messageId = "";
-                            try {
-                                let msg = (await (channel as TextChannel).send(mentionsEveryone ?
-                                    "@everyone " + localizer.getFormattedString(guildLanguage, "STREAMING_NOTIFICATION_EVERYONE", {
-                                        username: subscription.username
-                                    })
-                                    : "", {
-                                        embed: embed as any
-                                    })) as Message;
-                                messageId = msg.id;
-                            } catch(err) {
-                                this.log("err", "Failed to send notification for stream of", `${subscription.uid} (${providerName})`, "to channel", `${channel.id}.`, "Error ocurred", err);
-                                continue;
-                            }
-
-                            if(notificationsStatus) {
-                                if(notification && _notificationIndex !== -1) {
-                                    // editing old notification
-                                    notificationsStatus.notifiedGuilds[_notificationIndex] = {
-                                        guildId: subscribedGuildId,
-                                        messageId,
-                                        channelId: channel.id
-                                    };
-                                } else {
-                                    notificationsStatus.notifiedGuilds.push({
-                                        guildId: subscribedGuildId,
-                                        messageId,
-                                        channelId: channel.id
-                                    });
-                                }
-                            } else {
-                                subscription.notified.push({
-                                    id: result.id,
-                                    notifiedAt: Date.now(),
-                                    notifiedGuilds: [{
-                                        guildId: subscribedGuildId,
-                                        messageId,
-                                        channelId: channel.id
-                                    }]
+                            if(process.send) {
+                                process.send({
+                                    type: "streams:push",
+                                    payload: {
+                                        ifYouHaveGuild: subscribedGuildId,
+                                        notifyAbout: {
+                                            subscription,
+                                            notification,
+                                            result
+                                        }
+                                    }
                                 });
+                            } else {
+                                this.log("warn", "Could not find subscribed guild and notify other shards", subscribedGuildId, "to", subscription.uid, `(${subscription.provider})`);
                             }
-                        } // else ignore
+                            continue;
+                        }
+
+                        await this.pushNotification(guild, result, notification, subscription);
                     }
                 }
             }
+
             let rSubscriptions = subscriptions.map(this.convertToRawSubscription);
             for(let rSubscription of rSubscriptions) {
                 await this.updateSubscription(rSubscription);
@@ -983,6 +853,110 @@ class StreamNotifications extends Plugin implements IModule {
         }
 
         this.performingStreamsCheck = false;
+    }
+
+    async pushNotification(guild:Guild, result: IStreamStatus, notification:INotification, subscription:ISubscriptionRow) {
+        let providerName = subscription.provider;
+        let mod = this.servicesLoader.loadedModulesRegistry.get(providerName);
+        if(!mod) {
+            this.log("warn", "WARN:", providerName, "not found as loaded service");
+            return;
+        }
+        let service = mod.base as IStreamingService;
+
+        let guildLanguage = await getGuildLanguage(guild);
+
+        let embed: IEmbed | undefined = undefined;
+
+        try {
+            embed = await service.getEmbed(result, guildLanguage);
+        } catch(err) {
+            this.log("err", "Failed to get embed for stream of", `${subscription.uid} (${providerName})`, err);
+        }
+
+        if(!embed) {
+            this.log("warn", "Embed was not returned for stream of", `${subscription.uid} (${providerName})`);
+            return;
+        }
+
+        let settings = this.guildSettingsCache.get(guild.id);
+        if(!settings) {
+            let dbSettings = await this.getSettings(guild);
+            if(!dbSettings) {
+                this.log("err", "Not found `dbSettings` for subscribed guild", guild.id, "to subscription", subscription.provider, subscription.uid);
+                return;
+            }
+            settings = this.convertToNormalSettings(dbSettings);
+            this.guildSettingsCache.set(guild.id, settings);
+        }
+
+        if(!settings.channelId || settings.channelId === "-") { return; }
+
+        let channel = guild.channels.get(settings.channelId);
+        if(!channel) {
+            this.log("err", "Not found channel for subscribed guild", guild.id, "to subscription", subscription.provider, subscription.uid);
+            return;
+        }
+
+        let mentionsEveryone = !!settings.mentionsEveryone.find(s => {
+            return s.serviceName === providerName && (s.uid === subscription.uid || s.username === subscription.username);
+        });
+
+        if((result.updated || result.status === "offline") && (notification && notification.channelId === channel.id)) {
+            let msg = await (async () => {
+                try {
+                    return (await (channel as TextChannel).fetchMessage(notification.messageId));
+                } catch(err) {
+                    this.log("err", "Could not find message with ID", notification.messageId, "to update", err);
+                    return undefined;
+                }
+            })();
+
+            if(!msg) { return; }
+
+            try {
+                await msg.edit(mentionsEveryone ?
+                    "@everyone " + localizer.getFormattedString(guildLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
+                        username: subscription.username
+                    })
+                    : "", {
+                        embed: embed as any
+                    });
+            } catch(err) {
+                this.log("err", "Failed to update message with ID", notification.messageId, err);
+            }
+
+            if(result.status === "offline") {
+                service.flushOfflineStream(result.streamer.uid);
+            }
+        } else if(result.status !== "offline") {
+            let messageId = "";
+            try {
+                let msg = (await (channel as TextChannel).send(mentionsEveryone ?
+                    "@everyone " + localizer.getFormattedString(guildLanguage, "STREAMING_NOTIFICATION_EVERYONE", {
+                        username: subscription.username
+                    })
+                    : "", {
+                        embed: embed as any
+                    })) as Message;
+                messageId = msg.id;
+            } catch(err) {
+                this.log("err", "Failed to send notification for stream of", `${subscription.uid} (${providerName})`, "to channel", `${channel.id}.`, "Error ocurred", err);
+                return;
+            }
+
+            if(!botConfig.mainShard && process.send) {
+                process.send({
+                    type: "streams:flush_offline",
+                    payload: {
+                        provider: subscription.provider,
+                        uid: subscription.uid
+                    }
+                });
+            } else {
+                service.flushOfflineStream(subscription.uid);
+            }
+        }
     }
 
     // =======================================
@@ -1036,7 +1010,6 @@ class StreamNotifications extends Plugin implements IModule {
         return {
             username: raw.username,
             uid: raw.uid,
-            notified: JSON.parse(raw.notified),
             provider: raw.provider,
             subscribers: JSON.parse(raw.subscribers)
         };
@@ -1046,7 +1019,6 @@ class StreamNotifications extends Plugin implements IModule {
         return {
             username: normal.username,
             uid: normal.uid,
-            notified: JSON.stringify(normal.notified),
             provider: normal.provider,
             subscribers: JSON.stringify(normal.subscribers)
         };
@@ -1064,8 +1036,8 @@ class StreamNotifications extends Plugin implements IModule {
     // DB<>Plugin methods
     // =======================================
 
-    async getAllSubscriptions() {
-        return (await this.db(TABLE.subscriptions).select()) as ISubscriptionRawRow[];
+    async getAllNotifications() {
+        return (await this.db(TABLE.notifications).select()) as INotification[];
     }
 
     async getSubscriptionsForService(service: string) {
@@ -1086,7 +1058,6 @@ class StreamNotifications extends Plugin implements IModule {
     }
 
     async createSubscription(row: ISubscriptionRawRow) {
-        row.notified = "[]";
         await this.db(TABLE.subscriptions).insert(row);
         return row;
     }
@@ -1124,6 +1095,31 @@ class StreamNotifications extends Plugin implements IModule {
         }).update(newSettings);
     }
 
+    async saveNotification(notification: INotification) {
+        return await this.db(TABLE.notifications).insert(notification);
+    }
+
+    async updateNotification(notification: INotification) {
+        return await this.db(TABLE.notifications).where({
+            guild: notification.guild,
+            provider: notification.provider,
+            streamerId: notification.streamerId
+        } as INotification).update(notification);
+    }
+
+    async deleteNotification(notification: INotification) {
+        return await this.db(TABLE.notifications).where(notification).delete();
+    }
+
+    async getNotification(provider: string, streamerId: string, streamId: string, guild: Guild|string) {
+        return await this.db(TABLE.notifications).where({
+            provider,
+            streamerId,
+            streamId,
+            guild: guild instanceof Guild ? guild.id : guild
+        } as INotification);
+    }
+
     // =======================================
     // Plugin init & unload
     // =======================================
@@ -1138,9 +1134,6 @@ class StreamNotifications extends Plugin implements IModule {
                 username: "string",
                 subscribers: {
                     type: "MEDIUMTEXT"
-                },
-                notified: { // [{ "id": "ZgCOA8_A9iI", "notifiedAt": 1500287047927, "notifiedGuilds": ["307494339662184449"] }]
-                    type: "MEDIUMTEXT"
                 }
             });
         }
@@ -1149,13 +1142,54 @@ class StreamNotifications extends Plugin implements IModule {
         if(!settingsTable) {
             this.log("info", "Table of settings not found, going to create it right now");
             await createTableBySchema(TABLE.settings, {
-                guild: "string",
-                channelId: "string",
+                guild: {
+                    type: "string",
+                    comment: "Guild ID that these settings used for"
+                },
+                channelId: {
+                    type: "string",
+                    comment: "Channel ID where notifications going to"
+                },
                 mentionsEveryone: {
-                    type: "TEXT"
+                    type: "TEXT",
+                    comment: "A list of channels with turned on everyone mention",
+                    default: "[]"
                 },
                 subscribedTo: {
-                    type: "TEXT"
+                    type: "TEXT",
+                    comment: "A list of subscriptions",
+                    default: "[]"
+                }
+            });
+        }
+
+        let notificationsTable = await this.db.schema.hasTable(TABLE.notifications);
+        if(!notificationsTable) {
+            this.log("info", "Table of notifications statuses not found, will be created in momento");
+            await createTableBySchema(TABLE.notifications, {
+                guild: {
+                    type: "string",
+                    comment: "ID of the guild that was notified"
+                },
+                provider: {
+                    type: "string",
+                    comment: "Provider stream comes from"
+                },
+                channelId: {
+                    type: "string",
+                    comment: "UID of channel that was notified"
+                },
+                streamId: {
+                    type: "string",
+                    comment: "ID of the stream"
+                },
+                messageId: {
+                    type: "string",
+                    comment: "ID of message with notification"
+                },
+                sentAt: {
+                    type: "bignumber",
+                    comment: "Timestamp when guild was notified"
                 }
             });
         }
@@ -1174,7 +1208,54 @@ class StreamNotifications extends Plugin implements IModule {
         }
 
 
-        this.checknNotifyInterval = setInterval(() => this.checknNotify(), 60000);
+        if(botConfig.mainShard) {
+            this.checknNotifyInterval = setInterval(() => this.checknNotify(), 60000);
+        } else {
+            this.log("warn", "Not going to set notification fetching interval not in lead shard");
+        }
+
+        if(!botConfig.mainShard) {
+            process.on("message", (msg) => {
+                if(typeof msg !== "object") { return; }
+                if(!msg.type || !msg.payload) { return; }
+                if(msg.type !== "streams:push") { return; }
+
+                if(msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
+                    let guild = discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
+                    if(guild) {
+                        // process
+                        let notifyAbout = msg.payload.notifyAbout as {
+                            subscription: ISubscriptionRow,
+                            notification: INotification,
+                            result: IStreamStatus
+                        };
+                        this.pushNotification(guild, notifyAbout.result, notifyAbout.notification, notifyAbout.subscription);
+                    }
+                }
+            });
+        } else {
+            process.on("message", (msg) => {
+                if(typeof msg !== "object") { return; }
+                if(!msg.type || !msg.payload) { return; }
+                if(msg.type !== "streams:flush_offline" && msg.type !== "streams:free") { return; }
+                let payload = msg.payload as {
+                    provider: string;
+                    uid: string;
+                };
+                
+                let mod = this.servicesLoader.loadedModulesRegistry.get(payload.provider);
+                if(!mod) { this.log("warn", "Provider not found", payload.provider, "- message ignored"); return; }
+                if(!mod.loaded) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
+
+                let provider = mod.base as IStreamingService;
+
+                if(msg.type === "streams:flush_offline") {
+                    provider.flushOfflineStream(payload.uid);
+                } else if(msg.type === "streams:free" && provider.freed) {
+                    provider.freed(payload.uid);
+                }
+            });
+        }
 
         this.handleEvents();
     }
