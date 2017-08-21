@@ -424,7 +424,7 @@ class Profiles extends Plugin implements IModule {
     }
 
     humanize(duration: number, largest: number = 2, round: boolean = true, lang = "ru") {
-        return humanizeDuration(duration, { language: lang, largest, round: true });
+        return humanizeDuration(duration, { language: lang, largest, round });
     }
 
     async sendProfile(msg: Message, dbProfile: IDBUserProfile, member: GuildMember) {
