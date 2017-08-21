@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import { ModuleLoader, IModuleInfo } from "./ModuleLoader";
 import { ILocalizerOptions, Localizer } from "./Localizer";
+import logger = require("loggy");
 import * as djs from "discord.js";
 
 export interface IBotConfig {
@@ -32,6 +33,13 @@ export interface IBotConfig {
      * Localizator options
      */
     localizerOptions: ILocalizerOptions;
+    /**
+     * Sharding options
+     */
+    shardingOptions: {
+        enabled:boolean;
+        shards:number;
+    };
 }
 
 export interface IPublicBotConfig {
@@ -43,6 +51,33 @@ export interface IPublicBotConfig {
      * ID of bot owner
      */
     botOwner: string;
+    /**
+     * Bot is runned in sharded mode
+     */
+    sharded: boolean;
+    /**
+     * Main shard
+     */
+    mainShard: boolean;
+    /**
+     * Shard ID
+     */
+    shardId: number;
+    /**
+     * Total Shards
+     */
+    shardsCount: number;
+}
+
+export interface IInternalConfig {
+    /**
+     * Currently runned shards
+     */
+    shardsCount: number;
+    /**
+     * Current Shard ID
+     */
+    shardId: number;
 }
 
 declare global {
@@ -74,13 +109,21 @@ export class SnowballBot extends EventEmitter {
      */
     config: IBotConfig;
     /**
-     * DiscordBot
+     * Internal configuration
+     */
+    internalConfiguration: IInternalConfig;
+    /**
+     * Discord Bot
      */
     discordBot: djs.Client;
 
-    constructor(config: IBotConfig) {
+    log:Function = logger("::SnowballBot");
+
+    constructor(config: IBotConfig, internalConfig:IInternalConfig) {
         super();
         this.config = config;
+        this.internalConfiguration = internalConfig;
+        this.log = logger(`${config.name}:SnowballBot`);
     }
 
     /**
@@ -113,11 +156,55 @@ export class SnowballBot extends EventEmitter {
      * Prepare global client variable and client itself
      */
     prepareDiscordClient() {
+        let publicBotConfig:IPublicBotConfig = {
+            name: this.config.name,
+            botOwner: this.config.botOwner,
+            mainShard: true,
+            sharded: false,
+            shardId: 1,
+            shardsCount: 1
+        };
+
+        // checking options
+        let djsOptions = this.config.djs_config || {};
+
+        { // checking shards count
+            let shardCount = this.internalConfiguration.shardsCount;
+            if(shardCount > 0) {
+                this.log("warn", "WARNING! Running in sharding mode is still expiremental, please use it with risk!");
+                publicBotConfig.sharded = true;
+            } else {
+                throw new Error("Invalid shards count");
+            }
+        }
+
+        { // checking shard id
+            let shardId = this.internalConfiguration.shardId;
+            if(shardId >= 0) {
+                this.log("info", "Running as shard", shardId);
+                if(shardId === 0) {
+                    publicBotConfig.mainShard = true;
+                }
+                publicBotConfig.shardId = shardId;
+            } else {
+                throw new Error("Invalid shard id");
+            }
+        }
+
+        djsOptions.shardId = this.internalConfiguration.shardId;
+        djsOptions.shardCount = this.internalConfiguration.shardsCount;
+
+        this.log("info", "Preparing Discord client");
+
         // Making new Discord Client
-        this.discordBot = new djs.Client(this.config.djs_config);
+        this.discordBot = new djs.Client(djsOptions);
 
         // Setting max listeners
-        this.discordBot.setMaxListeners(50);
+        this.discordBot.setMaxListeners(100);
+
+        this.discordBot.on("error", (err) => {
+            this.log("err", "Error at Discord client", err);
+        });
 
         // Global bot variable, which should be used by plugins
         Object.defineProperty(global, "discordBot", {
@@ -128,10 +215,7 @@ export class SnowballBot extends EventEmitter {
         // Public bot config
         Object.defineProperty(global, "botConfig", {
             configurable: false, enumerable: false,
-            writable: true, value: {
-                name: this.config.name,
-                botOwner: this.config.botOwner
-            }
+            writable: true, value: publicBotConfig
         });
     }
 
@@ -148,8 +232,9 @@ export class SnowballBot extends EventEmitter {
      * Connect to Discord
      * @returns {Promise}
      */
-    connect() {
+    async connect() {
+        this.log("info", "Connecting to Discord...");
         // Just calling method
-        return this.discordBot.login(this.config.token);
+        return await this.discordBot.login(this.config.token);
     }
 }

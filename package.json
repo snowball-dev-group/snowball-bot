@@ -10,6 +10,7 @@
     "knex": "^0.13.0",
     "lodash": "^4.17.4",
     "loggy": "git+https://gitlab.com/BlackSilverBot/loggy.git",
+    "minimist": "^1.2.0",
     "moment": "^2.18.1",
     "moment-timezone": "^0.5.13",
     "mysql": "^2.13.0",

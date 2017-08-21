@@ -1166,7 +1166,14 @@ class StreamNotifications extends Plugin implements IModule {
 
         await this.checknNotify();
 
-        this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
+        if(botConfig.mainShard) {
+            this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
+            await this.notificationsCleanup();
+        } else {
+            this.log("warn", "Working not in main shard!");
+        }
+
+
         this.checknNotifyInterval = setInterval(() => this.checknNotify(), 60000);
 
         this.handleEvents();
