@@ -666,10 +666,10 @@ class Profiles extends Plugin implements IModule {
     }
 
     async getProfile(member: GuildMember, guild: Guild): Promise<IDBUserProfile> {
-        return await this.db(TABLE_NAME).where({
+        return (await this.db(TABLE_NAME).where({
             guild_id: guild.id,
             uid: member.id
-        }).first(...Object.keys(DB_PROFILE_PROPS));
+        }).first()) as IDBUserProfile;
     }
 
     async getOrCreateProfile(member: GuildMember, guild: Guild) {
