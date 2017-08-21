@@ -23,7 +23,7 @@ export interface IArgumentInfo {
 // Arguments
 //  - name? => [optional, ]
 export interface IHelpfulObject {
-    arguments?: ArgumentsMap;
+    arguments?: IArgumentsMap;
     description: string;
     specialCheck?: (msg: Message) => boolean;
 }
@@ -49,11 +49,11 @@ function init(): ICategories {
     return dict;
 }
 
-interface ArgumentsMap {
+interface IArgumentsMap {
     [argName: string]: IArgumentInfo;
 }
 
-export function command(category: Category, command: string, description: string, args?: ArgumentsMap, specialCheck?: (msg: Message) => boolean) {
+export function command(category: Category, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
     return (target) => {
         let d = init();
 
