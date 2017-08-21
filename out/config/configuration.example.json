@@ -103,5 +103,9 @@
         "source_language": "ru-RU",
         "default_language": "en-US",
         "directory": "./languages/"
+    },
+    "sharding": {
+        "enabled": false,
+        "shards": 1337
     }
 }
