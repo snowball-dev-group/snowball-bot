@@ -104,11 +104,11 @@ class PremiumControl extends Plugin implements IModule {
                 // give <#12345678901234>, 1mth
                 case "give": return await this.givePremium(msg, args);
                 // remove <#12345678901234>
-                case "remove": return await this.removePremium(msg, args);
+                case "remove": return await this.removePremium(msg);
                 // renew <#12345678901234>, 1mth
                 case "renew": return await this.renewPremium(msg, args);
                 // checkout <#12345678901234>
-                case "checkout": return await this.checkoutPremium(msg, args);
+                case "checkout": return await this.checkoutPremium(msg);
                 // resync
                 case "resync": return await this.runResync(msg);
                 // role
@@ -479,7 +479,7 @@ class PremiumControl extends Plugin implements IModule {
         });
     }
 
-    async checkoutPremium(msg: Message, args: string[]) {
+    async checkoutPremium(msg: Message) {
         if(isAdm(msg) && msg.mentions.users.size > 1) {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_CHECKOUT_ERR_MENTIONS")
@@ -530,7 +530,7 @@ class PremiumControl extends Plugin implements IModule {
         });
     }
 
-    async removePremium(msg: Message, args: string[]) {
+    async removePremium(msg: Message) {
         if(!isAdm(msg)) {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_PERMS")
@@ -671,7 +671,7 @@ class PremiumControl extends Plugin implements IModule {
     // ================================
 
     humanize(duration: number, language = "ru", largest: number = 2, round: boolean = true) {
-        return humanizeDuration(duration, { language, largest, round: true });
+        return humanizeDuration(duration, { language, largest, round });
     }
 
     roleSyncInterval: NodeJS.Timer;
