@@ -22,7 +22,7 @@ export function getDB() {
 }
 
 function getTypeInfo(type: string) {
-    let t: TypeInfo = {
+    let t: ITypeInfo = {
         unique: false,
         nullable: false,
         notNullable: false,
@@ -73,7 +73,7 @@ export namespace MySQL {
     export type AllTypes = NumbericTypes|DateTimeTypes|StringTypes|AdditionalTypes;
 }
 
-interface TypeInfo {
+interface ITypeInfo {
     unique?: boolean;
     nullable?: boolean;
     notNullable?: boolean;
@@ -81,10 +81,11 @@ interface TypeInfo {
     length?: number;
     default?: string;
     collate?: string;
+    comment?: string;
 }
 
 export interface ITableSchema {
-    [columnName:string]:MySQL.AllTypes|TypeInfo|string;
+    [columnName:string]:MySQL.AllTypes|ITypeInfo|string;
 }
 
 export async function createTableBySchema(tableName: string, schema:ITableSchema, dropExist = false) {
@@ -107,7 +108,7 @@ export async function createTableBySchema(tableName: string, schema:ITableSchema
         let keys = Object.keys(schema);
         keys.forEach(key => {
             let info = schema[key];
-            let typeInfo: TypeInfo;
+            let typeInfo: ITypeInfo;
 
             if(typeof info === "string") {
                 typeInfo = getTypeInfo(info);
@@ -146,6 +147,9 @@ export async function createTableBySchema(tableName: string, schema:ITableSchema
             }
             if(typeInfo.default) {
                 cb.defaultTo(typeInfo.default);
+            }
+            if(typeInfo.comment) {
+                cb.comment(typeInfo.comment);
             }
             // if(typeInfo.collate) {
             //     cb.collate(typeInfo.collate);
