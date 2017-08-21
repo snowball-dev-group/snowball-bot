@@ -23,7 +23,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
         return await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ARGS");
     }
 
-    async setup(str: string, member: GuildMember) {
+    async setup(str: string) {
         let js: ILastFMInfo = {
             username: str
         };
