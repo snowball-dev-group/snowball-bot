@@ -51,8 +51,13 @@ Create file named `configuration.json` in `out/config` directory. See [`configur
   - `default_language` ([`string`][string]): Default language code (it'll be used for new servers)
   - `source_language` ([`string`][string]): Source language code (it'll be used as fallback)
   - `directory` ([`string`][string]): Absolute path from `out` directory
+- **`shardingOptions`**
+  - `enabled` ([`boolean`][boolean]): Enabling of sharding mode
+  - `shards` ([`number`][number]): Number of shards to start
 
 [string]:https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String
+[boolean]:https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[number]:https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Number
 [any]:https://www.typescriptlang.org/docs/handbook/basic-types.html#any
 
 ### Database
