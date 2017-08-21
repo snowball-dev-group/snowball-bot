@@ -34,8 +34,8 @@ export function toRegionalIndicators(str: string, stances?: Stances, unknownChar
     return arr.join("");
 }
 
-export function convertNumbers(number: string | number, unknownCharReplacer?: (s: string) => string) {
-    let str = number + "";
+export function convertNumbers(num: string | number, unknownCharReplacer?: (s: string) => string) {
+    let str = num + "";
     str = str.replace(/([0-9])/ig, (s) => {
         if(/^[0-9]{1}$/.test(s)) {
             return `${s}${KEYCAP_SUBCHAR}`;
