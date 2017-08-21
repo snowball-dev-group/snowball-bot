@@ -77,6 +77,11 @@ function isServerAdmin(msg: Message) {
     return msg.channel.type === "text" && (msg.member.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === botConfig.botOwner);
 }
 
+declare global {
+    // tslint:disable-next-line:no-unused-variable
+    let moduleWhitelist:Whitelist|undefined;
+}
+
 @command(Category.Helpful, "sb_pstatus", "loc:WHITELIST_META_PSTATUS", undefined, isServerAdmin)
 @command(Category.Helpful, "whitelist", "loc:WHITELIST_META_WHITELIST", {
     "loc:WHITELIST_META_WHITELIST_ARG0": {
@@ -102,7 +107,7 @@ class Whitelist extends Plugin implements IModule {
                 | WhitelistModes.TrialAllowed
                 | WhitelistModes.Whitelist;
     currentMode: IParsedMode | undefined = undefined;
-    signup_url = "no_link";
+    signupUrl = "no_link";
     trialTime = 86400000;
 
     constructor(options) {
@@ -146,7 +151,7 @@ class Whitelist extends Plugin implements IModule {
             {
                 let url = options["signup_url"];
                 if(url !== undefined && typeof url === "string") {
-                    this.signup_url = url;
+                    this.signupUrl = url;
                 } else { throw new Error("No sign up link provided"); }
             }
             {
@@ -164,6 +169,11 @@ class Whitelist extends Plugin implements IModule {
             let found = !!discordBot.guilds.get(whitelistedId);
             this.log(found ? "ok" : "warn", "  -", whitelistedId, found ? "(found)" : "(not found)");
         }
+
+        Object.defineProperty(global, "moduleWhitelist", {
+            writable: true, enumerable: true,
+            configurable: true, value: this
+        });
     }
 
     async fetchCurrentMode() {
@@ -281,7 +291,6 @@ class Whitelist extends Plugin implements IModule {
     }
 
     async tryToGiveTrial(guild: Guild) {
-        let botPerc = this.calculateBotsPercentage(guild);
         let mode = this.currentMode;
         if(!mode) { mode = await this.fetchCurrentMode(); }
         if(mode.noBotFarms && this.calculateBotsPercentage(guild) > this.botsThreshold) {
@@ -327,7 +336,7 @@ class Whitelist extends Plugin implements IModule {
                 key: reason,
                 formatOptions: {
                     serverName: escapeDiscordMarkdown(guild.name, true),
-                    formUrl: this.signup_url
+                    formUrl: this.signupUrl
                 }
             }));
         }
