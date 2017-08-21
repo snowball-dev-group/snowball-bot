@@ -17,11 +17,11 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
         this.apiKey = apiKey;
     }
 
-    async getSetupArgs(caller:GuildMember) {
+    async getSetupArgs() {
         return null;
     }
 
-    async setup(str:string, member:GuildMember) {
+    async setup(_str:string, member:GuildMember) {
         let js:ITatsumakiInfo = {
             uid: member.id
         };
