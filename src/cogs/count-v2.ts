@@ -7,12 +7,12 @@ import * as knex from "knex";
 import * as Random from "random-js";
 import { generateEmbed, EmbedType, getLogger } from "./utils/utils";
 
-let DBInitializationState = {
-    NotInitialized: 0,
-    MainTableInitialized: 1,
-    ScoreboardInitialized: 2,
-    FullyInitialized: 1 | 2
-};
+enum DBInitializationState {
+    NotInitialized = 2,
+    MainTableInitialized = 4,
+    ScoreboardInitialized = 6,
+    FullyInitialized = NotInitialized|MainTableInitialized|ScoreboardInitialized
+}
 
 enum XPOperation {
     DoNotChange = 0,
@@ -20,7 +20,7 @@ enum XPOperation {
     Lower = 2
 }
 
-interface CountOperationRow {
+interface ICountOperationRow {
     count: number;
     author: string;
     date: number;
@@ -33,13 +33,13 @@ interface CountOperationRow {
     in_queue: string;
 }
 
-interface ScoreboardUserRow {
+interface IScoreboardUserRow {
     user: string;
     exp: number;
     streak: number;
 }
 
-interface ScoreboardUserUpdateInfo {
+interface IScoreboardUserUpdateInfo {
     user: string;
     addition: number;
     xp: number;
@@ -67,7 +67,7 @@ class CountV2 extends Plugin implements IModule {
     log: Function = getLogger("CountV2Channel");
     dbClient: knex;
     countRegex: RegExp;
-    dbInitialized: number = DBInitializationState.NotInitialized;
+    dbInitialized: DBInitializationState = DBInitializationState.NotInitialized;
     scoreboardMessages: {
         top10?: Message,
         latestChanges?: Message
@@ -212,7 +212,7 @@ class CountV2 extends Plugin implements IModule {
 
         let nNumber = parseInt(msg.content, 10);
 
-        let latestRow: CountOperationRow | undefined = undefined;
+        let latestRow: ICountOperationRow | undefined = undefined;
         try {
             latestRow = await this.dbClient(TABLENAME_MAIN).orderBy("date", "DESC").first("count", "author", "date", "operation", "number", "answered_by", "in_queue");
         } catch(err) {
@@ -336,8 +336,8 @@ class CountV2 extends Plugin implements IModule {
         }
     }
 
-    async giveXP(member: GuildMember, xpOperation: XPOperation): Promise<ScoreboardUserUpdateInfo | undefined> {
-        let userRow: ScoreboardUserRow | undefined = undefined;
+    async giveXP(member: GuildMember, xpOperation: XPOperation): Promise<IScoreboardUserUpdateInfo | undefined> {
+        let userRow: IScoreboardUserRow | undefined = undefined;
 
         try {
             userRow = await this.dbClient(TABLENAME_SCOREBOARD).where({
@@ -461,7 +461,7 @@ class CountV2 extends Plugin implements IModule {
         }
     }
 
-    async updateScoreboardMessages(playerUpdate?: ScoreboardUserUpdateInfo) {
+    async updateScoreboardMessages(playerUpdate?: IScoreboardUserUpdateInfo) {
         if(!this.scoreboardMessages.latestChanges || !this.scoreboardMessages.top10) {
             try {
                 this.log("info", "Probably cache was purged or plugin just started working, fetching messages from channel...");
@@ -494,7 +494,7 @@ class CountV2 extends Plugin implements IModule {
         }
 
         if(this.scoreboardMessages.top10) {
-            let top10: ScoreboardUserRow[];
+            let top10: IScoreboardUserRow[];
             try {
                 top10 = await this.dbClient(TABLENAME_SCOREBOARD).orderBy("exp", "DESC").limit(15);
             } catch(err) {
