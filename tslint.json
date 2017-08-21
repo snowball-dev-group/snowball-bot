@@ -2,9 +2,7 @@
     "rules": {
         "no-unused-expression": true,
         "no-duplicate-variable": true,
-        "no-unused-variable": [
-            true
-        ],
+        "no-unused-variable": [true, {}],
         "curly": true,
         "class-name": true,
         "semicolon": [true, "always"],
@@ -26,7 +24,12 @@
         "no-empty": true,
         "indent": [
             true
-        ]
+        ],
+        "radix": true,
+        "interface-name": [
+            true
+        ],
+        "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case"]
     },
     "jsRules": {
         "no-unused-new": true,
