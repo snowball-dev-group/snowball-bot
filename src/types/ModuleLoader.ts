@@ -42,7 +42,7 @@ export interface IModule {
     /**
      * Unload function
      */
-    unload(): Promise<boolean>;
+    unload(reason:string): Promise<boolean>;
 }
 
 export class Module extends EventEmitter {
@@ -94,7 +94,7 @@ export class Module extends EventEmitter {
      * @param reason Reason of unloading which'll be transmitted to module, by default "unload"
      * @returns {Promise} Promise which'll be resolved once module is unloaded or destroyed
      */
-    unload(reason: any = "unload") {
+    async unload(reason: any = "unload") {
         if(!this.loaded) { throw new Error("Module not loaded"); }
         if(!this.base) {
             this.emit("error", {
@@ -118,12 +118,18 @@ export class Module extends EventEmitter {
                 });
             }
         } else {
-            this.base.unload().then((unloaded) => {
+            try {
+                let unloaded = await this.base.unload(reason);
                 if(unloaded) {
                     this.emit("unloaded");
                     this.base = undefined;
                 }
-            });
+            } catch (err) {
+                this.emit("error", {
+                    state: "unload#unload",
+                    error: err
+                });
+            }
         }
     }
 }
