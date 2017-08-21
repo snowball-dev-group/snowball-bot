@@ -13,7 +13,7 @@ const TABLE_NAME = "voice_role";
 const SPECIFIC_TABLE_NAME = "specificvoicerole";
 const PREFIX = "!voiceRole";
 
-interface GuildRow {
+interface IGuildRow {
     /**
      * Discord snowflake, guild ID
      */
@@ -173,14 +173,14 @@ class VoiceRole extends Plugin implements IModule {
         }
     }
 
-    async searchGuildRow(guild: Guild): Promise<GuildRow | null> {
+    async searchGuildRow(guild: Guild): Promise<IGuildRow | null> {
         return await this.db(TABLE_NAME).where({
             guild_id: guild.id
         }).first();
     }
 
     async getGuildRow(guild: Guild) {
-        let element: null | GuildRow = await this.searchGuildRow(guild);
+        let element: null | IGuildRow = await this.searchGuildRow(guild);
 
         if(!element) {
             await this.db(TABLE_NAME).insert({
@@ -233,7 +233,7 @@ class VoiceRole extends Plugin implements IModule {
         return await this.db(SPECIFIC_TABLE_NAME).where(row).delete().first();
     }
 
-    async updateGuildRow(row: GuildRow) {
+    async updateGuildRow(row: IGuildRow) {
         return await this.db(TABLE_NAME).where({
             guild_id: row.guild_id
         }).update(row);
