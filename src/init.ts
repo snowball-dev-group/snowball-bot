@@ -1,9 +1,7 @@
 import logger = require("loggy");
 import { SnowballBot, IBotConfig, IInternalConfig } from "./types/SnowballBot";
 import { join as pathJoin } from "path";
-import * as minimalist from "minimist";
 import * as cluster from "cluster";
-import * as stream from "stream";
 
 const coreInfo = {
     "version": "0.9.996-prerelease"
@@ -153,10 +151,10 @@ async function spawnShard(log:any, config:IBotConfig, shardId:number, shardsCoun
 
 async function initBot(log:any, config:IBotConfig, internalConfig:IInternalConfig) {
     log("info", "Initializing bot...");
-    const Snowball = new SnowballBot(config, internalConfig);
+    const snowball = new SnowballBot(config, internalConfig);
 
     log("info", "Preparing our Discord client");
-    Snowball.prepareDiscordClient();
+    snowball.prepareDiscordClient();
 
     process.on("uncaughtException", (err) => {
         log("err", "Error", err);
@@ -165,13 +163,13 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalConfi
 
     try {
         log("info", "Connecting...");
-        await Snowball.connect();
+        await snowball.connect();
 
         log("ok", "Successfully connected, preparing our localizer...");
-        await Snowball.prepareLocalizator();
+        await snowball.prepareLocalizator();
 
         log("ok", "Localizer prepared, preparing module loader...");
-        await Snowball.prepareModLoader();
+        await snowball.prepareModLoader();
 
         log("ok", "====== DONE ======");
     } catch(err) {
