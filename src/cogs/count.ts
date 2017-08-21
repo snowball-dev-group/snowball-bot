@@ -2,7 +2,6 @@ import { IModule } from "../types/ModuleLoader";
 import logger = require("loggy");
 import { Plugin } from "./plugin";
 import { Message, TextChannel } from "discord.js";
-import { inChannel, shouldHaveAuthor } from "./checks/commands";
 import { getDB } from "./utils/db";
 import * as knex from "knex";
 import { convertNumbers } from "./utils/letters";
@@ -41,9 +40,9 @@ class Count extends Plugin implements IModule {
         this.countRegex = /^\d{0,}$/i;
     }
 
-    @inChannel("295643316610007050")
-    @shouldHaveAuthor
     async onMessage(msg: Message) {
+        if(msg.channel.id !== "295643316610007050") { return; }
+        if(!msg.author) { return; }
         if(!this.dbInitialized) { return; }
         if(msg.channel.type === "dm") { return; }
         if(!msg.content) { msg.delete(); return; }

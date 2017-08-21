@@ -2,7 +2,6 @@ import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message } from "discord.js";
 import { Context } from "vm";
-import { isOwner, command, CommandEquality as cmdEquality } from "./checks/commands";
 import { EmbedType, getLogger } from "./utils/utils";
 import util = require("util");
 import VM = require("vm");
@@ -44,9 +43,13 @@ class EvalJS extends Plugin implements IModule {
         };
     }
 
-    @isOwner
-    @command("!eval", ["!e", "!ev"], cmdEquality.NotEqual)
-    async onMessage(message: Message, usedPrefix?: string) {
+    async onMessage(message: Message) {
+        if(!message.author) { return; }
+        if(message.author.id !== botConfig.botOwner) { return; }
+        
+        let usedPrefix = ["!eval ", "!e ", "!ev "].find(prefix => message.content.startsWith(prefix));
+        if(!usedPrefix) { return; }
+
         let afterCmd = message.content.slice(`${usedPrefix} `.length).trim();
         if(!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
 

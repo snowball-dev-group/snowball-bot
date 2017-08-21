@@ -2,7 +2,6 @@ import { IModule } from "../types/ModuleLoader";
 import logger = require("loggy");
 import { Plugin } from "./plugin";
 import { Message } from "discord.js";
-import { isOwner } from "./checks/commands";
 import { generateLocalizedEmbed } from "./utils/ez-i18n";
 import { commandRedirect, objectToMap, EmbedType, escapeDiscordMarkdown } from "./utils/utils";
 import { default as fetch } from "node-fetch";
@@ -16,8 +15,9 @@ class OwnerCommands extends Plugin implements IModule {
         });
     }
 
-    @isOwner
     async onMessage(msg: Message) {
+        if(!msg.author) { return; }
+        if(msg.author.id !== botConfig.botOwner) { return; }
         let u = msg.member || msg.author;
         commandRedirect(msg.content, objectToMap<Function>({
             "!change_name": async (username) => {

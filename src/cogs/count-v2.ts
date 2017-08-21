@@ -1,7 +1,6 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message, TextChannel, GuildMember } from "discord.js";
-import { inChannel, shouldHaveAuthor } from "./checks/commands";
 import { getDB } from "./utils/db";
 import * as knex from "knex";
 import * as Random from "random-js";
@@ -173,11 +172,11 @@ class CountV2 extends Plugin implements IModule {
         ch.send("**Первый запуск!**\n__Число__: 1322.\n__Далее__: **+15**");
     }
 
-    @inChannel(CHANNELID_MAIN)
-    @shouldHaveAuthor
     async onMessage(msg: Message) {
         if(this.dbInitialized !== DBInitializationState.FullyInitialized) { return; }
         if(msg.channel.type === "dm") { return; } // never reply in direct messages
+        if(msg.channel.id !== CHANNELID_MAIN) { return; }
+        if(!msg.author) { msg.delete(); return; }
         if(!msg.content) { msg.delete(); return; }
         if(msg.author.id === discordBot.user.id) { return; }
 

@@ -1,7 +1,6 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message } from "discord.js";
-import { command, CommandEquality as cq, notByBot } from "./checks/commands";
 import { command as docCmd, Category } from "./utils/help";
 import { localizeForUser } from "./utils/ez-i18n";
 import { getLogger } from "./utils/utils";
@@ -21,9 +20,9 @@ class EmbedME extends Plugin implements IModule {
         });
     }
 
-    @notByBot
-    @command("!embed", undefined, cq.SemiEqual)
     async onMessage(msg: Message) {
+        if(msg.author && msg.author.bot) { return; }
+        if(!msg.content.startsWith("!embed")) { return; }
         if(msg.content === "!embed") {
             let str = await localizeForUser(msg.member, "EMBEDME_INFO");
             msg.channel.send(`:information_source: ${str}`);
