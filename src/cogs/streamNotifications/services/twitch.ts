@@ -12,6 +12,11 @@ interface IServiceOptions {
     fetchDifference:number;
 }
 
+interface ICacheItem {
+    fetchedAt: number;
+    value: ITwitchStream;
+}
+
 class TwitchStreamingService implements IStreamingService {
     public name = "twitch";
 
@@ -28,10 +33,7 @@ class TwitchStreamingService implements IStreamingService {
         }
     }
 
-    private streamsMap = new Map<string, {
-        fetchedAt: number,
-        value: ITwitchStream
-    }>();
+    private streamsMap = new Map<string, ICacheItem>();
 
     private previousFetchTime = 0;
 
@@ -99,14 +101,16 @@ class TwitchStreamingService implements IStreamingService {
                                     streamer,
                                     id: stream._id + "",
                                     oldId: cacheItem.value._id + "",
-                                    updated: true
+                                    updated: true,
+                                    payload: stream
                                 });
                             }
                         } else {
                             result.push({
                                 status: "online",
                                 streamer,
-                                id: stream._id + ""
+                                id: stream._id + "",
+                                payload: stream
                             });
                         }
                         this.streamsMap.set(streamer.uid, {
@@ -118,7 +122,8 @@ class TwitchStreamingService implements IStreamingService {
                             result.push({
                                 status: "offline",
                                 streamer,
-                                id: cacheItem.value._id + ""
+                                id: cacheItem.value._id + "",
+                                payload: cacheItem
                             });
                         }
                     }
@@ -144,7 +149,7 @@ class TwitchStreamingService implements IStreamingService {
     }
 
     public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
-        let stream = this.streamsMap.get(streamStatus.streamer.uid);
+        let stream = streamStatus.payload as ICacheItem;
         if(!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
         return {
             footer: {
