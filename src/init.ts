@@ -63,7 +63,7 @@ const SHARD_TIMEOUT = 30000; // ms
                 return;
             }
             try {
-                spawnShards(log, config, shards);
+                spawnShards(log, shards);
             } catch(err) {
                 log("err", "Could not start some shards", err);
                 process.exit(1);
@@ -78,18 +78,18 @@ const SHARD_TIMEOUT = 30000; // ms
     }
 })();
 
-async function spawnShards(log:any, config:IBotConfig, shardsCount:number) {
+async function spawnShards(log:any, shardsCount:number) {
     if(cluster.isWorker) {
         throw new Error("Could not spawn shards inside the worker!");
     }
 
     for(let shardId = 0; shardId < shardsCount; shardId++) {
         log("info", "Spawning shard", shardId);
-        await spawnShard(log, config, shardId, shardsCount);
+        await spawnShard(log, shardId, shardsCount);
     }
 }
 
-async function spawnShard(log:any, config:IBotConfig, shardId:number, shardsCount:number) {
+async function spawnShard(log:any, shardId:number, shardsCount:number) {
     if(cluster.isWorker) {
         throw new Error("Could not spawn shard inside the worker!");
     }
