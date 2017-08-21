@@ -76,6 +76,12 @@ export interface IStreamStatus {
      * If stream updated, provide new ID!
      */
     oldId?: string;
+
+    /**
+     * Payload
+     * Working in clusters means communication
+     */
+    payload: object;
 }
 
 export interface IStreamingServiceStreamer {
