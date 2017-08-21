@@ -64,11 +64,6 @@ export async function messageEvent(msg: Message) {
         return;
     }
     if(!msg.member) {
-        LOG("warn", "Detected lack of 'member' property in message", {
-            message: msg.content,
-            messageId: msg.id,
-            guild: msg.guild ? msg.guild.name : "???"
-        });
         return;
     }
     if(msg.guild.verificationLevel === 0) {
