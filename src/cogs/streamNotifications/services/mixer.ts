@@ -129,23 +129,29 @@ class MixerStreamingService implements IStreamingService {
                     result.push({
                         status: "offline",
                         streamer,
-                        id: getUUIDByString(`mixer::${streamer.uid}::${offlineStream.startedAt}`)
+                        id: getUUIDByString(`mixer::${streamer.uid}::${offlineStream.startedAt}`),
+                        payload: offlineStream
                     });
                 }
                 continue;
             } else {
+                let stream = this.onlineStreams.get(streamer.uid);
+                if(!stream) { continue; }
+
                 if(!!this.updatedRegistry.get(streamer.uid)) {
                     result.push({
                         status: "online",
                         streamer,
-                        id: getUUIDByString(`mixer::${streamer.uid}::${cached.startedAt}`)
+                        id: getUUIDByString(`mixer::${streamer.uid}::${cached.startedAt}`),
+                        payload: stream
                     });
                     this.updatedRegistry.delete(streamer.uid);
                 } else if(!!this.newRegistry.get(streamer.uid)) {
                     result.push({
                         status: "online",
                         streamer,
-                        id: getUUIDByString(`mixer::${streamer.uid}::${cached.startedAt}`)
+                        id: getUUIDByString(`mixer::${streamer.uid}::${cached.startedAt}`),
+                        payload: stream
                     });
                     this.newRegistry.delete(streamer.uid);
                 }
@@ -156,9 +162,9 @@ class MixerStreamingService implements IStreamingService {
     }
 
     public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-        let cache = stream.status === "online" ? this.onlineStreams.get(stream.streamer.uid) : this.deadStreams.get(stream.streamer.uid);
+        let cache = stream.payload as ICacheItem;
         if(!cache) {
-            throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure");
+            throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure: payload not found");
         }
         return {
             footer: {
