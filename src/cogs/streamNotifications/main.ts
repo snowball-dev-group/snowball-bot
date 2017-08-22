@@ -1224,7 +1224,9 @@ class StreamNotifications extends Plugin implements IModule {
             this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
             this.checknNotifyInterval = setInterval(() => this.checknNotify(), 60000);
             await this.notificationsCleanup();
-            await this.checknNotify();
+            if(!botConfig.sharded) {
+                await this.checknNotify();
+            }
 
             process.on("message", (msg) => {
                 if(typeof msg !== "object") { return; }
