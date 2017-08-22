@@ -912,7 +912,13 @@ class StreamNotifications extends Plugin implements IModule {
                 try {
                     return (await (channel as TextChannel).fetchMessage(notification.messageId));
                 } catch(err) {
-                    this.log("err", "Could not find message with ID", notification.messageId, "to update", err);
+                    this.log("err", "Could not find message with ID", notification.messageId, "to update message", err);
+                    if(err.code && err.code === 10008) {
+                        // message removed
+                        this.log("warn", "Notification was removed");
+                        await this.deleteNotification(notification);
+                    }
+
                     return undefined;
                 }
             })();
@@ -932,23 +938,13 @@ class StreamNotifications extends Plugin implements IModule {
             }
 
             if(result.status === "offline") {
-                if(!botConfig.mainShard && process.send) {
-                    process.send({
-                        type: "streams:flush_offline",
-                        payload: {
-                            provider: subscription.provider,
-                            uid: subscription.uid
-                        }
-                    });
-                } else {
-                    service.flushOfflineStream(subscription.uid);
-                }
+                this.flushOfflineStream(service, subscription);
+                await this.deleteNotification(notification); // we don't need it anymore
+            } else {
+                notification.streamId = result.id;
+                notification.sentAt = Date.now();
+                await this.updateNotification(notification);
             }
-
-            notification.streamId = result.id;
-            notification.sentAt = Date.now();
-
-            await this.updateNotification(notification);
         } else if(result.status !== "offline") {
             let messageId = "";
             try {
@@ -976,6 +972,26 @@ class StreamNotifications extends Plugin implements IModule {
             };
 
             await this.saveNotification(notification);
+        } else if(!notification && result.status === "offline") {
+            this.flushOfflineStream(service, subscription);
+        }
+    }
+
+    // =======================================
+    // Shard communication
+    // =======================================
+
+    flushOfflineStream(service:IStreamingService, subscription:ISubscriptionRow) {
+        if(!botConfig.mainShard && process.send) {
+            process.send({
+                type: "streams:flush_offline",
+                payload: {
+                    provider: subscription.provider,
+                    uid: subscription.uid
+                }
+            });
+        } else {
+            service.flushOfflineStream(subscription.uid);
         }
     }
 
