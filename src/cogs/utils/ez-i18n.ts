@@ -2,6 +2,7 @@ import { GuildMember, User, Guild } from "discord.js";
 import { getPreferenceValue as getUserPreferenceValue, setPreferenceValue as setUserPreferenceValue } from "./userPrefs";
 import { getPreferenceValue as getGuildPreferenceValue, setPreferenceValue as setGuildPreferenceValue } from "./guildPrefs";
 import { EmbedType, IEmbedOptions, generateEmbed } from "./utils";
+import { IFormatMessageVariables } from "../../types/Localizer";
 
 export type identify = User | GuildMember;
 const languagePref = ":language";
@@ -105,9 +106,7 @@ export async function forceGuildLanguageUpdate(guild: Guild): Promise<string> {
 
 interface ILocalizedEmbedString {
     key: string;
-    formatOptions: {
-        [name: string]: string | number | boolean;
-    };
+    formatOptions: IFormatMessageVariables;
 }
 
 interface ICustomString {
