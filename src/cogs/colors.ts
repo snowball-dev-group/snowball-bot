@@ -937,7 +937,7 @@ class Colors extends Plugin implements IModule {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "COLORS_RANDOM_REMOVED")
             });
-        } else if(args[0] === "onjoin") {
+        } else if(args[0] === "random") {
             if(args.length > 1) {
                 msg.channel.send("", {
                     embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_RANDOM_ARGERR3")
@@ -948,7 +948,10 @@ class Colors extends Plugin implements IModule {
             await setPreferenceValue(msg.guild, "colors:join", "random");
 
             msg.channel.send("", {
-                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "COLORS_RANDOM_SETRANDOM")
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
+                    custom: true,
+                    string: (await localizeForUser(msg.member, "COLORS_RANDOM_SETRANDOM")) + "\n\n" + (await localizeForUser(msg.member, "COLORS_RANDOM_SET_WARN"))
+                })
             });
         } else if(args[0] === "set") {
             if(args.length !== 2) {
@@ -980,7 +983,10 @@ class Colors extends Plugin implements IModule {
             await setPreferenceValue(msg.guild, "colors:join", color.role);
 
             msg.channel.send("", {
-                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "COLORS_RANDOM_SET")
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
+                    custom: true,
+                    string: await localizeForUser(msg.member, "COLORS_RANDOM_SET") + "\n\n" + (await localizeForUser(msg.member, "COLORS_RANDOM_SET_WARN"))
+                })
             });
         } else {
             msg.channel.send("", {
