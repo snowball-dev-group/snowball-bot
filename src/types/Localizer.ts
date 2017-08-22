@@ -9,6 +9,7 @@ export interface ILocalizerOptions {
     source_language: string;
     default_language: string;
     directory: string;
+    disable_converage_log: boolean;
 }
 
 export interface IStringsMap {
@@ -17,6 +18,10 @@ export interface IStringsMap {
 
 export interface IStringsMapsMap {
     [langCode: string]: IStringsMap | undefined;
+}
+
+export interface IFormatMessageVariables {
+    [name: string]: string | number | boolean;
 }
 
 const REQUIRED_META_KEYS = ["+NAME", "+COUNTRY"];
@@ -123,7 +128,7 @@ export class Localizer {
             // "" for empty crowdin translations
             if(typeof langFile[key] === "string" && langFile[key] !== "") {
                 unique += +1;
-            } else {
+            } else if(!this.opts.disable_converage_log) {
                 this.log("warn", `String "${key}" not translated in lang ${langFile["+NAME"]}`);
             }
         }
@@ -139,32 +144,32 @@ export class Localizer {
         return !!this.langMaps[lang];
     }
 
-    public getString(lang: string = this.opts.source_language, str: string) {
-        let lf = this.langMaps[lang];
-        if(!lf) {
+    public getString(lang: string = this.opts.source_language, key: string) {
+        let langMap = this.langMaps[lang];
+        if(!langMap) {
             let estr = "Could not find required language";
             this.log("err", estr);
             throw new Error(estr);
         }
-        let l = lf[str];
-        if((!l || l === "") && lang !== this.opts.source_language) {
+        let str = langMap[key];
+        if((!str || str === "") && lang !== this.opts.source_language) {
             // we already know that source language exists
-            l = (this.langMaps[this.opts.source_language] as IStringsMap)[str];
-            if(!l) {
-                let estr = `String "${str}" not found nor in prefered language nor in source language.`;
-                this.log("err", estr);
-                throw new Error(estr);
+            str = (this.langMaps[this.opts.source_language] as IStringsMap)[key];
+            if(!str) {
+                let errStr = `String "${key}" not found nor in prefered language nor in source language.`;
+                this.log("err", errStr);
+                throw new Error(errStr);
             }
-        } else if(!l) {
-            let estr = `String "${str}" not found.`;
-            this.log("err", estr);
-            throw new Error(estr);
+        } else if(!str) {
+            let errStr = `String "${key}" not found.`;
+            this.log("err", errStr);
+            throw new Error(errStr);
         }
-        return l;
+        return str;
     }
 
-    public getFormattedString(lang: string = this.opts.source_language, str: string, defs: any) {
-        let ns = this.getString(lang, str);
-        return formatMsg(ns, defs, lang);
+    public getFormattedString(lang: string = this.opts.source_language, key: string, variables:IFormatMessageVariables) {
+        let ns = this.getString(lang, key);
+        return formatMsg(ns, variables, lang);
     }
 }
