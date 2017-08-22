@@ -46,8 +46,9 @@ class EvalJS extends Plugin implements IModule {
     async onMessage(message: Message) {
         if(!message.author) { return; }
         if(message.author.id !== botConfig.botOwner) { return; }
-        
-        let usedPrefix = ["!eval ", "!e ", "!ev "].find(prefix => message.content.startsWith(prefix));
+        if(!message.content) { return; }
+
+        let usedPrefix = ["!eval", "!e", "!ev"].find(prefix => message.content.startsWith(prefix));
         if(!usedPrefix) { return; }
 
         let afterCmd = message.content.slice(`${usedPrefix} `.length).trim();
