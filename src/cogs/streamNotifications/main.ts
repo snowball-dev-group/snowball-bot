@@ -841,7 +841,7 @@ class StreamNotifications extends Plugin implements IModule {
                             continue;
                         }
 
-                        await this.pushNotification(guild, result, notification, subscription);
+                        await this.pushNotification(guild, result, subscription, notification);
                     }
                 }
             }
@@ -855,7 +855,7 @@ class StreamNotifications extends Plugin implements IModule {
         this.performingStreamsCheck = false;
     }
 
-    async pushNotification(guild:Guild, result: IStreamStatus, notification:INotification, subscription:ISubscriptionRow) {
+    async pushNotification(guild:Guild, result: IStreamStatus, subscription:ISubscriptionRow, notification?:INotification) {
         let providerName = subscription.provider;
         let mod = this.servicesLoader.loadedModulesRegistry.get(providerName);
         if(!mod) {
@@ -927,8 +927,23 @@ class StreamNotifications extends Plugin implements IModule {
             }
 
             if(result.status === "offline") {
-                service.flushOfflineStream(result.streamer.uid);
+                if(!botConfig.mainShard && process.send) {
+                    process.send({
+                        type: "streams:flush_offline",
+                        payload: {
+                            provider: subscription.provider,
+                            uid: subscription.uid
+                        }
+                    });
+                } else {
+                    service.flushOfflineStream(subscription.uid);
+                }
             }
+
+            notification.streamId = result.id;
+            notification.sentAt = Date.now();
+
+            await this.updateNotification(notification);
         } else if(result.status !== "offline") {
             let messageId = "";
             try {
@@ -945,16 +960,18 @@ class StreamNotifications extends Plugin implements IModule {
                 return;
             }
 
-            if(!botConfig.mainShard && process.send) {
-                process.send({
-                    type: "streams:flush_offline",
-                    payload: {
-                        provider: subscription.provider,
-                        uid: subscription.uid
-                    }
-                });
-            } else {
-                service.flushOfflineStream(subscription.uid);
+            if(!notification) {
+                notification = {
+                    guild: guild.id,
+                    channelId: channel.id,
+                    messageId,
+                    provider: subscription.provider,
+                    sentAt: Date.now(),
+                    streamerId: subscription.uid,
+                    streamId: result.id
+                };
+
+                await this.saveNotification(notification);
             }
         }
     }
@@ -1117,7 +1134,7 @@ class StreamNotifications extends Plugin implements IModule {
             streamerId,
             streamId,
             guild: guild instanceof Guild ? guild.id : guild
-        } as INotification);
+        } as INotification) as INotification;
     }
 
     // =======================================
@@ -1177,11 +1194,15 @@ class StreamNotifications extends Plugin implements IModule {
                 },
                 channelId: {
                     type: "string",
-                    comment: "UID of channel that was notified"
+                    comment: "ID of channel that was notified"
                 },
                 streamId: {
                     type: "string",
                     comment: "ID of the stream"
+                },
+                streamerId: {
+                    type: "string",
+                    comment: "UID of channel on streaming service"
                 },
                 messageId: {
                     type: "string",
@@ -1220,6 +1241,7 @@ class StreamNotifications extends Plugin implements IModule {
                 if(!msg.type || !msg.payload) { return; }
                 if(msg.type !== "streams:push") { return; }
 
+                this.log("info", "Received message", msg);
                 if(msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
                     let guild = discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
                     if(guild) {
@@ -1229,7 +1251,7 @@ class StreamNotifications extends Plugin implements IModule {
                             notification: INotification,
                             result: IStreamStatus
                         };
-                        this.pushNotification(guild, notifyAbout.result, notifyAbout.notification, notifyAbout.subscription);
+                        this.pushNotification(guild, notifyAbout.result,notifyAbout.subscription, notifyAbout.notification);
                     }
                 }
             });
@@ -1238,6 +1260,9 @@ class StreamNotifications extends Plugin implements IModule {
                 if(typeof msg !== "object") { return; }
                 if(!msg.type || !msg.payload) { return; }
                 if(msg.type !== "streams:flush_offline" && msg.type !== "streams:free") { return; }
+                
+                this.log("info", "Received message", msg);
+
                 let payload = msg.payload as {
                     provider: string;
                     uid: string;
