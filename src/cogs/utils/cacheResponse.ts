@@ -6,7 +6,7 @@ import { randomString } from "./random";
 
 const CACHE_TABLE_NAME = "cached_responses";
 const CACHE_TABLE_ROW_SCHEME = {
-    cache_owner: "string*",
+    cacheOwner: "string*",
     key: "string*",
     value: "string*",
     timestamp: "number*",
@@ -14,7 +14,7 @@ const CACHE_TABLE_ROW_SCHEME = {
 };
 
 // it's can cost us time later
-const CACHE_TABLE_ROW_KEYS = Object.keys(CACHE_TABLE_ROW_SCHEME);
+// const CACHE_TABLE_ROW_KEYS = Object.keys(CACHE_TABLE_ROW_SCHEME);
 const LOG = getLogger("CachingUtil");
 
 let db: knex | undefined = undefined;
@@ -84,10 +84,10 @@ export async function getFromCache(cacheOwner: string, key: string): Promise<ICa
     try {
         elem = await db(CACHE_TABLE_NAME).where({
             cacheOwner, key
-        }).first(...CACHE_TABLE_ROW_KEYS);
+        }).first();
         LOG("ok", logPrefix, "Got element from cache");
     } catch(err) {
-        LOG("err", logPrefix, "Failed to get element from cache");
+        LOG("err", logPrefix, "Failed to get element from cache", err);
         throw new Error("Failed to get element from cache");
     }
     return elem;
