@@ -872,6 +872,7 @@ class StreamNotifications extends Plugin implements IModule {
             embed = await service.getEmbed(result, guildLanguage);
         } catch(err) {
             this.log("err", "Failed to get embed for stream of", `${subscription.uid} (${providerName})`, err);
+            return;
         }
 
         if(!embed) {
@@ -883,7 +884,7 @@ class StreamNotifications extends Plugin implements IModule {
         if(!settings) {
             let dbSettings = await this.getSettings(guild);
             if(!dbSettings) {
-                this.log("err", "Not found `dbSettings` for subscribed guild", guild.id, "to subscription", subscription.provider, subscription.uid);
+                this.log("err", "Not found `dbSettings` for subscribed guild", guild.id, "to subscription", `${subscription.uid} (${providerName})`);
                 return;
             }
             settings = this.convertToNormalSettings(dbSettings);
@@ -894,7 +895,7 @@ class StreamNotifications extends Plugin implements IModule {
 
         let channel = guild.channels.get(settings.channelId);
         if(!channel) {
-            this.log("err", "Not found channel for subscribed guild", guild.id, "to subscription", subscription.provider, subscription.uid);
+            this.log("err", "Not found channel for subscribed guild", guild.id, "to subscription", `${subscription.uid} (${providerName})`);
             return;
         }
 
