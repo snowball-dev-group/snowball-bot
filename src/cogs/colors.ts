@@ -45,6 +45,19 @@ function isChat(msg: Message) {
         description: "loc:COLORS_META_INFO_ARG_DESC"
     }
 }, isChat)
+@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} onjoin`, "loc:COLORS_META_ONJOIN", {
+    "loc:COLORS_META_ONJOIN_ARG0": {
+        optional: false,
+        values: ["off", "set", "random"],
+        description: "loc:COLORS_META_ONJOIN_ARG0_DESC"
+    },
+    "loc:COLORS_META_ONJOIN_ARG1": {
+        optional: true,
+        description: "loc:COLORS_META_ONJOIN_ARG1_DESC"
+    }
+}, (msg: Message) => {
+    return isChat(msg) && checkPerms(msg.member);
+})
 @cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} reset`, "loc:COLORS_META_RESET", undefined, isChat)
 @cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} add`, "loc:COLORS_META_ADD", {
     "loc:COLORS_META_COLORNAME": {
