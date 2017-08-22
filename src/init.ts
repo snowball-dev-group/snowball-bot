@@ -35,19 +35,21 @@ const SHARD_TIMEOUT = 30000; // ms
         if(cluster.isWorker || (process.env["NODE_ENV"] === "development" && process.env["DEBUG_SHARDS"] === "yes")) {
             if(typeof process.env.SHARD_ID !== "string" || typeof process.env.SHARDS_COUNT !== "string") {
                 log("err", "Invalid environment variables", {
-                    first: process.env.SHARD_ID || "not set",
-                    second: process.env.SHARDS_COUNT || "not set"
+                    id: process.env.SHARD_ID || "not set",
+                    count: process.env.SHARDS_COUNT || "not set"
                 });
                 process.exit(1);
                 return;
             }
 
-            log("info", "Started as shard", process.env.SHARD_ID, "/", process.env.SHARDS_COUNT);
+            let shardId = parseInt(process.env.SHARD_ID as string, 10);
+            let shardsCount = parseInt(process.env.SHARDS_COUNT as string, 10);
+
+            log("info", "Started as shard", shardId + 1, "/", process.env.SHARDS_COUNT);
 
             await initBot(log, config, {
-                // "as" because fuck typescript, check above for him means nothing
-                shardId: parseInt(process.env.SHARD_ID as string, 10),
-                shardsCount: parseInt(process.env.SHARDS_COUNT as string, 10)
+                shardId,
+                shardsCount
             });
 
             if(process.send) {
@@ -84,7 +86,7 @@ async function spawnShards(log:any, shardsCount:number) {
     }
 
     for(let shardId = 0; shardId < shardsCount; shardId++) {
-        log("info", "Spawning shard", shardId);
+        log("info", "Spawning shard", shardId + 1);
         await spawnShard(log, shardId, shardsCount);
     }
 }
