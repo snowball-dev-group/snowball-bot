@@ -1220,43 +1220,12 @@ class StreamNotifications extends Plugin implements IModule {
             await this.servicesLoader.load(serviceName);
         }
 
-        await this.checknNotify();
-
         if(botConfig.mainShard) {
             this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
-            await this.notificationsCleanup();
-        } else {
-            this.log("warn", "Working not in main shard!");
-        }
-
-
-        if(botConfig.mainShard) {
             this.checknNotifyInterval = setInterval(() => this.checknNotify(), 60000);
-        } else {
-            this.log("warn", "Not going to set notification fetching interval not in lead shard");
-        }
+            await this.notificationsCleanup();
+            await this.checknNotify();
 
-        if(!botConfig.mainShard) {
-            process.on("message", (msg) => {
-                if(typeof msg !== "object") { return; }
-                if(!msg.type || !msg.payload) { return; }
-                if(msg.type !== "streams:push") { return; }
-
-                this.log("info", "Received message", msg);
-                if(msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
-                    let guild = discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
-                    if(guild) {
-                        // process
-                        let notifyAbout = msg.payload.notifyAbout as {
-                            subscription: ISubscriptionRow,
-                            notification: INotification,
-                            result: IStreamStatus
-                        };
-                        this.pushNotification(guild, notifyAbout.result,notifyAbout.subscription, notifyAbout.notification);
-                    }
-                }
-            });
-        } else {
             process.on("message", (msg) => {
                 if(typeof msg !== "object") { return; }
                 if(!msg.type || !msg.payload) { return; }
@@ -1279,6 +1248,28 @@ class StreamNotifications extends Plugin implements IModule {
                     provider.flushOfflineStream(payload.uid);
                 } else if(msg.type === "streams:free" && provider.freed) {
                     provider.freed(payload.uid);
+                }
+            });
+        } else {
+            this.log("warn", "Working not in lead shard, waiting for messages");
+
+            process.on("message", (msg) => {
+                if(typeof msg !== "object") { return; }
+                if(!msg.type || !msg.payload) { return; }
+                if(msg.type !== "streams:push") { return; }
+
+                this.log("info", "Received message", msg);
+                if(msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
+                    let guild = discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
+                    if(guild) {
+                        // process
+                        let notifyAbout = msg.payload.notifyAbout as {
+                            subscription: ISubscriptionRow,
+                            notification: INotification,
+                            result: IStreamStatus
+                        };
+                        this.pushNotification(guild, notifyAbout.result,notifyAbout.subscription, notifyAbout.notification);
+                    }
                 }
             });
         }
