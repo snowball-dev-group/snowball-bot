@@ -123,7 +123,7 @@ class TwitchStreamingService implements IStreamingService {
                                 status: "offline",
                                 streamer,
                                 id: cacheItem.value._id + "",
-                                payload: cacheItem
+                                payload: cacheItem.value
                             });
                         }
                     }
@@ -149,7 +149,7 @@ class TwitchStreamingService implements IStreamingService {
     }
 
     public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
-        let stream = streamStatus.payload as ICacheItem;
+        let stream = streamStatus.payload as ITwitchStream;
         if(!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
         return {
             footer: {
@@ -157,35 +157,35 @@ class TwitchStreamingService implements IStreamingService {
                 text: "Twitch"
             },
             description: localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
-                username: escapeDiscordMarkdown(stream.value.channel.display_name || stream.value.channel.name, true),
-                type: stream.value.stream_type
+                username: escapeDiscordMarkdown(stream.channel.display_name || stream.channel.name, true),
+                type: stream.stream_type
             }),
-            timestamp: stream.value.created_at,
+            timestamp: stream.created_at,
             thumbnail: {
-                url: stream.value.channel.logo,
+                url: stream.channel.logo,
                 width: 128,
                 height: 128
             },
             author: {
-                icon_url: stream.value.channel.logo,
-                name: stream.value.channel.display_name || stream.value.channel.name,
-                url: stream.value.channel.url
+                icon_url: stream.channel.logo,
+                name: stream.channel.display_name || stream.channel.name,
+                url: stream.channel.url
             },
-            title: stream.value.channel.status,
-            url: stream.value.channel.url,
+            title: stream.channel.status,
+            url: stream.channel.url,
             color: TWITCH_COLOR,
             image: {
-                url: stream.value.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}`
+                url: stream.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}`
             },
             fields: [{
                 inline: true,
                 name: localizer.getString(lang, "STREAMING_GAME_NAME"),
-                value: stream.value.game ? stream.value.game : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
+                value: stream.game ? stream.game : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
             }, {
                 inline: true,
                 name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
                 value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
-                    mature: stream.value.channel.mature + ""
+                    mature: stream.channel.mature + ""
                 })
             }]
         };
