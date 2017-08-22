@@ -864,6 +864,10 @@ class StreamNotifications extends Plugin implements IModule {
         }
         let service = mod.base as IStreamingService;
 
+        if((!result.updated && result.status !== "offline") && notification) {
+            return;
+        }
+
         let guildLanguage = await getGuildLanguage(guild);
 
         let embed: IEmbed | undefined = undefined;
@@ -961,19 +965,17 @@ class StreamNotifications extends Plugin implements IModule {
                 return;
             }
 
-            if(!notification) {
-                notification = {
-                    guild: guild.id,
-                    channelId: channel.id,
-                    messageId,
-                    provider: subscription.provider,
-                    sentAt: Date.now(),
-                    streamerId: subscription.uid,
-                    streamId: result.id
-                };
+            notification = {
+                guild: guild.id,
+                channelId: channel.id,
+                messageId,
+                provider: subscription.provider,
+                sentAt: Date.now(),
+                streamerId: subscription.uid,
+                streamId: result.id
+            };
 
-                await this.saveNotification(notification);
-            }
+            await this.saveNotification(notification);
         }
     }
 
@@ -1135,7 +1137,7 @@ class StreamNotifications extends Plugin implements IModule {
             streamerId,
             streamId,
             guild: guild instanceof Guild ? guild.id : guild
-        } as INotification) as INotification;
+        } as INotification).first() as INotification;
     }
 
     // =======================================
