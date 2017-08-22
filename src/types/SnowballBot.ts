@@ -194,7 +194,7 @@ export class SnowballBot extends EventEmitter {
         { // checking shard id
             let shardId = this.internalConfiguration.shardId;
             if(shardId >= 0) {
-                this.log("info", "Running as shard", shardId);
+                this.log("info", "Running as shard with ID", shardId);
                 if(shardId === 0) {
                     publicBotConfig.mainShard = true;
                 }
