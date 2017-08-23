@@ -3,14 +3,15 @@ import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js";
 import { getLogger, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
-import * as humanizeDuration from "humanize-duration";
 import { IProfilesPlugin, IAddedProfilePlugin, AddedProfilePluginType } from "./plugins/plugin";
 import { timeDiff } from "../utils/time";
 import { default as fetch } from "node-fetch";
 import * as util from "util";
 import { command as docCmd, Category } from "../utils/help";
 import { isPremium } from "../utils/premium";
-import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
+import { localizeForUser, generateLocalizedEmbed, getUserLanguage, humanizeDurationForUser } from "../utils/ez-i18n";
+import { INullableHashMap } from "../../types/Interfaces";
+import { Humanizer } from "../../types/Humanizer";
 
 interface IDBUserProfile {
     real_name?: string;
@@ -75,6 +76,7 @@ class Profiles extends Plugin implements IModule {
     log = getLogger("ProfilesJS");
     db = getDB();
     options: any;
+    customHumanizers:INullableHashMap<Humanizer> = {};
 
     constructor(options: any) {
         super({
@@ -423,8 +425,20 @@ class Profiles extends Plugin implements IModule {
         }
     }
 
-    humanize(duration: number, largest: number = 2, round: boolean = true, lang = "ru") {
-        return humanizeDuration(duration, { language: lang, largest, round });
+    serverTimeHumanize(duration: number, largest: number = 2, round: boolean = true, language:string = localizer.defaultLanguage) {
+        let humanizer = this.customHumanizers[language];
+        if(!humanizer) {
+            humanizer = this.customHumanizers[language] = localizer.createCustomHumanizer(language, {
+                w: (weeks) => localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:WEEKS", { weeks }),
+                m: (minutes) => localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:MINUTES", { minutes }),
+                s: (seconds) => localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:SECONDS", { seconds })
+            });
+            if(!humanizer) { return; }
+        }
+
+        return humanizer.humanize(duration, {
+            largest, round
+        });
     }
 
     async sendProfile(msg: Message, dbProfile: IDBUserProfile, member: GuildMember) {
@@ -455,7 +469,10 @@ class Profiles extends Plugin implements IModule {
         if(dbProfile.status_changed) {
             let changedAt = new Date(dbProfile.status_changed).getTime();
             let diff = Date.now() - changedAt;
-            let sDiff = this.humanize(diff, undefined, undefined, await localizeForUser(msg.member, "+SHORT_CODE"));
+            let sDiff = await humanizeDurationForUser(member, diff, undefined, {
+                round: true,
+                largest: 2
+            });
             statusString += ` (${sDiff})`;
         }
 
@@ -489,7 +506,7 @@ class Profiles extends Plugin implements IModule {
             fields: fields,
             footer: {
                 text: await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME", {
-                    duration: this.humanize(timeDiff(joinedDate, Date.now(), "ms"), undefined, undefined, await localizeForUser(msg.member, "+SHORT_CODE"))
+                    duration: this.serverTimeHumanize(timeDiff(joinedDate, Date.now(), "ms"), 2, true, await getUserLanguage(member))
                 }),
                 icon_url: msg.guild.iconURL
             },

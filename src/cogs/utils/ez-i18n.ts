@@ -2,7 +2,8 @@ import { GuildMember, User, Guild } from "discord.js";
 import { getPreferenceValue as getUserPreferenceValue, setPreferenceValue as setUserPreferenceValue } from "./userPrefs";
 import { getPreferenceValue as getGuildPreferenceValue, setPreferenceValue as setGuildPreferenceValue } from "./guildPrefs";
 import { EmbedType, IEmbedOptions, generateEmbed } from "./utils";
-import { IFormatMessageVariables } from "../../types/Localizer";
+import { IFormatMessageVariables, HumanizerUnitToConvert } from "../../types/Localizer";
+import { IHumanizerOptionsOverrides } from "../../types/Humanizer";
 
 export type identify = User | GuildMember;
 const languagePref = ":language";
@@ -58,6 +59,11 @@ export async function getUserLanguage(u: identify) {
 export async function localizeForUser(u: identify, str: string, formatOpts?: any) {
     let lang = await getUserLanguage(u);
     return formatOpts ? localizer.getFormattedString(lang, str, formatOpts) : localizer.getString(lang, str);
+}
+
+export async function humanizeDurationForUser(u: identify, duration: number, unit: HumanizerUnitToConvert = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
+    let lang = await getUserLanguage(u);
+    return localizer.humanizeDuration(lang, duration, unit, humanizerOptions);
 }
 
 export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {

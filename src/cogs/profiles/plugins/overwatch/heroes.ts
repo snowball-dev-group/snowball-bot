@@ -1,10 +1,9 @@
 import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { Message, GuildMember } from "discord.js";
 import { generateEmbed, EmbedType, IEmbedOptionsField, getLogger } from "../../../utils/utils";
-import { localizeForUser } from "../../../utils/ez-i18n";
+import { localizeForUser, getUserLanguage } from "../../../utils/ez-i18n";
 import { IRegionalProfile, Tier } from "./owApiInterfaces";
 import { getProfile, IOverwatchProfilePluginInfo } from "./overwatch";
-import * as humanizeDuration from "humanize-duration";
 
 const ACCEPTED_REGIONS = ["eu", "kr", "us"];
 const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
@@ -182,7 +181,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
                     if(heroPlaytime.playtime > 0 && stats.length < 3) {
                         stats.push({
                             hero: heroPlaytime.hero,
-                            stat: this.getPlaytimeStr(heroPlaytime.playtime, await localizeForUser(caller, "+SHORT_CODE"))
+                            stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
                         });
                     }
                 }
@@ -230,7 +229,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
                     if(heroPlaytime.playtime > 0 && stats.length < 3) {
                         stats.push({
                             hero: heroPlaytime.hero,
-                            stat: this.getPlaytimeStr(heroPlaytime.playtime, await localizeForUser(caller, "+SHORT_CODE"))
+                            stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
                         });
                     }
                 }
@@ -319,13 +318,12 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
         }
     }
 
-    getPlaytimeStr(playtime: number, lang: string) {
+    getPlaytimeStr(playtime: number, language: string) {
         let ms = ((playtime * 60) * 60) * 1000;
-        return humanizeDuration(ms, {
+        return localizer.humanizeDuration(language, ms, undefined, {
             largest: 2,
             units: ["h", "m", "s"],
-            serialComma: false,
-            language: lang
+            serialComma: false
         });
     }
 

@@ -9,7 +9,6 @@ import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref,
 import { createConfirmationMessage } from "./utils/interactive";
 import * as timestring from "timestring";
 import * as moment from "moment-timezone";
-import * as humanizeDuration from "humanize-duration";
 
 const PREMIUMCTRL_PREFIX = `!premiumctl`;
 
@@ -670,8 +669,8 @@ class PremiumControl extends Plugin implements IModule {
     // PLUGIN FUNCTIONS
     // ================================
 
-    humanize(duration: number, language = "ru", largest: number = 2, round: boolean = true) {
-        return humanizeDuration(duration, { language, largest, round });
+    humanize(duration: number, language = localizer.sourceLanguage, largest: number = 2, round: boolean = true) {
+        return localizer.humanizeDuration(language, duration, undefined, { largest, round });
     }
 
     roleSyncInterval: NodeJS.Timer;
