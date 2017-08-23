@@ -213,7 +213,7 @@ export class SnowballBot extends EventEmitter {
         this.discordBot = new djs.Client(djsOptions);
 
         // Setting max listeners
-        this.discordBot.setMaxListeners(100);
+        this.discordBot.setMaxListeners(0);
 
         this.discordBot.on("error", (err) => {
             this.log("err", "Error at Discord client", err);
