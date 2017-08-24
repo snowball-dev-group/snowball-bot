@@ -85,13 +85,25 @@ async function spawnShards(log:any, shardsCount:number) {
         throw new Error("Could not spawn shards inside the worker!");
     }
 
+    let clusterRegistry: { [id: string]: cluster.Worker } = {};
+
+    let forwardMessage = (c, msg) => {
+        for(let id in clusterRegistry) {
+            // no self msg
+            if(id === c.id) { continue; }
+            clusterRegistry[id].send(msg);
+        }
+    };
+
     for(let shardId = 0; shardId < shardsCount; shardId++) {
         log("info", "Spawning shard", shardId + 1);
-        await spawnShard(log, shardId, shardsCount);
+        // returns shard
+        let c = await spawnShard(log, shardId, shardsCount, forwardMessage);
+        clusterRegistry[c.id] = c;
     }
 }
 
-async function spawnShard(log:any, shardId:number, shardsCount:number) {
+async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMessage:(c:cluster.Worker, msg:any) => void) : Promise<cluster.Worker> {
     if(cluster.isWorker) {
         throw new Error("Could not spawn shard inside the worker!");
     }
@@ -111,14 +123,12 @@ async function spawnShard(log:any, shardId:number, shardsCount:number) {
         if(typeof message === "object") {
             if(typeof message.type === "string") {
                 switch(message.type) {
-                    case "stdin": {
-                        console.log(`[SHARD:${shardId}] ${message.data.replace("\r", "")}`);
-                    } break;
-                    case "stderr": {
-                        console.log(`[SHARD:${shardId}] ${message.data.replace("\r", "")}`);
-                    } break;
                     case "online": {
                         shardConnected = true;
+                    } break;
+                    default: {
+                        log("info", "Forwarding message", message);
+                        forwardMessage(c, message);
                     } break;
                 }
             }
@@ -149,6 +159,8 @@ async function spawnShard(log:any, shardId:number, shardsCount:number) {
     }));
 
     log("ok", "Shard repond, continuing spawning");
+
+    return c;
 }
 
 async function initBot(log:any, config:IBotConfig, internalConfig:IInternalConfig) {
