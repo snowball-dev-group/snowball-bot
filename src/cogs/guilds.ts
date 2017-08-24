@@ -244,7 +244,7 @@ class Guilds extends Plugin implements IModule {
 
     async onMessage(msg: Message) {
         if(msg.channel.type === "dm") {
-            // dm handler
+            await this.dmCodeHandler(msg);
             return;
         }
         try {
@@ -286,7 +286,9 @@ class Guilds extends Plugin implements IModule {
     // ==============================
 
     async dmCodeHandler(msg: Message) {
+        if(msg.channel.type !== "dm") { return; } // non-dm msg
         if(!process.send) { return; } // non-sharded run
+
         let pendingInvite = this.pendingInvites[msg.author.id];
         if(!pendingInvite) { return; } // no pending invites
         if(pendingInvite.code.toLowerCase() === msg.content.toLowerCase()) {
