@@ -10,6 +10,7 @@ import { parse as parseURI } from "url";
 import { replaceAll } from "./utils/text";
 import { Category, command } from "./utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
+import { randomString } from "./utils/random";
 
 const TABLE_NAME = "guilds";
 
@@ -209,10 +210,27 @@ class Guilds extends Plugin implements IModule {
     log = getLogger("Guilds");
     db = getDB();
 
+    pendingInvites: { [uid: string]: { code: string; } } = {};
+    processMessageListener?: ((msg: any) => void);
+
     constructor() {
         super({
             "message": (msg: Message) => this.onMessage(msg)
         }, true);
+
+        if(botConfig.sharded) {
+            this.processMessageListener = (msg) => {
+                if(typeof msg !== "object") { return; }
+                if(msg.type && !msg.type.startsWith("guilds:")) { return; }
+                if(msg.type === "guilds:rules:pending_clear" && msg.payload) {
+                    // payload: <{uid: string}>
+                    if(!msg.payload.uid) { return; }
+                    if(!this.pendingInvites[msg.payload.uid]) { return; }
+                    delete this.pendingInvites[msg.payload.uid];
+                }
+            };
+            process.on("message", this.processMessageListener);
+        }
 
         // this.init();
     }
@@ -222,7 +240,8 @@ class Guilds extends Plugin implements IModule {
     // ==============================
 
     async onMessage(msg: Message) {
-        if(msg.channel.type !== "text") {
+        if(msg.channel.type === "dm") {
+            // dm handler
             return;
         }
         try {
@@ -262,6 +281,27 @@ class Guilds extends Plugin implements IModule {
     // ==============================
     // Handlers
     // ==============================
+
+    async dmCodeHandler(msg: Message) {
+        if(!process.send) { return; } // non-sharded run
+        let pendingInvite = this.pendingInvites[msg.author.id];
+        if(!pendingInvite) { return; } // no pending invites
+        if(pendingInvite.code.toLowerCase() === msg.content.toLowerCase()) {
+            process.send({
+                type: "guilds:rules:accept",
+                payload: {
+                    uid: msg.author.id
+                }
+            });
+        } else if(msg.content === "-") {
+            process.send({
+                type: "guilds:rules:reject",
+                payload: {
+                    uid: msg.author.id
+                }
+            });
+        }
+    }
 
     async sendHelp(channel: TextChannel, article: string = "guilds", member: GuildMember) {
         let str = "";
@@ -940,7 +980,7 @@ class Guilds extends Plugin implements IModule {
         })) as Message;
 
         if(cz.rules) {
-            let code = (Math.round((20000 + (Math.random() * (100000 - 20000)))).toString(16) + Math.round((20000 + (Math.random() * (100000 - 20000)))).toString(16)).toUpperCase();
+            let code = (randomString(6)).toUpperCase();
 
             let __msg: Message | undefined = undefined;
 
@@ -977,18 +1017,57 @@ class Guilds extends Plugin implements IModule {
             });
 
             let confirmed = false;
-            try {
-                let msgs = await waitForMessages(__msg.channel as DMChannel, {
-                    time: 60 * 1000,
-                    variants: [code, code.toLowerCase(), "-"],
-                    maxMatches: 1,
-                    max: 1,
-                    authors: [msg.author.id]
+            if(!botConfig.sharded) {
+                try {
+                    let msgs = await waitForMessages(__msg.channel as DMChannel, {
+                        time: 60 * 1000,
+                        variants: [code, code.toLowerCase(), "-"],
+                        maxMatches: 1,
+                        max: 1,
+                        authors: [msg.author.id]
+                    });
+
+                    confirmed = msgs.first().content.toLowerCase() === code.toLowerCase();
+                } catch(err) {
+                    confirmed = false;
+                }
+            } else if(process.send) {
+                process.send({
+                    type: "guilds:rules:pending",
+                    payload: {
+                        uid: msg.author.id,
+                        code
+                    }
                 });
 
-                confirmed = msgs.first().content.toLowerCase() === code.toLowerCase();
-            } catch(err) {
-                confirmed = false;
+                confirmed = await (new Promise<boolean>((res) => {
+                    let t: NodeJS.Timer; // predefines
+                    let resolve: (v: boolean) => void;
+
+                    let listener = (msg) => {
+                        if((msg.type === "guild:rules:accepted" || msg.type === "guilds:rules:reject") && msg.payload) {
+                            if(msg.payload.id && msg.payload.id === msg.author.id) {
+                                clearTimeout(t);
+                                resolve(msg.type === "guilds:rules:accepted");
+                            }
+                        }
+                    };
+
+                    resolve = (v) => {
+                        if(process.send) {
+                            process.send({
+                                type: "guilds:rules:pending_clear",
+                                payload: { uid: msg.author.id }
+                            });
+                        }
+                        process.removeListener("message", listener);
+                        return res(v);
+                    };
+
+                    t = setTimeout(() => resolve(false), 60000);
+
+                    process.on("message", listener);
+                }));
             }
 
             if(!confirmed) {
@@ -1638,6 +1717,10 @@ class Guilds extends Plugin implements IModule {
     }
 
     async unload() {
+        if(this.processMessageListener) {
+            // removing listeners
+            process.removeListener("message", this.processMessageListener);
+        }
         this.unhandleEvents();
         return true;
     }
