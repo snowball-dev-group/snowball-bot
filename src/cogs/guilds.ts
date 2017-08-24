@@ -227,6 +227,9 @@ class Guilds extends Plugin implements IModule {
                     if(!msg.payload.uid) { return; }
                     if(!this.pendingInvites[msg.payload.uid]) { return; }
                     delete this.pendingInvites[msg.payload.uid];
+                } else if(msg.type === "guilds:rules:pending" && msg.payload) {
+                    if(!msg.payload.uid || !msg.payload.code) { return; }
+                    this.pendingInvites[msg.payload.uid] = { code: msg.payload.code };
                 }
             };
             process.on("message", this.processMessageListener);
