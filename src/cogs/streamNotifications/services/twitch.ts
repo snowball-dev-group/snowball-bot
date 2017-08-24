@@ -57,7 +57,7 @@ class TwitchStreamingService implements IStreamingService {
                 try {
                     streamsResp = (await this.makeRequest(this.getAPIURL_Streams(chunk.map(s => s.uid))));
                 } catch(err) {
-                    this.log("err", "Error has been received while tried to update online streams", err);
+                    this.log("err", "Error has been received from Twitch, chunk processing failed", err);
                     return;
                 }
 
