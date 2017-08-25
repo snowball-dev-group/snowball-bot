@@ -418,16 +418,17 @@ class Colors extends Plugin implements IModule {
                 }));
             } else {
                 _confirmationString += await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_REQUIREDROLES");
-                for(let requiredRole of requiredRoles) {
-                    // - {roleName}
+                for(let i = 0; i < requiredRoles.length; i++) {
+                    const requiredRole = requiredRoles[i];
                     _confirmationString += await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_REQUIREDROLES_ITEM", {
-                        roleName: escapeDiscordMarkdown(requiredRole.name)
+                        roleName: escapeDiscordMarkdown(requiredRole.name),
+                        latest: (i + 1) === requiredRoles.length
                     });
                 }
             }
         }
 
-        _confirmationString += await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_RIGHTSWARNING");
+        _confirmationString += "\n\n" + (await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_RIGHTSWARNING"));
 
         let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
             custom: true,
