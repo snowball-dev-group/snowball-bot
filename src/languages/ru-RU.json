@@ -292,7 +292,7 @@
     "GUILDS_INVITE_USAGE": "Правильное использование этой команды - `{prefix} [название гильдии], [revoke, упоминания / упоминания / list]`. Ключевое слово `revoke` используется для отмены приглашений",
     "GUILDS_INVITE_NOMENTIONS": "Вы не упомянули участников",
     "GUILDS_INVITE_NOINVITES": "В гильдию никто не приглашен.",
-    "GUILDS_INVITE_REVOKED": "{revoked, plural, one {# приглашение} few {# приглашения было отозвано} other {# приглашений было отозвано}}",
+    "GUILDS_INVITE_REVOKED": "{revoked, plural, one {# приглашение было отозвано} few {# приглашения было отозвано} other {# приглашений было отозвано}}",
     "GUILDS_INVITE_INVITED": "{invited, plural, one {# участник был приглашен} few {# участника были приглашены} other {# участников было приглашено}}",
     "GUILDS_INVITE_ALREADYINVITED": "{username} уже был приглашен в гильдию",
     "GUILDS_INVITE_NOTAMEMBER": "{username} не является участником сервера",
