@@ -123,8 +123,12 @@ const CMD_GUILDS_INVITE = `${BASE_PREFIX} invite`;
 const CMD_GUILDS_MEMBERS = `${BASE_PREFIX} members`;
 const DEFAULT_ROLE_PREFIX = `!`;
 
+function isServerAdmin(member:GuildMember) {
+    return member.hasPermission(["MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"], undefined, false, true);
+}
+
 function rightsCheck(member: GuildMember, row?: IGuildRow, noAdmins = false) {
-    let checkA = member.hasPermission(["MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"], undefined, false, true);
+    let checkA = isServerAdmin(member);
     let checkB = false;
     if(row) {
         let cz = JSON.parse(row.customize) as IGuildCustomize;
@@ -619,6 +623,7 @@ class Guilds extends Plugin implements IModule {
                     });
                     return;
                 }
+                let serverAdmin = isServerAdmin(msg.member);
                 if(content.startsWith("<@") && content.endsWith(">")) {
                     content = content.slice(2).slice(0, -1);
                     if(content.startsWith("!")) {
@@ -634,7 +639,12 @@ class Guilds extends Plugin implements IModule {
                 }
                 if(member.id === dbRow.ownerId) {
                     msg.channel.send("", {
-                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_TRANSFEROWNERSHIPTOOWNER")
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+                            key: "GUILDS_EDIT_TRANSFEROWNERSHIPTOOWNER",
+                            formatOptions: {
+                                serverAdmin
+                            }
+                        })
                     });
                     return;
                 }
@@ -654,7 +664,9 @@ class Guilds extends Plugin implements IModule {
                 if(customize.admins && customize.admins.includes(member.id)) {
                     customize.admins.splice(customize.admins.indexOf(member.id), 1);
                 }
-                doneString = await localizeForUser(msg.member, "GUILDS_EDIT_TRANSFERDONE");
+                doneString = await localizeForUser(msg.member, "GUILDS_EDIT_TRANSFERDONE", {
+                    serverAdmin
+                });
             } break;
             case "google-ua": {
                 if(isCalledByAdmin) {
