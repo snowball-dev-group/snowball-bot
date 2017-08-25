@@ -33,7 +33,7 @@ const TABLE_SCHEMA = {
     }
 };
 
-const BANNED_HOSTS = ["goo.gl", "grabify.link"];
+const BANNED_HOSTS = ["goo.gl", "grabify.link", "bit.ly"];
 
 function isHostBanned(host: string) {
     if(host.startsWith("www.")) {
