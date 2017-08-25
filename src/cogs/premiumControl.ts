@@ -655,7 +655,7 @@ class PremiumControl extends Plugin implements IModule {
     }
 
     async performGuildsSync(noLog = false) {
-        this.log("info", "Performing role sync in guilds...");
+        if(!noLog) { this.log("info", "Performing role sync in guilds..."); }
         for(let guild of discordBot.guilds.values()) {
             try {
                 await this.performGuildSync(guild, noLog);
