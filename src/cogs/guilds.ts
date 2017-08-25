@@ -1049,11 +1049,12 @@ class Guilds extends Plugin implements IModule {
                     let t: NodeJS.Timer; // predefines
                     let resolve: (v: boolean) => void;
 
-                    let listener = (msg) => {
-                        if((msg.type === "guild:rules:accepted" || msg.type === "guilds:rules:reject") && msg.payload) {
-                            if(msg.payload.id && msg.payload.id === msg.author.id) {
+                    let listener = (ipcMsg) => {
+                        if(typeof ipcMsg !== "object") { return; }
+                        if((ipcMsg.type === "guilds:rules:accept" || ipcMsg.type === "guilds:rules:reject") && ipcMsg.payload) {
+                            if(ipcMsg.payload.uid && ipcMsg.payload.uid === msg.author.id) {
                                 clearTimeout(t);
-                                resolve(msg.type === "guilds:rules:accepted");
+                                resolve(ipcMsg.type === "guilds:rules:accept");
                             }
                         }
                     };
