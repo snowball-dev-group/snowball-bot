@@ -24,6 +24,12 @@ interface IDBUserProfile {
     status_changed?: string;
 }
 
+interface IUserActivity {
+    link?:string;
+    text:string;
+    emoji:string;
+}
+
 const TABLE_NAME = "profiles";
 const DB_PROFILE_PROPS = {
     real_name: "string?",
@@ -446,7 +452,7 @@ class Profiles extends Plugin implements IModule {
         statusString += await this.getUserStatusEmoji(member) + " ";
         statusString += await this.getUserStatusString(member, msg.member);
 
-        if(member.presence.game) {
+        if(member.presence.game && !dbProfile.activity) {
             statusString = "";
 
             if(member.presence.game.streaming) {
@@ -458,6 +464,14 @@ class Profiles extends Plugin implements IModule {
                 statusString += await this.getUserStatusString("playing", msg.member) + " ";
                 statusString += `в **${escapeDiscordMarkdown(member.presence.game.name)}**`;
             }
+        } else if(dbProfile.activity) {
+            let jsonActivity = JSON.parse(dbProfile.activity) as IUserActivity;
+
+            statusString = "";
+
+            statusString += jsonActivity.emoji;
+
+            statusString += " **" + ((text) => (jsonActivity.link ? `[${text}](${jsonActivity.link})` : text))(escapeDiscordMarkdown(jsonActivity.text)) + "**";
         }
 
         if(member.id === botConfig.botOwner) {
