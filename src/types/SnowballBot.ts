@@ -40,6 +40,12 @@ export interface IBotConfig {
         enabled:boolean;
         shards:number;
     };
+    /**
+     * Enable queue mode?
+     * If `false`, all modules will be loaded at same time
+     * Parallel loading is good for debugging
+     */
+    queueModuleLoading: boolean;
 }
 
 export interface IPublicBotConfig {
@@ -154,7 +160,8 @@ export class SnowballBot extends EventEmitter {
             basePath: "./cogs/",
             name: `${this.config.name}:ModLoader`,
             defaultSet: this.config.autoLoad,
-            registry: new Map<string, IModuleInfo>(this._convertToModulesMap(this.config.modules))
+            registry: new Map<string, IModuleInfo>(this._convertToModulesMap(this.config.modules)),
+            queueModuleLoading: !!this.config.queueModuleLoading
         });
         await this.modLoader.loadModules();
 
