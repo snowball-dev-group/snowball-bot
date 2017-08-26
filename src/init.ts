@@ -21,7 +21,7 @@ const SHARD_TIMEOUT = 30000; // ms
         try {
             config = require(`./config/configuration.${env}.json`);
         } catch (err) {
-            log("err", "Loading module for", env, "failed, attempt to load standard module");
+            log("err", "Loading config for", env, "failed, attempt to load standard config");
             config = require("./config/configuration.json");
         }
     } catch(err) {
