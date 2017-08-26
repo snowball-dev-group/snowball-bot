@@ -545,7 +545,7 @@ class StreamNotifications extends Plugin implements IModule {
 
         let subscription = this.convertToNormalSubscription(rawSubscription);
 
-        if(subscription.subscribers.includes(msg.guild.id)) {
+        if(!subscription.subscribers.includes(msg.guild.id)) {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("REMOVE_FAULT_NOTSUBBED"))
             });
