@@ -36,6 +36,10 @@ export interface IConfig {
      * Will be used in log
      */
     name: string;
+    /**
+     * Will be all modules loaded as queue or they should be loaded in parallel
+     */
+    queueModuleLoading?: boolean;
 }
 
 export interface IModule {
@@ -253,8 +257,12 @@ export class ModuleLoader {
         }
 
         this.log("info", "Loading started");
+        this.log("info", !!this.config.queueModuleLoading ? "Queue mode enabled": "Parallel mode enabled");
         for(let modName of toLoad) {
-            await this.load(modName);
+            let loadingPromise = this.load(modName);
+            if(!!this.config.queueModuleLoading) {
+                await loadingPromise;
+            }
         }
     }
 
