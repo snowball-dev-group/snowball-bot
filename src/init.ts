@@ -15,7 +15,15 @@ const SHARD_TIMEOUT = 30000; // ms
     let config: IBotConfig;
     try {
         log("info", "Loading config...");
-        config = require("./config/configuration.json");
+
+        let env = (process.env["NODE_ENV"] || "development");
+
+        try {
+            config = require(`./config/configuration.${env}.json`);
+        } catch (err) {
+            log("err", "Loading module for", env, "failed, attempt to load standard module");
+            config = require("./config/configuration.json");
+        }
     } catch(err) {
         log("err", err);
         log("err", "Exiting due we can't start bot without proper config");
