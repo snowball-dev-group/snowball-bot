@@ -114,7 +114,7 @@ class YouTubeStreamingService implements IStreamingService {
     }
 
     public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-        let cachedStream = stream.payload as ICacheItem<IYouTubeVideo>;
+        let cachedStream = stream.payload as IYouTubeVideo;
         if(!cachedStream) {
             throw new StreamingServiceError("YOUTUBE_CACHENOTFOUND", `Stream cache for channel with ID "${stream.streamer.uid}" not found`);
         }
@@ -153,20 +153,20 @@ class YouTubeStreamingService implements IStreamingService {
                 width: 128,
                 height: 128
             },
-            timestamp: cachedStream.value.snippet.publishedAt,
+            timestamp: cachedStream.snippet.publishedAt,
             author: {
                 icon_url: channel.snippet.thumbnails.default.url,
                 name: channel.snippet.title,
                 url: `https://youtube.com/channel/${channel.id}`
             },
-            title: cachedStream.value.snippet.title,
-            url: `https://youtu.be/${cachedStream.value.id.videoId}`,
+            title: cachedStream.snippet.title,
+            url: `https://youtu.be/${cachedStream.id.videoId}`,
             description: localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
                 username: escapeDiscordMarkdown(channel.snippet.title, true)
             }),
             color: YOUTUBE_COLOR,
             image: {
-                url: cachedStream.value.snippet.thumbnails.high.url
+                url: cachedStream.snippet.thumbnails.high.url
             }
         };
     }
