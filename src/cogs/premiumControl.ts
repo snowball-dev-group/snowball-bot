@@ -4,7 +4,7 @@ import { Message, Guild } from "discord.js";
 import { command, Category } from "./utils/help";
 import { init, checkPremium, givePremium, deletePremium, isPremium as isPremiumUser } from "./utils/premium";
 import { getLogger, EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "./utils/utils";
-import { generateLocalizedEmbed, localizeForUser } from "./utils/ez-i18n";
+import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser } from "./utils/ez-i18n";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "./utils/guildPrefs";
 import { createConfirmationMessage } from "./utils/interactive";
 import * as timestring from "timestring";
@@ -504,7 +504,7 @@ class PremiumControl extends Plugin implements IModule {
 
         let dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
         let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-        let durString = this.humanize(currentPremium.due_to.getTime() - Date.now(), await localizeForUser(msg.member, "+SHORT_CODE"));
+        let durString = humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
         let msgStr = "";
         msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
@@ -555,7 +555,7 @@ class PremiumControl extends Plugin implements IModule {
 
         let dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
         let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-        let durString = this.humanize(currentPremium.due_to.getTime() - Date.now(), await localizeForUser(msg.member, "+SHORT_CODE"));
+        let durString = humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
         let sep = "----------------";
         let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n${sep}\n`;
@@ -668,10 +668,6 @@ class PremiumControl extends Plugin implements IModule {
     // ================================
     // PLUGIN FUNCTIONS
     // ================================
-
-    humanize(duration: number, language = localizer.sourceLanguage, largest: number = 2, round: boolean = true) {
-        return localizer.humanizeDuration(language, duration, undefined, { largest, round });
-    }
 
     roleSyncInterval: NodeJS.Timer;
 
