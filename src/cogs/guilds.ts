@@ -1002,7 +1002,7 @@ class Guilds extends Plugin implements IModule {
             let __msg: Message | undefined = undefined;
 
             try {
-                __msg = await (msg.author.send("", {
+                __msg = (await msg.author.send("", {
                     embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
                         custom: true,
                         string: cz.rules
@@ -1043,9 +1043,9 @@ class Guilds extends Plugin implements IModule {
                         max: 1,
                         authors: [msg.author.id]
                     });
-
                     confirmed = msgs.first().content.toLowerCase() === code.toLowerCase();
                 } catch(err) {
+                    this.log("err", "Failed to check user's agreement with rules", err);
                     confirmed = false;
                 }
             } else if(process.send) {
@@ -1086,6 +1086,8 @@ class Guilds extends Plugin implements IModule {
 
                     process.on("message", listener);
                 }));
+            } else {
+                throw new Error("UNEXPECTED BEHAVIOR: Sharded run, but process.send isn't present");
             }
 
             if(!confirmed) {
