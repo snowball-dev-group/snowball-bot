@@ -92,6 +92,7 @@ export async function waitForMessages(channel: TextChannel | DMChannel, rules: I
     }, {
             errors: ["time"],
             maxMatches: rules.maxMatches,
-            time: rules.time
+            time: rules.time,
+            max: rules.max
         });
 }
