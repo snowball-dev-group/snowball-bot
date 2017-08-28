@@ -190,11 +190,13 @@ export class SnowballBot extends EventEmitter {
 
         { // checking shards count
             let shardCount = this.internalConfiguration.shardsCount;
-            if(shardCount > 0) {
+            if(this.config.shardingOptions.enabled) {
                 this.log("warn", "WARNING! Running in sharding mode is still expiremental, please use it with risk!");
+                if(shardCount < 0) {
+                    this.log("err", "Invalid shards count", shardCount);
+                    throw new Error("Invalid shards count");
+                }
                 publicBotConfig.sharded = true;
-            } else {
-                throw new Error("Invalid shards count");
             }
         }
 
