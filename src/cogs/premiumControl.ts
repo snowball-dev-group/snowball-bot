@@ -504,7 +504,7 @@ class PremiumControl extends Plugin implements IModule {
 
         let dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
         let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-        let durString = humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
+        let durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
         let msgStr = "";
         msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
@@ -555,7 +555,7 @@ class PremiumControl extends Plugin implements IModule {
 
         let dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
         let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-        let durString = humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
+        let durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
         let sep = "----------------";
         let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n${sep}\n`;
