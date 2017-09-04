@@ -915,6 +915,15 @@ class Guilds extends Plugin implements IModule {
             return;
         }
 
+        let visitor: ua.Visitor | undefined = undefined;
+        if(cz.ua) {
+            visitor = ua(cz.ua, msg.guild.id, {
+                strictCidFormat: false,
+                https: true,
+                uid: msg.member.id
+            });
+        }
+
         let str = await localizeForUser(msg.member, "GUILDS_LEAVE_CONFIRMATION", {
             guildName: escapeDiscordMarkdown(dbRow.name, true)
         });
@@ -928,11 +937,15 @@ class Guilds extends Plugin implements IModule {
             custom: true,
             string: str
         });
+
         let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
         if(!confirmation) {
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CANCELED")
             });
+            if(visitor) {
+                visitor.event("Members", "Saved from leave", msg.member.id).send();
+            }
             return;
         }
 
@@ -961,12 +974,7 @@ class Guilds extends Plugin implements IModule {
 
         try {
             await msg.member.removeRole(role);
-            if(cz.ua) {
-                let visitor = ua(cz.ua, msg.guild.id, {
-                    strictCidFormat: false,
-                    https: true
-                });
-
+            if(visitor) {
                 visitor.event("Members", "Left", msg.member.id).send();
             }
         } catch(err) {
@@ -1003,7 +1011,19 @@ class Guilds extends Plugin implements IModule {
 
         let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 
+        let visitor: ua.Visitor | undefined = undefined;
+        if(cz.ua) {
+            visitor = ua(cz.ua, msg.guild.id, {
+                strictCidFormat: false,
+                https: true,
+                uid: msg.member.id
+            });
+        }
+
         if(cz.invite_only && (!cz.invites || !(cz.invites as string[]).includes(msg.member.id))) {
+            if(visitor) {
+                visitor.event("Members", "Not invited join attempt", msg.member.id).send();
+            }
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_IOERR")
             });
@@ -1011,6 +1031,9 @@ class Guilds extends Plugin implements IModule {
         }
 
         if(cz.banned && Array.isArray(cz.banned) && cz.banned.includes(msg.member.id)) {
+            if(visitor) {
+                visitor.event("Members", "Banned join attempt", msg.member.id).send();
+            }
             msg.channel.send("", {
                 embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_BANNEDERR")
             });
@@ -1140,6 +1163,9 @@ class Guilds extends Plugin implements IModule {
                         }
                     })
                 });
+                if(visitor) {
+                    visitor.event("Members", "Rules rejected", msg.member.id).send();
+                }
                 return;
             } else {
                 _dmRulesMsg = (await msg.author.send("", {
@@ -1151,6 +1177,9 @@ class Guilds extends Plugin implements IModule {
                         }
                     })
                 })) as Message;
+                if(visitor) {
+                    visitor.event("Members", "Rules confirmed", msg.member.id).send();
+                }
             }
         }
 
@@ -1181,11 +1210,7 @@ class Guilds extends Plugin implements IModule {
 
         try {
             await msg.member.addRole(role);
-            if(cz.ua) {
-                let visitor = ua(cz.ua, msg.guild.id, {
-                    strictCidFormat: false,
-                    https: true
-                });
+            if(visitor) {
                 visitor.event("Members", "Joined", msg.member.id).send();
             }
         } catch(err) {
@@ -1406,6 +1431,15 @@ class Guilds extends Plugin implements IModule {
 
         let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 
+        let visitor: ua.Visitor | undefined = undefined;
+        if(cz.ua) {
+            visitor = ua(cz.ua, msg.guild.id, {
+                strictCidFormat: false,
+                https: true,
+                uid: msg.member.id
+            });
+        }
+
         switch(action) {
             case "list": {
                 let str = "#" + await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST", {
@@ -1488,12 +1522,18 @@ class Guilds extends Plugin implements IModule {
                         str += (await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_KICKEDADMITEM" : "GUILDS_MEMBERSCONTROL_KICKEDITEM", {
                             username: escapeDiscordMarkdown(member.displayName, true)
                         })) + "\n";
+                        if(visitor) {
+                            visitor.event("Users Management", "Member kicked", member.id).send();
+                        }
                     } else if(action === "ban") {
                         if(!cz.banned) { cz.banned = []; }
                         cz.banned.push(member.id);
                         str += (await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_BANNEDADMITEM" : "GUILDS_MEMBERSCONTROL_BANNEDITEM", {
                             username: escapeDiscordMarkdown(member.displayName, true)
                         })) + "\n";
+                        if(visitor) {
+                            visitor.event("Users Management", "Member banned", member.id).send();
+                        }
                     }
                     affected++;
                 }
