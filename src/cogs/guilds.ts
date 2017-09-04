@@ -1169,16 +1169,10 @@ class Guilds extends Plugin implements IModule {
                 return;
             } else {
                 _dmRulesMsg = (await msg.author.send("", {
-                    embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
-                        key: "GUILDS_JOIN_DONE_RULES_DM",
-                        formatOptions: {
-                            guildName: escapeDiscordMarkdown(dbRow.name, true),
-                            serverName: escapeDiscordMarkdown(msg.guild.name, true)
-                        }
-                    })
+                    embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_JOIN_DONE_RULES_DM")
                 })) as Message;
                 if(visitor) {
-                    visitor.event("Members", "Rules confirmed", msg.member.id).send();
+                    visitor.event("Members", "Rules accepted", msg.member.id).send();
                 }
             }
         }
@@ -1252,7 +1246,13 @@ class Guilds extends Plugin implements IModule {
 
         if(_dmRulesMsg) {
             _dmRulesMsg.edit("", {
-                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_JOIN_JOINED_RULES_DM")
+                embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
+                    key: "GUILDS_JOIN_JOINED_RULES_DM",
+                    formatOptions: {
+                        guildName: escapeDiscordMarkdown(dbRow.name, true),
+                        serverName: escapeDiscordMarkdown(msg.guild.name, true)
+                    }
+                })
             });
         }
     }
