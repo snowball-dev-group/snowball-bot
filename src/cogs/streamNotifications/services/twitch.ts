@@ -1,7 +1,9 @@
-import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError } from "../baseService";
+import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError, StreamStatusChangedAction } from "../baseService";
 import { IEmbed, sleep, getLogger, escapeDiscordMarkdown } from "../../utils/utils";
 import { default as fetch } from "node-fetch";
 import { chunk } from "lodash";
+import { EventEmitter } from "events";
+import { IHashMap } from "../../../types/Interfaces";
 
 const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
 const TWITCH_COLOR = 0x6441A4;
@@ -9,7 +11,7 @@ const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
 
 interface IServiceOptions {
     clientId:string;
-    fetchDifference:number;
+    updatingInterval:number;
 }
 
 interface ICacheItem {
@@ -17,37 +19,93 @@ interface ICacheItem {
     value: ITwitchStream;
 }
 
-class TwitchStreamingService implements IStreamingService {
+class TwitchStreamingService extends EventEmitter implements IStreamingService {
     public name = "twitch";
 
-    private clientId: string;
     private log = getLogger("TwitchStreamingService");
-    private fetchDiff = 120000;
+
+    private options: IServiceOptions;
 
     constructor(options: string|IServiceOptions) {
-        if(typeof options !== "string") {
-            this.clientId = options.clientId;
-            this.fetchDiff = options.fetchDifference;
+        super();
+        this.options = typeof options === "object" ? options: {
+            clientId: options,
+            updatingInterval: 120000
+        };
+    }
+
+    // ========================================
+    //            Subscriptions
+    // ========================================
+
+    private subscriptions: IStreamingServiceStreamer[] = [];
+    
+    public addSubscription(streamer: IStreamingServiceStreamer) {
+        if(this.isSubscribed(streamer.uid)) {
+            throw new Error(`Already subscribed to ${streamer.uid}`);
+        }
+        return this.subscriptions.push(streamer);
+    }
+
+    public removeSubscribtion(uid: string) {
+        let index = this.findSubscriptionIndex(uid);
+        if(index === -1) {
+            throw new Error(`Not subscribed to ${uid}`);
+        }
+        this.subscriptions.splice(index, 1);
+    }
+
+    private findSubscriptionIndex(uid: string) {
+        return this.subscriptions.findIndex((s) => s.uid === uid);
+    }
+
+    public isSubscribed(uid: string) {
+        return this.findSubscriptionIndex(uid) !== -1;
+    }
+
+    // ========================================
+    //            Fetching interval
+    // ========================================
+
+    private interval?: NodeJS.Timer;
+    private pendingStart?: NodeJS.Timer;
+
+    public async start(delayed: number = 0) {
+        if(this.pendingStart) {
+            throw new Error("There's a pending start delayed");
+        } else if(this.interval) {
+            throw new Error("There's already started fetch interval");
+        }
+        if(delayed < 0) {
+            throw new Error("Invalid `delayed` value");
+        } else if(delayed > 0) {
+            this.pendingStart = setTimeout(() => {
+                this.pendingStart = undefined;
+                this.start();
+            }, delayed);
         } else {
-            this.clientId = options;
+            this.interval = setInterval(() => this.fetch(this.subscriptions), this.options.updatingInterval);
+            await this.fetch(this.subscriptions);
         }
     }
 
-    private streamsMap = new Map<string, ICacheItem>();
-
-    private previousFetchTime = 0;
-
-    public async fetch(streamers: IStreamingServiceStreamer[]): Promise<IStreamStatus[]> {
-        let currentTime = Date.now();
-
-        if((currentTime - this.previousFetchTime) < this.fetchDiff) {
-            // ratelimit
-            // twitch still caches api responses for some time >_>
-            return [];
+    public async stop() {
+        if(!this.interval && !this.pendingStart) {
+            throw new Error("There's nor interval nor delayed start");
+        } else if(this.pendingStart) {
+            clearTimeout(this.pendingStart);
+        } else if(this.interval) {
+            clearInterval(this.interval);
         }
+    }
 
-        let result: IStreamStatus[] = [];
+    // ========================================
+    //                Fetching
+    // ========================================
 
+    private streamsMap: IHashMap<ICacheItem> = {};
+
+    public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
         if(streamers.length > 0) {
             let processChunk = async (chunk: IStreamingServiceStreamer[]) => {
                 let streamsResp: {
@@ -70,7 +128,7 @@ class TwitchStreamingService implements IStreamingService {
                     let stream = streamsResp.streams.find((stream) => {
                         return (stream.channel._id + "") === streamer.uid;
                     });
-                    let cacheItem = this.streamsMap.get(streamer.uid);
+                    let cacheItem = this.streamsMap[streamer.uid];
                     if(stream) {
                         if(cacheItem) {
                             let cachedStream = cacheItem.value;
@@ -96,7 +154,7 @@ class TwitchStreamingService implements IStreamingService {
 
                             // if yes, we pushing update
                             if(updated) {
-                                result.push({
+                                this.emit("updated", {
                                     status: "online",
                                     streamer,
                                     id: stream._id + "",
@@ -106,20 +164,20 @@ class TwitchStreamingService implements IStreamingService {
                                 });
                             }
                         } else {
-                            result.push({
+                            this.emit("online", {
                                 status: "online",
                                 streamer,
                                 id: stream._id + "",
                                 payload: stream
                             });
                         }
-                        this.streamsMap.set(streamer.uid, {
+                        this.streamsMap[streamer.uid] = {
                             fetchedAt: Date.now(),
                             value: stream
-                        });
+                        };
                     } else {
                         if(cacheItem) {
-                            result.push({
+                            this.emit("offline", {
                                 status: "offline",
                                 streamer,
                                 id: cacheItem.value._id + "",
@@ -139,14 +197,11 @@ class TwitchStreamingService implements IStreamingService {
                 }
             }
         }
-
-        this.previousFetchTime = currentTime;
-        return result;
     }
 
-    public async flushOfflineStream(uid: string) {
-        this.streamsMap.delete(uid);
-    }
+    // ========================================
+    //                 Discord
+    // ========================================
 
     public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
         let stream = streamStatus.payload as ITwitchStream;
@@ -191,17 +246,17 @@ class TwitchStreamingService implements IStreamingService {
         };
     }
 
+    // ========================================
+    //                   API
+    // ========================================
+
     private getAPIURL_Streams(ids: string[]) {
-        return `https://api.twitch.tv/kraken/streams/?channel=${ids.join(",")}&stream_type=all&client_id=${this.clientId}&api_version=5`;
+        return `https://api.twitch.tv/kraken/streams/?channel=${ids.join(",")}&stream_type=all&client_id=${this.options.clientId}&api_version=5`;
     }
 
     private getAPIURL_User(username: string | string[]) {
         let uidsStr = username instanceof Array ? username.join(",") : username;
-        return `https://api.twitch.tv/kraken/users?login=${uidsStr}&client_id=${this.clientId}&api_version=5`;
-    }
-
-    public freed(uid: string) {
-        this.streamsMap.delete(uid);
+        return `https://api.twitch.tv/kraken/users?login=${uidsStr}&client_id=${this.options.clientId}&api_version=5`;
     }
 
     public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
@@ -251,8 +306,18 @@ class TwitchStreamingService implements IStreamingService {
         return await loop();
     }
 
+    // ========================================
+    //              Module Stuff
+    // ========================================
+
+    public emit(type: StreamStatusChangedAction, update: IStreamStatus) {
+        return super.emit(type, update);
+    }
+
     async unload() {
-        this.streamsMap.clear();
+        for(let key in this.streamsMap) {
+            delete this.streamsMap[key];
+        }
         return true;
     }
 }
