@@ -1,6 +1,8 @@
 import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError } from "../baseService";
 import { IEmbed, escapeDiscordMarkdown } from "../../utils/utils";
 import { default as fetch } from "node-fetch";
+import { EventEmitter } from "events";
+import { IHashMap } from "../../../types/Interfaces";
 
 const MAX_CHANNEL_CACHE_LIFE = 600000;  // ms
 const YOUTUBE_ICON = "https://i.imgur.com/7Li5Iu2.png";
@@ -13,86 +15,137 @@ interface ICacheItem<T> {
 }
 
 interface IServiceOptions {
-    apiKey:string;
-    fetchDifference:number;
+    apiKey: string;
+    updatingInterval: number;
 }
 
-class YouTubeStreamingService implements IStreamingService {
+class YouTubeStreamingService extends EventEmitter implements IStreamingService {
     public name = "youtube";
 
-    private apiKey: string;
-    private fetchDiff = 180000;
+    private options: IServiceOptions;
 
-    constructor(options: string|IServiceOptions) {
-        if(typeof options !== "string") {
-            this.apiKey = options.apiKey;
-            this.fetchDiff = options.fetchDifference;
+    constructor(options: string | IServiceOptions) {
+        super();
+        this.options = typeof options === "object" ? options : {
+            apiKey: options,
+            updatingInterval: 300000
+        };
+    }
+
+    // ========================================
+    //            Subscriptions
+    // ========================================
+
+    private subscriptions: IStreamingServiceStreamer[] = [];
+
+    public addSubscription(streamer: IStreamingServiceStreamer) {
+        if(this.isSubscribed(streamer.uid)) {
+            throw new Error(`Already subscribed to ${streamer.uid}`);
+        }
+        return this.subscriptions.push(streamer);
+    }
+
+    public removeSubscribtion(uid: string) {
+        let index = this.findSubscriptionIndex(uid);
+        if(index === -1) {
+            throw new Error(`Not subscribed to ${uid}`);
+        }
+        this.subscriptions.splice(index, 1);
+    }
+
+    private findSubscriptionIndex(uid: string) {
+        return this.subscriptions.findIndex((s) => s.uid === uid);
+    }
+
+    public isSubscribed(uid: string) {
+        return this.findSubscriptionIndex(uid) !== -1;
+    }
+
+    // ========================================
+    //            Fetching interval
+    // ========================================
+
+    private interval?: NodeJS.Timer;
+    private pendingStart?: NodeJS.Timer;
+
+    public async start(delayed: number = 0) {
+        if(this.pendingStart) {
+            throw new Error("There's a pending start delayed");
+        } else if(this.interval) {
+            throw new Error("There's already started fetch interval");
+        }
+        if(delayed < 0) {
+            throw new Error("Invalid `delayed` value");
+        } else if(delayed > 0) {
+            this.pendingStart = setTimeout(() => {
+                this.pendingStart = undefined;
+                this.start();
+            }, delayed);
         } else {
-            this.apiKey = options;
+            await this.fetch(this.subscriptions);
+            this.interval = setInterval(() => this.fetch(this.subscriptions), this.options.updatingInterval);
         }
     }
 
-    private streamsCache = new Map<string, ICacheItem<IYouTubeVideo>>();
-    private oldStreamsCache = new Map<string, ICacheItem<IYouTubeVideo>>();
-
-    private channelCache = new Map<string, ICacheItem<IYouTubeChannel>>();
-
-    private previousFetchTime = 0;
-
-    public async fetch(streamers: IStreamingServiceStreamer[]) {
-        // don't updating for cached streams
-        let currentTime = Date.now();
-
-        if((currentTime - this.previousFetchTime) < this.fetchDiff) {
-            // ratelimited, not going to bother API
-            // it's made to not go over quota of YouTube API :FeelsBadMan:
-            return [];
+    public async stop() {
+        if(!this.interval && !this.pendingStart) {
+            throw new Error("There's nor interval nor delayed start");
+        } else if(this.pendingStart) {
+            clearTimeout(this.pendingStart);
+        } else if(this.interval) {
+            clearInterval(this.interval);
         }
+    }
 
-        let result: IStreamStatus[] = [];
+    // ========================================
+    //                Fetching
+    // ========================================
 
+    private streamsCache: IHashMap<ICacheItem<IYouTubeVideo>> = {};
+    private channelCache: IHashMap<ICacheItem<IYouTubeChannel>> = {};
+
+    public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
         for(let streamer of streamers) {
             let resp = await fetch(this.getAPIURL_Stream(streamer.uid));
             if(resp.status !== 200) { continue; }
-            let vids = (await resp.json()) as IYouTubeListResponse<IYouTubeVideo>;
-            if(vids.items.length === 0) {
+            let videos = (await resp.json()) as IYouTubeListResponse<IYouTubeVideo>;
+            if(videos.items.length === 0) {
                 // probably we had stream before
-                let cachedStream = this.streamsCache.get(streamer.uid);
+                let cachedStream = this.streamsCache[streamer.uid];
                 if(cachedStream) {
-                    this.oldStreamsCache.set(streamer.uid, cachedStream);
-                    // deleting old copy
-                    this.streamsCache.delete(streamer.uid);
-                    result.push({
+                    this.emit("offline", {
                         status: "offline",
                         streamer,
                         id: cachedStream.value.id.videoId,
                         payload: cachedStream.value
                     });
+                    // deleting old copy
+                    delete this.streamsCache[streamer.uid];
                 }
-            } else if(vids.items.length === 1) {
+            } else if(videos.items.length === 1) {
                 // what if we had old version?
-                let cachedVersion = this.streamsCache.get(streamer.uid);
-                let newStream = vids.items[0];
+                let cachedVersion = this.streamsCache[streamer.uid];
+                let newStream = videos.items[0];
                 if(cachedVersion) {
-                    let oldStream = cachedVersion.value;
+                    let cachedStream = cachedVersion.value;
 
                     let updated = false;
-                    
-                    if(newStream.id.videoId !== oldStream.id.videoId) { updated = true; }
-                    if(newStream.snippet.title !== oldStream.snippet.title) { updated = true; }
+
+                    if(newStream.id.videoId !== cachedStream.id.videoId) { updated = true; }
+                    if(newStream.snippet.title !== cachedStream.snippet.title) { updated = true; }
 
                     if(updated) {
-                        result.push({
+                        this.emit("updated", {
                             status: "online",
                             streamer,
                             id: newStream.id.videoId,
                             updated: true,
-                            oldId: oldStream.id.videoId,
+                            oldId: cachedStream.id.videoId,
                             payload: newStream
                         });
                     }
                 } else {
-                    result.push({
+                    this.emit("updated", {
                         status: "online",
                         streamer,
                         id: newStream.id.videoId,
@@ -100,18 +153,19 @@ class YouTubeStreamingService implements IStreamingService {
                     });
                 }
 
-                this.streamsCache.set(streamer.uid, {
+                this.streamsCache[streamer.uid] = {
                     cachedAt: Date.now(),
                     value: newStream
-                });
-            } else if(vids.items.length > 1) {
+                };
+            } else if(videos.items.length > 1) {
                 continue;
             }
         }
-
-        this.previousFetchTime = currentTime;
-        return result;
     }
+
+    // ========================================
+    //                 Discord
+    // ========================================
 
     public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
         let cachedStream = stream.payload as IYouTubeVideo;
@@ -119,7 +173,7 @@ class YouTubeStreamingService implements IStreamingService {
             throw new StreamingServiceError("YOUTUBE_CACHENOTFOUND", `Stream cache for channel with ID "${stream.streamer.uid}" not found`);
         }
 
-        let cachedChannel = this.channelCache.get(stream.streamer.uid);
+        let cachedChannel = this.channelCache[stream.streamer.uid];
         if(!cachedChannel || ((Date.now() - cachedChannel.cachedAt) > MAX_CHANNEL_CACHE_LIFE)) {
             let resp = await fetch(this.getAPIURL_Channels(stream.streamer.uid, false));
             if(resp.status !== 200) {
@@ -129,13 +183,9 @@ class YouTubeStreamingService implements IStreamingService {
             if(channels.length !== 1) {
                 throw new StreamingServiceError("YOUTUBE_CHANNELNOTFOUND", "Channel not found");
             }
-            this.channelCache.set(stream.streamer.uid, {
+            cachedChannel = this.channelCache[stream.streamer.uid] = {
                 cachedAt: Date.now(),
                 value: channels[0]
-            });
-            cachedChannel = this.channelCache.get(stream.streamer.uid) as {
-                cachedAt: number,
-                value: IYouTubeChannel
             };
         }
 
@@ -171,13 +221,17 @@ class YouTubeStreamingService implements IStreamingService {
         };
     }
 
+    // ========================================
+    //                   API
+    // ========================================
+
     private getAPIURL_Stream(channelId: string) {
         let str = "https://www.googleapis.com/youtube/v3/search";
         str += "?part=snippet";
         str += `&channelId=${channelId}`;
         str += "&type=video";
         str += "&eventType=live";
-        str += `&key=${this.apiKey}`;
+        str += `&key=${this.options.apiKey}`;
         return str;
     }
 
@@ -185,7 +239,7 @@ class YouTubeStreamingService implements IStreamingService {
         let str = "https://www.googleapis.com/youtube/v3/channels";
         str += isUsername ? `?forUsername=${id}` : `?id=${id}`;
         str += "&part=snippet";
-        str += `&key=${this.apiKey}`;
+        str += `&key=${this.options.apiKey}`;
         return str;
     }
 
@@ -202,16 +256,15 @@ class YouTubeStreamingService implements IStreamingService {
         }
 
         let channels = ((await resp.json()) as IYouTubeListResponse<IYouTubeChannel>).items;
-
         if(channels.length !== 1) {
             throw new StreamingServiceError("YOUTUBE_USERNOTFOUND", "User not found.");
         }
-        let channel = channels[0];
 
-        this.channelCache.set(channel.id, {
+        let channel = channels[0];
+        this.channelCache[channel.id] = {
             cachedAt: Date.now(),
             value: channel
-        });
+        };
 
         return {
             serviceName: this.name,
@@ -220,18 +273,17 @@ class YouTubeStreamingService implements IStreamingService {
         };
     }
 
-    public flushOfflineStream(uid: string) {
-        this.oldStreamsCache.delete(uid);
-    }
-
-    public freed(uid: string) {
-        this.streamsCache.delete(uid);
-        this.channelCache.delete(uid);
-    }
+    // ========================================
+    //              Module Stuff
+    // ========================================
 
     async unload() {
-        this.channelCache.clear();
-        this.streamsCache.clear();
+        for(let key in this.streamsCache) {
+            delete this.streamsCache[key];
+        }
+        for(let key in this.channelCache) {
+            delete this.channelCache[key];
+        }
         return true;
     }
 }
