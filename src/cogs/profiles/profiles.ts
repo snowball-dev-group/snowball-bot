@@ -377,7 +377,10 @@ class Profiles extends Plugin implements IModule {
                 def_aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_DEFINITON")
             };
             await msg.channel.send("", {
-                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, `\`!set_bio [${strs.aboutMe}]\``, {
+                embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+                    custom: true,
+                    string: `\`!set_bio [${strs.aboutMe}]\``
+                }, {
                     fields: [{
                         name: `\`${strs.aboutMe}\``,
                         inline: false,
