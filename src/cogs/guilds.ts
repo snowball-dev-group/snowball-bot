@@ -1477,7 +1477,7 @@ class Guilds extends Plugin implements IModule {
                 let str = "";
                 let affected = 0;
 
-                if(action === "unban" && !cz.banned) {
+                if(action === "unban" && (!cz.banned || cz.banned.length === 0)) {
                     statusMsg = (await statusMsg.edit("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_NONEBANNED")
                     })) as Message;
@@ -1558,6 +1558,9 @@ class Guilds extends Plugin implements IModule {
                     affected++;
                 }
                 if(action === "ban" || action === "unban") {
+                    if(cz.banned && cz.banned.length === 0) {
+                        delete cz.banned;
+                    }
                     dbRow.customize = JSON.stringify(cz);
                     await this.updateGuildRow(dbRow);
                 }
