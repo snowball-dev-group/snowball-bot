@@ -14,7 +14,11 @@
     "emitDecoratorMetadata": true,
     "inlineSourceMap": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "pretty": true,
+    "strict": true,
+    "newLine": "LF"
   },
   "include": [
     "src/**/*",
