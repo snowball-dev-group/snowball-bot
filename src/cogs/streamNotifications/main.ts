@@ -6,9 +6,10 @@ import { getDB, createTableBySchema } from "../utils/db";
 import { simpleCmdParse } from "../utils/text";
 import { generateLocalizedEmbed, getGuildLanguage } from "../utils/ez-i18n";
 import { EmbedType, sleep, IEmbedOptionsField, IEmbed } from "../utils/utils";
-import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IStreamStatus } from "./baseService";
+import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IStreamStatus, StreamStatusChangedHandler, StreamStatusChangedAction } from "./baseService";
 import { createConfirmationMessage } from "../utils/interactive";
 import { command, Category as CommandCategory } from "../utils/help";
+import { IHashMap } from "../../types/Interfaces";
 
 const PREFIX = "!streams";
 const MAX_NOTIFIED_LIFE = 86400000; // ms
@@ -42,6 +43,12 @@ interface ISettingsParsedRow {
     mentionsEveryone: IStreamingServiceStreamer[];
     subscribedTo: IStreamingServiceStreamer[];
 }
+
+type SubscriptionFilter = {
+    provider: string;
+    uid?: string;
+    username?: string;
+};
 
 interface ISubscriptionRow {
     /**
@@ -618,7 +625,7 @@ class StreamNotifications extends Plugin implements IModule {
                 let provider = providerModule.base as IStreamingService;
 
                 if(botConfig.mainShard) {
-                    if(provider.freed) { provider.freed(rawSubscription.uid); }
+                    provider.removeSubscribtion(subscription.uid);
                 } else {
                     if(process.send) { // notifying then
                         process.send({
@@ -773,86 +780,104 @@ class StreamNotifications extends Plugin implements IModule {
 
     checknNotifyInterval: NodeJS.Timer;
 
-    private performingStreamsCheck = false;
+    private handlers : {
+        online: IHashMap<StreamStatusChangedHandler[]>,
+        updated: IHashMap<StreamStatusChangedHandler[]>,
+        offline: IHashMap<StreamStatusChangedHandler[]>
+    } = {
+        online: {},
+        updated: {},
+        offline: {}
+    };
 
-    async checknNotify() {
-        if(this.cleanupPromise) {
-            await this.cleanupPromise;
-        }
-
-        if(this.performingStreamsCheck) {
-            // for cases if checking goes for long time
-            // by some reason it could happen in future
-            // unlike cleanup this is not the Promise because we won't do check-after-check
-            return;
-        }
-
-        this.performingStreamsCheck = true;
-
-        for(let [providerName, mod] of this.servicesLoader.loadedModulesRegistry) {
+    async handleNotifications() {
+        for (let [providerName, mod] of this.servicesLoader.loadedModulesRegistry) {
             if(!mod.base) {
-                this.log("warn", "Not found streaming service with name", providerName);
-                continue;
-            }
-            let service = mod.base as IStreamingService;
-            let subscriptions = (await this.getSubscriptionsForService(providerName)).map(this.convertToNormalSubscription);
-            let toFetch = subscriptions.map(this.convertToStreamer);
-            let results: IStreamStatus[] = [];
-
-            try {
-                results = await service.fetch(toFetch);
-            } catch(err) {
-                this.log("err", "Failed to fetch streams from", providerName, err);
+                this.log("err", `${providerName} is still not loaded (?!)`);
                 continue;
             }
 
-            for(let result of results) {
-                let streamerSubscriptions = subscriptions.filter(sub => {
-                    return sub.uid === result.streamer.uid;
-                });
-
-                for(let subscription of streamerSubscriptions) {
-                    if(subscription.username !== result.streamer.username) {
-                        // for cases if streamer changed username (Twitch/Mixer)
-                        subscription.username = result.streamer.username;
+            let provider = mod.base as IStreamingService;
+            
+            for(let a of ["online", "updated", "offline"]) {
+                let action = a as StreamStatusChangedAction;
+                let handler = (status) => {
+                    try {
+                        this.handleNotification(providerName, status);
+                    } catch (err) {
+                        this.log("err", "Failed to handle notification", err);
                     }
-
-                    for(let subscribedGuildId of subscription.subscribers) {
-                        let notification = await this.getNotification(subscription.provider, subscription.uid, (result.updated && result.oldId ? result.oldId : result.id), subscribedGuildId);
-
-                        let guild = discordBot.guilds.get(subscribedGuildId);
-
-                        if(!guild) {
-                            if(process.send) {
-                                process.send({
-                                    type: "streams:push",
-                                    payload: {
-                                        ifYouHaveGuild: subscribedGuildId,
-                                        notifyAbout: {
-                                            subscription,
-                                            notification,
-                                            result
-                                        }
-                                    }
-                                });
-                            } else {
-                                this.log("warn", "Could not find subscribed guild and notify other shards", subscribedGuildId, "to", subscription.uid, `(${subscription.provider})`);
-                            }
-                            continue;
-                        }
-
-                        await this.pushNotification(guild, result, subscription, notification);
-                    }
+                };
+                provider.on(action, handler);
+                let handlersCollection = this.handlers[action][providerName];
+                if(!handlersCollection) {
+                    handlersCollection = this.handlers[action][providerName] = [] as StreamStatusChangedHandler[];
                 }
+                handlersCollection.push(handler);
             }
 
-            let rSubscriptions = subscriptions.map(this.convertToRawSubscription);
-            for(let rSubscription of rSubscriptions) {
-                await this.updateSubscription(rSubscription);
+            // loading subscriptions unto provider
+
+            let subscriptions = await this.getSubscriptionsByFilter({
+                provider: providerName
+            });
+
+            for(let subscription of subscriptions) {
+                if(provider.isSubscribed(subscription.uid)) {
+                    continue;
+                }
+                provider.addSubscription({
+                    serviceName: providerName,
+                    uid: subscription.uid,
+                    username: subscription.username
+                });
+            }
+
+            if(provider.start) {
+                await provider.start();
             }
         }
+    }
 
-        this.performingStreamsCheck = false;
+    async handleNotification(providerName: string, status: IStreamStatus) {
+        let subscriptions = (await this.getSubscriptionsByFilter({
+            provider: providerName,
+            uid: status.streamer.uid
+        })).map(this.convertToNormalSubscription);
+
+        for(let subscription of subscriptions) {
+            if(subscription.username !== status.streamer.username) {
+                // for cases if streamer changed username (Twitch/Mixer)
+                subscription.username = status.streamer.username;
+            }
+
+            for(let subscribedGuildId of subscription.subscribers) {
+                let notification = await this.getNotification(subscription.provider, subscription.uid, (status.updated && status.oldId ? status.oldId : status.id), subscribedGuildId);
+
+                let guild = discordBot.guilds.get(subscribedGuildId);
+
+                if(!guild) {
+                    if(process.send) {
+                        process.send({
+                            type: "streams:push",
+                            payload: {
+                                ifYouHaveGuild: subscribedGuildId,
+                                notifyAbout: {
+                                    subscription,
+                                    notification,
+                                    status
+                                }
+                            }
+                        });
+                    } else {
+                        this.log("warn", "Could not find subscribed guild and notify other shards", subscribedGuildId, "to", subscription.uid, `(${subscription.provider})`);
+                    }
+                    continue;
+                }
+
+                await this.pushNotification(guild, status, subscription, notification);
+            }
+        }
     }
 
     async pushNotification(guild:Guild, result: IStreamStatus, subscription:ISubscriptionRow, notification?:INotification) {
@@ -938,7 +963,6 @@ class StreamNotifications extends Plugin implements IModule {
             }
 
             if(result.status === "offline") {
-                this.flushOfflineStream(service, subscription);
                 await this.deleteNotification(notification); // we don't need it anymore
             } else {
                 notification.streamId = result.id;
@@ -972,26 +996,6 @@ class StreamNotifications extends Plugin implements IModule {
             };
 
             await this.saveNotification(notification);
-        } else if(!notification && result.status === "offline") {
-            this.flushOfflineStream(service, subscription);
-        }
-    }
-
-    // =======================================
-    // Shard communication
-    // =======================================
-
-    flushOfflineStream(service:IStreamingService, subscription:ISubscriptionRow) {
-        if(!botConfig.mainShard && process.send) {
-            process.send({
-                type: "streams:flush_offline",
-                payload: {
-                    provider: subscription.provider,
-                    uid: subscription.uid
-                }
-            });
-        } else {
-            service.flushOfflineStream(subscription.uid);
         }
     }
 
@@ -1076,21 +1080,15 @@ class StreamNotifications extends Plugin implements IModule {
         return (await this.db(TABLE.notifications).select()) as INotification[];
     }
 
-    async getSubscriptionsForService(service: string) {
-        return (await this.db(TABLE.subscriptions).select().where({
-            provider: service
-        })) as ISubscriptionRawRow[];
+    async getSubscriptionsByFilter(filter: SubscriptionFilter) : Promise<ISubscriptionRawRow[]> {
+        return await this.db(TABLE.subscriptions).select().where(filter) as ISubscriptionRawRow[];
     }
 
-    async getSubscription(filter: {
-        provider: string,
-        uid?: string,
-        username?: string
-    }): Promise<ISubscriptionRawRow | undefined> {
+    async getSubscription(filter: SubscriptionFilter): Promise<ISubscriptionRawRow | undefined> {
         if(!filter.uid && !filter.username) {
             throw new Error("Nor uid nor username provided");
         }
-        return await this.db(TABLE.subscriptions).where(filter).first() as ISubscriptionRawRow;
+        return await this.db(TABLE.subscriptions).select().where(filter).first() as ISubscriptionRawRow;
     }
 
     async createSubscription(row: ISubscriptionRawRow) {
@@ -1240,16 +1238,12 @@ class StreamNotifications extends Plugin implements IModule {
 
         if(botConfig.mainShard) {
             this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
-            this.checknNotifyInterval = setInterval(() => this.checknNotify(), 60000);
             await this.notificationsCleanup();
-            if(!botConfig.sharded) {
-                await this.checknNotify();
-            }
 
             process.on("message", (msg) => {
                 if(typeof msg !== "object") { return; }
                 if(!msg.type || !msg.payload) { return; }
-                if(msg.type !== "streams:flush_offline" && msg.type !== "streams:free") { return; }
+                if(msg.type !== "streams:free") { return; }
                 
                 this.log("info", "Received message", msg);
 
@@ -1264,12 +1258,12 @@ class StreamNotifications extends Plugin implements IModule {
 
                 let provider = mod.base as IStreamingService;
 
-                if(msg.type === "streams:flush_offline") {
-                    provider.flushOfflineStream(payload.uid);
-                } else if(msg.type === "streams:free" && provider.freed) {
-                    provider.freed(payload.uid);
+                if(msg.type === "streams:free") {
+                    provider.removeSubscribtion(payload.uid);
                 }
             });
+
+            await this.handleNotifications();
         } else {
             this.log("warn", "Working not in lead shard, waiting for messages");
 
