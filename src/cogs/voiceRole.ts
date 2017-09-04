@@ -476,7 +476,7 @@ class VoiceRole extends Plugin implements IModule {
                 for(let member of msg.guild.members.values()) {
                     if(!row) { continue; }
                     if(member.roles.has(row.voice_role)) {
-                        await member[1].removeRole(row.voice_role);
+                        await member.removeRole(row.voice_role);
                     }
                 }
             }
@@ -529,7 +529,7 @@ class VoiceRole extends Plugin implements IModule {
                 for(let member of msg.guild.members.values()) {
                     if(!row) { continue; }
                     if(member.roles.has(row.voice_role)) {
-                        await member[1].removeRole(row.voice_role);
+                        await member.removeRole(row.voice_role);
                     }
                 }
             }
