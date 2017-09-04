@@ -1,5 +1,4 @@
 {
-    "$schema": "",
     "PROFILES_META_PROFILE": "Показывает ваш или профиль упомянутого участника сервера",
     "PROFILES_META_PROFILE_ARG0": "@упоминание",
     "PROFILES_META_PROFILE_ARG0_DESC": "упоминание другого участника сервера",
