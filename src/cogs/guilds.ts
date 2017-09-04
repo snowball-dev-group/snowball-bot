@@ -11,6 +11,7 @@ import { replaceAll } from "./utils/text";
 import { Category, command } from "./utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
 import { randomString } from "./utils/random";
+import { IPCMessage } from "../types/Interfaces";
 
 const TABLE_NAME = "guilds";
 
@@ -962,7 +963,7 @@ class Guilds extends Plugin implements IModule {
             await msg.member.removeRole(role);
             if(cz.ua) {
                 let visitor = ua(cz.ua, msg.guild.id, {
-                    strict_cid_format: false,
+                    strictCidFormat: false,
                     https: true
                 });
 
@@ -988,7 +989,7 @@ class Guilds extends Plugin implements IModule {
     async joinGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
         if(!dbRow || !role) { return; }
 
-        let getEmbed = async (str) => {
+        let getEmbed = async (str: string) => {
             return await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
                 custom: true,
                 string: str
@@ -1091,7 +1092,9 @@ class Guilds extends Plugin implements IModule {
                     let t: NodeJS.Timer; // predefines
                     let resolve: (v: boolean) => void;
 
-                    let listener = (ipcMsg) => {
+                    let listener = (ipcMsg: IPCMessage<{
+                        uid: string
+                    }>) => {
                         if(typeof ipcMsg !== "object") { return; }
                         if((ipcMsg.type === "guilds:rules:accept" || ipcMsg.type === "guilds:rules:reject") && ipcMsg.payload) {
                             if(ipcMsg.payload.uid && ipcMsg.payload.uid === msg.author.id) {
@@ -1180,7 +1183,7 @@ class Guilds extends Plugin implements IModule {
             await msg.member.addRole(role);
             if(cz.ua) {
                 let visitor = ua(cz.ua, msg.guild.id, {
-                    strict_cid_format: false,
+                    strictCidFormat: false,
                     https: true
                 });
                 visitor.event("Members", "Joined", msg.member.id).send();
