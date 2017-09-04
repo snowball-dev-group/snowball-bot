@@ -1548,6 +1548,7 @@ class Guilds extends Plugin implements IModule {
                             str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTBANNED", {
                                 username: escapeDiscordMarkdown(member.displayName, true)
                             })) + "\n";
+                            continue;
                         }
                         cz.banned.splice(index, 1);
                         str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_UNBANNEDITEM", {
