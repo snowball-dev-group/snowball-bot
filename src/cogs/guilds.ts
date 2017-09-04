@@ -1537,12 +1537,16 @@ class Guilds extends Plugin implements IModule {
                     }
                     affected++;
                 }
+                if(action === "ban") {
+                    dbRow.customize = JSON.stringify(cz);
+                    await this.updateGuildRow(dbRow);
+                }
                 statusMsg = (await statusMsg.edit("", {
                     embed: await generateLocalizedEmbed(affected === 0 ? EmbedType.Error : EmbedType.OK, msg.member, {
                         custom: true,
                         string: str
                     }, {
-                            title: await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_KICKED", {
+                            title: await localizeForUser(msg.member, action === "kick" ? "GUILDS_MEMBERSCONTROL_KICKED" : "GUILDS_MEMBERSCONTROL_BAN", {
                                 members: affected
                             })
                         })
