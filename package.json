@@ -36,6 +36,7 @@
     "@types/node": "^8.0.24",
     "@types/node-fetch": "^1.6.7",
     "@types/random-js": "^1.0.30",
+    "@types/universal-analytics": "^0.4.1",
     "grunt": "^1.0.1",
     "grunt-cli": "^1.2.0",
     "grunt-contrib-copy": "^1.0.0",
