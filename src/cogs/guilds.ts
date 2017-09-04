@@ -1546,7 +1546,7 @@ class Guilds extends Plugin implements IModule {
                         custom: true,
                         string: str
                     }, {
-                            title: await localizeForUser(msg.member, action === "kick" ? "GUILDS_MEMBERSCONTROL_KICKED" : "GUILDS_MEMBERSCONTROL_BAN", {
+                            title: await localizeForUser(msg.member, action === "kick" ? "GUILDS_MEMBERSCONTROL_KICKED" : "GUILDS_MEMBERSCONTROL_BANNED", {
                                 members: affected
                             })
                         })
