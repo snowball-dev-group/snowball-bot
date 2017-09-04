@@ -1401,7 +1401,7 @@ class Guilds extends Plugin implements IModule {
         if(args[1] === "list") {
             await this.membersControlAction(msg, dbRow, "list");
             return;
-        } else if(["kick", "ban"].includes(args[1]) && args.length > 2) {
+        } else if(["kick", "ban", "unban"].includes(args[1]) && args.length > 2) {
             if(msg.mentions.users.size === 0) {
                 msg.channel.send("", {
                     embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_NOMENTIONS")
@@ -1414,7 +1414,7 @@ class Guilds extends Plugin implements IModule {
                 });
                 return;
             }
-            await this.membersControlAction(msg, dbRow, args[1] as "kick" | "ban");
+            await this.membersControlAction(msg, dbRow, args[1] as "kick" | "ban" | "unban");
         }
     }
 
@@ -1422,7 +1422,7 @@ class Guilds extends Plugin implements IModule {
         return replaceAll(str, "`", "'");
     }
 
-    async membersControlAction(msg: Message, dbRow: IGuildRow, action: "list" | "kick" | "ban" | "add") {
+    async membersControlAction(msg: Message, dbRow: IGuildRow, action: "list" | "kick" | "ban" | "unban" | "add") {
         let statusMsg = (await msg.channel.send("", {
             embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_MEMBERSCONTROL_LOADING")
         })) as Message;
@@ -1466,7 +1466,7 @@ class Guilds extends Plugin implements IModule {
                     })) as Message;
                 }
             } break;
-            case "kick": case "ban": {
+            case "kick": case "ban": case "unban": {
                 if(msg.mentions.users.size > 20) {
                     statusMsg = (await statusMsg.edit("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_MAXMENTIONS")
@@ -1476,6 +1476,13 @@ class Guilds extends Plugin implements IModule {
 
                 let str = "";
                 let affected = 0;
+
+                if(action === "unban" && !cz.banned) {
+                    statusMsg = (await statusMsg.edit("", {
+                        embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_NONEBANNED")
+                    })) as Message;
+                    return;
+                }
 
                 for(let mention of msg.mentions.users.values()) {
                     let member = msg.guild.members.get(mention.id);
@@ -1534,10 +1541,22 @@ class Guilds extends Plugin implements IModule {
                         if(visitor) {
                             visitor.event("Users Management", "Member banned", member.id).send();
                         }
+                    } else if(action === "unban") {
+                        if(!cz.banned) { break; }
+                        let index = cz.banned.indexOf(member.id);
+                        if(index === -1) {
+                            str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTBANNED", {
+                                username: escapeDiscordMarkdown(member.displayName, true)
+                            })) + "\n";
+                        }
+                        cz.banned.splice(index, 1);
+                        str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_UNBANNEDITEM", {
+                            username: escapeDiscordMarkdown(member.displayName, true)
+                        })) + "\n";
                     }
                     affected++;
                 }
-                if(action === "ban") {
+                if(action === "ban" || action === "unban") {
                     dbRow.customize = JSON.stringify(cz);
                     await this.updateGuildRow(dbRow);
                 }
@@ -1546,7 +1565,7 @@ class Guilds extends Plugin implements IModule {
                         custom: true,
                         string: str
                     }, {
-                            title: await localizeForUser(msg.member, action === "kick" ? "GUILDS_MEMBERSCONTROL_KICKED" : "GUILDS_MEMBERSCONTROL_BANNED", {
+                            title: await localizeForUser(msg.member, action === "kick" ? "GUILDS_MEMBERSCONTROL_KICKED" : (action === "ban" ? "GUILDS_MEMBERSCONTROL_BANNED" : "GUILDS_MEMBERSCONTROL_UNBANNED"), {
                                 members: affected
                             })
                         })
