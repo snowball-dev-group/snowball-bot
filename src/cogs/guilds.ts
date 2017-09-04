@@ -1414,7 +1414,7 @@ class Guilds extends Plugin implements IModule {
                 });
                 return;
             }
-            await this.membersControlAction(msg, dbRow, "kick");
+            await this.membersControlAction(msg, dbRow, args[1] as "kick" | "ban");
         }
     }
 
