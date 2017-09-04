@@ -111,6 +111,10 @@ interface IGuildCustomize {
      * Guild rules
      */
     rules?: string;
+    /**
+     * Banned users
+     */
+    banned?:string[];
 }
 
 const BASE_PREFIX = "!guilds";
@@ -608,6 +612,21 @@ class Guilds extends Plugin implements IModule {
             } break;
             case "welcome_msg": {
                 content = content.replace("@everyone", "@\u200Beveryone").replace("@here", "@\u200Bhere");
+                if(!content.includes("{usermention}") && !content.includes("{username}")) {
+                    let confirmation = false;
+                    try {
+                        confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOUSERMENTION"), msg);
+                    } catch (err) {
+                        confirmation = false;
+                    }
+
+                    if(confirmation) {
+                        msg.channel.send("", {
+                            embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CANCELED")
+                        });
+                        return;
+                    }
+                }
                 customize.welcome_msg = content;
                 doneString = await localizeForUser(msg.member, "GUILDS_EDIT_WELCOMEMSGSET");
             } break;
@@ -990,6 +1009,13 @@ class Guilds extends Plugin implements IModule {
             return;
         }
 
+        if(cz.banned && Array.isArray(cz.banned) && cz.banned.includes(msg.member.id)) {
+            msg.channel.send("", {
+                embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_BANNEDERR")
+            });
+            return;
+        }
+
         let _msg = (await msg.channel.send("", {
             embed: await getEmbed(await localizeForUser(msg.member, "GUILDS_JOIN_PROGRESS", {
                 guildName: escapeDiscordMarkdown(dbRow.name, true)
@@ -1288,6 +1314,7 @@ class Guilds extends Plugin implements IModule {
         // guildName, list
         // guildName, kick, @mention
         // guildName, add, @mention
+        // guildName, ban, @mention
         if(args.length < 2) {
             // something
             return;
@@ -1318,7 +1345,7 @@ class Guilds extends Plugin implements IModule {
         if(args[1] === "list") {
             await this.membersControlAction(msg, dbRow, "list");
             return;
-        } else if(args[1] === "kick" && args.length > 2) {
+        } else if(["kick", "ban"].includes(args[1]) && args.length > 2) {
             if(msg.mentions.users.size === 0) {
                 msg.channel.send("", {
                     embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_NOMENTIONS")
@@ -1339,12 +1366,14 @@ class Guilds extends Plugin implements IModule {
         return replaceAll(str, "`", "'");
     }
 
-    async membersControlAction(msg: Message, dbRow: IGuildRow, action: "list" | "kick" | "add") {
+    async membersControlAction(msg: Message, dbRow: IGuildRow, action: "list" | "kick" | "ban" | "add") {
         let statusMsg = (await msg.channel.send("", {
             embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_MEMBERSCONTROL_LOADING")
         })) as Message;
 
         let members = msg.guild.members.filter(m => m.roles.has(dbRow.roleId));
+
+        let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 
         switch(action) {
             case "list": {
@@ -1372,24 +1401,28 @@ class Guilds extends Plugin implements IModule {
                     })) as Message;
                 }
             } break;
-            case "kick": {
+            case "kick": case "ban": {
                 if(msg.mentions.users.size > 20) {
                     statusMsg = (await statusMsg.edit("", {
                         embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_MAXMENTIONS")
                     })) as Message;
                     return;
                 }
+
                 let str = "";
-                let kicked = 0;
+                let affected = 0;
+
                 for(let mention of msg.mentions.users.values()) {
                     let member = msg.guild.members.get(mention.id);
                     let adminRemoved = false;
+
                     if(!member) {
                         str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBEROFSERVER", {
                             username: escapeDiscordMarkdown(mention.username, true)
                         })) + "\n";
                         continue;
                     }
+
                     if(rightsCheck(msg.member, dbRow, true)) {
                         // command called by admin or guild owner
                         if(rightsCheck(member, dbRow, false)) {
@@ -1408,25 +1441,38 @@ class Guilds extends Plugin implements IModule {
                             continue;
                         }
                     }
+
                     if(!member.roles.has(dbRow.roleId)) {
-                        str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBER", {
+                        if(action === "kick") {
+                            str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBER", {
+                                username: escapeDiscordMarkdown(member.displayName, true)
+                            })) + "\n";
+                            continue;
+                        }
+                    } else {
+                        await member.removeRole(dbRow.roleId);
+                    }
+
+                    if(action === "kick") {
+                        str += (await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_KICKEDADMITEM" : "GUILDS_MEMBERSCONTROL_KICKEDITEM", {
                             username: escapeDiscordMarkdown(member.displayName, true)
                         })) + "\n";
-                        continue;
+                    } else if(action === "ban") {
+                        if(!cz.banned) { cz.banned = []; }
+                        cz.banned.push(member.id);
+                        str += (await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_BANNEDADMITEM" : "GUILDS_MEMBERSCONTROL_BANNEDITEM", {
+                            username: escapeDiscordMarkdown(member.displayName, true)
+                        })) + "\n";
                     }
-                    await member.removeRole(dbRow.roleId);
-                    str += (await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_KICKEDADMITEM" : "GUILDS_MEMBERSCONTROL_KICKEDITEM", {
-                        username: escapeDiscordMarkdown(member.displayName, true)
-                    })) + "\n";
-                    kicked++;
+                    affected++;
                 }
                 statusMsg = (await statusMsg.edit("", {
-                    embed: await generateLocalizedEmbed(kicked === 0 ? EmbedType.Error : EmbedType.OK, msg.member, {
+                    embed: await generateLocalizedEmbed(affected === 0 ? EmbedType.Error : EmbedType.OK, msg.member, {
                         custom: true,
                         string: str
                     }, {
                             title: await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_KICKED", {
-                                members: kicked
+                                members: affected
                             })
                         })
                 })) as Message;
