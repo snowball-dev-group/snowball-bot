@@ -7,6 +7,7 @@ import { IHashMap } from "../../../types/Interfaces";
 const MAX_CHANNEL_CACHE_LIFE = 600000;  // ms
 const YOUTUBE_ICON = "https://i.imgur.com/7Li5Iu2.png";
 const YOUTUBE_COLOR = 0xCD201F;
+const YOUTUBE_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_youtube.png";
 // const YOUTUBE_ID_REGEXP = /^[a-zA-Z0-9\_\-]{23,26}$/;
 
 interface ICacheItem<T> {
@@ -216,7 +217,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
             }),
             color: YOUTUBE_COLOR,
             image: {
-                url: cachedStream.snippet.thumbnails.high.url
+                url: stream.status === "online" ? cachedStream.snippet.thumbnails.high.url : YOUTUBE_OFFLINE_BANNER
             }
         };
     }
