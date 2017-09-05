@@ -8,10 +8,11 @@ import { IHashMap } from "../../../types/Interfaces";
 const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
 const TWITCH_COLOR = 0x6441A4;
 const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
+const TWITCH_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_twitch.png";
 
 interface IServiceOptions {
-    clientId:string;
-    updatingInterval:number;
+    clientId: string;
+    updatingInterval: number;
 }
 
 interface ICacheItem {
@@ -26,9 +27,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
     private options: IServiceOptions;
 
-    constructor(options: string|IServiceOptions) {
+    constructor(options: string | IServiceOptions) {
         super();
-        this.options = typeof options === "object" ? options: {
+        this.options = typeof options === "object" ? options : {
             clientId: options,
             updatingInterval: 120000
         };
@@ -39,7 +40,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
     // ========================================
 
     private subscriptions: IStreamingServiceStreamer[] = [];
-    
+
     public addSubscription(streamer: IStreamingServiceStreamer) {
         if(this.isSubscribed(streamer.uid)) {
             throw new Error(`Already subscribed to ${streamer.uid}`);
@@ -230,7 +231,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
             url: stream.channel.url,
             color: TWITCH_COLOR,
             image: {
-                url: stream.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}`
+                url: streamStatus.status === "online" ? stream.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}` : (
+                    stream.channel.video_banner || TWITCH_OFFLINE_BANNER
+                )
             },
             fields: [{
                 inline: true,
@@ -340,6 +343,8 @@ interface ITwitchChannel extends ITwitchUser {
     language?: string;
     /** Channel owner avy */
     logo: string;
+    /** Banned */
+    video_banner?: string;
     /** Url to stream */
     url: string;
     /** Current name of stream */
