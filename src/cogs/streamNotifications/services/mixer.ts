@@ -11,6 +11,7 @@ Carina.WebSocket = ws;
 
 const MIXER_ICON = "https://i.imgur.com/fQsQPkd.png";
 const MIXER_COLOR = 0x1FBAED;
+const MIXER_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_mixer.png";
 
 interface ICacheItem {
     startedAt: number;
@@ -224,7 +225,9 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
             url: `https://mixer.com/${cache.channel.token}`,
             color: MIXER_COLOR,
             image: {
-                url: `https://thumbs.beam.pro/channel/${cache.channel.id}.big.jpg?ts=${Date.now()}`
+                url: stream.status === "online" ? `https://thumbs.beam.pro/channel/${cache.channel.id}.big.jpg?ts=${Date.now()}` : (
+                    cache.channel.bannerUrl || MIXER_OFFLINE_BANNER
+                )
             },
             fields: [{
                 inline: true,
@@ -319,6 +322,9 @@ interface IMixerChannel {
      * Audience of stream
      */
     audience: "teen" | "18+" | "family";
+
+    /** Link to the banner */
+    bannerUrl?: string;
 }
 
 module.exports = MixerStreamingService;
