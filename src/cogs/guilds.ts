@@ -159,7 +159,7 @@ function defHelpCheck(msg: Message) {
         description: "loc:GUILDS_META_JOINLEAVE_ARG0_DESC"
     }
 }, defHelpCheck)
-@command(Category.Guilds, CMD_GUILDS_CREATE.slice(1), "создать новую гильдию", {
+@command(Category.Guilds, CMD_GUILDS_CREATE.slice(1), "loc:GUILDS_META_CREATE", {
     "loc:GUILDS_META_GUILDNAME": {
         optional: false,
         description: "loc:GUILDS_META_CREATE_ARG0_DESC"
