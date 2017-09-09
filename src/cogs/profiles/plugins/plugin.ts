@@ -3,23 +3,23 @@ import { IEmbedOptionsField } from "../../utils/utils";
 import { Message, GuildMember } from "discord.js";
 
 export enum AddedProfilePluginType {
-    Embed,
-    Customs
+	Embed,
+	Customs
 }
 
 export interface ICustoms {
-    image_url?:string;
-    thumbnail_url?:string;
+	image_url?:string;
+	thumbnail_url?:string;
 }
 
 export interface IAddedProfilePlugin {
-    json: string;
-    type: AddedProfilePluginType;
+	json: string;
+	type: AddedProfilePluginType;
 }
 
 export interface IProfilesPlugin extends IModule {
-    getCustoms?(info, caller:GuildMember): Promise<ICustoms>;
-    getEmbed?(info, caller:GuildMember) : Promise<IEmbedOptionsField>;
-    setup(args:string, member?:GuildMember, message?:Message) : Promise <IAddedProfilePlugin>;
-    getSetupArgs(caller:GuildMember): Promise<string|null>;
+	getCustoms?(info, caller:GuildMember): Promise<ICustoms>;
+	getEmbed?(info, caller:GuildMember) : Promise<IEmbedOptionsField>;
+	setup(args:string, member?:GuildMember, message?:Message) : Promise <IAddedProfilePlugin>;
+	getSetupArgs(caller:GuildMember): Promise<string|null>;
 }

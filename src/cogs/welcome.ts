@@ -6,26 +6,26 @@ import { getLogger } from "./utils/utils";
 
 
 class Welcome extends Plugin implements IModule {
-    log = getLogger("Welcome");
+	log = getLogger("Welcome");
 
-    constructor() {
-        super({
-            "message": (msg: Message) => this.onMessage(msg)
-        });
-    }
+	constructor() {
+		super({
+			"message": (msg: Message) => this.onMessage(msg)
+		});
+	}
 
-    async onMessage(msg: Message) {
-        // handling commands
-    }
+	async onMessage(msg: Message) {
+		// handling commands
+	}
 
-    async init() {
-        // initialization
-    }
+	async init() {
+		// initialization
+	}
 
-    async unload() {
-        this.unhandleEvents();
-        return true;
-    }
+	async unload() {
+		this.unhandleEvents();
+		return true;
+	}
 }
 
 module.exports = Welcome; */

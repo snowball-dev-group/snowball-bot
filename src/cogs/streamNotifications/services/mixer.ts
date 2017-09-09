@@ -14,317 +14,317 @@ const MIXER_COLOR = 0x1FBAED;
 const MIXER_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_mixer.png";
 
 interface ICacheItem {
-    startedAt: number;
-    channel: IMixerChannel;
+	startedAt: number;
+	channel: IMixerChannel;
 }
 
 class MixerStreamingService extends EventEmitter implements IStreamingService {
-    public name = "mixer";
+	public name = "mixer";
 
-    private log = getLogger("MixerStreamingService");
+	private log = getLogger("MixerStreamingService");
 
-    private ca: Carina;
+	private ca: Carina;
 
-    constructor(apiKey) {
-        super();
-        try {
-            this.ca = new Carina({
-                isBot: true,
-                authToken: apiKey,
-                autoReconnect: true
-            }).on("error", (err) => {
-                this.log("err", "Carina error", err);
-            });
-        } catch(err) {
-            this.log("err", "Failed to run plugin", err);
-        }
-    }
+	constructor(apiKey) {
+		super();
+		try {
+			this.ca = new Carina({
+				isBot: true,
+				authToken: apiKey,
+				autoReconnect: true
+			}).on("error", (err) => {
+				this.log("err", "Carina error", err);
+			});
+		} catch(err) {
+			this.log("err", "Failed to run plugin", err);
+		}
+	}
 
-    // ========================================
-    //             Updates handlers
-    // ========================================
+	// ========================================
+	//           Updates handlers
+	// ========================================
 
-    private _carinaListeners: IHashMap<((data) => void)> = {};
-    private currentData: IHashMap<ICacheItem> = {};
+	private _carinaListeners: IHashMap<((data) => void)> = {};
+	private currentData: IHashMap<ICacheItem> = {};
 
-    private generateID(cacheItem: ICacheItem) {
-        return getUUIDByString(`${this.name.toUpperCase()}::{${cacheItem.startedAt}-${cacheItem.channel.id}}`);
-    }
+	private generateID(cacheItem: ICacheItem) {
+		return getUUIDByString(`${this.name.toUpperCase()}::{${cacheItem.startedAt}-${cacheItem.channel.id}}`);
+	}
 
-    public async subscribeTo(streamer: IStreamingServiceStreamer) {
-        let listener = async (data: IMixerChannel) => {
-            /**
-            * Cached data to check updates
-            */
-            let currentData = this.currentData[streamer.uid];
-            if(data.online === true) {
-                // stream goes online
-                let channel = await this.fetchChannel(streamer.uid);
-                if(!channel.online) {
-                    this.log("warn", "We were notified about starting stream of", streamer.uid, "but channel is offline");
-                    return;
-                }
-                // start time
-                let startedAt = await this.getStreamStartTime(streamer.uid);
-                if(!startedAt) {
-                    this.log("err", "Unknown error with streamer", streamer.uid);
-                    return;
-                }
-                currentData = this.currentData[streamer.uid] = {
-                    startedAt,
-                    channel
-                };
-                this.emit("online", {
-                    streamer,
-                    status: "online",
-                    id: this.generateID(currentData),
-                    payload: currentData
-                });
-            } else if(currentData) {
-                if(data.online === false) {
-                    // stream goes offline
-                    this.emit("offline", {
-                        streamer,
-                        status: "offline",
-                        id: this.generateID(currentData),
-                        payload: currentData
-                    });
+	public async subscribeTo(streamer: IStreamingServiceStreamer) {
+		let listener = async (data: IMixerChannel) => {
+			/**
+			* Cached data to check updates
+			*/
+			let currentData = this.currentData[streamer.uid];
+			if(data.online === true) {
+				// stream goes online
+				let channel = await this.fetchChannel(streamer.uid);
+				if(!channel.online) {
+					this.log("warn", "We were notified about starting stream of", streamer.uid, "but channel is offline");
+					return;
+				}
+				// start time
+				let startedAt = await this.getStreamStartTime(streamer.uid);
+				if(!startedAt) {
+					this.log("err", "Unknown error with streamer", streamer.uid);
+					return;
+				}
+				currentData = this.currentData[streamer.uid] = {
+					startedAt,
+					channel
+				};
+				this.emit("online", {
+					streamer,
+					status: "online",
+					id: this.generateID(currentData),
+					payload: currentData
+				});
+			} else if(currentData) {
+				if(data.online === false) {
+					// stream goes offline
+					this.emit("offline", {
+						streamer,
+						status: "offline",
+						id: this.generateID(currentData),
+						payload: currentData
+					});
 
-                    delete this.currentData[streamer.uid];
-                } else {
-                    let updated = !!data.name || !!data.audience || data.type !== undefined || (data.user && data.user.avatarUrl);
-                    if(updated) {
-                        // getting old id
-                        let oldId = this.generateID(currentData);
+					delete this.currentData[streamer.uid];
+				} else {
+					let updated = !!data.name || !!data.audience || data.type !== undefined || (data.user && data.user.avatarUrl);
+					if(updated) {
+						// getting old id
+						let oldId = this.generateID(currentData);
 
-                        // updating props
-                        for(let updated in data) {
-                            this.currentData[streamer.uid][updated] = data[updated];
-                        }
+						// updating props
+						for(let updated in data) {
+							this.currentData[streamer.uid][updated] = data[updated];
+						}
 
-                        // updating started at time
-                        let startedAt = await this.getStreamStartTime(streamer.uid);
+						// updating started at time
+						let startedAt = await this.getStreamStartTime(streamer.uid);
 
-                        // updating cached
-                        this.currentData[streamer.uid].startedAt = startedAt;
+						// updating cached
+						this.currentData[streamer.uid].startedAt = startedAt;
 
-                        // updating var
-                        currentData = this.currentData[streamer.uid];
+						// updating var
+						currentData = this.currentData[streamer.uid];
 
-                        // emittin'!
-                        this.emit("updated", {
-                            streamer,
-                            status: "online",
-                            id: this.generateID(currentData),
-                            oldId,
-                            updated: true,
-                            payload: currentData
-                        });
-                    }
-                }
-            }
-        };
+						// emittin'!
+						this.emit("updated", {
+							streamer,
+							status: "online",
+							id: this.generateID(currentData),
+							oldId,
+							updated: true,
+							payload: currentData
+						});
+					}
+				}
+			}
+		};
 
-        this._carinaListeners[streamer.uid] = listener;
-        this.ca.subscribe<IMixerChannel>(`channel:${streamer.uid}:update`, listener);
-    }
+		this._carinaListeners[streamer.uid] = listener;
+		this.ca.subscribe<IMixerChannel>(`channel:${streamer.uid}:update`, listener);
+	}
 
-    // ========================================
-    //              Subscriptions
-    // ========================================
+	// ========================================
+	//              Subscriptions
+	// ========================================
 
-    public addSubscription(streamer: IStreamingServiceStreamer) {
-        if(this.isSubscribed(streamer.uid)) {
-            throw new StreamingServiceError("ALREADY_SUBSCRIBED", "Already subscribed to this streamer");
-        }
-        this.subscribeTo(streamer);
-    }
+	public addSubscription(streamer: IStreamingServiceStreamer) {
+		if(this.isSubscribed(streamer.uid)) {
+			throw new StreamingServiceError("ALREADY_SUBSCRIBED", "Already subscribed to this streamer");
+		}
+		this.subscribeTo(streamer);
+	}
 
-    public removeSubscribtion(uid: string) {
-        let listener = this._carinaListeners.get(uid);
-        if(listener) {
-            this.ca.unsubscribe(`channel:${uid}:update`);
-            delete this._carinaListeners[uid];
-        }
-    }
+	public removeSubscribtion(uid: string) {
+		let listener = this._carinaListeners.get(uid);
+		if(listener) {
+			this.ca.unsubscribe(`channel:${uid}:update`);
+			delete this._carinaListeners[uid];
+		}
+	}
 
-    public isSubscribed(uid: string) {
-        return !!this._carinaListeners[uid];
-    }
+	public isSubscribed(uid: string) {
+		return !!this._carinaListeners[uid];
+	}
 
-    // ========================================
-    //                   API
-    // ========================================
+	// ========================================
+	//                   API
+	// ========================================
 
-    public async fetchChannel(uid: string): Promise<IMixerChannel> {
-        return (await this.makeRequest(this.getAPIURL_Channel(uid))) as IMixerChannel;
-    }
+	public async fetchChannel(uid: string): Promise<IMixerChannel> {
+		return (await this.makeRequest(this.getAPIURL_Channel(uid))) as IMixerChannel;
+	}
 
-    public async getStreamStartTime(uid: string): Promise<number> {
-        return new Date(((await this.makeRequest(`${this.getAPIURL_Channel(uid)}/manifest.light2`)) as {
-            now: string,
-            startedAt: string
-        }).startedAt).getTime();
-    }
+	public async getStreamStartTime(uid: string): Promise<number> {
+		return new Date(((await this.makeRequest(`${this.getAPIURL_Channel(uid)}/manifest.light2`)) as {
+			now: string,
+			startedAt: string
+		}).startedAt).getTime();
+	}
 
-    public getAPIURL_Channel(username: string) {
-        return `https://mixer.com/api/v1/channels/${username}`;
-    }
+	public getAPIURL_Channel(username: string) {
+		return `https://mixer.com/api/v1/channels/${username}`;
+	}
 
-    public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
-        let json = (await this.makeRequest(this.getAPIURL_Channel(username))) as IMixerChannel;
-        return {
-            serviceName: this.name,
-            uid: json.id + "",
-            username: json.token
-        };
-    }
+	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
+		let json = (await this.makeRequest(this.getAPIURL_Channel(username))) as IMixerChannel;
+		return {
+			serviceName: this.name,
+			uid: json.id + "",
+			username: json.token
+		};
+	}
 
-    private async makeRequest(uri: string, attempt: number = 0): Promise<any> {
-        let resp = await fetch(uri);
-        if(resp.status === 429) {
-            let delay = parseInt(resp.headers.get("retry-after"), 10);
-            this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
-            await sleep(delay);
-            return await this.makeRequest(uri, attempt + 1);
-        } else if(resp.status === 404) {
-            throw new StreamingServiceError("MIXER_NOTFOUND", "Resource not found");
-        }
-        return (await resp.json());
-    }
+	private async makeRequest(uri: string, attempt: number = 0): Promise<any> {
+		let resp = await fetch(uri);
+		if(resp.status === 429) {
+			let delay = parseInt(resp.headers.get("retry-after"), 10);
+			this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
+			await sleep(delay);
+			return await this.makeRequest(uri, attempt + 1);
+		} else if(resp.status === 404) {
+			throw new StreamingServiceError("MIXER_NOTFOUND", "Resource not found");
+		}
+		return (await resp.json());
+	}
 
-    // ========================================
-    //                 Discord
-    // ========================================
+	// ========================================
+	//                 Discord
+	// ========================================
 
-    public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-        let cache = stream.payload as ICacheItem;
-        if(!cache) {
-            throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure: payload not found");
-        }
-        return {
-            footer: {
-                icon_url: MIXER_ICON,
-                text: "Mixer"
-            },
-            timestamp: cache.channel.updatedAt,
-            author: {
-                icon_url: cache.channel.user.avatarUrl,
-                name: cache.channel.user.username,
-                url: `https://mixer.com/${cache.channel.token}`
-            },
-            thumbnail: {
-                width: 128,
-                height: 128,
-                url: cache.channel.user.avatarUrl || MIXER_ICON
-            },
-            description: localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
-                username: escapeDiscordMarkdown(cache.channel.user.username, true)
-            }),
-            title: cache.channel.name,
-            url: `https://mixer.com/${cache.channel.token}`,
-            color: MIXER_COLOR,
-            image: {
-                url: stream.status === "online" ? `https://thumbs.beam.pro/channel/${cache.channel.id}.big.jpg?ts=${Date.now()}` : (
-                    cache.channel.bannerUrl || MIXER_OFFLINE_BANNER
-                )
-            },
-            fields: [{
-                inline: true,
-                name: localizer.getString(lang, "STREAMING_GAME_NAME"),
-                value: cache.channel.type ? cache.channel.type.name : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
-            }, {
-                inline: true,
-                name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
-                value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_MIXER", {
-                    audience: cache.channel.audience
-                })
-            }]
-        };
-    }
+	public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
+		let cache = stream.payload as ICacheItem;
+		if(!cache) {
+			throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure: payload not found");
+		}
+		return {
+			footer: {
+				icon_url: MIXER_ICON,
+				text: "Mixer"
+			},
+			timestamp: cache.channel.updatedAt,
+			author: {
+				icon_url: cache.channel.user.avatarUrl,
+				name: cache.channel.user.username,
+				url: `https://mixer.com/${cache.channel.token}`
+			},
+			thumbnail: {
+				width: 128,
+				height: 128,
+				url: cache.channel.user.avatarUrl || MIXER_ICON
+			},
+			description: localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
+				username: escapeDiscordMarkdown(cache.channel.user.username, true)
+			}),
+			title: cache.channel.name,
+			url: `https://mixer.com/${cache.channel.token}`,
+			color: MIXER_COLOR,
+			image: {
+				url: stream.status === "online" ? `https://thumbs.beam.pro/channel/${cache.channel.id}.big.jpg?ts=${Date.now()}` : (
+					cache.channel.bannerUrl || MIXER_OFFLINE_BANNER
+				)
+			},
+			fields: [{
+				inline: true,
+				name: localizer.getString(lang, "STREAMING_GAME_NAME"),
+				value: cache.channel.type ? cache.channel.type.name : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
+			}, {
+				inline: true,
+				name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
+				value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_MIXER", {
+					audience: cache.channel.audience
+				})
+			}]
+		};
+	}
 
-    // ========================================
-    //              Module Stuff
-    // ========================================
+	// ========================================
+	//              Module Stuff
+	// ========================================
 
-    public async start() {
-        this.ca.open();
-    }
+	public async start() {
+		this.ca.open();
+	}
 
-    public emit(type: StreamStatusChangedAction, update: IStreamStatus) {
-        return super.emit(type, update);
-    }
+	public emit(type: StreamStatusChangedAction, update: IStreamStatus) {
+		return super.emit(type, update);
+	}
 
-    async unload() {
-        for(let uid in this._carinaListeners) {
-            this.removeSubscribtion(uid);
-        }
-        return true;
-    }
+	async unload() {
+		for(let uid in this._carinaListeners) {
+			this.removeSubscribtion(uid);
+		}
+		return true;
+	}
 }
 
 interface IMixerChannel {
-    /**
-     * Channel ID
-     */
-    id: string;
-    /**
-     * Channel name
-     */
-    token: string;
-    /**
-     * Name of the stream
-     */
-    name: string;
-    /**
-     * Viewers (current)
-     */
-    viewersCurrent: number;
-    /**
-     * Viewers (total)
-     */
-    viewersTotal: number;
-    /**
-     * Followers
-     */
-    numFollowers: number;
-    /**
-     * Latest time channel was updated (streaming also updates it)
-     */
-    updatedAt: string;
-    /**
-     * Details about game
-     */
-    type: {
-        /**
-         * Name of game
-         */
-        name: string
-    } | null;
-    /**
-     * Online?
-     */
-    online: boolean;
-    /**
-     * User info
-     */
-    user: {
-        /**
-         * Avy url
-         */
-        avatarUrl?: string;
-        /**
-         * Username
-         */
-        username: string;
-    };
-    /**
-     * Audience of stream
-     */
-    audience: "teen" | "18+" | "family";
+	/**
+	 * Channel ID
+	 */
+	id: string;
+	/**
+	 * Channel name
+	 */
+	token: string;
+	/**
+	 * Name of the stream
+	 */
+	name: string;
+	/**
+	 * Viewers (current)
+	 */
+	viewersCurrent: number;
+	/**
+	 * Viewers (total)
+	 */
+	viewersTotal: number;
+	/**
+	 * Followers
+	 */
+	numFollowers: number;
+	/**
+	 * Latest time channel was updated (streaming also updates it)
+	 */
+	updatedAt: string;
+	/**
+	 * Details about game
+	 */
+	type: {
+		/**
+		 * Name of game
+		 */
+		name: string
+	} | null;
+	/**
+	 * Online?
+	 */
+	online: boolean;
+	/**
+	 * User info
+	 */
+	user: {
+		/**
+		 * Avy url
+		 */
+		avatarUrl?: string;
+		/**
+		 * Username
+		 */
+		username: string;
+	};
+	/**
+	 * Audience of stream
+	 */
+	audience: "teen" | "18+" | "family";
 
-    /** Link to the banner */
-    bannerUrl?: string;
+	/** Link to the banner */
+	bannerUrl?: string;
 }
 
 module.exports = MixerStreamingService;

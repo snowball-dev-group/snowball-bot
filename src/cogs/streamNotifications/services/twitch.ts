@@ -11,378 +11,378 @@ const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
 const TWITCH_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_twitch.png";
 
 interface IServiceOptions {
-    clientId: string;
-    updatingInterval: number;
+	clientId: string;
+	updatingInterval: number;
 }
 
 interface ICacheItem {
-    fetchedAt: number;
-    value: ITwitchStream;
+	fetchedAt: number;
+	value: ITwitchStream;
 }
 
 class TwitchStreamingService extends EventEmitter implements IStreamingService {
-    public name = "twitch";
+	public name = "twitch";
 
-    private log = getLogger("TwitchStreamingService");
+	private log = getLogger("TwitchStreamingService");
 
-    private options: IServiceOptions;
+	private options: IServiceOptions;
 
-    constructor(options: string | IServiceOptions) {
-        super();
-        this.options = typeof options === "object" ? options : {
-            clientId: options,
-            updatingInterval: 120000
-        };
-    }
+	constructor(options: string | IServiceOptions) {
+		super();
+		this.options = typeof options === "object" ? options : {
+			clientId: options,
+			updatingInterval: 120000
+		};
+	}
 
-    // ========================================
-    //            Subscriptions
-    // ========================================
+	// ========================================
+	//            Subscriptions
+	// ========================================
 
-    private subscriptions: IStreamingServiceStreamer[] = [];
+	private subscriptions: IStreamingServiceStreamer[] = [];
 
-    public addSubscription(streamer: IStreamingServiceStreamer) {
-        if(this.isSubscribed(streamer.uid)) {
-            throw new Error(`Already subscribed to ${streamer.uid}`);
-        }
-        return this.subscriptions.push(streamer);
-    }
+	public addSubscription(streamer: IStreamingServiceStreamer) {
+		if(this.isSubscribed(streamer.uid)) {
+			throw new Error(`Already subscribed to ${streamer.uid}`);
+		}
+		return this.subscriptions.push(streamer);
+	}
 
-    public removeSubscribtion(uid: string) {
-        let index = this.findSubscriptionIndex(uid);
-        if(index === -1) {
-            throw new Error(`Not subscribed to ${uid}`);
-        }
-        this.subscriptions.splice(index, 1);
-    }
+	public removeSubscribtion(uid: string) {
+		let index = this.findSubscriptionIndex(uid);
+		if(index === -1) {
+			throw new Error(`Not subscribed to ${uid}`);
+		}
+		this.subscriptions.splice(index, 1);
+	}
 
-    private findSubscriptionIndex(uid: string) {
-        return this.subscriptions.findIndex((s) => s.uid === uid);
-    }
+	private findSubscriptionIndex(uid: string) {
+		return this.subscriptions.findIndex((s) => s.uid === uid);
+	}
 
-    public isSubscribed(uid: string) {
-        return this.findSubscriptionIndex(uid) !== -1;
-    }
+	public isSubscribed(uid: string) {
+		return this.findSubscriptionIndex(uid) !== -1;
+	}
 
-    // ========================================
-    //            Fetching interval
-    // ========================================
+	// ========================================
+	//            Fetching interval
+	// ========================================
 
-    private interval?: NodeJS.Timer;
-    private pendingStart?: NodeJS.Timer;
+	private interval?: NodeJS.Timer;
+	private pendingStart?: NodeJS.Timer;
 
-    public async start(delayed: number = 0) {
-        if(this.pendingStart) {
-            throw new Error("There's a pending start delayed");
-        } else if(this.interval) {
-            throw new Error("There's already started fetch interval");
-        }
-        if(delayed < 0) {
-            throw new Error("Invalid `delayed` value");
-        } else if(delayed > 0) {
-            this.pendingStart = setTimeout(() => {
-                this.pendingStart = undefined;
-                this.start();
-            }, delayed);
-        } else {
-            this.interval = setInterval(() => this.fetch(this.subscriptions), this.options.updatingInterval);
-            await this.fetch(this.subscriptions);
-        }
-    }
+	public async start(delayed: number = 0) {
+		if(this.pendingStart) {
+			throw new Error("There's a pending start delayed");
+		} else if(this.interval) {
+			throw new Error("There's already started fetch interval");
+		}
+		if(delayed < 0) {
+			throw new Error("Invalid `delayed` value");
+		} else if(delayed > 0) {
+			this.pendingStart = setTimeout(() => {
+				this.pendingStart = undefined;
+				this.start();
+			}, delayed);
+		} else {
+			this.interval = setInterval(() => this.fetch(this.subscriptions), this.options.updatingInterval);
+			await this.fetch(this.subscriptions);
+		}
+	}
 
-    public async stop() {
-        if(!this.interval && !this.pendingStart) {
-            throw new Error("There's nor interval nor delayed start");
-        } else if(this.pendingStart) {
-            clearTimeout(this.pendingStart);
-        } else if(this.interval) {
-            clearInterval(this.interval);
-        }
-    }
+	public async stop() {
+		if(!this.interval && !this.pendingStart) {
+			throw new Error("There's nor interval nor delayed start");
+		} else if(this.pendingStart) {
+			clearTimeout(this.pendingStart);
+		} else if(this.interval) {
+			clearInterval(this.interval);
+		}
+	}
 
-    // ========================================
-    //                Fetching
-    // ========================================
+	// ========================================
+	//                Fetching
+	// ========================================
 
-    private streamsMap: IHashMap<ICacheItem> = {};
+	private streamsMap: IHashMap<ICacheItem> = {};
 
-    public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
-        if(streamers.length > 0) {
-            let processChunk = async (chunk: IStreamingServiceStreamer[]) => {
-                let streamsResp: {
-                    streams?: ITwitchStream[]
-                } = {};
+	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
+		if(streamers.length > 0) {
+			let processChunk = async (chunk: IStreamingServiceStreamer[]) => {
+				let streamsResp: {
+					streams?: ITwitchStream[]
+				} = {};
 
-                try {
-                    streamsResp = (await this.makeRequest(this.getAPIURL_Streams(chunk.map(s => s.uid))));
-                } catch(err) {
-                    this.log("err", "Error has been received from Twitch, chunk processing failed", err);
-                    return;
-                }
+				try {
+					streamsResp = (await this.makeRequest(this.getAPIURL_Streams(chunk.map(s => s.uid))));
+				} catch(err) {
+					this.log("err", "Error has been received from Twitch, chunk processing failed", err);
+					return;
+				}
 
-                if(!streamsResp.streams) {
-                    this.log("warn", "Got empty response from Twitch", streamsResp);
-                    return;
-                }
+				if(!streamsResp.streams) {
+					this.log("warn", "Got empty response from Twitch", streamsResp);
+					return;
+				}
 
-                for(let streamer of chunk) {
-                    let stream = streamsResp.streams.find((stream) => {
-                        return (stream.channel._id + "") === streamer.uid;
-                    });
-                    let cacheItem = this.streamsMap[streamer.uid];
-                    if(stream) {
-                        if(cacheItem) {
-                            let cachedStream = cacheItem.value;
-                            let updated = false;
-                            // Stream name updated
-                            if(stream.channel.status !== cachedStream.channel.status) { updated = true; }
-                            // or game
-                            if(stream.game !== cachedStream.game) { updated = true; }
-                            // or stream_type (stream -> vodcast)
-                            if(stream.stream_type !== cachedStream.stream_type) { updated = true; }
-                            // or id???
-                            if(stream._id !== cachedStream._id) { updated = true; }
-                            // or username
-                            if((stream.channel.name !== cachedStream.channel.name) || (stream.channel.display_name !== cachedStream.channel.display_name)) {
-                                // updating username in db too
-                                streamer.username = stream.channel.display_name || stream.channel.name;
-                                updated = true;
-                            }
-                            // or logo
-                            if(stream.channel.logo !== cachedStream.channel.logo) { updated = true; }
-                            // or probably author changed stream to (/from) 18+
-                            if(stream.channel.mature !== cachedStream.channel.mature) { updated = true; }
+				for(let streamer of chunk) {
+					let stream = streamsResp.streams.find((stream) => {
+						return (stream.channel._id + "") === streamer.uid;
+					});
+					let cacheItem = this.streamsMap[streamer.uid];
+					if(stream) {
+						if(cacheItem) {
+							let cachedStream = cacheItem.value;
+							let updated = false;
+							// Stream name updated
+							if(stream.channel.status !== cachedStream.channel.status) { updated = true; }
+							// or game
+							if(stream.game !== cachedStream.game) { updated = true; }
+							// or stream_type (stream -> vodcast)
+							if(stream.stream_type !== cachedStream.stream_type) { updated = true; }
+							// or id???
+							if(stream._id !== cachedStream._id) { updated = true; }
+							// or username
+							if((stream.channel.name !== cachedStream.channel.name) || (stream.channel.display_name !== cachedStream.channel.display_name)) {
+								// updating username in db too
+								streamer.username = stream.channel.display_name || stream.channel.name;
+								updated = true;
+							}
+							// or logo
+							if(stream.channel.logo !== cachedStream.channel.logo) { updated = true; }
+							// or probably author changed stream to (/from) 18+
+							if(stream.channel.mature !== cachedStream.channel.mature) { updated = true; }
 
-                            // if yes, we pushing update
-                            if(updated) {
-                                this.emit("updated", {
-                                    status: "online",
-                                    streamer,
-                                    id: stream._id + "",
-                                    oldId: cacheItem.value._id + "",
-                                    updated: true,
-                                    payload: stream
-                                });
-                            }
-                        } else {
-                            this.emit("online", {
-                                status: "online",
-                                streamer,
-                                id: stream._id + "",
-                                payload: stream
-                            });
-                        }
-                        this.streamsMap[streamer.uid] = {
-                            fetchedAt: Date.now(),
-                            value: stream
-                        };
-                    } else {
-                        if(cacheItem) {
-                            this.emit("offline", {
-                                status: "offline",
-                                streamer,
-                                id: cacheItem.value._id + "",
-                                payload: cacheItem.value
-                            });
-                        }
-                    }
-                }
-            };
+							// if yes, we pushing update
+							if(updated) {
+								this.emit("updated", {
+									status: "online",
+									streamer,
+									id: stream._id + "",
+									oldId: cacheItem.value._id + "",
+									updated: true,
+									payload: stream
+								});
+							}
+						} else {
+							this.emit("online", {
+								status: "online",
+								streamer,
+								id: stream._id + "",
+								payload: stream
+							});
+						}
+						this.streamsMap[streamer.uid] = {
+							fetchedAt: Date.now(),
+							value: stream
+						};
+					} else {
+						if(cacheItem) {
+							this.emit("offline", {
+								status: "offline",
+								streamer,
+								id: cacheItem.value._id + "",
+								payload: cacheItem.value
+							});
+						}
+					}
+				}
+			};
 
-            let chunks = chunk(streamers, 50);
-            for(let chunk of chunks) {
-                try {
-                    await processChunk(chunk);
-                } catch(err) {
-                    this.log("warn", "Failed to fetch chunk", err);
-                }
-            }
-        }
-    }
+			let chunks = chunk(streamers, 50);
+			for(let chunk of chunks) {
+				try {
+					await processChunk(chunk);
+				} catch(err) {
+					this.log("warn", "Failed to fetch chunk", err);
+				}
+			}
+		}
+	}
 
-    // ========================================
-    //                 Discord
-    // ========================================
+	// ========================================
+	//                 Discord
+	// ========================================
 
-    public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
-        let stream = streamStatus.payload as ITwitchStream;
-        if(!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
-        return {
-            footer: {
-                icon_url: TWITCH_ICON,
-                text: "Twitch"
-            },
-            description: localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
-                username: escapeDiscordMarkdown(stream.channel.display_name || stream.channel.name, true),
-                type: stream.stream_type
-            }),
-            timestamp: stream.created_at,
-            thumbnail: {
-                url: stream.channel.logo,
-                width: 128,
-                height: 128
-            },
-            author: {
-                icon_url: stream.channel.logo,
-                name: stream.channel.display_name || stream.channel.name,
-                url: stream.channel.url
-            },
-            title: stream.channel.status,
-            url: stream.channel.url,
-            color: TWITCH_COLOR,
-            image: {
-                url: streamStatus.status === "online" ? stream.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}` : (
-                    stream.channel.video_banner || TWITCH_OFFLINE_BANNER
-                )
-            },
-            fields: [{
-                inline: true,
-                name: localizer.getString(lang, "STREAMING_GAME_NAME"),
-                value: stream.game ? stream.game : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
-            }, {
-                inline: true,
-                name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
-                value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
-                    mature: stream.channel.mature + ""
-                })
-            }]
-        };
-    }
+	public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
+		let stream = streamStatus.payload as ITwitchStream;
+		if(!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
+		return {
+			footer: {
+				icon_url: TWITCH_ICON,
+				text: "Twitch"
+			},
+			description: localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
+				username: escapeDiscordMarkdown(stream.channel.display_name || stream.channel.name, true),
+				type: stream.stream_type
+			}),
+			timestamp: stream.created_at,
+			thumbnail: {
+				url: stream.channel.logo,
+				width: 128,
+				height: 128
+			},
+			author: {
+				icon_url: stream.channel.logo,
+				name: stream.channel.display_name || stream.channel.name,
+				url: stream.channel.url
+			},
+			title: stream.channel.status,
+			url: stream.channel.url,
+			color: TWITCH_COLOR,
+			image: {
+				url: streamStatus.status === "online" ? stream.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}` : (
+					stream.channel.video_banner || TWITCH_OFFLINE_BANNER
+				)
+			},
+			fields: [{
+				inline: true,
+				name: localizer.getString(lang, "STREAMING_GAME_NAME"),
+				value: stream.game ? stream.game : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
+			}, {
+				inline: true,
+				name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
+				value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
+					mature: stream.channel.mature + ""
+				})
+			}]
+		};
+	}
 
-    // ========================================
-    //                   API
-    // ========================================
+	// ========================================
+	//                   API
+	// ========================================
 
-    private getAPIURL_Streams(ids: string[]) {
-        return `https://api.twitch.tv/kraken/streams/?channel=${ids.join(",")}&stream_type=all&client_id=${this.options.clientId}&api_version=5`;
-    }
+	private getAPIURL_Streams(ids: string[]) {
+		return `https://api.twitch.tv/kraken/streams/?channel=${ids.join(",")}&stream_type=all&client_id=${this.options.clientId}&api_version=5`;
+	}
 
-    private getAPIURL_User(username: string | string[]) {
-        let uidsStr = username instanceof Array ? username.join(",") : username;
-        return `https://api.twitch.tv/kraken/users?login=${uidsStr}&client_id=${this.options.clientId}&api_version=5`;
-    }
+	private getAPIURL_User(username: string | string[]) {
+		let uidsStr = username instanceof Array ? username.join(",") : username;
+		return `https://api.twitch.tv/kraken/users?login=${uidsStr}&client_id=${this.options.clientId}&api_version=5`;
+	}
 
-    public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
-        if(!TWITCH_USERNAME_REGEXP.test(username)) {
-            throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
-        }
+	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
+		if(!TWITCH_USERNAME_REGEXP.test(username)) {
+			throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
+		}
 
-        let foundUsers = (await this.makeRequest(this.getAPIURL_User(username)) as {
-            users: ITwitchUser[]
-        }).users;
+		let foundUsers = (await this.makeRequest(this.getAPIURL_User(username)) as {
+			users: ITwitchUser[]
+		}).users;
 
-        if(foundUsers.length === 0) {
-            throw new StreamingServiceError("TWITCH_USERNOTFOUND", "User not found.");
-        } else if(foundUsers.length > 1) {
-            throw new StreamingServiceError("TWITCH_INVALIDRESPONSE", "Invalid response received.");
-        }
+		if(foundUsers.length === 0) {
+			throw new StreamingServiceError("TWITCH_USERNOTFOUND", "User not found.");
+		} else if(foundUsers.length > 1) {
+			throw new StreamingServiceError("TWITCH_INVALIDRESPONSE", "Invalid response received.");
+		}
 
-        // this one is amazing <3
-        let user = foundUsers[0];
+		// this one is amazing <3
+		let user = foundUsers[0];
 
-        return {
-            serviceName: this.name,
-            uid: user._id,
-            username: user.display_name || user.name
-        };
-    }
+		return {
+			serviceName: this.name,
+			uid: user._id,
+			username: user.display_name || user.name
+		};
+	}
 
-    private async makeRequest(uri: string): Promise<any> {
-        let loop = async (attempt: number = 0) => {
-            if(attempt > 3) {
-                throw new StreamingServiceError("TWITCH_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
-            }
-            let resp = await fetch(uri);
-            if(resp.status === 429) {
-                let delay = parseInt(resp.headers.get("retry-after") || "5000", 10);
-                this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
-                await sleep(delay);
-                return await loop(attempt + 1);
-            } else if(resp.status !== 200) {
-                throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch", {
-                    status: resp.status,
-                    body: (await resp.text())
-                });
-            }
-            return await resp.json();
-        };
-        return await loop();
-    }
+	private async makeRequest(uri: string): Promise<any> {
+		let loop = async (attempt: number = 0) => {
+			if(attempt > 3) {
+				throw new StreamingServiceError("TWITCH_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
+			}
+			let resp = await fetch(uri);
+			if(resp.status === 429) {
+				let delay = parseInt(resp.headers.get("retry-after") || "5000", 10);
+				this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
+				await sleep(delay);
+				return await loop(attempt + 1);
+			} else if(resp.status !== 200) {
+				throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch", {
+					status: resp.status,
+					body: (await resp.text())
+				});
+			}
+			return await resp.json();
+		};
+		return await loop();
+	}
 
-    // ========================================
-    //              Module Stuff
-    // ========================================
+	// ========================================
+	//              Module Stuff
+	// ========================================
 
-    public emit(type: StreamStatusChangedAction, update: IStreamStatus) {
-        return super.emit(type, update);
-    }
+	public emit(type: StreamStatusChangedAction, update: IStreamStatus) {
+		return super.emit(type, update);
+	}
 
-    async unload() {
-        for(let key in this.streamsMap) {
-            delete this.streamsMap[key];
-        }
-        return true;
-    }
+	async unload() {
+		for(let key in this.streamsMap) {
+			delete this.streamsMap[key];
+		}
+		return true;
+	}
 }
 
 interface ITwitchUser {
-    /** Username with saved cAsE (to display) */
-    display_name: string;
-    /** ID */
-    _id: string;
-    /** Username */
-    name: string;
+	/** Username with saved cAsE (to display) */
+	display_name: string;
+	/** ID */
+	_id: string;
+	/** Username */
+	name: string;
 }
 
 interface ITwitchChannel extends ITwitchUser {
-    /** Mature? */
-    mature: boolean;
-    /** Game name */
-    game: string;
-    /** Language */
-    language?: string;
-    /** Channel owner avy */
-    logo: string;
-    /** Banned */
-    video_banner?: string;
-    /** Url to stream */
-    url: string;
-    /** Current name of stream */
-    status: string;
-    /** Broadcaster language */
-    broadcaster_language?: string;
+	/** Mature? */
+	mature: boolean;
+	/** Game name */
+	game: string;
+	/** Language */
+	language?: string;
+	/** Channel owner avy */
+	logo: string;
+	/** Banned */
+	video_banner?: string;
+	/** Url to stream */
+	url: string;
+	/** Current name of stream */
+	status: string;
+	/** Broadcaster language */
+	broadcaster_language?: string;
 }
 
 interface ITwitchStream {
-    /** Stream ID */
-    "_id": number;
-    /** Current game name */
-    "game": string;
-    /** Platform broadcaster streams at */
-    "broadcast_platform": string;
-    /** Current number of viewers */
-    "viewers": number;
-    /** Video height */
-    "video_height": number;
-    /** Average FPS */
-    "average_fps": number;
-    /** If streamer uses delay it would be here */
-    "delay": number;
-    /** ISO Date when stream started */
-    "created_at": string;
-    /** It's vodcast? */
-    "is_playlist": boolean;
-    /** Type of stream */
-    "stream_type": "live" | "playlist" | "all";
-    /** Previews */
-    "preview": {
-        "small": string;
-        "medium": string;
-        "large": string;
-        "template": string;
-    };
-    /** Channel, lol */
-    "channel": ITwitchChannel;
+	/** Stream ID */
+	"_id": number;
+	/** Current game name */
+	"game": string;
+	/** Platform broadcaster streams at */
+	"broadcast_platform": string;
+	/** Current number of viewers */
+	"viewers": number;
+	/** Video height */
+	"video_height": number;
+	/** Average FPS */
+	"average_fps": number;
+	/** If streamer uses delay it would be here */
+	"delay": number;
+	/** ISO Date when stream started */
+	"created_at": string;
+	/** It's vodcast? */
+	"is_playlist": boolean;
+	/** Type of stream */
+	"stream_type": "live" | "playlist" | "all";
+	/** Previews */
+	"preview": {
+		"small": string;
+		"medium": string;
+		"large": string;
+		"template": string;
+	};
+	/** Channel, lol */
+	"channel": ITwitchChannel;
 }
 
 module.exports = TwitchStreamingService;
