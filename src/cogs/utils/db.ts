@@ -152,7 +152,7 @@ export async function createTableBySchema(tableName: string, schema:ITableSchema
 				cb.comment(typeInfo.comment);
 			}
 			// if(typeInfo.collate) {
-			//	 cb.collate(typeInfo.collate);
+			// 	cb.collate(typeInfo.collate);
 			// }
 		});
 	});

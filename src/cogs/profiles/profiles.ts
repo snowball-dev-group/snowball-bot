@@ -108,7 +108,7 @@ class Profiles extends Plugin implements IModule {
 			this.editBio(msg);
 		}
 		// else if(msg.content.startsWith("!status")) {
-		//	 this.editActivity(msg);
+		// 	this.editActivity(msg);
 		// }
 	}
 

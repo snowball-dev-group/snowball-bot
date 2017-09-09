@@ -173,10 +173,10 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 				winrate: qpOveral.win_rate
 			})) + ")";
 			// str += (await localizeForUser(caller, "OWPROFILEPLUGIN_HOURSPLAYED", {
-			//	 hours: profile.stats.quickplay.game_stats.time_played
+			// 	hours: profile.stats.quickplay.game_stats.time_played
 			// })) + "\n";
 			// str += await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
-			//	 gamesWon: qpOveral.wins
+			// 	gamesWon: qpOveral.wins
 			// });
 		}
 

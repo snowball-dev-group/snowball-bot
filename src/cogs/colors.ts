@@ -156,7 +156,7 @@ class Colors extends Plugin implements IModule {
 		}
 
 		let role = await getPreferenceValue(member.guild, "colors:join");
-		
+
 		if(typeof role !== "string") { return; }
 
 		let colorfulInfo = await this.getInfo(member.guild);
@@ -167,7 +167,7 @@ class Colors extends Plugin implements IModule {
 			// pick random
 			roles = roles.filter((r) => !r.required_role);
 			if(roles.length === 0) { return; } // no colors to give
-			
+
 			let randomColor = randomPick(roles);
 			try {
 				member.addRole(randomColor.role);
@@ -535,7 +535,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		// 
+		//
 		let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			key: "COLORS_RENAME_CONFIRMATION",
 			formatOptions: {
@@ -865,12 +865,12 @@ class Colors extends Plugin implements IModule {
 				}
 			}
 			// if(colorInfo.required_role && !msg.guild.roles.has(colorInfo.required_role)) {
-			//	 unavailable.due_deleted.push(colorName);
-			//	 return;
+			// 	unavailable.due_deleted.push(colorName);
+			// 	return;
 			// }
 			// if(colorInfo.required_role && !msg.member.roles.has(colorInfo.required_role)) {
-			//	 unavailable.due_role.push(colorName);
-			//	 return;
+			// 	unavailable.due_role.push(colorName);
+			// 	return;
 			// }
 			ok.push(colorName);
 		});
@@ -892,11 +892,11 @@ class Colors extends Plugin implements IModule {
 		}
 
 		// if(unavailable.due_deleted.length > 0) {
-		//	 fields.push({
-		//		 inline: true,
-		//		 name: "Роль удалена:",
-		//		 value: unavailable.due_deleted.join("\n")
-		//	 });
+		// 	fields.push({
+		// 		inline: true,
+		// 		name: "Роль удалена:",
+		// 		value: unavailable.due_deleted.join("\n")
+		// 	});
 		// }
 
 		msg.channel.send("", {
@@ -958,7 +958,7 @@ class Colors extends Plugin implements IModule {
 				});
 				return;
 			}
-			
+
 			await setPreferenceValue(msg.guild, "colors:join", "random");
 
 			msg.channel.send("", {
@@ -976,7 +976,7 @@ class Colors extends Plugin implements IModule {
 			}
 
 			// second arg = color name
-			
+
 			let colorfulInfo = await this.getInfo(msg.guild);
 
 			let color = await colorfulInfo.rolePrefixes.get(args[1]);
@@ -1056,7 +1056,7 @@ class Colors extends Plugin implements IModule {
 
 	/**
 	 * Get guild's colorful information
-	 * @param guildId 
+	 * @param guildId
 	 */
 	async getInfo(guildId: string | Guild, deep: boolean = false): Promise<IColorfulGuildInfo> {
 		if(typeof guildId !== "string") {
