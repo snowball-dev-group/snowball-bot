@@ -1,41 +1,41 @@
 {
-    "rules": {
-        "no-unused-expression": true,
-        "no-duplicate-variable": true,
-        "no-unused-variable": [true, {}],
-        "curly": true,
-        "class-name": true,
-        "semicolon": [true, "always"],
-        "triple-equals": true,
-        "array-type": [
-            true,
-            "array-simple"
-        ],
-        "no-var-keyword": true,
-        "comment-format": [
-            true,
-            "check-space"
-        ],
-        "no-var-requires": true,
-        "quotemark": [
-            true,
-            "double"
-        ],
-        "no-empty": true,
-        "indent": [
-            true
-        ],
-        "radix": true,
-        "interface-name": [
-            true
-        ],
-        "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case"]
-    },
-    "jsRules": {
-        "no-unused-new": true,
-        "no-unused-expression": true,
-        "semicolon": [
-            "always"
-        ]
-    }
+	"rules": {
+		"no-unused-expression": true,
+		"no-duplicate-variable": true,
+		"no-unused-variable": [true, {}],
+		"curly": true,
+		"class-name": true,
+		"semicolon": [true, "always"],
+		"triple-equals": true,
+		"array-type": [
+			true,
+			"array-simple"
+		],
+		"no-var-keyword": true,
+		"comment-format": [
+			true,
+			"check-space"
+		],
+		"no-var-requires": true,
+		"quotemark": [
+			true,
+			"double"
+		],
+		"no-empty": true,
+		"indent": [
+			true
+		],
+		"radix": true,
+		"interface-name": [
+			true
+		],
+		"variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case"]
+	},
+	"jsRules": {
+		"no-unused-new": true,
+		"no-unused-expression": true,
+		"semicolon": [
+			"always"
+		]
+	}
 }
