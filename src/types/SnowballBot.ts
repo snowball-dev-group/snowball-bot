@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { ModuleLoader, IModuleInfo } from "./ModuleLoader";
+import { ModuleLoader, IModuleInfo, convertToModulesMap } from "./ModuleLoader";
 import { ILocalizerOptions, Localizer } from "./Localizer";
 import logger = require("loggy");
 import * as djs from "discord.js";
@@ -140,18 +140,6 @@ export class SnowballBot extends EventEmitter {
 	}
 
 	/**
-	 * Convert modules object to Map object
-	 * @param obj {Array} Array of module info entries
-	 */
-	_convertToModulesMap(obj: IModuleInfo[]) {
-		let modulesMap = new Map();
-		obj.forEach((moduleInfo) => {
-			modulesMap.set(moduleInfo.name, moduleInfo);
-		});
-		return modulesMap;
-	}
-
-	/**
 	 * Prepare module loader
 	 * It will load all modules / plugins
 	 */
@@ -160,7 +148,7 @@ export class SnowballBot extends EventEmitter {
 			basePath: "./cogs/",
 			name: `${this.config.name}:ModLoader`,
 			defaultSet: this.config.autoLoad,
-			registry: new Map<string, IModuleInfo>(this._convertToModulesMap(this.config.modules)),
+			registry: convertToModulesMap(this.config.modules),
 			queueModuleLoading: !!this.config.queueModuleLoading
 		});
 		await this.modLoader.loadModules();
