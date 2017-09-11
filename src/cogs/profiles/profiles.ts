@@ -1,4 +1,4 @@
-import { IModule, ModuleLoader, IModuleInfo, Module } from "../../types/ModuleLoader";
+import { IModule, ModuleLoader, IModuleInfo, Module, convertToModulesMap } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js";
 import { getLogger, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed } from "../utils/utils";
@@ -136,7 +136,8 @@ class Profiles extends Plugin implements IModule {
 	async sendPluginsList(msg: Message) {
 		let str = "# " + await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE");
 
-		for(let [name, plugin] of this.plugLoader.loadedModulesRegistry) {
+		for(let name in this.plugLoader.loadedModulesRegistry) {
+			let plugin = this.plugLoader.loadedModulesRegistry[name];
 			str += `\n- ${name}`;
 			if(!plugin.base) { return; }
 			let plug = plugin.base as IProfilesPlugin;
@@ -240,7 +241,7 @@ class Profiles extends Plugin implements IModule {
 
 			let mod: Module | undefined = undefined;
 
-			if(!(mod = this.plugLoader.loadedModulesRegistry.get(param))) {
+			if(!(mod = this.plugLoader.loadedModulesRegistry[param])) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
 				});
@@ -346,7 +347,7 @@ class Profiles extends Plugin implements IModule {
 					delete customize["image_url"];
 				}
 			} else {
-				if(!this.plugLoader.loadedModulesRegistry.has(param)) {
+				if(!this.plugLoader.loadedModulesRegistry[param]) {
 					await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
 					});
@@ -584,7 +585,7 @@ class Profiles extends Plugin implements IModule {
 			if(customize.plugins) {
 				for(let pluginName of Object.keys(customize.plugins)) {
 					let mod: Module | undefined = undefined;
-					if(!(mod = this.plugLoader.loadedModulesRegistry.get(pluginName))) {
+					if(!(mod = this.plugLoader.loadedModulesRegistry[pluginName])) {
 						// not found, skipping
 						continue;
 					}
@@ -753,13 +754,13 @@ class Profiles extends Plugin implements IModule {
 			}
 		}
 
-		let plugins = new Map<string, IModuleInfo>(this._convertToModulesMap(options));
+		let plugins = convertToModulesMap(options);
 
 		this.plugLoader = new ModuleLoader({
 			name: "Profiles:Plugins",
 			basePath: "./cogs/profiles/plugins/",
 			registry: plugins,
-			defaultSet: Array.from(plugins.keys())
+			defaultSet: Object.keys(plugins)
 		});
 
 		await this.plugLoader.loadModules();
