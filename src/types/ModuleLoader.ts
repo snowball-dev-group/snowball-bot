@@ -1,5 +1,6 @@
 import { EventEmitter } from "events";
 import logger = require("loggy");
+import { IHashMap } from "./Interfaces";
 
 export interface IModuleInfo {
 	/**
@@ -30,7 +31,7 @@ export interface IConfig {
 	/**
 	 * Pre-filled registry with info about modules
 	 */
-	registry: Map<string, IModuleInfo>;
+	registry: IHashMap<IModuleInfo>;
 	/**
 	 * Name of module loaded
 	 * Will be used in log
@@ -146,11 +147,11 @@ export class ModuleLoader {
 	/**
 	 * Registry with modules
 	 */
-	registry: Map<string, IModuleInfo> = new Map<string, IModuleInfo>();
+	registry: IHashMap<IModuleInfo> = {};
 	/**
 	 * Registry with currently loaded modules
 	 */
-	loadedModulesRegistry: Map<string, Module> = new Map<string, Module>();
+	loadedModulesRegistry: IHashMap<Module> = {};
 
 	log: Function;
 
@@ -159,7 +160,8 @@ export class ModuleLoader {
 		this.log = logger(config.name);
 
 		this.log("info", "Registering modules");
-		for(let value of config.registry.values()) {
+		for(let i in config.registry) {
+			let value = config.registry[i];
 			this.register(value);
 		}
 	}
@@ -169,10 +171,9 @@ export class ModuleLoader {
 	 * @param info Information about module
 	 */
 	register(info: IModuleInfo) {
-		this.registry.set(info.name, info);
+		this.registry[info.name] = info;
 		this.log("info", "Registered new module", process.env["NODE_ENV"] === "development" ? info : `"${info.name}" - "${info.path}"`);
 	}
-
 
 	/**
 	 * Load module by this name in registry
@@ -180,17 +181,17 @@ export class ModuleLoader {
 	 * @returns {Promise} Promise which'll be resolved once module is loaded
 	 */
 	async load(name: string) {
-		if(!this.registry.has(name)) {
+		if(!this.registry[name]) {
 			let reason = "Module not found in registry. Use `ModuleLoader#register` to put your module in registry";
 			this.log("err", "#load: attempt to load module", name, "failed:", reason);
 			throw new Error(reason);
 		}
-		if(this.loadedModulesRegistry.has(name)) {
+		if(this.loadedModulesRegistry[name]) {
 			let reason = "Module already loaded";
 			this.log("err", "#load: attempt to load module", name, "failed:", reason);
 			throw new Error(reason);
 		}
-		let moduleInfo = this.registry.get(name);
+		let moduleInfo = this.registry[name];
 		if(!moduleInfo) {
 			this.log("err", "#load: module found in registry, but returned undefined value");
 			throw new Error("No module info");
@@ -205,15 +206,15 @@ export class ModuleLoader {
 			throw err;
 		}
 
-		let module = new Module(moduleInfo);
+		let mod = new Module(moduleInfo);
 		try {
-			await module.load();
+			await mod.load();
 		} catch(err) {
-			this.log("err", "#load: module", module.info.name, " rejected loading:", err);
+			this.log("err", "#load: module", mod.info.name, " rejected loading:", err);
 			throw err;
 		}
-		this.log("ok", "#load: module", module.info.name, "resolved (loading complete)");
-		this.loadedModulesRegistry.set(module.info.name, module);
+		this.log("ok", "#load: module", mod.info.name, "resolved (loading complete)");
+		this.loadedModulesRegistry[mod.info.name] = mod;
 	}
 
 	/**
@@ -222,19 +223,19 @@ export class ModuleLoader {
 	 * @returns {Promise} Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
 	 */
 	async unload(name: string, skipCallingUnload: boolean = false) {
-		if(!this.loadedModulesRegistry.has(name)) {
+		if(!this.loadedModulesRegistry[name]) {
 			let reason = "Module not found or not loaded yet";
 			this.log("err", "#unload: check failed: ", reason);
 			throw new Error(reason);
 		}
-		let m = this.loadedModulesRegistry.get(name);
+		let m = this.loadedModulesRegistry[name];
 		if(skipCallingUnload) {
 			this.log("warn", "#unload: skiping calling `unload` method");
-			this.loadedModulesRegistry.delete(name);
+			delete this.loadedModulesRegistry[name];
 		} else {
 			if(!m) {
 				this.log("warn", "#unload: check failed: registry member is already undefined");
-				this.loadedModulesRegistry.delete(name);
+				delete this.loadedModulesRegistry.delete[name];
 				return;
 			}
 			try {
@@ -244,14 +245,14 @@ export class ModuleLoader {
 				throw err;
 			}
 			this.log("ok", "#unload: module", name, "successfully unloaded");
-			this.loadedModulesRegistry.delete(name);
+			delete this.loadedModulesRegistry[name];
 		}
 	}
 
 	async loadModules(forceAll = false) {
 		let toLoad:string[] = [];
 		if(forceAll) {
-			toLoad = Array.from(this.config.registry.keys());
+			toLoad = Array.from(Object.keys(this.config.registry));
 		} else {
 			toLoad = this.config.defaultSet;
 		}
@@ -271,7 +272,7 @@ export class ModuleLoader {
 	 */
 	async unloadAll() {
 		this.log("info", "Unloading started");
-		for(let moduleName of this.loadedModulesRegistry.keys()) {
+		for(let moduleName in this.loadedModulesRegistry) {
 			await this.unload(moduleName);
 		}
 	}
@@ -282,9 +283,9 @@ export class ModuleLoader {
 * @param obj {Array} Array of module info entries
 */
 export function convertToModulesMap(obj: IModuleInfo[]) {
-	let modulesMap = new Map();
+	let modulesMap:IHashMap<IModuleInfo> = {};
 	for(let moduleInfo of obj) {
-		modulesMap.set(moduleInfo.name, moduleInfo);
+		modulesMap[moduleInfo.name] = moduleInfo;
 	}
 	return modulesMap;
 }
