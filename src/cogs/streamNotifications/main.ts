@@ -147,14 +147,14 @@ class StreamNotifications extends Plugin implements IModule {
 	log = getLogger("StreamNotifications");
 	db = getDB();
 	servicesLoader: ModuleLoader;
-	servicesList: Map<string, IModuleInfo>;
+	servicesList: IHashMap<IModuleInfo>;
 
 	constructor(options) {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
 
-		this.servicesList = new Map<string, IModuleInfo>(convertToModulesMap(options));
+		this.servicesList = convertToModulesMap(options);
 
 		this.servicesLoader = new ModuleLoader({
 			name: "StreamNotifications:Services",
@@ -391,7 +391,7 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 
 		let providerName = args[0].toLowerCase();
-		let providerModule = this.servicesLoader.loadedModulesRegistry.get(providerName);
+		let providerModule = this.servicesLoader.loadedModulesRegistry[providerName];
 		if(!providerModule) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("ADD_FAULT_PROVIDERNOTFOUND"))
@@ -620,7 +620,7 @@ class StreamNotifications extends Plugin implements IModule {
 			await this.removeSubscription(rawSubscription);
 
 			// we'll gonna notify provider that it can free cache for this subscription
-			let providerModule = this.servicesLoader.loadedModulesRegistry.get(args[0].toLowerCase());
+			let providerModule = this.servicesLoader.loadedModulesRegistry[args[0].toLowerCase()];
 			if(providerModule) {
 				let provider = providerModule.base as IStreamingService;
 
@@ -791,7 +791,8 @@ class StreamNotifications extends Plugin implements IModule {
 	};
 
 	async handleNotifications() {
-		for (let [providerName, mod] of this.servicesLoader.loadedModulesRegistry) {
+		for (let providerName in this.servicesLoader.loadedModulesRegistry) {
+			let mod = this.servicesLoader.loadedModulesRegistry[providerName];
 			if(!mod.base) {
 				this.log("err", `${providerName} is still not loaded (?!)`);
 				continue;
@@ -882,7 +883,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	async pushNotification(guild:Guild, result: IStreamStatus, subscription:ISubscriptionRow, notification?:INotification) {
 		let providerName = subscription.provider;
-		let mod = this.servicesLoader.loadedModulesRegistry.get(providerName);
+		let mod = this.servicesLoader.loadedModulesRegistry[providerName];
 		if(!mod) {
 			this.log("warn", "WARN:", providerName, "not found as loaded service");
 			return;
@@ -1232,7 +1233,7 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 		}
 
-		for(let serviceName of this.servicesList.keys()) {
+		for(let serviceName in this.servicesList) {
 			await this.servicesLoader.load(serviceName);
 		}
 
@@ -1252,7 +1253,7 @@ class StreamNotifications extends Plugin implements IModule {
 					uid: string;
 				};
 				
-				let mod = this.servicesLoader.loadedModulesRegistry.get(payload.provider);
+				let mod = this.servicesLoader.loadedModulesRegistry[payload.provider];
 				if(!mod) { this.log("warn", "Provider not found", payload.provider, "- message ignored"); return; }
 				if(!mod.loaded) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
 
