@@ -34,7 +34,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	}
 
 	// ========================================
-	//			Subscriptions
+	//             Subscriptions
 	// ========================================
 
 	private subscriptions: IStreamingServiceStreamer[] = [];
@@ -63,7 +63,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	}
 
 	// ========================================
-	//			Fetching interval
+	//           Fetching interval
 	// ========================================
 
 	private interval?: NodeJS.Timer;
@@ -99,7 +99,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	}
 
 	// ========================================
-	//				Fetching
+	//              Fetching
 	// ========================================
 
 	private streamsCache: IHashMap<ICacheItem<IYouTubeVideo>> = {};
@@ -165,7 +165,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	}
 
 	// ========================================
-	//				 Discord
+	//              Discord
 	// ========================================
 
 	public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
@@ -223,7 +223,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	}
 
 	// ========================================
-	//				   API
+	//                  API
 	// ========================================
 
 	private getAPIURL_Stream(channelId: string) {
@@ -275,7 +275,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	}
 
 	// ========================================
-	//			  Module Stuff
+	//             Module Stuff
 	// ========================================
 
 	async unload() {
