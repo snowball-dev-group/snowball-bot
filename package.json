@@ -8,18 +8,18 @@
     "full-icu": "^1.2.0",
     "knex": "^0.13.0",
     "lodash": "^4.17.4",
-    "loggy": "git+https://gitlab.com/BlackSilverBot/loggy.git",
+    "loggy": "https://gitlab.com/BlackSilverBot/loggy.git",
     "minimist": "^1.2.0",
     "moment": "^2.18.1",
     "moment-timezone": "^0.5.13",
     "mysql": "^2.14.1",
-    "mz": "^2.6.0",
-    "node-fetch": "^1.7.2",
+    "mz": "^2.7.0",
+    "node-fetch": "^1.7.3",
     "random-js": "^1.0.8",
     "timestring": "^5.0.0",
     "universal-analytics": "^0.4.15",
     "uws": "^8.14.1",
-    "ws": "^3.1.0"
+    "ws": "^3.2.0"
   },
   "name": "snowballbot-discord",
   "displayName": "Discord Snowball bot",
@@ -27,13 +27,13 @@
   "version": "0.0.1",
   "main": "init.js",
   "devDependencies": {
-    "@types/async": "^2.0.40",
-    "@types/bluebird": "^3.5.8",
-    "@types/crypto-js": "^3.1.33",
-    "@types/knex": "^0.0.56",
-    "@types/lodash": "^4.14.70",
+    "@types/async": "^2.0.42",
+    "@types/bluebird": "^3.5.11",
+    "@types/crypto-js": "^3.1.35",
+    "@types/knex": "^0.0.61",
+    "@types/lodash": "^4.14.74",
     "@types/mz": "^0.0.31",
-    "@types/node": "^8.0.24",
+    "@types/node": "^8.0.28",
     "@types/node-fetch": "^1.6.7",
     "@types/random-js": "^1.0.30",
     "@types/universal-analytics": "^0.4.1",
@@ -42,7 +42,7 @@
     "grunt-contrib-copy": "^1.0.0",
     "grunt-ts": "^6.0.0-beta.16",
     "grunt-tslint": "^5.0.1",
-    "tslint": "^5.7.0",
-    "typescript": "^2.6.0-dev.20170907"
+    "tslint": "^5.0.0-dev.0",
+    "typescript": "^2.6.0-dev.20170916"
   }
 }
