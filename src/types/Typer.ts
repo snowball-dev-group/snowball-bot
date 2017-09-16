@@ -127,7 +127,15 @@ export class Typer {
         }
 
         if(schema.type !== "any") {
+            if(Typer.isUndefined(val) && !schema.optional) {
+                throw new TyperError("Value not provided, when required by schema", path, {
+                    optional: false,
+                    schemaRef: schema
+                });
+            }
+
             let valType = typeof val;
+
             if(valType !== schema.type) {
                 throw new TyperError("Invalid type of object", path, {
                     expectedType: schema.type,
@@ -160,15 +168,6 @@ export class Typer {
             // => => `isObject`: `isNumber` auto-set
             if(schema.isObject) {
                 schema.isNumber = false;
-            }
-
-            // => Actual checking
-            // => => Checking if undefined and not optional
-            if(!schema.optional && Typer.isUndefined(val)) {
-                throw new TyperError("Value not provided while required by schema", path, {
-                    optional: false,
-                    schemaRef: schema
-                });
             }
 
             // => => Checking if `isObject` but `val` is not Object
