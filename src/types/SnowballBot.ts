@@ -125,7 +125,7 @@ const SCHEMA_CONFIG: ISchema = {
 	},
 	"modules": {
 		type: "object", isArray: true,
-		schema: SCHEMA_MODULEINFO
+		elementSchema: SCHEMA_MODULEINFO
 	},
 	"djsConfig": { type: "any" },
 	"localizerOptions": {
