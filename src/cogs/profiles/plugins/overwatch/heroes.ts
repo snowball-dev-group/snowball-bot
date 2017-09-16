@@ -320,7 +320,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 	getPlaytimeStr(playtime: number, language: string) {
 		let ms = ((playtime * 60) * 60) * 1000;
-		return localizer.humanizeDuration(language, ms, undefined, {
+		return $localizer.humanizeDuration(language, ms, undefined, {
 			largest: 2,
 			units: ["h", "m", "s"],
 			serialComma: false

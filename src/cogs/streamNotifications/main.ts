@@ -10,6 +10,7 @@ import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IS
 import { createConfirmationMessage } from "../utils/interactive";
 import { command, Category as CommandCategory } from "../utils/help";
 import { IHashMap } from "../../types/Interfaces";
+import { messageToExtra } from "../utils/failToDetail";
 
 const PREFIX = "!streams";
 const MAX_NOTIFIED_LIFE = 86400000; // ms
@@ -82,7 +83,7 @@ interface INotification {
 const LOCALIZED = (str: string) => `STREAMING_${str.toUpperCase()}`;
 
 function rightsCheck(member: GuildMember) {
-	return member.hasPermission(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.hasPermission(["ADMINISTRATOR"]) || member.id === botConfig.botOwner;
+	return member.hasPermission(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.hasPermission(["ADMINISTRATOR"]) || member.id === $botConfig.botOwner;
 }
 
 function helpCheck(msg: Message) {
@@ -183,6 +184,7 @@ class StreamNotifications extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("CMD_ERROR"))
 			});
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			this.log("err", `Error starting command "${msg.content}"`, err);
 		}
 	}
@@ -415,6 +417,7 @@ class StreamNotifications extends Plugin implements IModule {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED(err.stringKey))
 					});
 				} else {
+					$snowball.captureException(err, { extra: messageToExtra(msg) });
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("ADD_FAULT_UNKNOWN"))
 					});
@@ -624,7 +627,7 @@ class StreamNotifications extends Plugin implements IModule {
 			if(providerModule) {
 				let provider = providerModule.base as IStreamingService;
 
-				if(botConfig.mainShard) {
+				if($botConfig.mainShard) {
 					provider.removeSubscribtion(subscription.uid);
 				} else {
 					if(process.send) { // notifying then
@@ -805,8 +808,9 @@ class StreamNotifications extends Plugin implements IModule {
 				let handler = (status) => {
 					try {
 						this.handleNotification(providerName, status);
-					} catch (err) {
+					} catch(err) {
 						this.log("err", "Failed to handle notification", err);
+						$snowball.captureException(err, { extra: { providerName, status } });
 					}
 				};
 				provider.on(action, handler);
@@ -855,7 +859,7 @@ class StreamNotifications extends Plugin implements IModule {
 			for(let subscribedGuildId of subscription.subscribers) {
 				let notification = await this.getNotification(subscription.provider, subscription.uid, (status.updated && status.oldId ? status.oldId : status.id), subscribedGuildId);
 
-				let guild = discordBot.guilds.get(subscribedGuildId);
+				let guild = $discordBot.guilds.get(subscribedGuildId);
 
 				if(!guild) {
 					if(process.send) {
@@ -901,6 +905,12 @@ class StreamNotifications extends Plugin implements IModule {
 		try {
 			embed = await service.getEmbed(result, guildLanguage);
 		} catch(err) {
+			$snowball.captureException(err, {
+				extra: {
+					guildLanguage,
+					result, providerName
+				}
+			});
 			this.log("err", "Failed to get embed for stream of", `${subscription.uid} (${providerName})`, err);
 			return;
 		}
@@ -953,7 +963,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 			try {
 				await msg.edit(mentionsEveryone ?
-					"@everyone " + localizer.getFormattedString(guildLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
+					"@everyone " + $localizer.getFormattedString(guildLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
 						username: subscription.username
 					})
 					: "", {
@@ -961,6 +971,9 @@ class StreamNotifications extends Plugin implements IModule {
 					});
 			} catch(err) {
 				this.log("err", "Failed to update message with ID", notification.messageId, err);
+				$snowball.captureException(err, {
+					extra: { subscription, guildLanguage, result, channelId: channel.id }
+				});
 			}
 
 			if(result.status === "offline") {
@@ -974,7 +987,7 @@ class StreamNotifications extends Plugin implements IModule {
 			let messageId = "";
 			try {
 				let msg = (await (channel as TextChannel).send(mentionsEveryone ?
-					"@everyone " + localizer.getFormattedString(guildLanguage, "STREAMING_NOTIFICATION_EVERYONE", {
+					"@everyone " + $localizer.getFormattedString(guildLanguage, "STREAMING_NOTIFICATION_EVERYONE", {
 						username: subscription.username
 					})
 					: "", {
@@ -982,6 +995,9 @@ class StreamNotifications extends Plugin implements IModule {
 					})) as Message;
 				messageId = msg.id;
 			} catch(err) {
+				$snowball.captureException(err, {
+					extra: { subscription, guildLanguage, result, channelId: channel.id }
+				});
 				this.log("err", "Failed to send notification for stream of", `${subscription.uid} (${providerName})`, "to channel", `${channel.id}.`, "Error ocurred", err);
 				return;
 			}
@@ -1237,7 +1253,7 @@ class StreamNotifications extends Plugin implements IModule {
 			await this.servicesLoader.load(serviceName);
 		}
 
-		if(botConfig.mainShard) {
+		if($botConfig.mainShard) {
 			this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
 			await this.notificationsCleanup();
 
@@ -1275,7 +1291,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 				this.log("info", "Received message", msg);
 				if(msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
-					let guild = discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
+					let guild = $discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
 					if(guild) {
 						// process
 						let notifyAbout = msg.payload.notifyAbout as {

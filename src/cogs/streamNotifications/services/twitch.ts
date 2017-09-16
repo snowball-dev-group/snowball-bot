@@ -212,7 +212,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				icon_url: TWITCH_ICON,
 				text: "Twitch"
 			},
-			description: localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
+			description: $localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
 				username: escapeDiscordMarkdown(stream.channel.display_name || stream.channel.name, true),
 				type: stream.stream_type
 			}),
@@ -237,12 +237,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			},
 			fields: [{
 				inline: true,
-				name: localizer.getString(lang, "STREAMING_GAME_NAME"),
-				value: stream.game ? stream.game : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
+				name: $localizer.getString(lang, "STREAMING_GAME_NAME"),
+				value: stream.game ? stream.game : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
 			}, {
 				inline: true,
-				name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
-				value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
+				name: $localizer.getString(lang, "STREAMING_MATURE_NAME"),
+				value: $localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
 					mature: stream.channel.mature + ""
 				})
 			}]

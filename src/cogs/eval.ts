@@ -45,7 +45,7 @@ class EvalJS extends Plugin implements IModule {
 
 	async onMessage(message: Message) {
 		if(!message.author) { return; }
-		if(message.author.id !== botConfig.botOwner) { return; }
+		if(message.author.id !== $botConfig.botOwner) { return; }
 		if(!message.content) { return; }
 
 		let usedPrefix = ["!eval", "!e", "!ev"].find(prefix => message.content.startsWith(prefix));
@@ -65,7 +65,7 @@ class EvalJS extends Plugin implements IModule {
 			let output = this.safeEval(script, {
 				...global,
 				this: this,
-				$bot: discordBot,
+				$bot: $discordBot,
 				$msg: message,
 				setTimeout: (handler, ms) => setTimeout(this.makeSafe(handler), ms),
 				setInterval: (handler, ms) => setInterval(this.makeSafe(handler), ms),

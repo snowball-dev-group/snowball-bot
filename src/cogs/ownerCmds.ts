@@ -17,13 +17,13 @@ class OwnerCommands extends Plugin implements IModule {
 
 	async onMessage(msg: Message) {
 		if(!msg.author) { return; }
-		if(msg.author.id !== botConfig.botOwner) { return; }
+		if(msg.author.id !== $botConfig.botOwner) { return; }
 		let u = msg.member || msg.author;
 		commandRedirect(msg.content, objectToMap<Function>({
 			"!change_name": async (username) => {
 				try {
-					let oldName = discordBot.user.username;
-					let newUser = await discordBot.user.setUsername(username);
+					let oldName = $discordBot.user.username;
+					let newUser = await $discordBot.user.setUsername(username);
 					msg.react("✅");
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.OK, u, {
@@ -56,7 +56,7 @@ class OwnerCommands extends Plugin implements IModule {
 						return;
 					}
 					try {
-						let newUser = await discordBot.user.setAvatar(await resp.buffer());
+						let newUser = await $discordBot.user.setAvatar(await resp.buffer());
 						msg.channel.send("", {
 							embed: await generateLocalizedEmbed(EmbedType.OK, u, "OWNERCMDS_CHANGEAVY_DONE", {
 								imageUrl: newUser.displayAvatarURL

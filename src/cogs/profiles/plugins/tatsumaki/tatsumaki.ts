@@ -72,7 +72,7 @@ export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUs
 				Authorization: apiKey
 			}
 		});
-	} catch (err) {
+	} catch(err) {
 		LOG("err", logPrefix, "Error catched!", err);
 		if(err.status && err.status === 404) {
 			throw new Error("Profile not found");
@@ -89,7 +89,7 @@ export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUs
 	try {
 		LOG("info", logPrefix, "Parsing JSON response");
 		uObject = await resp.json() as IUserInfo;
-	} catch (err) {
+	} catch(err) {
 		LOG("err", logPrefix, "JSON parsing failed", err);
 		throw new Error("Error retrieving information from the API.");
 	}
@@ -102,7 +102,7 @@ export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUs
 	try {
 		LOG("info", logPrefix, "Caching response");
 		await cache(CACHE_OWNER, uid, JSON.stringify(uObject), true);
-	} catch (err) {
+	} catch(err) {
 		LOG("err", logPrefix, "Caching failed", err);
 	}
 
@@ -116,7 +116,7 @@ export async function getTatsuProfile(uid:string, apiKey:string) : Promise<IUser
 	try {
 		cached = await getFromCache(CACHE_OWNER, uid);
 		LOG("ok", logPrefix, "Got element from cache");
-	} catch (err) {
+	} catch(err) {
 		LOG("err", logPrefix, "Failed to get element from cache.", err);
 		throw err;
 	}
@@ -131,7 +131,7 @@ export async function getTatsuProfile(uid:string, apiKey:string) : Promise<IUser
 			try {
 				obj = JSON.parse(cached.value) as IUserInfo;
 				LOG("ok", logPrefix, "Cached JSON parsed!");
-			} catch (err) {
+			} catch(err) {
 				LOG("err", logPrefix, "Failed to parse cached JSON", cached.value);
 			}
 			
@@ -143,7 +143,7 @@ export async function getTatsuProfile(uid:string, apiKey:string) : Promise<IUser
 			LOG("warn", logPrefix, "Old cache detected, removing...");
 			try {
 				await clearCache(CACHE_OWNER, uid);
-			} catch (err) {
+			} catch(err) {
 				LOG("err", logPrefix, "Caching removal failed", err);
 			}
 		}
@@ -154,7 +154,7 @@ export async function getTatsuProfile(uid:string, apiKey:string) : Promise<IUser
 	try {
 		profile = await fetchTatsuProfile(uid, apiKey);
 		LOG("ok", logPrefix, "Fetching done.");
-	} catch (err) {
+	} catch(err) {
 		LOG("err", logPrefix, "Fetching failed", err);
 	}
 

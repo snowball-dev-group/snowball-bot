@@ -9,10 +9,11 @@ import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref,
 import { createConfirmationMessage } from "./utils/interactive";
 import * as timestring from "timestring";
 import * as moment from "moment-timezone";
+import { messageToExtra } from "./utils/failToDetail";
 
 const PREMIUMCTRL_PREFIX = `!premiumctl`;
 
-let whoCan = [botConfig.botOwner];
+let whoCan = [$botConfig.botOwner];
 
 function isAdm(msg: Message) {
 	return isChat(msg) && whoCan.indexOf(msg.author.id) !== -1;
@@ -118,6 +119,7 @@ class PremiumControl extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_STARTFAILED")
 			});
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 		}
 	}
 
@@ -656,11 +658,12 @@ class PremiumControl extends Plugin implements IModule {
 
 	async performGuildsSync(noLog = false) {
 		if(!noLog) { this.log("info", "Performing role sync in guilds..."); }
-		for(let guild of discordBot.guilds.values()) {
+		for(let guild of $discordBot.guilds.values()) {
 			try {
 				await this.performGuildSync(guild, noLog);
 			} catch(err) {
 				this.log("err", `Role sync failed at guild "${guild.name}"`, err);
+				$snowball.captureException(err, { extra: { guildId: guild.id } });
 			}
 		}
 	}

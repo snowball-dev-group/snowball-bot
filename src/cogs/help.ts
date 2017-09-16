@@ -1,9 +1,10 @@
 import { IModule } from "../types/ModuleLoader";
 import { Plugin } from "./plugin";
 import { Message } from "discord.js";
-import { getHelp, command, Category } from "./utils/help";
+import { generateHelpContent, command, Category } from "./utils/help";
 import { EmbedType } from "./utils/utils";
 import { generateLocalizedEmbed } from "./utils/ez-i18n";
+import { messageToExtra } from "./utils/failToDetail";
 
 @command(Category.Helpful, "sb_help", "loc:HELPFULCMD_CMDMETA_DESCRIPTION")
 class HelpfulCommand extends Plugin implements IModule {
@@ -31,7 +32,7 @@ class HelpfulCommand extends Plugin implements IModule {
 		}
 
 		try {
-			let hStr = await getHelp(msg);
+			let hStr = await generateHelpContent(msg);
 			await msg.author.send(hStr, {
 				split: true,
 				code: "md"
@@ -41,12 +42,13 @@ class HelpfulCommand extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "HELPFULCMD_SENTTOPM")
 				});
 			}
-		} catch (err) {
+		} catch(err) {
 			if(infoMsg) {
 				infoMsg = await infoMsg.edit("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "HELPFULCMD_ERRSENDING")
 				});
 			}
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 		}
 
 	}

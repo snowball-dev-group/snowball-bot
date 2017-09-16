@@ -25,9 +25,9 @@ interface IDBUserProfile {
 }
 
 interface IUserActivity {
-	link?:string;
-	text:string;
-	emoji:string;
+	link?: string;
+	text: string;
+	emoji: string;
 }
 
 const TABLE_NAME = "profiles";
@@ -82,7 +82,7 @@ class Profiles extends Plugin implements IModule {
 	log = getLogger("ProfilesJS");
 	db = getDB();
 	options: any;
-	customHumanizers:INullableHashMap<Humanizer> = {};
+	customHumanizers: INullableHashMap<Humanizer> = {};
 
 	constructor(options: any) {
 		super({
@@ -174,7 +174,7 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async addBadge(msg: Message) {
-		if(msg.author.id !== botConfig.botOwner) {
+		if(msg.author.id !== $botConfig.botOwner) {
 			return;
 		}
 		let args = msg.content.slice("!add_badge ".length).split(",").map(arg => arg.trim());
@@ -382,12 +382,12 @@ class Profiles extends Plugin implements IModule {
 					custom: true,
 					string: `\`!set_bio [${strs.aboutMe}]\``
 				}, {
-					fields: [{
-						name: `\`${strs.aboutMe}\``,
-						inline: false,
-						value: strs.def_aboutMe
-					}]
-				})
+						fields: [{
+							name: `\`${strs.aboutMe}\``,
+							inline: false,
+							value: strs.def_aboutMe
+						}]
+					})
 			});
 			return;
 		}
@@ -435,13 +435,13 @@ class Profiles extends Plugin implements IModule {
 		}
 	}
 
-	serverTimeHumanize(duration: number, largest: number = 2, round: boolean = true, language:string = localizer.defaultLanguage) {
+	serverTimeHumanize(duration: number, largest: number = 2, round: boolean = true, language: string = $localizer.defaultLanguage) {
 		let humanizer = this.customHumanizers[language];
 		if(!humanizer) {
-			humanizer = this.customHumanizers[language] = localizer.createCustomHumanizer(language, {
-				w: (weeks) => localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:WEEKS", { weeks }),
-				m: (minutes) => localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:MINUTES", { minutes }),
-				s: (seconds) => localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:SECONDS", { seconds })
+			humanizer = this.customHumanizers[language] = $localizer.createCustomHumanizer(language, {
+				w: (weeks) => $localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:WEEKS", { weeks }),
+				m: (minutes) => $localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:MINUTES", { minutes }),
+				s: (seconds) => $localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:SECONDS", { seconds })
 			});
 			if(!humanizer) { return; }
 		}
@@ -478,7 +478,7 @@ class Profiles extends Plugin implements IModule {
 			statusString += " **" + ((text) => (jsonActivity.link ? `[${text}](${jsonActivity.link})` : text))(escapeDiscordMarkdown(jsonActivity.text)) + "**";
 		}
 
-		if(member.id === botConfig.botOwner) {
+		if(member.id === $botConfig.botOwner) {
 			statusString = `<:adm_badge:313954950143279117> ${statusString}`;
 		} else if((await isPremium(member))) {
 			statusString = `<:premium:315520823504928768> ${statusString}`;
@@ -731,6 +731,7 @@ class Profiles extends Plugin implements IModule {
 		try {
 			this.db = getDB();
 		} catch(err) {
+			$snowball.captureException(err);
 			this.log("err", "Cannot connect to database");
 			return;
 		}
@@ -739,6 +740,7 @@ class Profiles extends Plugin implements IModule {
 		try {
 			status = await this.db.schema.hasTable(TABLE_NAME);
 		} catch(err) {
+			$snowball.captureException(err);
 			this.log("err", "Can't check table status: ", err);
 			return;
 		}
@@ -749,6 +751,7 @@ class Profiles extends Plugin implements IModule {
 				await createTableBySchema(TABLE_NAME, DB_PROFILE_PROPS);
 				this.log("ok", "Table is created!");
 			} catch(err) {
+				$snowball.captureException(err);
 				this.log("err", "Cannot create table right now", err);
 				return;
 			}

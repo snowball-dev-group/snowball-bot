@@ -50,7 +50,7 @@ class Count extends Plugin implements IModule {
 		if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
 
 		if(override) {
-			if(msg.author.id === botConfig.botOwner) {
+			if(msg.author.id === $botConfig.botOwner) {
 				let mNumber = parseInt(msg.content.slice(1), 10);
 				if(isNaN(mNumber)) { msg.delete(); return; }
 				await this.dbClient("count").insert({
