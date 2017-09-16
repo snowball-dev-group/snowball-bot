@@ -339,11 +339,9 @@ export class SnowballBot extends EventEmitter {
 	 * Connect to Discord
 	 * @returns {Promise}
 	 */
-	public async connect() {
+	public async login() {
 		this._log("info", "Connecting to Discord...");
 		if(!this._discordClient) {
-			throw new Error("Discord client not requires reconnecting");
-		} else if(this._discordClient.status !== 4) {
 			throw new Error("Discord client not requires reconnecting");
 		}
 		return await this._discordClient.login(this._config.token);
