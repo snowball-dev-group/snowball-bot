@@ -293,7 +293,7 @@
   "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_INVITED":"",
   "GUILDS_INFO_DESCRIPTIONPLACEHOLDER":"",
   "GUILDS_INVITE_INFO":"Отправь эту команду, чтобы пригласить других участников в гильдию, для которой вы админ.",
-  "GUILDS_INVITE_USAGE":"Правильно писать - `{prefix} [имя гильдии], [revoke, упоминания / упоминания / list]`. Ключевое слово `revoke`отзывает приглашения",
+  "GUILDS_INVITE_USAGE":"Правильное использование - `{prefix} [имя гильдии], [revoke, упоминания / упоминания / list]`. Ключевое слово `revoke`отзывает приглашения",
   "GUILDS_INVITE_NOMENTIONS":"Ты не упомянул участников",
   "GUILDS_INVITE_NOINVITES":"",
   "GUILDS_INVITE_REVOKED":"",
