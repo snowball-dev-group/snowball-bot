@@ -329,7 +329,7 @@ export class SnowballBot extends EventEmitter {
 
 		await localizer.init();
 
-		Object.defineProperty(global, "localizer", {
+		Object.defineProperty(global, "$localizer", {
 			configurable: false, enumerable: false,
 			writable: false, value: localizer
 		});
