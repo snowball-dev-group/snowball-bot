@@ -55,10 +55,15 @@ const SHARD_TIMEOUT = 30000; // ms
 
 			log("info", "Started as shard", shardId + 1, "/", process.env.SHARDS_COUNT);
 
-			await initBot(log, config, {
-				shardId,
-				shardsCount
-			});
+			try {
+				await initBot(log, config, {
+					shardId,
+					shardsCount
+				});
+			} catch (err) {
+				log("err", "Failed to initializate bot", err);
+				return process.exit(1);
+			}
 
 			if(process.send) {
 				process.send({
@@ -80,11 +85,16 @@ const SHARD_TIMEOUT = 30000; // ms
 			}
 		}
 	} else {
-		// continuing loading
-		await initBot(log, config, {
-			shardId: 0,
-			shardsCount: 1
-		});
+		try {
+			// continuing loading
+			await initBot(log, config, {
+				shardId: 0,
+				shardsCount: 1
+			});
+		} catch (err) {
+			log("err", "Failed to initalizate bot", err);
+			return process.exit(1);
+		}
 	}
 })();
 
