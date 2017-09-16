@@ -74,7 +74,7 @@ export interface ITypeErrorInvalidInfo {
 /**
  * Class of TyperError: Error that Typer throws once one of tests fails
  */
-export class TyperError extends TypeError {
+export class TyperError extends Error {
     /**
      * Prefix for Typer errors
      */
