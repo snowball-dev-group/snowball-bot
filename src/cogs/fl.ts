@@ -106,9 +106,9 @@ class ReverseLayout extends Plugin implements IModule {
 					thumbWidth: 32,
 					thumbHeight: 32,
 					footer: {
-						icon_url: discordBot.user.displayAvatarURL,
+						icon_url: $discordBot.user.displayAvatarURL,
 						text: await localizeForUser(msg.member, "FL_MESSAGE_INREPLY", {
-							botname: discordBot.user.username
+							botname: $discordBot.user.username
 						})
 					},
 					color: FL_COLOR,

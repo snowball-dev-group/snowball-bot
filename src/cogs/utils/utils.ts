@@ -242,8 +242,8 @@ export function generateEmbed(type: EmbedType, description: string, options?: IE
 		} else {
 			if(type !== EmbedType.Empty) {
 				embed.footer = {
-					text: discordBot.user.username,
-					icon_url: discordBot.user.displayAvatarURL
+					text: $discordBot.user.username,
+					icon_url: $discordBot.user.displayAvatarURL
 				};
 			}
 		}

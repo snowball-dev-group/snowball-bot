@@ -41,9 +41,9 @@ class EmbedME extends Plugin implements IModule {
 				description: mContent,
 				timestamp: msg.createdAt,
 				footer: {
-					icon_url: discordBot.user.displayAvatarURL,
+					icon_url: $discordBot.user.displayAvatarURL,
 					text: await localizeForUser(msg.member, "EMBEDME_EMBED", {
-						botName: discordBot.user.username
+						botName: $discordBot.user.username
 					})
 				}
 			},

@@ -9,7 +9,7 @@ export type identify = User | GuildMember;
 const languagePref = ":language";
 const guildLangPref = ":language";
 const guildEnforcePref = ":enforce_lang";
-const defLanguage = localizer.defaultLanguage;
+const defLanguage = $localizer.defaultLanguage;
 
 // <uid, language>
 let uCache = new Map<string, string>();
@@ -58,12 +58,12 @@ export async function getUserLanguage(u: identify) {
 
 export async function localizeForUser(u: identify, str: string, formatOpts?: any) {
 	let lang = await getUserLanguage(u);
-	return formatOpts ? localizer.getFormattedString(lang, str, formatOpts) : localizer.getString(lang, str);
+	return formatOpts ? $localizer.getFormattedString(lang, str, formatOpts) : $localizer.getString(lang, str);
 }
 
 export async function humanizeDurationForUser(u: identify, duration: number, unit: HumanizerUnitToConvert = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
 	let lang = await getUserLanguage(u);
-	return localizer.humanizeDuration(lang, duration, unit, humanizerOptions);
+	return $localizer.humanizeDuration(lang, duration, unit, humanizerOptions);
 }
 
 export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {

@@ -11,7 +11,8 @@ import { replaceAll } from "./utils/text";
 import { Category, command } from "./utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
 import { randomString } from "./utils/random";
-import { IPCMessage } from "../types/Interfaces";
+import { IPCMessage } from "../types/Types";
+import { messageToExtra } from "./utils/failToDetail";
 
 const TABLE_NAME = "guilds";
 
@@ -137,7 +138,7 @@ function rightsCheck(member: GuildMember, row?: IGuildRow, noAdmins = false) {
 	let checkB = false;
 	if(row) {
 		let cz = JSON.parse(row.customize) as IGuildCustomize;
-		checkB = row.ownerId === member.id || member.id === botConfig.botOwner;
+		checkB = row.ownerId === member.id || member.id === $botConfig.botOwner;
 		if(!noAdmins) {
 			checkB = checkB || (cz.admins && cz.admins.includes(member.id));
 		}
@@ -227,7 +228,7 @@ class Guilds extends Plugin implements IModule {
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
 
-		if(botConfig.sharded) {
+		if($botConfig.sharded) {
 			this.processMessageListener = (msg) => {
 				if(typeof msg !== "object") { return; }
 				if(msg.type && !msg.type.startsWith("guilds:")) { return; }
@@ -283,6 +284,7 @@ class Guilds extends Plugin implements IModule {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_RUNNINGFAILED")
 			});
 			this.log("err", "Error at running cmd", msg.content, "\n", err);
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 		}
 	}
 
@@ -589,7 +591,7 @@ class Guilds extends Plugin implements IModule {
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_RULESSET");
 			} break;
 			case "welcome_msg_channel": {
-				let channel = discordBot.channels.get(content);
+				let channel = $discordBot.channels.get(content);
 				if(!channel) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_CHANNELNOTFOUND")
@@ -1088,7 +1090,7 @@ class Guilds extends Plugin implements IModule {
 			});
 
 			let confirmed = false;
-			if(!botConfig.sharded) {
+			if(!$botConfig.sharded) {
 				try {
 					let msgs = await waitForMessages(__msg.channel as DMChannel, {
 						time: 60 * 1000,
@@ -1099,7 +1101,6 @@ class Guilds extends Plugin implements IModule {
 					});
 					confirmed = msgs.first().content.toLowerCase() === code.toLowerCase();
 				} catch(err) {
-					this.log("err", "Failed to check user's agreement with rules", err);
 					confirmed = false;
 				}
 			} else if(process.send) {
@@ -1181,6 +1182,7 @@ class Guilds extends Plugin implements IModule {
 			dbRow = await this.getGuildRow(msg.guild, guildName);
 		} catch(err) {
 			this.log("err", "Failed to get guild", err);
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			dbRow = undefined;
 		}
 
@@ -1269,6 +1271,7 @@ class Guilds extends Plugin implements IModule {
 			dbRow = await this.getGuildRow(msg.guild, guildName);
 		} catch(err) {
 			this.log("err", "Failed to get guild", err);
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			dbRow = undefined;
 		}
 
@@ -1381,6 +1384,7 @@ class Guilds extends Plugin implements IModule {
 			dbRow = await this.getGuildRow(msg.guild, args[0]);
 		} catch(err) {
 			this.log("err", "Failed to get guild", err);
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			dbRow = undefined;
 		}
 
@@ -1602,6 +1606,7 @@ class Guilds extends Plugin implements IModule {
 			// args[0] supposed to be guild name
 		} catch(err) {
 			this.log("err", "Failed to get guild", err);
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			dbRow = undefined;
 		}
 
@@ -1861,6 +1866,7 @@ class Guilds extends Plugin implements IModule {
 			status = await this.db.schema.hasTable(TABLE_NAME);
 		} catch(err) {
 			this.log("err", "Can't get table status", err);
+			$snowball.captureException(err);
 			return;
 		}
 
@@ -1870,6 +1876,7 @@ class Guilds extends Plugin implements IModule {
 				await createTableBySchema(TABLE_NAME, TABLE_SCHEMA);
 			} catch(err) {
 				this.log("err", "Can't create table by schema", err);
+				$snowball.captureException(err);
 				return;
 			}
 		} else {

@@ -53,29 +53,30 @@ interface IArgumentsMap {
 	[argName: string]: IArgumentInfo;
 }
 
+export function addCommand(category: Category, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
+	let categoriesMap = init();
+
+	let categoryMap = categoriesMap[category];
+	if(!categoryMap) {
+		categoryMap = categoriesMap[category] = {};
+		if(!categoryMap) { return; } // category not found
+	}
+
+	categoryMap[command] = {
+		arguments: args,
+		description,
+		specialCheck
+	};
+}
+
 export function command(category: Category, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
 	return (target) => {
-		let d = init();
-
-		let cat = d[category];
-		if(!cat) {
-			cat = d[category] = {};
-			if(!cat) {
-				return target;
-			}
-		}
-
-		cat[command] = {
-			arguments: args,
-			description,
-			specialCheck
-		};
-
+		addCommand(category, command, description, args, specialCheck);
 		return target;
 	};
 }
 
-export async function getHelp(msg: Message) {
+export async function generateHelpContent(msg: Message) {
 	let rStr = "";
 	let user = msg.channel.type === "text" ? msg.member : msg.author;
 	let categories = init();

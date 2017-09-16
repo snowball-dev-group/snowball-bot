@@ -154,12 +154,12 @@ class CountV2 extends Plugin implements IModule {
 			date: Date.now(),
 			count: 1322,
 			number: 1337,
-			author: botConfig.botOwner,
+			author: $botConfig.botOwner,
 			operation: "+"
 		};
 
 		let ch: TextChannel;
-		if(!(ch = discordBot.channels.get(CHANNELID_MAIN) as TextChannel)) {
+		if(!(ch = $discordBot.channels.get(CHANNELID_MAIN) as TextChannel)) {
 			return false;
 		}
 
@@ -178,12 +178,12 @@ class CountV2 extends Plugin implements IModule {
 		if(msg.channel.id !== CHANNELID_MAIN) { return; }
 		if(!msg.author) { msg.delete(); return; }
 		if(!msg.content) { msg.delete(); return; }
-		if(msg.author.id === discordBot.user.id) { return; }
+		if(msg.author.id === $discordBot.user.id) { return; }
 
 		let override = msg.content.startsWith("!");
 		if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
 
-		if(override && msg.author.id === botConfig.botOwner) {
+		if(override && msg.author.id === $botConfig.botOwner) {
 			msg.react("⏳");
 			let nNumber = parseInt(msg.content.slice("!".length), 10);
 			try {
@@ -418,14 +418,14 @@ class CountV2 extends Plugin implements IModule {
 	}
 
 	async newScoreboardMessage() {
-		if(!discordBot.channels.has(CHANNELID_SCOREBOARD)) {
+		if(!$discordBot.channels.has(CHANNELID_SCOREBOARD)) {
 			throw new Error("Scoreboard channel not found");
 		}
-		let ch = discordBot.channels.get(CHANNELID_SCOREBOARD) as TextChannel;
+		let ch = $discordBot.channels.get(CHANNELID_SCOREBOARD) as TextChannel;
 
 		let messages = await ch.fetchMessages();
 		messages.forEach((message) => {
-			if(message.embeds.length === 0 && message.author.id !== botConfig.botOwner) {
+			if(message.embeds.length === 0 && message.author.id !== $botConfig.botOwner) {
 				message.delete();
 				return;
 			}

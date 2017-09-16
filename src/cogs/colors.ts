@@ -9,6 +9,7 @@ import { localizeForUser, generateLocalizedEmbed } from "./utils/ez-i18n";
 import { getPreferenceValue, setPreferenceValue, removePreference } from "./utils/guildPrefs";
 import { randomPick } from "./utils/random";
 import { isVerified } from "./utils/verified";
+import { messageToExtra } from "./utils/failToDetail";
 
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";
@@ -147,6 +148,7 @@ class Colors extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_RUNNINGFAILED")
 			});
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 		}
 	}
 
@@ -171,8 +173,16 @@ class Colors extends Plugin implements IModule {
 			let randomColor = randomPick(roles);
 			try {
 				member.addRole(randomColor.role);
-			} catch (err) {
+			} catch(err) {
 				this.log("err", "Failed to assing random color", err, member.guild.id);
+				$snowball.captureException(err, {
+					extra: {
+						guildId: member.guild.id,
+						memberId: member.id,
+						roleId: randomColor.role,
+						originalError: err
+					}
+				});
 			}
 		} else {
 			let color = roles.find(r => r.role === role);
@@ -180,8 +190,16 @@ class Colors extends Plugin implements IModule {
 
 			try {
 				member.addRole(color.role);
-			} catch (err) {
+			} catch(err) {
 				this.log("err", "Failed to assign color role", err, member.guild.id);
+				$snowball.captureException(err, {
+					extra: {
+						guildId: member.guild.id,
+						memberId: member.id,
+						roleId: color.role,
+						originalError: err
+					}
+				});
 			}
 		}
 	}
@@ -269,6 +287,9 @@ class Colors extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_FAILED_UNASSIGN")
 			});
+			$snowball.captureException(err, {
+				extra: messageToExtra(msg, { toUnassign })
+			});
 			return;
 		}
 
@@ -277,6 +298,9 @@ class Colors extends Plugin implements IModule {
 		} catch(err) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_FAILED_ASSIGN")
+			});
+			$snowball.captureException(err, {
+				extra: messageToExtra(msg, { roleId: colorInfo.role })
 			});
 			return;
 		}
@@ -1022,6 +1046,7 @@ class Colors extends Plugin implements IModule {
 			dbCreated = await this.db.schema.hasTable(TABLE_NAME);
 		} catch(err) {
 			this.log("err", "Can't check table in database.", err);
+			$snowball.captureException(err);
 		}
 		if(!dbCreated) {
 			try {
@@ -1032,6 +1057,7 @@ class Colors extends Plugin implements IModule {
 				});
 			} catch(err) {
 				this.log("err", "Can't create table in database!", err);
+				$snowball.captureException(err);
 				return;
 			}
 		} else {

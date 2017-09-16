@@ -4,6 +4,7 @@ import { ILocalizerOptions, Localizer, SCHEMA_LOCALIZEROPTIONS } from "./Localiz
 import logger = require("loggy");
 import * as djs from "discord.js";
 import { ISchema, Typer } from "./Typer";
+import * as Raven from "raven";
 
 export interface IBotConfig {
 	/**
@@ -47,6 +48,10 @@ export interface IBotConfig {
 	 * Parallel loading is good for debugging
 	 */
 	queueModuleLoading: boolean;
+	/**
+	 * Raven URL (Sentry.io)
+	 */
+	ravenUrl?: string;
 }
 
 export interface IPublicBotConfig {
@@ -76,7 +81,7 @@ export interface IPublicBotConfig {
 	shardsCount: number;
 }
 
-export interface IInternalConfig {
+export interface IInternalBotConfig {
 	/**
 	 * Currently runned shards
 	 */
@@ -91,26 +96,27 @@ declare global {
 	/**
 	 * Bot itself
 	 */
-	// tslint:disable-next-line:no-unused-variable
-	const discordBot: djs.Client;
+	const $discordBot: djs.Client;
 
 	/**
 	 * Public bot config visible to all modules
 	 */
-	// tslint:disable-next-line:no-unused-variable
-	const botConfig: IPublicBotConfig;
+	const $botConfig: IPublicBotConfig;
 
 	/**
 	 * Localizer
 	 */
-	// tslint:disable-next-line:no-unused-variable
-	const localizer: Localizer;
+	const $localizer: Localizer;
 
 	/**
 	 * Module Loader
 	 */
-	// tslint:disable-next-line:no-unused-variable
-	const modLoader: ModuleLoader;
+	const $modLoader: ModuleLoader;
+
+	/**
+	 * Snowball bot instance
+	 */
+	const $snowball: SnowballBot;
 }
 
 const SCHEMA_CONFIG: ISchema = {
@@ -139,53 +145,73 @@ const SCHEMA_CONFIG: ISchema = {
 			"shards": { type: "number", notNaN: true }
 		}
 	},
-	"queueModuleLoading": { type: "boolean" }
+	"queueModuleLoading": { type: "boolean" },
+	"ravenUrl": { type: "string", optional: true }
 };
 
 export class SnowballBot extends EventEmitter {
 	/**
 	 * Module loader
 	 */
-	modLoader: ModuleLoader;
-	/**
-	 * Configuration
-	 */
-	config: IBotConfig;
-	/**
-	 * Internal configuration
-	 */
-	internalConfiguration: IInternalConfig;
+	public modLoader: ModuleLoader;
+	
 	/**
 	 * Discord Bot
 	 */
-	discordBot: djs.Client;
+	private _discordClient: djs.Client;
+	
+	/**
+	 * Raven (Sentry.io) client
+	 */
+	public raven: Raven.Client | null;
 
-	log: Function = logger("::SnowballBot");
+	/**
+	 * Log function
+	 */
+	private _log: Function;
 
-	constructor(config: IBotConfig, internalConfig: IInternalConfig) {
+	constructor(
+		/**
+		 * Bot configuration
+		 */
+		private readonly _config: IBotConfig,
+		/**
+		 * International configuration
+		 */
+		private readonly _internalConfiguration: IInternalBotConfig) {
+
 		super();
-		Typer.checkObjectBySchema(SCHEMA_CONFIG, config);
-		this.config = config;
-		this.internalConfiguration = internalConfig;
-		this.log = logger(`${config.name}:SnowballBot`);
+		
+		// Check everything
+		Typer.checkObjectBySchema(SCHEMA_CONFIG, _config);
+
+		this._log = logger(`${_config.name}:SnowballBot`);
+
+		// Public Snowball instance
+		Object.defineProperty(global, "$snowball", {
+			enumerable: true, writable: false,
+			configurable: false, value: this
+		});
 	}
 
 	/**
 	 * Prepare module loader
 	 * It will load all modules / plugins
 	 */
-	async prepareModLoader() {
+	public async prepareModLoader() {
+		if(this.modLoader) { throw new Error("ModLoader is already prepared"); }
+
 		this.modLoader = new ModuleLoader({
 			basePath: "./cogs/",
-			name: `${this.config.name}:ModLoader`,
-			defaultSet: this.config.autoLoad,
-			registry: convertToModulesMap(this.config.modules),
-			queueModuleLoading: !!this.config.queueModuleLoading
+			name: `${this._config.name}:ModLoader`,
+			defaultSet: this._config.autoLoad,
+			registry: convertToModulesMap(this._config.modules),
+			queueModuleLoading: !!this._config.queueModuleLoading
 		});
 		await this.modLoader.loadModules();
 
 		// Public module loader
-		Object.defineProperty(global, "modLoader", {
+		Object.defineProperty(global, "$modLoader", {
 			configurable: false, enumerable: false,
 			writable: true, value: this.modLoader
 		});
@@ -194,10 +220,12 @@ export class SnowballBot extends EventEmitter {
 	/**
 	 * Prepare global client variable and client itself
 	 */
-	prepareDiscordClient() {
+	public prepareDiscordClient() {
+		if(this._discordClient) { throw new Error("Discord client is already prepared"); }
+
 		let publicBotConfig: IPublicBotConfig = {
-			name: this.config.name,
-			botOwner: this.config.botOwner,
+			name: this._config.name,
+			botOwner: this._config.botOwner,
 			mainShard: true,
 			sharded: false,
 			shardId: 1,
@@ -205,14 +233,14 @@ export class SnowballBot extends EventEmitter {
 		};
 
 		// checking options
-		let djsOptions = this.config.djs_config || {};
+		let djsOptions = this._config.djs_config || {};
 
 		{ // checking shards count
-			let shardCount = this.internalConfiguration.shardsCount;
-			if(this.config.shardingOptions.enabled) {
-				this.log("warn", "WARNING! Running in sharding mode is still expiremental, please use it with risk!");
+			let shardCount = this._internalConfiguration.shardsCount;
+			if(this._config.shardingOptions.enabled) {
+				this._log("warn", "WARNING! Running in sharding mode is still expiremental, please use it with risk!");
 				if(shardCount < 0) {
-					this.log("err", "Invalid shards count", shardCount);
+					this._log("err", "Invalid shards count", shardCount);
 					throw new Error("Invalid shards count");
 				}
 				publicBotConfig.sharded = true;
@@ -220,9 +248,9 @@ export class SnowballBot extends EventEmitter {
 		}
 
 		{ // checking shard id
-			let shardId = this.internalConfiguration.shardId;
+			let shardId = this._internalConfiguration.shardId;
 			if(shardId >= 0) {
-				this.log("info", "Running as shard with ID", shardId);
+				this._log("info", "Running as shard with ID", shardId);
 				if(shardId === 0) {
 					publicBotConfig.mainShard = true;
 				}
@@ -232,37 +260,75 @@ export class SnowballBot extends EventEmitter {
 			}
 		}
 
-		djsOptions.shardId = this.internalConfiguration.shardId;
-		djsOptions.shardCount = this.internalConfiguration.shardsCount;
+		djsOptions.shardId = this._internalConfiguration.shardId;
+		djsOptions.shardCount = this._internalConfiguration.shardsCount;
 
-		this.log("info", "Preparing Discord client");
+		this._log("info", "Preparing Discord client");
 
 		// Making new Discord Client
-		this.discordBot = new djs.Client(djsOptions);
+		this._discordClient = new djs.Client(djsOptions);
 
 		// Setting max listeners
-		this.discordBot.setMaxListeners(0);
+		this._discordClient.setMaxListeners(0);
 
-		this.discordBot.on("error", (err) => {
-			this.log("err", "Error at Discord client", err);
+		this._discordClient.on("error", (err) => {
+			this._log("err", "Error at Discord client", err);
 		});
 
 		// Global bot variable, which should be used by plugins
-		Object.defineProperty(global, "discordBot", {
+		Object.defineProperty(global, "$discordBot", {
 			configurable: false, enumerable: false,
-			writable: true, value: this.discordBot
+			writable: true, value: this._discordClient
 		});
 
 		// Public bot config
-		Object.defineProperty(global, "botConfig", {
+		Object.defineProperty(global, "$botConfig", {
 			configurable: false, enumerable: false,
 			writable: true, value: publicBotConfig
 		});
 	}
 
-	async prepareLocalizator() {
-		let localizer = new Localizer(`${this.config.name}:Localizer`, this.config.localizerOptions);
+	async prepareRaven() {
+		if(this.raven) {
+			throw new Error("Raven is already prepared");
+		}
+
+		if(this._config.ravenUrl) {
+			this.raven = Raven.config(this._config.ravenUrl).install();
+			this._log("ok", "Raven is configured");
+		} else {
+			this.raven = null;
+		}
+
+		Object.defineProperty(global, "$raven", {
+			enumerable: true, configurable: false,
+			writable: false, value: this.raven
+		});
+	}
+
+	public async captureException(err: Error, options?: Raven.CaptureOptions) {
+		if(!this.raven) { return; }
+		this.raven.captureException(err, options);
+	}
+
+	public async captureMessage(message: string, options?: Raven.CaptureOptions) {
+		if(!this.raven) { return; }
+		this.raven.captureMessage(message, options);
+	}
+
+	/**
+	 * Prepare Localizer
+	 * Creates, initializes, defines global variable of localizer
+	 */
+	public async prepareLocalizator() {
+		if(global["localizer"]) {
+			throw new Error("Localizer is already prepared");
+		}
+
+		let localizer = new Localizer(`${this._config.name}:Localizer`, this._config.localizerOptions);
+
 		await localizer.init();
+
 		Object.defineProperty(global, "localizer", {
 			configurable: false, enumerable: false,
 			writable: false, value: localizer
@@ -273,9 +339,13 @@ export class SnowballBot extends EventEmitter {
 	 * Connect to Discord
 	 * @returns {Promise}
 	 */
-	async connect() {
-		this.log("info", "Connecting to Discord...");
-		// Just calling method
-		return await this.discordBot.login(this.config.token);
+	public async connect() {
+		this._log("info", "Connecting to Discord...");
+		if(!this._discordClient) {
+			throw new Error("Discord client not requires reconnecting");
+		} else if(this._discordClient.status !== 4) {
+			throw new Error("Discord client not requires reconnecting");
+		}
+		return await this._discordClient.login(this._config.token);
 	}
 }

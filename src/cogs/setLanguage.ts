@@ -45,7 +45,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			return;
 		}
 		this.log("info", "Syncing...");
-		for(let g of discordBot.guilds.values()) {
+		for(let g of $discordBot.guilds.values()) {
 			this.log("info", `Updating language for guild "${g.name}"`);
 			await forceGuildLanguageUpdate(g);
 			this.log("info", `Updating enforcing status for guild "${g.name}"`);
@@ -55,8 +55,8 @@ class SetLanguageCommand extends Plugin implements IModule {
 				await getUserLanguage(m);
 			}
 		}
-		this.log("info", `Started language update for ${discordBot.users.size} users`);
-		for(let m of discordBot.users.values()) {
+		this.log("info", `Started language update for ${$discordBot.users.size} users`);
+		for(let m of $discordBot.users.values()) {
 			await forceUserLanguageUpdate(m);
 		}
 		this.log("ok", "Sync done, poor DB");
@@ -124,7 +124,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			}
 		}
 		let lang = msg.content.slice(CMD.SWITCH.length).trim();
-		if(!localizer.languageExists(lang)) {
+		if(!$localizer.languageExists(lang)) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, u, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
 			});
@@ -145,13 +145,13 @@ class SetLanguageCommand extends Plugin implements IModule {
 	async getCodes(msg: Message) {
 		let u = msg.member || msg.author;
 		let str = `# ${await localizeForUser(u, "LANGUAGE_CODES_HEADER")}\n\n`;
-		let langs = localizer.loadedLanguages;
+		let langs = $localizer.loadedLanguages;
 		for(let lang of langs) {
 			str += `* ${lang}: `;
-			str += await localizer.getString(lang, "+NAME");
-			str += ` (${await localizer.getString(lang, "+COUNTRY")})`;
-			str += ` - ${(await localizer.getString(lang, "+COVERAGE"))}%`;
-			str += `${!(await localizer.getString(lang, "+COMMUNITY_MANAGED") === "false") ? ` ${await localizeForUser(u, "LANGUAGE_CODES_ITEM_CM")}` : ""}\n`;
+			str += await $localizer.getString(lang, "+NAME");
+			str += ` (${await $localizer.getString(lang, "+COUNTRY")})`;
+			str += ` - ${(await $localizer.getString(lang, "+COVERAGE"))}%`;
+			str += `${!(await $localizer.getString(lang, "+COMMUNITY_MANAGED") === "false") ? ` ${await localizeForUser(u, "LANGUAGE_CODES_ITEM_CM")}` : ""}\n`;
 		}
 		msg.channel.send(str, {
 			code: "md",
@@ -189,7 +189,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			return;
 		}
 		let lang = msg.content.slice(CMD.GUILDS_SWITCH.length).trim();
-		if(!localizer.languageExists(lang)) {
+		if(!$localizer.languageExists(lang)) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
 			});
@@ -202,7 +202,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 				key: enforcingEnabled ? "LANGUAGE_GUILD_SWITCH_DONE" : "LANGUAGE_GUILD_SWITCH_DONE_ENFORCING",
 				formatOptions: {
-					lang: `${localizer.getString(lang, "+NAME")} (${localizer.getString(lang, "+COUNTRY")})`
+					lang: `${$localizer.getString(lang, "+NAME")} (${$localizer.getString(lang, "+COUNTRY")})`
 				}
 			})
 		});

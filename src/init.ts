@@ -1,5 +1,5 @@
 import logger = require("loggy");
-import { SnowballBot, IBotConfig, IInternalConfig } from "./types/SnowballBot";
+import { SnowballBot, IBotConfig, IInternalBotConfig } from "./types/SnowballBot";
 import { join as pathJoin } from "path";
 import * as cluster from "cluster";
 
@@ -20,7 +20,7 @@ const SHARD_TIMEOUT = 30000; // ms
 
 		try {
 			config = require(`./config/configuration.${env}.json`);
-		} catch (err) {
+		} catch(err) {
 			log("err", "Loading config for", env, "failed, attempt to load standard config");
 			config = require("./config/configuration.json");
 		}
@@ -60,7 +60,7 @@ const SHARD_TIMEOUT = 30000; // ms
 					shardId,
 					shardsCount
 				});
-			} catch (err) {
+			} catch(err) {
 				log("err", "Failed to initializate bot", err);
 				return process.exit(1);
 			}
@@ -91,7 +91,7 @@ const SHARD_TIMEOUT = 30000; // ms
 				shardId: 0,
 				shardsCount: 1
 			});
-		} catch (err) {
+		} catch(err) {
 			log("err", "Failed to initalizate bot", err);
 			return process.exit(1);
 		}
@@ -181,9 +181,18 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 	return c;
 }
 
-async function initBot(log:any, config:IBotConfig, internalConfig:IInternalConfig) {
+async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotConfig) {
 	log("info", "Initializing bot...");
 	const snowball = new SnowballBot(config, internalConfig);
+
+	if(!config.ravenUrl) {
+		log("info", "Want beautiful reports for bot errors?");
+		log("info", "Get your Raven API key at https://sentry.io/");
+		log("info", "Put it to `ravenUrl` in your config file");
+	} else {
+		log("info", "Preparing Raven... Catch 'em all!");
+	}
+	await snowball.prepareRaven();
 
 	log("info", "Preparing our Discord client");
 	snowball.prepareDiscordClient();

@@ -167,10 +167,10 @@ export class Plugin {
 			let val = this.eventsMap[key];
 			if(Array.isArray(val)) {
 				for(let handler of val) {
-					discordBot.on(key, handler);
+					$discordBot.on(key, handler);
 				}
 			} else {
-				discordBot.on(key, val);
+				$discordBot.on(key, val);
 			}
 		}
 	}
@@ -180,10 +180,10 @@ export class Plugin {
 			let val = this.eventsMap[key];
 			if(Array.isArray(val)) {
 				for(let handler of val) {
-					discordBot.removeListener(key, handler);
+					$discordBot.removeListener(key, handler);
 				}
 			} else {
-				discordBot.removeListener(key, val);
+				$discordBot.removeListener(key, val);
 			}
 		}
 	}

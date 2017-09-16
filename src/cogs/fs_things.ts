@@ -62,7 +62,7 @@ class FanServerThings extends Plugin implements IModule {
 
 		this.options = options;
 		this.nickRegexp = new RegExp(options.nickRegexp, "i");
-		let fsGuild = discordBot.guilds.find("id", options.fsGuildId);
+		let fsGuild = $discordBot.guilds.find("id", options.fsGuildId);
 		if(!fsGuild) {
 			this.log("err", "Fan Server Guild not found");
 			return;

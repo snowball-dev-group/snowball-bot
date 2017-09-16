@@ -212,7 +212,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 			},
 			title: cachedStream.snippet.title,
 			url: `https://youtu.be/${cachedStream.id.videoId}`,
-			description: localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
+			description: $localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
 				username: escapeDiscordMarkdown(channel.snippet.title, true)
 			}),
 			color: YOUTUBE_COLOR,

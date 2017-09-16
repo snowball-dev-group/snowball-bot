@@ -89,6 +89,9 @@ class Ball8 extends Plugin implements IModule {
 			})) as Message;
 		} catch(err) {
 			this.log("err", "Damn! 8Ball can't send message", err);
+			$snowball.captureException(err, {
+				extra: { channelId: msg.channel.id }
+			});
 			return;
 		}
 
@@ -115,8 +118,14 @@ class Ball8 extends Plugin implements IModule {
 				})
 			});
 		} catch(err) {
+			$snowball.captureException(err, { extra: { id: message.id } });
 			this.log("err", "Bummer! We can't update message, trying to delete our message", err);
-			try { await message.delete(); } catch(err) { this.log("err", "Message also can't be removed...", err); }
+			try {
+				await message.delete();
+			} catch(err) {
+				this.log("err", "Message also can't be removed...", err);
+				$snowball.captureException(err, { extra: { id: message.id } });
+			}
 		}
 	}
 

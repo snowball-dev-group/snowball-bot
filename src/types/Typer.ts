@@ -127,11 +127,17 @@ export class Typer {
         }
 
         if(schema.type !== "any") {
-            if(Typer.isUndefined(val) && !schema.optional) {
-                throw new TyperError("Value not provided, when required by schema", path, {
-                    optional: false,
-                    schemaRef: schema
-                });
+            if(Typer.isUndefined(val)) {
+                if(!schema.optional) {
+                    // -> Not optional, throw
+                    throw new TyperError("Value not provided, when required by schema", path, {
+                        optional: false,
+                        schemaRef: schema
+                    });
+                } else {
+                    // -> Optional, skipping futher checks
+                    return;
+                }
             }
 
             let valType = typeof val;

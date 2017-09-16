@@ -28,7 +28,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 
 		try {
 			await getTatsuProfile(js.uid, this.apiKey);
-		} catch (err) {
+		} catch(err) {
 			LOG("err", `${js.uid} (setup)| Can't get Tatsumaki profile`, err);
 			throw new Error("Failed to get Tatsumaki profile!");
 		}
@@ -51,7 +51,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 			LOG("info", "Getting Tatsumaki profile...");
 			profile = await getTatsuProfile(info.uid, this.apiKey);
 			LOG("ok", logPrefix, "Got Tatsumaki profile!");
-		} catch (err) {
+		} catch(err) {
 			LOG("err", logPrefix, "Error", err);
 			throw new Error("Failed to get Tatsumaki profile.");
 		}
@@ -85,7 +85,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 				name: "<:tatsu:306223189628026881> Tatsumaki",
 				value: str
 			};
-		} catch (err) {
+		} catch(err) {
 			LOG("err", logPrefix, "Failed to generate embed", err);
 			throw new Error("Failed to generate embed");
 		}

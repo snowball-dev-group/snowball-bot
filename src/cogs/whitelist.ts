@@ -70,11 +70,11 @@ interface IParsedMode {
 const allowedModes = ["whitelist", "nobotfarms", "trial", "nolowmembers", "nomaxmembers"];
 
 function isBotAdmin(msg: Message) {
-	return msg.author.id === botConfig.botOwner;
+	return msg.author.id === $botConfig.botOwner;
 }
 
 function isServerAdmin(msg: Message) {
-	return msg.channel.type === "text" && (msg.member.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === botConfig.botOwner);
+	return msg.channel.type === "text" && (msg.member.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === $botConfig.botOwner);
 }
 
 declare global {
@@ -166,7 +166,7 @@ class Whitelist extends Plugin implements IModule {
 		this.log("info", " Required members to stay:", this.minMembersRequired, "-", this.maxMembersAllowed);
 		this.log("info", " Always whitelisted servers:");
 		for(let whitelistedId of this.alwaysWhitelisted) {
-			let found = !!discordBot.guilds.get(whitelistedId);
+			let found = !!$discordBot.guilds.get(whitelistedId);
 			this.log(found ? "ok" : "warn", "  -", whitelistedId, found ? "(found)" : "(not found)");
 		}
 
@@ -266,7 +266,7 @@ class Whitelist extends Plugin implements IModule {
 	}
 
 	async checkGuilds() {
-		for(let g of discordBot.guilds.values()) {
+		for(let g of $discordBot.guilds.values()) {
 			let whitelistStatus = await this.isWhitelisted(g);
 			if(whitelistStatus.state === GUILD_STATE.EXPIRED) {
 				await this.leaveGuild(g, "WHITELIST_LEAVE_EXPIRED");
@@ -325,6 +325,10 @@ class Whitelist extends Plugin implements IModule {
 			try {
 				await chToSendMessage.send("", { embed });
 			} catch(err) {
+				$snowball.captureException(err, {
+					level: "warning",
+					extra: { guildId: guild, embed }
+				});
 				this.log("warn", `Failed to send message to channel ${chToSendMessage.name} (${chToSendMessage.id})`);
 			}
 		}
@@ -346,7 +350,7 @@ class Whitelist extends Plugin implements IModule {
 	}
 
 	isAdmin(m: GuildMember) {
-		return m.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || m.id === botConfig.botOwner;
+		return m.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || m.id === $botConfig.botOwner;
 	}
 
 	async onMessage(msg: Message) {
@@ -389,7 +393,7 @@ class Whitelist extends Plugin implements IModule {
 			return;
 		}
 
-		if(msg.author.id !== botConfig.botOwner) { return; }
+		if(msg.author.id !== $botConfig.botOwner) { return; }
 
 		let cmd = simpleCmdParse(msg.content);
 
@@ -522,7 +526,7 @@ class Whitelist extends Plugin implements IModule {
 				await delGuildPref(cmd.args[0], "whitelist:until");
 				await setGuildPref(cmd.args[0], "whitelist:status", GUILD_STATE.BANNED);
 
-				let currentGuild = discordBot.guilds.get(cmd.args[0]);
+				let currentGuild = $discordBot.guilds.get(cmd.args[0]);
 				if(currentGuild) {
 					await currentGuild.leave();
 				}

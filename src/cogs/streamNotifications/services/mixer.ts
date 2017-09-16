@@ -218,7 +218,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 				height: 128,
 				url: cache.channel.user.avatarUrl || MIXER_ICON
 			},
-			description: localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
+			description: $localizer.getFormattedString(lang, stream.status === "online" ? "STREAMING_DESCRIPTION" : "STREAMING_DESCRIPTION_OFFLINE", {
 				username: escapeDiscordMarkdown(cache.channel.user.username, true)
 			}),
 			title: cache.channel.name,
@@ -231,12 +231,12 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 			},
 			fields: [{
 				inline: true,
-				name: localizer.getString(lang, "STREAMING_GAME_NAME"),
-				value: cache.channel.type ? cache.channel.type.name : localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
+				name: $localizer.getString(lang, "STREAMING_GAME_NAME"),
+				value: cache.channel.type ? cache.channel.type.name : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
 			}, {
 				inline: true,
-				name: localizer.getString(lang, "STREAMING_MATURE_NAME"),
-				value: localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_MIXER", {
+				name: $localizer.getString(lang, "STREAMING_MATURE_NAME"),
+				value: $localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_MIXER", {
 					audience: cache.channel.audience
 				})
 			}]

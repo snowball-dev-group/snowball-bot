@@ -7,6 +7,7 @@ import { getLogger, EmbedType, resolveGuildRole, resolveGuildChannel } from "./u
 import { isVerified } from "./utils/verified";
 import * as knex from "knex";
 import { replaceAll } from "./utils/text";
+import { messageToExtra } from "./utils/failToDetail";
 // import { command as docCmd , Category } from "./utils/help";
 
 const TABLE_NAME = "voice_role";
@@ -52,6 +53,7 @@ class VoiceRole extends Plugin implements IModule {
 		try {
 			this.db = getDB();
 		} catch(err) {
+			$snowball.captureException(err);
 			this.log("err", "Asking for DB failed:", err);
 			return;
 		}
@@ -63,6 +65,7 @@ class VoiceRole extends Plugin implements IModule {
 		try {
 			dbStatus = await this.db.schema.hasTable(TABLE_NAME);
 		} catch(err) {
+			$snowball.captureException(err);
 			this.log("err", "Error checking if table is created");
 			return;
 		}
@@ -83,6 +86,7 @@ class VoiceRole extends Plugin implements IModule {
 		try {
 			specificDBStatus = await this.db.schema.hasTable(SPECIFIC_TABLE_NAME);
 		} catch(err) {
+			$snowball.captureException(err);
 			this.log("err", "Error checking if specific table is created");
 			return;
 		}
@@ -104,7 +108,7 @@ class VoiceRole extends Plugin implements IModule {
 		this.handleEvents();
 
 		// stage eight: do cleanup for all guilds
-		for(let guild of discordBot.guilds.values()) {
+		for(let guild of $discordBot.guilds.values()) {
 			this.log("info", `Cleanup started at Guild: "${guild.name}"`);
 			await this.VCR_Cleanup(guild);
 		}
@@ -122,6 +126,7 @@ class VoiceRole extends Plugin implements IModule {
 			this.log("ok", "Created table for 'voice roles'");
 			return true;
 		} catch(err) {
+			$snowball.captureException(err);
 			this.log("err", "Failed to create table. An error occured:", err);
 			return false;
 		}
@@ -137,6 +142,7 @@ class VoiceRole extends Plugin implements IModule {
 			this.log("ok", "Created table for specific 'voice roles'");
 			return true;
 		} catch(err) {
+			$snowball.captureException(err);
 			this.log("err", "Failed to create table for specific 'voice roles'");
 			return false;
 		}
@@ -488,6 +494,10 @@ class VoiceRole extends Plugin implements IModule {
 				await this.VCR_Cleanup(msg.guild);
 				msg.react("👍");
 			} catch(err) {
+				$snowball.captureException(err, {
+					level: "warning",
+					extra: { row, ...messageToExtra(msg) }
+				});
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_SAVING")
 				});
@@ -541,6 +551,10 @@ class VoiceRole extends Plugin implements IModule {
 				await this.VCR_Cleanup(msg.guild);
 				msg.react("👍");
 			} catch(err) {
+				$snowball.captureException(err, {
+					level: "warning",
+					extra: { ...messageToExtra(msg), row, voiceRoleDeleted: true }
+				});
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 				});
@@ -608,6 +622,13 @@ class VoiceRole extends Plugin implements IModule {
 					});
 					msg.react("👍");
 				} catch(err) {
+					$snowball.captureException(err, {
+						level: "warning",
+						extra: {
+							current, oldRole, newRole: resolvedRole.id,
+							...messageToExtra(msg)
+						}
+					});
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 					});
@@ -628,6 +649,13 @@ class VoiceRole extends Plugin implements IModule {
 				await this.updateSpecificRole(newRow);
 				await this.VCR_Cleanup(msg.guild);
 			} catch(err) {
+				$snowball.captureException(err, {
+					level: "warning",
+					extra: {
+						current, new: newRow,
+						...messageToExtra(msg)
+					}
+				});
 				progMsg.edit("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 				});
@@ -689,6 +717,13 @@ class VoiceRole extends Plugin implements IModule {
 				}
 				await this.VCR_Cleanup(msg.guild);
 			} catch(err) {
+				$snowball.captureException(err, {
+					level: "warning",
+					extra: {
+						specificDeleted: true, current,
+						...messageToExtra(msg)
+					}
+				});
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 				});
