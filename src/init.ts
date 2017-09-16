@@ -204,7 +204,7 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotCo
 
 	try {
 		log("info", "Connecting...");
-		await snowball.connect();
+		await snowball.login();
 
 		log("ok", "Successfully connected, preparing our localizer...");
 		await snowball.prepareLocalizator();
