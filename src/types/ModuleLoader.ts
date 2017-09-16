@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import logger = require("loggy");
 import { IHashMap } from "./Interfaces";
-import { ISchema } from "./Typer";
+import { ISchemaObject } from "./Typer";
 
 export interface IModuleInfo {
 	/**
@@ -18,10 +18,16 @@ export interface IModuleInfo {
 	options: any;
 }
 
-export const SCHEMA_MODULEINFO: ISchema = {
-	"name": { type: "string" },
-	"path": { type: "string" },
-	"options": { type: "any" }
+export const SCHEMA_MODULEINFO: ISchemaObject = {
+	type: "object",
+	elementSchema: {
+		type: "object",
+		schema: {
+			"name": { type: "string" },
+			"path": { type: "string" },
+			"options": { type: "any", optional: true }
+		}
+	}
 };
 
 export interface IConfig {
