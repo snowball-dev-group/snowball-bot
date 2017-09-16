@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import logger = require("loggy");
 import { IHashMap } from "./Interfaces";
+import { ISchema } from "./Typer";
 
 export interface IModuleInfo {
 	/**
@@ -16,6 +17,12 @@ export interface IModuleInfo {
 	 */
 	options: any;
 }
+
+export const SCHEMA_MODULEINFO: ISchema = {
+	"name": { type: "string" },
+	"path": { type: "string" },
+	"options": { type: "any" }
+};
 
 export interface IConfig {
 	/**
@@ -47,7 +54,7 @@ export interface IModule {
 	/**
 	 * Unload function
 	 */
-	unload(reason?:string): Promise<boolean>;
+	unload(reason?: string): Promise<boolean>;
 }
 
 export class Module extends EventEmitter {
@@ -129,7 +136,7 @@ export class Module extends EventEmitter {
 					this.emit("unloaded");
 					this.base = undefined;
 				}
-			} catch (err) {
+			} catch(err) {
 				this.emit("error", {
 					state: "unload#unload",
 					error: err
@@ -250,7 +257,7 @@ export class ModuleLoader {
 	}
 
 	async loadModules(forceAll = false) {
-		let toLoad:string[] = [];
+		let toLoad: string[] = [];
 		if(forceAll) {
 			toLoad = Array.from(Object.keys(this.config.registry));
 		} else {
@@ -258,7 +265,7 @@ export class ModuleLoader {
 		}
 
 		this.log("info", "Loading started");
-		this.log("info", !!this.config.queueModuleLoading ? "Queue mode enabled": "Parallel mode enabled");
+		this.log("info", !!this.config.queueModuleLoading ? "Queue mode enabled" : "Parallel mode enabled");
 		for(let modName of toLoad) {
 			let loadingPromise = this.load(modName);
 			if(!!this.config.queueModuleLoading) {
@@ -283,7 +290,7 @@ export class ModuleLoader {
 * @param obj {Array} Array of module info entries
 */
 export function convertToModulesMap(obj: IModuleInfo[]) {
-	let modulesMap:IHashMap<IModuleInfo> = {};
+	let modulesMap: IHashMap<IModuleInfo> = {};
 	for(let moduleInfo of obj) {
 		modulesMap[moduleInfo.name] = moduleInfo;
 	}

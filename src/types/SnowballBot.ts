@@ -1,8 +1,9 @@
 import { EventEmitter } from "events";
-import { ModuleLoader, IModuleInfo, convertToModulesMap } from "./ModuleLoader";
-import { ILocalizerOptions, Localizer } from "./Localizer";
+import { ModuleLoader, IModuleInfo, convertToModulesMap, SCHEMA_MODULEINFO } from "./ModuleLoader";
+import { ILocalizerOptions, Localizer, SCHEMA_LOCALIZEROPTIONS } from "./Localizer";
 import logger = require("loggy");
 import * as djs from "discord.js";
+import { ISchema, Typer } from "./Typer";
 
 export interface IBotConfig {
 	/**
@@ -37,8 +38,8 @@ export interface IBotConfig {
 	 * Sharding options
 	 */
 	shardingOptions: {
-		enabled:boolean;
-		shards:number;
+		enabled: boolean;
+		shards: number;
 	};
 	/**
 	 * Enable queue mode?
@@ -112,6 +113,35 @@ declare global {
 	const modLoader: ModuleLoader;
 }
 
+const SCHEMA_CONFIG: ISchema = {
+	"token": { type: "string" },
+	"name": { type: "string" },
+	"botOwner": { type: "string" },
+	"autoLoad": {
+		type: "object", isArray: true,
+		elementSchema: {
+			type: "string"
+		}
+	},
+	"modules": {
+		type: "object", isArray: true,
+		schema: SCHEMA_MODULEINFO
+	},
+	"djsConfig": { type: "any" },
+	"localizerOptions": {
+		type: "object",
+		schema: SCHEMA_LOCALIZEROPTIONS
+	},
+	"shardingOptions": {
+		type: "object",
+		schema: {
+			"enabled": { type: "boolean" },
+			"shards": { type: "number", notNaN: true }
+		}
+	},
+	"queueModuleLoading": { type: "boolean" }
+};
+
 export class SnowballBot extends EventEmitter {
 	/**
 	 * Module loader
@@ -130,10 +160,11 @@ export class SnowballBot extends EventEmitter {
 	 */
 	discordBot: djs.Client;
 
-	log:Function = logger("::SnowballBot");
+	log: Function = logger("::SnowballBot");
 
-	constructor(config: IBotConfig, internalConfig:IInternalConfig) {
+	constructor(config: IBotConfig, internalConfig: IInternalConfig) {
 		super();
+		Typer.checkObjectBySchema(SCHEMA_CONFIG, config);
 		this.config = config;
 		this.internalConfiguration = internalConfig;
 		this.log = logger(`${config.name}:SnowballBot`);
@@ -164,7 +195,7 @@ export class SnowballBot extends EventEmitter {
 	 * Prepare global client variable and client itself
 	 */
 	prepareDiscordClient() {
-		let publicBotConfig:IPublicBotConfig = {
+		let publicBotConfig: IPublicBotConfig = {
 			name: this.config.name,
 			botOwner: this.config.botOwner,
 			mainShard: true,

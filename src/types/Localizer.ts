@@ -4,6 +4,7 @@ import { join as pathJoin } from "path";
 import * as formatMessage from "format-message";
 import { getLogger, ILoggerFunction } from "../cogs/utils/utils";
 import { Humanizer, IHumanizerLanguage, IHumanizerOptionsOverrides, IHumanizerPluralOverride, IHumanizerDefaultOptions } from "./Humanizer";
+import { ISchema } from "./Typer";
 
 export interface ILocalizerOptions {
 	languages: string[];
@@ -12,6 +13,17 @@ export interface ILocalizerOptions {
 	directory: string;
 	disable_converage_log: boolean;
 }
+
+export const SCHEMA_LOCALIZEROPTIONS: ISchema = {
+	"languages": {
+		type: "object", isArray: true,
+		elementSchema: { type: "string" }
+	},
+	"source_language": { type: "string" },
+	"default_language": { type: "string" },
+	"directory": { type: "string" },
+	"disable_converage_log": { type: "boolean" }
+};
 
 export interface IStringsMap {
 	[key: string]: string | undefined;
@@ -246,7 +258,7 @@ export class Localizer {
 	 * @param lang {string} Language to use in Humanizer
 	 * @param overrides {object} Custom language overrides for Humanizer
 	 */
-	public createCustomHumanizer(lang: string = this.sourceLanguage, languageOverride?:{
+	public createCustomHumanizer(lang: string = this.sourceLanguage, languageOverride?: {
 		// it's overrides, so we gonna create anotha inline-interface?
 		y?: IHumanizerPluralOverride;
 		mo?: IHumanizerPluralOverride;
@@ -258,7 +270,7 @@ export class Localizer {
 		ms?: IHumanizerPluralOverride;
 		decimal?: string;
 	}, defaultOptions?: IHumanizerDefaultOptions) {
-		let defaultDefinition:IHumanizerLanguage = {
+		let defaultDefinition: IHumanizerLanguage = {
 			y: (years: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:YEARS", { years }),
 			mo: (months: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:MONTHS", { months }),
 			w: (weeks: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:WEEKS", { weeks }),
