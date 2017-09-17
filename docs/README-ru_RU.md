@@ -48,8 +48,15 @@ grunt
 - **`botOwner`** ([`string`][string]): Discord ID владельца бота. Это дает право на некоторые команды для владельца. Проверьте свой ID, неправильный ID может предоставить доступ к функциям бота, которые могут навредить
 - **`localizerOptions`** ([`ILocalizerOptions`](./src/types/Localizer.ts#L7)): Конфигурация Localizer-a
   - `languages` ([`string[]`][string]): Языковые коды (имена файлов, например `en-US`)
-  - `defaultLanguage` ([`string`][string]): Стандартный язык
+  - `default_language` ([`string`][string]): Язык по умолчанию
+  - `source_language` ([`string`](string)): Исходный язык
   - `directory` ([`string`][string]): Абсолютный путь из папки `out`
+  - `disable_coverage_log` ([`boolean`](boolean), **опционально**): Отключает логирование результатов "покрытия переводом", которые показывают все непереведенные строки
+- **`shardingOptions`**
+  - `enabled` ([`boolean`][boolean]): Включает режим "Sharding"
+  - `shards` ([`number`][number]): Количество "шардов" к запуску
+- **`queueModuleLoading`** ([`boolean`](boolean), **optional**): Включить поочередную загрузку для модулей. Будет грузить все модули в одно и то же время, без ожидания `init`, если установлено в значение `false`
+- **`ravenUrl`** ([`string`][string], **optional**): Ваша ссылка для модуля Raven от [Sentry.io][sentry], это позволяет ловить все ошибки в более красивом виде
 
 [string]:https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String
 [any]:https://www.typescriptlang.org/docs/handbook/basic-types.html#any
