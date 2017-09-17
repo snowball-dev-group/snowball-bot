@@ -1503,7 +1503,13 @@ class Guilds extends Plugin implements IModule {
 						// command called by admin or guild owner
 						if(rightsCheck(member, dbRow, false)) {
 							let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
-							let index = cz.admins.indexOf(member.id);
+							let index = (cz.admins || []).indexOf(member.id);
+							if(index < 0) {
+								str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_SERVERADM", {
+									username: escapeDiscordMarkdown(mention.username, true)
+								})) + "\n";
+								continue;
+							}
 							cz.admins.splice(index, 1);
 							dbRow.customize = JSON.stringify(cz);
 							await this.updateGuildRow(dbRow);
