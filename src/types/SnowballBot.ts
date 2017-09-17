@@ -125,9 +125,7 @@ const SCHEMA_CONFIG: ISchema = {
 	"botOwner": { type: "string" },
 	"autoLoad": {
 		type: "object", isArray: true,
-		elementSchema: {
-			type: "string"
-		}
+		elementSchema: { type: "string" }
 	},
 	"modules": {
 		type: "object", isArray: true,
