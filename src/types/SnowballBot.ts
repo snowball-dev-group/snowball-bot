@@ -145,7 +145,7 @@ const SCHEMA_CONFIG: ISchema = {
 			"shards": { type: "number", notNaN: true }
 		}
 	},
-	"queueModuleLoading": { type: "boolean" },
+	"queueModuleLoading": { type: "boolean", optional: true },
 	"ravenUrl": { type: "string", optional: true }
 };
 
