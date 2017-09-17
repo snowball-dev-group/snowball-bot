@@ -3,34 +3,34 @@
     "token": "YOUR DISC0RD T0K3N",
     "modules": [{
         "name": "ping",
-        "path": "ping"
+        "path": "ping/ping"
     }, {
         "name": "eval",
-        "path": "eval"
+        "path": "eval/eval"
     }, {
         "name": "count",
-        "path": "count"
+        "path": "count/count"
     }, {
         "name": "embedME",
-        "path": "embedMe"
+        "path": "embedMe/embedMe"
     }, {
         "name": "ownerCMDs",
-        "path": "ownerCmds"
+        "path": "ownerCmds/ownerCmds"
     }, {
         "name": "shibChannel",
-        "path": "shib"
+        "path": "shib/shib"
     }, {
         "name": "count_V2",
-        "path": "count-v2"
+        "path": "count-v2/count-v2"
     }, {
         "name": "8Ball",
-        "path": "8ball"
+        "path": "8ball/8ball"
     }, {
         "name": "voiceRole",
-        "path": "voiceRole"
+        "path": "voiceRole/voiceRole"
     }, {
         "name": "help",
-        "path": "help"
+        "path": "help/help"
     }, {
         "name": "profiles",
         "path": "profiles/profiles",
@@ -54,25 +54,25 @@
         }]
     }, {
         "name": "colors",
-        "path": "colors"
+        "path": "colors/colors"
     }, {
         "name": "premiumControl",
-        "path": "premiumControl"
+        "path": "premiumControl/premiumControl"
     }, {
         "name": "guilds",
-        "path": "guilds"
+        "path": "guilds/guilds"
     }, {
         "name": "verificationhandler",
-        "path": "verifiedUtilHandler"
+        "path": "verifiedUtilHandler/verifiedUtilHandler"
     }, {
         "name": "setLanguage",
-        "path": "setLanguage",
+        "path": "setLanguage/setLanguage",
         "options": {
             "crowdinLink": "https://crowdin.com/project/snowball-bot"
         }
     }, {
         "name": "whitelist",
-        "path": "whitelist",
+        "path": "whitelist/whitelist",
         "options": {
             "always_whitelisted": ["307494339662184449", "331101356205015041", "209767264210255883", "260005365289058304", "322790052008689665"],
             "signup_url": "FORM_URL"
@@ -94,7 +94,7 @@
         }]
     }, {
         "name": "fl",
-        "path": "fl"
+        "path": "fl/fl"
     }],
     "autoLoad": ["ping", "eval", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "premiumControl", "guilds", "verificationhandler", "setLanguage"],
     "botOwner": "80351110224678912",
