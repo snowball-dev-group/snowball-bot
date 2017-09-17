@@ -11,7 +11,7 @@ export interface ILocalizerOptions {
 	source_language: string;
 	default_language: string;
 	directory: string;
-	disable_converage_log: boolean;
+	disable_coverage_log: boolean;
 }
 
 export const SCHEMA_LOCALIZEROPTIONS: ISchema = {
@@ -22,7 +22,7 @@ export const SCHEMA_LOCALIZEROPTIONS: ISchema = {
 	"source_language": { type: "string" },
 	"default_language": { type: "string" },
 	"directory": { type: "string" },
-	"disable_converage_log": { type: "boolean" }
+	"disable_coverage_log": { type: "boolean", optional: true }
 };
 
 export interface IStringsMap {
@@ -162,7 +162,7 @@ export class Localizer {
 			// "" for empty crowdin translations
 			if(typeof langFile[key] === "string" && langFile[key] !== "") {
 				unique += +1;
-			} else if(!this.opts.disable_converage_log) {
+			} else if(!this.opts.disable_coverage_log) {
 				this.log("warn", `String "${key}" not translated in lang ${langFile["+NAME"]}`);
 			}
 		}
