@@ -325,6 +325,7 @@
 	"GUILDS_MEMBERSCONTROL_NOTAMEMBEROFSERVER": "{username} не является участником сервера",
 	"GUILDS_MEMBERSCONTROL_NOTAMEMBER": "{username} не является участником гильдии",
 	"GUILDS_MEMBERSCONTROL_NOTBANNED": "{username} не забанен в этой гильдии",
+	"GUILDS_MEMBERSCONTROL_SERVERADM": "{username} является администратором сервера или гильдии",
 	"GUILDS_MEMBERSCONTROL_GUILDADMOROWNR": "{username} является владельцем или администратором гильдии",
 	"GUILDS_MEMBERSCONTROL_KICKEDITEM": "{username} был кикнут из гильдии",
 	"GUILDS_MEMBERSCONTROL_KICKEDADMITEM": "Администратор {username} был кикнут из гильдии",
