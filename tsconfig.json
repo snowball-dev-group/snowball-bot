@@ -6,7 +6,6 @@
 		"module": "commonjs",
 		"strictNullChecks": true,
 		"removeComments": true,
-		// "noUnusedLocals": true,
 		"moduleResolution": "node",
 		"inlineSources": true,
 		"allowJs": true,
