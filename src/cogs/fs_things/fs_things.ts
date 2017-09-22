@@ -79,7 +79,7 @@ class FanServerThings extends Plugin implements IModule {
 		this.log("info", "Synchronization started");
 		const startedAt = Date.now();
 		for(let member of fsGuild.members.values()) {
-			this.onUpdate(member, member);
+			await this.onUpdate(member, member);
 		}
 		this.log("ok", `Synchronization done in ${(Date.now() - startedAt)}ms!`);
 	}
@@ -128,6 +128,7 @@ class FanServerThings extends Plugin implements IModule {
 
 		if(!!subRole && !oneSubRole) {
 			let newSubRoles = newRoles.filter((r) => this.options.subRoles.includes(r.id));
+
 			// has subrole but not onesub role
 			await newMember.addRole(this.options.oneSubRole);
 
