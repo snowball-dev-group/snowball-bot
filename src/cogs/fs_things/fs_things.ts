@@ -123,6 +123,7 @@ class FanServerThings extends Plugin implements IModule {
 			if(!!ancChannel) {
 				for(let nSubRole of newSubRoles.keys()) {
 					let texts = this.options.texts.filter(r => r.roleId === nSubRole);
+					if(texts.length === 0) { continue; }
 					let randText: ISubText = random.pick(texts);
 					(ancChannel as TextChannel).send(randText.text.replace("++", newMember.toString()));
 				}
