@@ -271,6 +271,21 @@ export class SnowballBot extends EventEmitter {
 
 		this._discordClient.on("error", (err) => {
 			this._log("err", "Error at Discord client", err);
+			this.captureException(err);
+		});
+
+		this._discordClient.on("disconnect", async (reason) => {
+			this._log("warn", "Disconnected with reason:", reason);
+			if((this._discordClient.status && (this._discordClient.status !== 1 && this._discordClient.status !== 2)) || !this._discordClient.status) {
+				this._log("warn", "No reconnect pending, reconnecting...");
+				try {
+					await this.login();
+					this._log("ok", "Reconnected");
+				} catch (err) {
+					this._log("err", "Detected error while reconnecting", err);
+					this.captureException(err);
+				}
+			}
 		});
 
 		// Global bot variable, which should be used by plugins
