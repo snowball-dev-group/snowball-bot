@@ -286,14 +286,14 @@ export class SnowballBot extends EventEmitter {
 		});
 	}
 
-	async prepareRaven() {
+	public prepareRaven() {
 		if(this.raven) {
 			throw new Error("Raven is already prepared");
 		}
 
 		if(this._config.ravenUrl) {
 			this.raven = Raven.config(this._config.ravenUrl).install();
-			this._log("ok", "Raven is configured");
+			this._log("ok", "Raven is configured!");
 		} else {
 			this.raven = null;
 		}
@@ -304,14 +304,14 @@ export class SnowballBot extends EventEmitter {
 		});
 	}
 
-	public async captureException(err: Error, options?: Raven.CaptureOptions) {
+	public captureException(err: Error, options?: Raven.CaptureOptions) {
 		if(!this.raven) { return; }
-		this.raven.captureException(err, options);
+		return this.raven.captureException(err, options);
 	}
 
-	public async captureMessage(message: string, options?: Raven.CaptureOptions) {
+	public captureMessage(message: string, options?: Raven.CaptureOptions) {
 		if(!this.raven) { return; }
-		this.raven.captureMessage(message, options);
+		return this.raven.captureMessage(message, options);
 	}
 
 	/**
