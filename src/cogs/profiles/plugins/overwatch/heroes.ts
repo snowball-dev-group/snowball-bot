@@ -9,6 +9,7 @@ const ACCEPTED_REGIONS = ["eu", "kr", "us"];
 const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
 const ACCEPTED_SORTS = ["playtime", "winrate"];
 const LOG = getLogger("OWRatingPlugin");
+const HEROES_TO_SHOW = 3;
 
 type Hero = "reinhardt" | "tracer" | "zenyatta" | "junkrat" | "mccree" | "winston" | "orisa" | "hanzo" | "pharah" | "roadhog" | "zarya" | "torbjorn" | "mercy" | "mei" | "ana" | "widowmaker" | "genji" | "reaper" | "soldier76" | "bastion" | "symmetra" | "dva" | "sombra" | "lucio" | "doomfist";
 type Sorts = "playtime" | "winrate";
@@ -162,7 +163,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
 			str += `<:competitive:322781963943673866> __**${tStrs.competitive}**__\n`;
-			str += " - no stats -\n";
+			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")) + "\n";
 		} else {
 			let compOveral = profile.stats.competitive.overall_stats;
 			str += `${this.getTierEmoji(compOveral.tier)} __**${tStrs.competitive}**__\n`;
@@ -178,7 +179,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					return b.playtime - a.playtime;
 				});
 				for(let heroPlaytime of sorted) {
-					if(heroPlaytime.playtime > 0 && stats.length < 3) {
+					if(heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroPlaytime.hero,
 							stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
@@ -196,7 +197,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					return b.games_won - a.games_won;
 				});
 				for(let heroWins of sorted) {
-					if(heroWins.games_won > 0 && stats.length < 3) {
+					if(heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroWins.hero,
 							stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
@@ -211,8 +212,8 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		str += `\n<:quick:322781693205282816> __**${tStrs.quickplay}**__\n`;
 
-		if(!profile.stats.quickplay || !profile.stats.quickplay.overall_stats.games) {
-			str += "- no stats -\n";
+		if(!profile.stats.quickplay) {
+			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")) + "\n";
 		} else {
 			let stats: HeroStats = [];
 			if(info.sortBy === "playtime") {
@@ -226,7 +227,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					return b.playtime - a.playtime;
 				});
 				for(let heroPlaytime of sorted) {
-					if(heroPlaytime.playtime > 0 && stats.length < 3) {
+					if(heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroPlaytime.hero,
 							stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
@@ -244,7 +245,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					return b.games_won - a.games_won;
 				});
 				for(let heroWins of sorted) {
-					if(heroWins.games_won > 0 && stats.length < 3) {
+					if(heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroWins.hero,
 							stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
