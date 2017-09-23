@@ -140,6 +140,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 		};
 
 		str += `<:competitive:322781963943673866> __**${tStrs.competitive}**__\n`;
+
 		if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
 			str += this.getTierEmoji(null);
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
@@ -159,25 +160,25 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		str += `\n<:quick:322781693205282816> __**${tStrs.quickplay}**__\n`;
 
-		if(!profile.stats.quickplay || !profile.stats.quickplay.overall_stats.games) {
+		if(!profile.stats.quickplay) {
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
 		} else {
 			let qpOveral = profile.stats.quickplay.overall_stats;
-			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
-				games: qpOveral.games
-			})) + "\n";
 
-			str += ` ${atStrs.win}: ${qpOveral.wins}.\n ${atStrs.loss}: ${qpOveral.losses}.\n`;
-			str += `  (`;
-			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_WINRATE", {
-				winrate: qpOveral.win_rate
-			})) + ")";
-			// str += (await localizeForUser(caller, "OWPROFILEPLUGIN_HOURSPLAYED", {
-			// 	hours: profile.stats.quickplay.game_stats.time_played
+			// str += (await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
+			// 	games: qpOveral.games
 			// })) + "\n";
-			// str += await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
-			// 	gamesWon: qpOveral.wins
-			// });
+			// str += ` ${atStrs.win}: ${qpOveral.wins}.\n ${atStrs.loss}: ${qpOveral.losses}.\n`;
+			// str += `  (`;
+			// str += (await localizeForUser(caller, "OWPROFILEPLUGIN_WINRATE", {
+			// 	winrate: qpOveral.win_rate
+			// })) + ")";
+			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_HOURSPLAYED", {
+				hours: profile.stats.quickplay.game_stats.time_played
+			})) + "\n";
+			str += await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
+				gamesWon: qpOveral.wins
+			});
 		}
 
 		return {
