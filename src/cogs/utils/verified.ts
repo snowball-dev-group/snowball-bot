@@ -119,15 +119,24 @@ export async function init(): Promise<boolean> {
 		return false;
 	}
 
-	initDone = true;
-	return true;
+	return initDone = true;
 }
 
 /**
- * Returns an value that indicates member corresponds to server verification level
+ * Returns a value that indicates if verified was init'ed
+ */
+export function isInitDone() {
+	return initDone;
+}
+
+/**
+ * Returns a value that indicates member corresponds to server verification level
  * @param member {GuildMember} Member of guild
  */
 export async function isVerified(member: GuildMember) {
+	if(!initDone) {
+		throw new Error("Initialization wasn't complete. You should enable `verifiedHandler` in order to use this util");
+	}
 	if(member.guild.verificationLevel === 0) {
 		// of course member is verified
 		return true;
