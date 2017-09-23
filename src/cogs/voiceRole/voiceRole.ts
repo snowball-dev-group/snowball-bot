@@ -4,7 +4,7 @@ import { Plugin } from "../plugin";
 import { Message, Guild, Role, GuildMember, VoiceChannel } from "discord.js";
 import { getDB } from "../utils/db";
 import { getLogger, EmbedType, resolveGuildRole, resolveGuildChannel } from "../utils/utils";
-import { isVerified } from "../utils/verified";
+import { isVerified, isInitDone as isVerifiedEnabled } from "../utils/verified";
 import * as knex from "knex";
 import { replaceAll } from "../utils/text";
 import { messageToExtra } from "../utils/failToDetail";
@@ -157,7 +157,7 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async vcUpdated(oldMember: GuildMember, newMember: GuildMember) {
-		if(!(await isVerified(newMember))) {
+		if(isVerifiedEnabled() && !(await isVerified(newMember))) {
 			// not going to do anything if user isn't verified
 			return;
 		}
