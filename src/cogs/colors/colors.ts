@@ -8,7 +8,7 @@ import { createConfirmationMessage } from "../utils/interactive";
 import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
 import { getPreferenceValue, setPreferenceValue, removePreference } from "../utils/guildPrefs";
 import { randomPick } from "../utils/random";
-import { isVerified } from "../utils/verified";
+import { isVerified, isInitDone as isVerifiedEnabled } from "../utils/verified";
 import { messageToExtra } from "../utils/failToDetail";
 
 const TABLE_NAME = "color_prefixes";
@@ -153,7 +153,7 @@ class Colors extends Plugin implements IModule {
 	}
 
 	async onMemberJoin(member:GuildMember) {
-		if(!(await isVerified(member))) {
+		if(isVerifiedEnabled() && !(await isVerified(member))) {
 			return;
 		}
 
