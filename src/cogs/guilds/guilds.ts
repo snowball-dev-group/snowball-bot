@@ -857,6 +857,7 @@ class Guilds extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CANCELED")
 			});
+			return;
 		}
 
 		await this.deleteGuildRow(dbRow);
