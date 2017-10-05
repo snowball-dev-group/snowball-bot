@@ -1,6 +1,6 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
-import { Message, Guild } from "discord.js";
+import { Message, Guild, DiscordAPIError } from "discord.js";
 import { command, Category } from "../utils/help";
 import { init, checkPremium, givePremium, deletePremium, isPremium as isPremiumUser } from "../utils/premium";
 import { getLogger, EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
@@ -132,12 +132,33 @@ class PremiumControl extends Plugin implements IModule {
 			// NO PERMISSIONS
 			return;
 		}
+		
+		const botMember = msg.guild.members.get($discordBot.user.id);
+		
+		if(!botMember) {
+			throw new Error("Unexpected behaviour, should have botMember set as GuildMember but got nothing");
+		}
+
+		if(!botMember.permissions.hasPermission("MANAGE_ROLES")) {
+			msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOPERMS")
+			});
+			return;
+		}
+
 		// premiumctl:role
 		if(args[0].toLowerCase() !== "none") {
 			let role = await resolveGuildRole(args[0], msg.guild, false);
 			if(!role) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOTFOUND")
+				});
+				return;
+			}
+
+			if(role.calculatedPosition > botMember.highestRole.calculatedPosition) {
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_ROLEHIGHTER")
 				});
 				return;
 			}
@@ -608,7 +629,7 @@ class PremiumControl extends Plugin implements IModule {
 
 	async performGuildSync(guild: Guild, noLog = false) {
 		if(!noLog) { this.log("info", `Started role sync on guild "${guild.name}"`); }
-		let guildPremiumRole = await getGuildPref(guild, "premiumctl:role");
+		const guildPremiumRole = await getGuildPref(guild, "premiumctl:role");
 		if(!guildPremiumRole) {
 			if(!noLog) { this.log("warn", "Guild doesn't has premium role"); }
 			return {
@@ -617,20 +638,67 @@ class PremiumControl extends Plugin implements IModule {
 			};
 		}
 
+		const botMember = guild.members.get($discordBot.user.id);
+		
+		if(!botMember) {
+			this.log("err", "Could not get bot in current guild", guild.id);
+			return;
+		}
+
 		let done = 0;
 
+		const premiumRole = guild.roles.get(guildPremiumRole);
+
+		// checks
+
+		if(!premiumRole) {
+			this.log("warn", "Premium role was deleted on guild", guild.id);
+			await delGuildPref(guild, "premiumctl:role");
+			return;
+		}
+
+		if(!botMember.permissions.hasPermission("MANAGE_ROLES")) {
+			this.log("warn", "Bot doesn't has permission to manage roles on guild", guild.id);
+			await delGuildPref(guild, "premiumctl:role");
+			return;
+		}
+
+		if(premiumRole.calculatedPosition > botMember.highestRole.calculatedPosition) {
+			this.log("warn", "Premium role is above bot's one, so bot can't give it");
+			await delGuildPref(guild, "premiumctl:role");
+			return;
+		}
+
 		for(let member of guild.members.values()) {
+			if(member.highestRole.calculatedPosition > botMember.highestRole.calculatedPosition) {
+				// not managable?
+				done++;
+				continue;
+			}
+
 			let isPremium = await isPremiumUser(member);
 			if(isPremium && !member.roles.has(guildPremiumRole)) {
 				try {
-					await member.addRole(guildPremiumRole);
+					await member.addRole(premiumRole);
 					done++;
 				} catch(err) {
+					if(err instanceof DiscordAPIError) {
+						let breakSync = false;
+						switch(err.code) {
+							case 10011: {
+								// role was deleted, deleting ctl pref
+								await delGuildPref(guild, "permiumctl:role");
+								breakSync = true;
+							} break;
+						}
+
+						if(breakSync) { break; }
+					}
 					this.log("err", `Failed to assign premium role to member "${member.displayName}"...`);
 				}
 			} else if(!isPremium && member.roles.has(guildPremiumRole)) {
 				try {
-					await member.removeRole(guildPremiumRole);
+					await member.removeRole(premiumRole);
 					done++;
 				} catch(err) {
 					this.log("err", `Failed to unassign premium role from member "${member.displayName}"...`);
