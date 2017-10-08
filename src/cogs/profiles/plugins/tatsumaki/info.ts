@@ -11,6 +11,10 @@ export interface ITatsumakiInfo {
 }
 
 export class TatsumakiProfilePlugin implements IProfilesPlugin {
+	public get signature() {
+		return "snowball.features.profile.plugins.tatsumaki";
+	}
+
 	private apiKey:string;
 
 	constructor(apiKey:string) {
