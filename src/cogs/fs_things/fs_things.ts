@@ -50,6 +50,10 @@ interface IOptions {
  * Partnered until 01.01.2019
  */
 class FanServerThings extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.partners.fsofbsadw";
+	}
+
 	options: IOptions;
 	nickRegexp: RegExp;
 	log = getLogger("FSofBSaDW");
@@ -62,7 +66,7 @@ class FanServerThings extends Plugin implements IModule {
 
 		this.options = options;
 		this.nickRegexp = new RegExp(options.nickRegexp, "i");
-		let fsGuild = $discordBot.guilds.get(options.fsGuildId);
+		const fsGuild = $discordBot.guilds.get(options.fsGuildId);
 		if(!fsGuild) {
 			this.log("err", "Fan Server's guild not found");
 			return;
@@ -71,14 +75,14 @@ class FanServerThings extends Plugin implements IModule {
 	}
 
 	async init() {
-		let fsGuild = $discordBot.guilds.get(this.options.fsGuildId);
+		const fsGuild = $discordBot.guilds.get(this.options.fsGuildId);
 		if(!fsGuild) {
 			this.log("err", "Fan Server's guild not found, skipping init cycle");
 			return;
 		}
 		this.log("info", "Synchronization started");
 		const startedAt = Date.now();
-		for(let member of fsGuild.members.values()) {
+		for(const member of fsGuild.members.values()) {
 			await this.onUpdate(member, member);
 		}
 		this.log("ok", `Synchronization done in ${(Date.now() - startedAt)}ms!`);
@@ -120,26 +124,26 @@ class FanServerThings extends Plugin implements IModule {
 		await this.nickCheck(newMember, oldMember);
 
 		// checking if member has atleast one sub role
-		let subRole = newMember.roles.find((r) => this.options.subRoles.includes(r.id));
-		let oneSubRole = newMember.roles.find((r) => this.options.oneSubRole === r.id);
+		const subRole = newMember.roles.find((r) => this.options.subRoles.includes(r.id));
+		const oneSubRole = newMember.roles.find((r) => this.options.oneSubRole === r.id);
 
 		// let removedRoles = oldMember.roles.filter((r) => !newMember.roles.has(r.id));
-		let newRoles = newMember.roles.filter((r) => !oldMember.roles.has(r.id));
+		const newRoles = newMember.roles.filter((r) => !oldMember.roles.has(r.id));
 
 		if(!!subRole && !oneSubRole) {
-			let newSubRoles = newRoles.filter((r) => this.options.subRoles.includes(r.id));
+			const newSubRoles = newRoles.filter((r) => this.options.subRoles.includes(r.id));
 
 			// has subrole but not onesub role
 			await newMember.addRole(this.options.oneSubRole);
 
-			let random = new Random(Random.engines.mt19937().autoSeed());
+			const random = new Random(Random.engines.mt19937().autoSeed());
 
-			let ancChannel = newMember.guild.channels.find("id", this.options.subAncChannel);
+			const ancChannel = newMember.guild.channels.find("id", this.options.subAncChannel);
 			if(!!ancChannel) {
-				for(let nSubRole of newSubRoles.keys()) {
-					let texts = this.options.texts.filter(r => r.roleId === nSubRole);
+				for(const nSubRole of newSubRoles.keys()) {
+					const texts = this.options.texts.filter(r => r.roleId === nSubRole);
 					if(texts.length === 0) { continue; }
-					let randText: ISubText = random.pick(texts);
+					const randText: ISubText = random.pick(texts);
 					(ancChannel as TextChannel).send(randText.text.replace("++", newMember.toString()));
 				}
 			}
