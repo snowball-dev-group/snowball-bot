@@ -3,6 +3,9 @@ import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 
 class SHIBCHANNEL extends Plugin implements IModule {
+	public get signature() {
+		return "dafri.interactive.shibs";
+	}
 
 	constructor() {
 		super({
