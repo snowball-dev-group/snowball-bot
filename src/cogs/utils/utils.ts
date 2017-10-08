@@ -3,37 +3,35 @@ import { Guild } from "discord.js";
 import { replaceAll } from "./text";
 
 export function stringifyError(err, filter = null, space = 2) {
-	let plainObject = {};
-	Object.getOwnPropertyNames(err).forEach(function (key) {
+	const plainObject = {};
+	for(const key of Object.getOwnPropertyNames(err)) {
 		plainObject[key] = err[key];
-	});
+	}
 	return JSON.stringify(plainObject, filter, space);
 }
 
 export function colorNumberToHex(color) {
 	let hex = color.toString(16);
-	while(hex.length < 6) {
-		hex = `0${hex}`;
-	}
+	while(hex.length < 6) { hex = `0${hex}`; }
 	return `${hex}`.toUpperCase();
 }
 
 export function objectToMap<T>(obj) {
-	let map = new Map<string, T>();
-	Object.keys(obj).forEach(key => {
+	const map = new Map<string, T>();
+	for(const key of Object.keys(obj)) {
 		map.set(key, obj[key]);
-	});
+	}
 	return map;
 }
 
 export function commandRedirect(content: string, redirects: Map<string, Function>) {
-	redirects.forEach((val, key) => {
-		let keySpaced = `${key} `;
-		let itsStarts = content.startsWith(keySpaced);
+	for(const [key, val] of redirects) {
+		const keySpaced = `${key} `;
+		const itsStarts = content.startsWith(keySpaced);
 		if(itsStarts || content === key) {
 			val(itsStarts ? content.slice(keySpaced.length) : content);
 		}
-	});
+	}
 }
 
 export function escapeDiscordMarkdown(str: string, usernames: boolean = false) {
