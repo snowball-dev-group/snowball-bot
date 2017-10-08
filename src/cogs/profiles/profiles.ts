@@ -1,4 +1,4 @@
-import { IModule, ModuleLoader, IModuleInfo, Module, convertToModulesMap } from "../../types/ModuleLoader";
+import { IModule, ModuleLoader, ModuleBase, convertToModulesMap, ModuleLoadState } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User, Guild } from "discord.js";
 import { getLogger, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed } from "../utils/utils";
@@ -78,6 +78,10 @@ function isChat(msg: Message) {
 }, isChat)
 @docCmd(Category.Profiles, "profile_plugins", "loc:PROFILES_META_PROFILEPLUGINS", undefined, isChat)
 class Profiles extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.features.profile";
+	}
+
 	plugLoader: ModuleLoader;
 	log = getLogger("ProfilesJS");
 	db = getDB();
@@ -113,7 +117,7 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async onPresenseUpdate(old: GuildMember, member: GuildMember) {
-		let profile = await this.getOrCreateProfile(member, member.guild);
+		const profile = await this.getOrCreateProfile(member, member.guild);
 		if(old.presence.status !== member.presence.status) {
 			if(old.presence.game && member.presence.game) {
 				if(old.presence.game.equals(member.presence.game)) {
@@ -136,11 +140,11 @@ class Profiles extends Plugin implements IModule {
 	async sendPluginsList(msg: Message) {
 		let str = "# " + await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE");
 
-		for(let name in this.plugLoader.loadedModulesRegistry) {
-			let plugin = this.plugLoader.loadedModulesRegistry[name];
+		for(const name in this.plugLoader.loadedModulesRegistry) {
+			const plugin = this.plugLoader.loadedModulesRegistry[name] as ModuleBase<IProfilesPlugin>;
 			str += `\n- ${name}`;
-			if(!plugin.base) { return; }
-			let plug = plugin.base as IProfilesPlugin;
+			if(!plugin || !plugin.base) { return; }
+			const plug = plugin.base;
 			str += `\n  - : ${await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_ARGUMENTS", {
 				arguments: (await plug.getSetupArgs(msg.member)) || await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_ARGUMENTS_EMPTY")
 			})}\n`;
@@ -153,12 +157,12 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async showProfile(msg: Message) {
-		let profileOwner: GuildMember | undefined;
+		let profileOwner: GuildMember | undefined = undefined;
 		if(msg.content === "!profile") {
 			profileOwner = msg.member;
 		} else if(msg.content.startsWith("!profile ") && msg.mentions.users.size === 1) {
-			let ment = msg.mentions.users.first();
-			if(!(profileOwner = msg.guild.members.get(ment.id))) {
+			const mentioned = msg.mentions.users.first();
+			if(!(profileOwner = msg.guild.members.get(mentioned.id))) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTAMEMBER")
 				});
@@ -168,7 +172,7 @@ class Profiles extends Plugin implements IModule {
 			return;
 		}
 
-		let profile = await this.getOrCreateProfile(profileOwner, msg.guild);
+		const profile = await this.getOrCreateProfile(profileOwner, msg.guild);
 
 		await this.sendProfile(msg, profile, profileOwner);
 	}
@@ -177,7 +181,7 @@ class Profiles extends Plugin implements IModule {
 		if(msg.author.id !== $botConfig.botOwner) {
 			return;
 		}
-		let args = msg.content.slice("!add_badge ".length).split(",").map(arg => arg.trim());
+		const args = msg.content.slice("!add_badge ".length).split(",").map(arg => arg.trim());
 		if(args.length !== 4) {
 			// uid, gid, add/remove, badgeid
 			msg.channel.send("", {
@@ -197,15 +201,16 @@ class Profiles extends Plugin implements IModule {
 			return;
 		}
 		let param = msg.content.slice("!edit_profile ".length);
-		let profile = await this.getOrCreateProfile(msg.member, msg.guild);
+		const profile = await this.getOrCreateProfile(msg.member, msg.guild);
 		if(param.startsWith("set ")) {
 			param = param.slice("set ".length);
-			let firstSpaceIndex = param.indexOf(" ");
-			let arg = firstSpaceIndex !== -1 ? param.slice(firstSpaceIndex + 1) : "";
+			const firstSpaceIndex = param.indexOf(" ");
+			const arg = firstSpaceIndex !== -1 ? param.slice(firstSpaceIndex + 1) : "";
 			param = param.slice(0, firstSpaceIndex === -1 ? param.length + 1 : firstSpaceIndex);
 
 			if(["image"].indexOf(param) !== -1) {
-				let customize = JSON.parse(profile.customize);
+				const customize = JSON.parse(profile.customize);
+
 				if(param === "image") {
 					if(arg === "" || (!arg.startsWith("http://") && !arg.startsWith("https://"))) {
 						await msg.channel.send("", {
@@ -230,32 +235,30 @@ class Profiles extends Plugin implements IModule {
 					});
 				}
 
-				customize = JSON.stringify(customize);
-
-				profile.customize = customize;
+				profile.customize = JSON.stringify(customize);
 
 				await this.updateProfile(profile);
 
 				return;
 			}
 
-			let mod: Module | undefined = undefined;
+			const mod = this.plugLoader.loadedModulesRegistry[param] as ModuleBase<IProfilesPlugin>|undefined;
 
-			if(!(mod = this.plugLoader.loadedModulesRegistry[param])) {
+			if(!mod) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
 				});
 				return;
 			}
 
-			if(!mod.loaded) {
+			if(mod.state !== ModuleLoadState.Loaded || !mod.base) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_NOT_LOADED")
 				});
 				return;
 			}
 
-			let plugin = mod.base as IProfilesPlugin;
+			const plugin = mod.base;
 
 			let completeInfo: IAddedProfilePlugin | undefined = undefined;
 			try {
@@ -272,7 +275,7 @@ class Profiles extends Plugin implements IModule {
 				return;
 			}
 
-			let customize = JSON.parse(profile.customize);
+			const customize = JSON.parse(profile.customize);
 
 			if(!customize.plugins) {
 				customize.plugins = {};
@@ -296,9 +299,7 @@ class Profiles extends Plugin implements IModule {
 
 			customize.plugins[param] = completeInfo;
 
-			customize = JSON.stringify(customize);
-
-			profile.customize = customize;
+			profile.customize = JSON.stringify(customize);
 
 			await this.updateProfile(profile);
 
@@ -306,7 +307,7 @@ class Profiles extends Plugin implements IModule {
 				embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, "PROFILES_PROFILE_SETUP_COMPLETE")
 			});
 		} else if(param === "set") {
-			let strs = {
+			const strs = {
 				key: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY"),
 				value: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_VALUE"),
 				keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION"),
@@ -323,7 +324,7 @@ class Profiles extends Plugin implements IModule {
 			});
 			return;
 		} else if(param === "remove") {
-			let strs = {
+			const strs = {
 				key: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY"),
 				keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION")
 			};
@@ -337,7 +338,7 @@ class Profiles extends Plugin implements IModule {
 		} else if(param.startsWith("remove ")) {
 			param = param.slice("remove ".length);
 
-			let customize = JSON.parse(profile.customize);
+			const customize = JSON.parse(profile.customize);
 
 			let doneStr = "";
 
@@ -359,9 +360,7 @@ class Profiles extends Plugin implements IModule {
 				});
 			}
 
-			customize = JSON.stringify(customize);
-
-			profile.customize = customize;
+			profile.customize = JSON.stringify(customize);
 
 			await this.updateProfile(profile);
 
@@ -373,7 +372,7 @@ class Profiles extends Plugin implements IModule {
 
 	async editBio(msg: Message) {
 		if(msg.content === "!set_bio") {
-			let strs = {
+			const strs = {
 				aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME"),
 				def_aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_DEFINITON")
 			};
@@ -391,7 +390,8 @@ class Profiles extends Plugin implements IModule {
 			});
 			return;
 		}
-		let newBio = msg.content.slice("!set_bio ".length);
+
+		const newBio = msg.content.slice("!set_bio ".length);
 		if(newBio.length >= 1024) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_INVALIDTEXT")
@@ -399,7 +399,7 @@ class Profiles extends Plugin implements IModule {
 			return;
 		}
 
-		let profile = await this.getOrCreateProfile(msg.member, msg.guild);
+		const profile = await this.getOrCreateProfile(msg.member, msg.guild);
 		profile.bio = newBio;
 		await this.updateProfile(profile);
 
@@ -424,7 +424,7 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async getUserStatusString(user: User | GuildMember | string, localizingFor: GuildMember | User) {
-		let lF = async (str: string) => { return await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`); };
+		const lF = async (str: string) => { return await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`); };
 		switch(typeof user !== "string" ? user.presence.status : user) {
 			case "online": { return await lF("online"); }
 			case "idle": { return await lF("idle"); }
@@ -469,7 +469,7 @@ class Profiles extends Plugin implements IModule {
 				statusString += `в **${escapeDiscordMarkdown(member.presence.game.name)}**`;
 			}
 		} else if(dbProfile.activity) {
-			let jsonActivity = JSON.parse(dbProfile.activity) as IUserActivity;
+			const jsonActivity = JSON.parse(dbProfile.activity) as IUserActivity;
 
 			statusString = "";
 
@@ -485,16 +485,16 @@ class Profiles extends Plugin implements IModule {
 		}
 
 		if(dbProfile.status_changed) {
-			let changedAt = new Date(dbProfile.status_changed).getTime();
-			let diff = Date.now() - changedAt;
-			let sDiff = await humanizeDurationForUser(member, diff, undefined, {
+			const changedAt = new Date(dbProfile.status_changed).getTime();
+			const diff = Date.now() - changedAt;
+			const sDiff = await humanizeDurationForUser(member, diff, undefined, {
 				round: true,
 				largest: 2
 			});
 			statusString += ` (${sDiff})`;
 		}
 
-		let fields: IEmbedOptionsField[] = [];
+		const fields: IEmbedOptionsField[] = [];
 
 		if(dbProfile.bio) {
 			fields.push({
@@ -514,7 +514,7 @@ class Profiles extends Plugin implements IModule {
 			joinedDate = member.joinedAt.getTime();
 		}
 
-		let embed = {
+		const embed = {
 			author: {
 				icon_url: member.user.displayAvatarURL.replace("?size=2048", "?size=512"),
 				name: member.displayName
@@ -538,7 +538,7 @@ class Profiles extends Plugin implements IModule {
 		let pushing = false;
 		let repushAfterPush = false;
 
-		let pushUpdate = async () => {
+		const pushUpdate = async () => {
 			if(pushing) {
 				repushAfterPush = true;
 				return;
@@ -572,7 +572,7 @@ class Profiles extends Plugin implements IModule {
 		};
 
 		if(dbProfile.customize !== "{}") {
-			let customize = JSON.parse(dbProfile.customize);
+			const customize = JSON.parse(dbProfile.customize);
 
 			if(customize["image_url"]) {
 				embed.image = { url: customize["image_url"] };
@@ -583,26 +583,26 @@ class Profiles extends Plugin implements IModule {
 			}
 
 			if(customize.plugins) {
-				for(let pluginName of Object.keys(customize.plugins)) {
-					let mod: Module | undefined = undefined;
-					if(!(mod = this.plugLoader.loadedModulesRegistry[pluginName])) {
+				for(const pluginName of Object.keys(customize.plugins)) {
+					const mod: ModuleBase<IProfilesPlugin> | undefined = this.plugLoader.loadedModulesRegistry[pluginName];
+					if(!mod) {
 						// not found, skipping
 						continue;
 					}
 
-					if(!mod.loaded) {
+					if(mod.state !== ModuleLoadState.Loaded || !mod.base) {
 						// not loaded, skipping
 						continue;
 					}
 
-					let plugin = mod.base as IProfilesPlugin;
+					const plugin = mod.base;
 
-					let addedPlugin = customize.plugins[pluginName] as IAddedProfilePlugin;
+					const addedPlugin = customize.plugins[pluginName] as IAddedProfilePlugin;
 
 					if(addedPlugin.type === AddedProfilePluginType.Embed) {
 						if(!plugin.getEmbed) { continue; }
 
-						let fNum = fields.length;
+						const fNum = fields.length;
 
 						fields.push({
 							name: pluginName,
@@ -610,10 +610,10 @@ class Profiles extends Plugin implements IModule {
 							inline: true
 						});
 
-						let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+						const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
 
 						let canEdit = true;
-						let t: NodeJS.Timer = setTimeout(async () => {
+						const t: NodeJS.Timer = setTimeout(async () => {
 							this.log("err", pluginLogPrefix, "timed out.");
 							canEdit = false;
 							fields[fNum] = {
@@ -647,10 +647,10 @@ class Profiles extends Plugin implements IModule {
 					} else if(addedPlugin.type === AddedProfilePluginType.Customs) {
 						if(!plugin.getCustoms) { continue; }
 
-						let pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+						const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
 
 						let canEdit = true;
-						let t: NodeJS.Timer = setTimeout(() => {
+						const t: NodeJS.Timer = setTimeout(() => {
 							this.log("err", pluginLogPrefix, "timed out.");
 							canEdit = false;
 						}, 20000);
@@ -727,7 +727,7 @@ class Profiles extends Plugin implements IModule {
 	// =====================================
 
 	async init() {
-		let options = this.options;
+		const options = this.options;
 		try {
 			this.db = getDB();
 		} catch(err) {
@@ -757,7 +757,7 @@ class Profiles extends Plugin implements IModule {
 			}
 		}
 
-		let plugins = convertToModulesMap(options);
+		const plugins = convertToModulesMap(options);
 
 		this.plugLoader = new ModuleLoader({
 			name: "Profiles:Plugins",
@@ -769,18 +769,6 @@ class Profiles extends Plugin implements IModule {
 		await this.plugLoader.loadModules();
 
 		this.handleEvents();
-	}
-
-	/**
-	 * Convert modules object to Map object
-	 * @param obj {Array} Array of module info entries
-	 */
-	_convertToModulesMap(obj: IModuleInfo[]) {
-		let modulesMap = new Map();
-		for(let moduleInfo of obj) {
-			modulesMap.set(moduleInfo.name, moduleInfo);
-		}
-		return modulesMap;
 	}
 
 	async unload() {
