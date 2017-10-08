@@ -1,4 +1,4 @@
-import { IModule, ModuleLoader, convertToModulesMap, IModuleInfo } from "../../types/ModuleLoader";
+import { IModule, ModuleLoader, convertToModulesMap, IModuleInfo, ModuleBase, ModuleLoadState } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, TextChannel, GuildMember } from "discord.js";
 import { getLogger } from "../utils/utils";
@@ -145,6 +145,10 @@ function helpCheck(msg: Message) {
 	}
 }, helpCheck)
 class StreamNotifications extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.features.stream_notifications";
+	}
+
 	log = getLogger("StreamNotifications");
 	db = getDB();
 	servicesLoader: ModuleLoader;
@@ -728,9 +732,9 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
-		let fields: IEmbedOptionsField[] = [];
+		const fields: IEmbedOptionsField[] = [];
 		let c = 1;
-		for(let result of results) {
+		for(const result of results) {
 			fields.push({
 				inline: false,
 				name: `${c++}. ${result.username}`,
@@ -767,7 +771,7 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 		await sleep(100);
 
-		for(let notification of notifications) {
+		for(const notification of notifications) {
 			if((Date.now() - notification.sentAt) > MAX_NOTIFIED_LIFE) {
 				await this.deleteNotification(notification);
 			}
@@ -794,18 +798,19 @@ class StreamNotifications extends Plugin implements IModule {
 	};
 
 	async handleNotifications() {
-		for (let providerName in this.servicesLoader.loadedModulesRegistry) {
-			let mod = this.servicesLoader.loadedModulesRegistry[providerName];
-			if(!mod.base) {
+		for (const providerName in this.servicesLoader.loadedModulesRegistry) {
+			const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService>|undefined;
+
+			if(!mod || !mod.base) {
 				this.log("err", `${providerName} is still not loaded (?!)`);
 				continue;
 			}
 
-			let provider = mod.base as IStreamingService;
+			const provider = mod.base as IStreamingService;
 			
-			for(let a of ["online", "updated", "offline"]) {
-				let action = a as StreamStatusChangedAction;
-				let handler = (status) => {
+			for(const a of ["online", "updated", "offline"]) {
+				const action = a as StreamStatusChangedAction;
+				const handler = (status) => {
 					try {
 						this.handleNotification(providerName, status);
 					} catch(err) {
@@ -823,11 +828,11 @@ class StreamNotifications extends Plugin implements IModule {
 
 			// loading subscriptions unto provider
 
-			let subscriptions = await this.getSubscriptionsByFilter({
+			const subscriptions = await this.getSubscriptionsByFilter({
 				provider: providerName
 			});
 
-			for(let subscription of subscriptions) {
+			for(const subscription of subscriptions) {
 				if(provider.isSubscribed(subscription.uid)) {
 					continue;
 				}
@@ -845,21 +850,21 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async handleNotification(providerName: string, status: IStreamStatus) {
-		let subscriptions = (await this.getSubscriptionsByFilter({
+		const subscriptions = (await this.getSubscriptionsByFilter({
 			provider: providerName,
 			uid: status.streamer.uid
 		})).map(this.convertToNormalSubscription);
 
-		for(let subscription of subscriptions) {
+		for(const subscription of subscriptions) {
 			if(subscription.username !== status.streamer.username) {
 				// for cases if streamer changed username (Twitch/Mixer)
 				subscription.username = status.streamer.username;
 			}
 
-			for(let subscribedGuildId of subscription.subscribers) {
-				let notification = await this.getNotification(subscription.provider, subscription.uid, (status.updated && status.oldId ? status.oldId : status.id), subscribedGuildId);
+			for(const subscribedGuildId of subscription.subscribers) {
+				const notification = await this.getNotification(subscription.provider, subscription.uid, (status.updated && status.oldId ? status.oldId : status.id), subscribedGuildId);
 
-				let guild = $discordBot.guilds.get(subscribedGuildId);
+				const guild = $discordBot.guilds.get(subscribedGuildId);
 
 				if(!guild) {
 					if(process.send) {
@@ -886,19 +891,19 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async pushNotification(guild:Guild, result: IStreamStatus, subscription:ISubscriptionRow, notification?:INotification) {
-		let providerName = subscription.provider;
-		let mod = this.servicesLoader.loadedModulesRegistry[providerName];
-		if(!mod) {
+		const providerName = subscription.provider;
+		const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService>|undefined;
+		if(!mod || !mod.base) {
 			this.log("warn", "WARN:", providerName, "not found as loaded service");
 			return;
 		}
-		let service = mod.base as IStreamingService;
+		const service = mod.base as IStreamingService;
 
 		if((!result.updated && result.status !== "offline") && notification) {
 			return;
 		}
 
-		let guildLanguage = await getGuildLanguage(guild);
+		const guildLanguage = await getGuildLanguage(guild);
 
 		let embed: IEmbed | undefined = undefined;
 
@@ -922,7 +927,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		let settings = this.guildSettingsCache.get(guild.id);
 		if(!settings) {
-			let dbSettings = await this.getSettings(guild);
+			const dbSettings = await this.getSettings(guild);
 			if(!dbSettings) {
 				this.log("err", "Not found `dbSettings` for subscribed guild", guild.id, "to subscription", `${subscription.uid} (${providerName})`);
 				return;
@@ -933,18 +938,18 @@ class StreamNotifications extends Plugin implements IModule {
 
 		if(!settings.channelId || settings.channelId === "-") { return; }
 
-		let channel = guild.channels.get(settings.channelId);
+		const channel = guild.channels.get(settings.channelId);
 		if(!channel) {
 			this.log("err", "Not found channel for subscribed guild", guild.id, "to subscription", `${subscription.uid} (${providerName})`);
 			return;
 		}
 
-		let mentionsEveryone = !!settings.mentionsEveryone.find(s => {
+		const mentionsEveryone = !!settings.mentionsEveryone.find(s => {
 			return s.serviceName === providerName && (s.uid === subscription.uid || s.username === subscription.username);
 		});
 
 		if((result.updated || result.status === "offline") && (notification && notification.channelId === channel.id)) {
-			let msg = await (async () => {
+			const msg = await (async () => {
 				try {
 					return (await (channel as TextChannel).fetchMessage(notification.messageId));
 				} catch(err) {
@@ -1056,8 +1061,8 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	convertToMap<T>(toConvert: T[], key: string): Map<string, T> {
-		let map = new Map<string, T>();
-		for(let elem of toConvert) {
+		const map = new Map<string, T>();
+		for(const elem of toConvert) {
 			map.set(elem[key], elem);
 		}
 		return map;
@@ -1271,7 +1276,7 @@ class StreamNotifications extends Plugin implements IModule {
 				
 				let mod = this.servicesLoader.loadedModulesRegistry[payload.provider];
 				if(!mod) { this.log("warn", "Provider not found", payload.provider, "- message ignored"); return; }
-				if(!mod.loaded) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
+				if(mod.state !== ModuleLoadState.Loaded || !mod.base) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
 
 				let provider = mod.base as IStreamingService;
 

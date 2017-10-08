@@ -24,6 +24,10 @@ const CMD = {
 	}
 })
 class SetLanguageCommand extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.core_features.setlanguage";
+	}
+
 	prefs = getPrefsNames();
 	log = getLogger("SetLanguage");
 	noLazy = false;
@@ -45,18 +49,18 @@ class SetLanguageCommand extends Plugin implements IModule {
 			return;
 		}
 		this.log("info", "Syncing...");
-		for(let g of $discordBot.guilds.values()) {
+		for(const g of $discordBot.guilds.values()) {
 			this.log("info", `Updating language for guild "${g.name}"`);
 			await forceGuildLanguageUpdate(g);
 			this.log("info", `Updating enforcing status for guild "${g.name}"`);
 			await forceGuildEnforceUpdate(g);
 			this.log("info", `-- Started language update for ${g.members.size} members`);
-			for(let m of g.members.values()) {
+			for(const m of g.members.values()) {
 				await getUserLanguage(m);
 			}
 		}
 		this.log("info", `Started language update for ${$discordBot.users.size} users`);
-		for(let m of $discordBot.users.values()) {
+		for(const m of $discordBot.users.values()) {
 			await forceUserLanguageUpdate(m);
 		}
 		this.log("ok", "Sync done, poor DB");
@@ -80,13 +84,13 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	async getCurrentLang(msg: Message) {
-		let u = msg.member || msg.author;
+		const u = msg.member || msg.author;
 		let str = await localizeForUser(u, "LANGUAGE_CURRENTLANG", {
 			lang: `${await localizeForUser(u, "+NAME")} (${await localizeForUser(u, "+COUNTRY")})`,
 			coverage: await localizeForUser(u, "+COVERAGE")
 		});
 		if(!(await localizeForUser(u, "+COMMUNITY_MANAGED") === "false")) {
-			let userLangCode = await getUserLanguage(u);
+			const userLangCode = await getUserLanguage(u);
 			str += "\n\n";
 			str += await localizeForUser(u, "LANGUAGE_COMMUNITYMANAGED", {
 				crowdinLink: `${this.crowdinLink}/${userLangCode}`
@@ -101,7 +105,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	async switchLanguage(msg: Message) {
-		let u = msg.member || msg.author;
+		const u = msg.member || msg.author;
 		if(msg.content === CMD.SWITCH) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, u, {
@@ -115,7 +119,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			return;
 		}
 		if(msg.channel.type !== "dm") {
-			let enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
+			const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
 			if(enforcingEnabled) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ENFORCEDLANG")
@@ -123,7 +127,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				return;
 			}
 		}
-		let lang = msg.content.slice(CMD.SWITCH.length).trim();
+		const lang = msg.content.slice(CMD.SWITCH.length).trim();
 		if(!$localizer.languageExists(lang)) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, u, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
@@ -143,10 +147,10 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	async getCodes(msg: Message) {
-		let u = msg.member || msg.author;
+		const u = msg.member || msg.author;
 		let str = `# ${await localizeForUser(u, "LANGUAGE_CODES_HEADER")}\n\n`;
-		let langs = $localizer.loadedLanguages;
-		for(let lang of langs) {
+		const langs = $localizer.loadedLanguages;
+		for(const lang of langs) {
 			str += `* ${lang}: `;
 			str += await $localizer.getString(lang, "+NAME");
 			str += ` (${await $localizer.getString(lang, "+COUNTRY")})`;
@@ -188,14 +192,14 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 			return;
 		}
-		let lang = msg.content.slice(CMD.GUILDS_SWITCH.length).trim();
+		const lang = msg.content.slice(CMD.GUILDS_SWITCH.length).trim();
 		if(!$localizer.languageExists(lang)) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
 			});
 			return;
 		}
-		let enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
+		const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
 		await setGuildPref(msg.guild, this.prefs.guild, lang);
 		await forceGuildLanguageUpdate(msg.guild);
 		msg.channel.send("", {
@@ -228,15 +232,15 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 			return;
 		}
-		let arg = msg.content.slice(CMD.GUILDS_ENFORCE.length).trim();
+		const arg = msg.content.slice(CMD.GUILDS_ENFORCE.length).trim();
 		if(!["true", "false"].includes(arg)) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ENFORCE_ARGERR")
 			});
 			return;
 		}
-		let enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
-		let shouldEnableEnforcing = arg === "true";
+		const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
+		const shouldEnableEnforcing = arg === "true";
 		if((enforcingEnabled && shouldEnableEnforcing) || (!enforcingEnabled && !shouldEnableEnforcing)) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {

@@ -7,6 +7,10 @@ import { getLogger } from "../utils/utils";
 @command(Category.Utilites, "ping", "loc:PING_CMDMETA_DEFAULT_DESCRIPTION")
 @command(Category.Utilites, "ping_embed", "loc:PING_CMDMETA_EMBED_DESCRIPTION")
 class Ping extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.core_features.ping";
+	}
+
 	log: Function = getLogger("PingJS");
 
 	constructor() {

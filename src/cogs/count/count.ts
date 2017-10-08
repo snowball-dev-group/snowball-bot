@@ -7,6 +7,10 @@ import * as knex from "knex";
 import { convertNumbers } from "../utils/letters";
 
 class Count extends Plugin implements IModule {
+	public get signature() {
+		return "dafri.interactive.count";
+	}
+
 	log: Function = logger("CountChannel");
 	dbClient: knex;
 	countRegex: RegExp;
@@ -46,12 +50,12 @@ class Count extends Plugin implements IModule {
 		if(!this.dbInitialized) { return; }
 		if(msg.channel.type === "dm") { return; }
 		if(!msg.content) { msg.delete(); return; }
-		let override = msg.content.startsWith("!");
+		const override = msg.content.startsWith("!");
 		if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
 
 		if(override) {
 			if(msg.author.id === $botConfig.botOwner) {
-				let mNumber = parseInt(msg.content.slice(1), 10);
+				const mNumber = parseInt(msg.content.slice(1), 10);
 				if(isNaN(mNumber)) { msg.delete(); return; }
 				await this.dbClient("count").insert({
 					author: msg.author.id,
@@ -65,15 +69,15 @@ class Count extends Plugin implements IModule {
 			}
 		}
 
-		let row = await this.dbClient("count").orderBy("count", "DESC").first("count", "author", "date");
+		const row = await this.dbClient("count").orderBy("count", "DESC").first("count", "author", "date");
 
 		if(!row) { this.log("err", "Not found element"); return; }
 
-		let rowDate = parseInt(row.date, 10);
+		const rowDate = parseInt(row.date, 10);
 
 		if(row.author === msg.author.id && ((Date.now() - rowDate) / 1000) < 180) { msg.delete(); return; }
 
-		let mNumber = parseInt(msg.content, 10);
+		const mNumber = parseInt(msg.content, 10);
 		if(isNaN(mNumber)) { msg.delete(); return; }
 
 		if((row.count + 1) !== mNumber) {

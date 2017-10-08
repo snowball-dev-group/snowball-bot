@@ -34,6 +34,10 @@ interface ISpecificRoleRow {
 }
 
 class VoiceRole extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.features.voicerole";
+	}
+
 	db: knex;
 	log = getLogger("VoiceRole");
 	loaded = false;
@@ -108,7 +112,7 @@ class VoiceRole extends Plugin implements IModule {
 		this.handleEvents();
 
 		// stage eight: do cleanup for all guilds
-		for(let guild of $discordBot.guilds.values()) {
+		for(const guild of $discordBot.guilds.values()) {
 			this.log("info", `Cleanup started at Guild: "${guild.name}"`);
 			await this.VCR_Cleanup(guild);
 		}
@@ -201,15 +205,15 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async getAllSpecificRowsOfGuild(guild: Guild, method: "role" | "channel") {
-		let rows = ((await this.db(SPECIFIC_TABLE_NAME).where({
+		const rows = ((await this.db(SPECIFIC_TABLE_NAME).where({
 			guild_id: guild.id
 		})) || []) as ISpecificRoleRow[];
-		let map = new Map<string, ISpecificRoleRow | ISpecificRoleRow[]>();
-		for(let r of rows) {
+		const map = new Map<string, ISpecificRoleRow | ISpecificRoleRow[]>();
+		for(const r of rows) {
 			if(method === "channel") {
 				map.set(r.channel_id, r);
 			} else {
-				let current = map.get(r.voice_role);
+				const current = map.get(r.voice_role);
 				if(current) {
 					map.set(r.voice_role, ([] as ISpecificRoleRow[]).concat(current).concat(r));
 				}
@@ -273,12 +277,10 @@ class VoiceRole extends Plugin implements IModule {
 				}
 			}
 		};
-		for(let specific of allSpecificRows.values()) {
+		for(const specific of allSpecificRows.values()) {
 
 			if(specific instanceof Array) {
-				for(let s of specific) {
-					await k(s);
-				}
+				for(const s of specific) { await k(s); }
 			} else {
 				k(specific);
 			}
@@ -289,9 +291,12 @@ class VoiceRole extends Plugin implements IModule {
 			allSpecificRows = await this.getAllSpecificRowsOfGuild(guild, "role");
 		}
 
-		for(let member of guild.members.values()) {
+		for(const member of guild.members.values()) {
 			let voiceChannelOfMember: VoiceChannel | undefined = member.voiceChannel;
-			if(voiceChannelOfMember && voiceChannelOfMember.guild.id !== guild.id) { voiceChannelOfMember = undefined; }
+			if(voiceChannelOfMember && voiceChannelOfMember.guild.id !== guild.id) {
+				voiceChannelOfMember = undefined;
+			}
+
 			if(role) {
 				if(!voiceChannelOfMember && member.roles.has(role.id)) {
 					member.removeRole(role);
@@ -301,8 +306,8 @@ class VoiceRole extends Plugin implements IModule {
 			}
 
 			// removing old specific roles
-			for(let memberRole of member.roles.values()) {
-				let specificRow = allSpecificRows.get(memberRole.id);
+			for(const memberRole of member.roles.values()) {
+				const specificRow = allSpecificRows.get(memberRole.id);
 				if(!specificRow) { continue; }
 				let ok = false;
 				if(voiceChannelOfMember) {
@@ -322,9 +327,9 @@ class VoiceRole extends Plugin implements IModule {
 				let specificRoleForChannel: ISpecificRoleRow | undefined = undefined;
 
 				// because Map has no .find(), fuck
-				for(let specific of allSpecificRows.values()) {
+				for(const specific of allSpecificRows.values()) {
 					if(specific instanceof Array) {
-						for(let realSpecific of specific) {
+						for(const realSpecific of specific) {
 							if(realSpecific.channel_id === voiceChannelOfMember.id) {
 								specificRoleForChannel = realSpecific;
 								break;
@@ -479,7 +484,7 @@ class VoiceRole extends Plugin implements IModule {
 			}
 
 			if(row.voice_role !== "-") {
-				for(let member of msg.guild.members.values()) {
+				for(const member of msg.guild.members.values()) {
 					if(!row) { continue; }
 					if(member.roles.has(row.voice_role)) {
 						await member.removeRole(row.voice_role);
@@ -526,7 +531,7 @@ class VoiceRole extends Plugin implements IModule {
 				return;
 			}
 
-			let row = await this.getGuildRow(msg.guild);
+			const row = await this.getGuildRow(msg.guild);
 
 			if(!row) {
 				msg.channel.send("", {
@@ -536,8 +541,7 @@ class VoiceRole extends Plugin implements IModule {
 			}
 
 			if(row.voice_role !== "-") {
-				for(let member of msg.guild.members.values()) {
-					if(!row) { continue; }
+				for(const member of msg.guild.members.values()) {
 					if(member.roles.has(row.voice_role)) {
 						await member.removeRole(row.voice_role);
 					}
@@ -602,15 +606,15 @@ class VoiceRole extends Plugin implements IModule {
 				return;
 			}
 
-			let current = await this.getSpecificRow(resolvedChannel as VoiceChannel);
+			const current = await this.getSpecificRow(resolvedChannel as VoiceChannel);
 			if(current) {
-				let oldRole = current.voice_role;
+				const oldRole = current.voice_role;
 				current.voice_role = resolvedRole.id;
-				let progMsg = (await msg.channel.send("", {
+				const progMsg = (await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
 				})) as Message;
 				try {
-					for(let member of msg.guild.members.values()) {
+					for(const member of msg.guild.members.values()) {
 						if(member.roles.has(oldRole)) {
 							member.removeRole(oldRole);
 						}
@@ -636,13 +640,13 @@ class VoiceRole extends Plugin implements IModule {
 				return;
 			}
 
-			let newRow: ISpecificRoleRow = {
+			const newRow: ISpecificRoleRow = {
 				channel_id: resolvedChannel.id,
 				guild_id: msg.guild.id,
 				voice_role: resolvedRole.id
 			};
 
-			let progMsg = (await msg.channel.send("", {
+			const progMsg = (await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_SAVING")
 			})) as Message;
 			try {
@@ -696,7 +700,7 @@ class VoiceRole extends Plugin implements IModule {
 				return;
 			}
 
-			let current = await this.getSpecificRow(resolvedChannel as VoiceChannel);
+			const current = await this.getSpecificRow(resolvedChannel as VoiceChannel);
 
 			if(!current) {
 				msg.channel.send("", {
@@ -705,12 +709,12 @@ class VoiceRole extends Plugin implements IModule {
 				return;
 			}
 
-			let progMsg = (await msg.channel.send("", {
+			const progMsg = (await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
 			})) as Message;
 			try {
 				await this.deleteSpecificRow(current);
-				for(let member of msg.guild.members.values()) {
+				for(const member of msg.guild.members.values()) {
 					if(member.roles.has(current.voice_role)) {
 						member.removeRole(current.voice_role);
 					}

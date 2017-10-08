@@ -217,6 +217,10 @@ function defHelpCheck(msg: Message) {
 	}
 }, defHelpCheck)
 class Guilds extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.features.guilds";
+	}
+
 	log = getLogger("Guilds");
 	db = getDB();
 
@@ -1451,7 +1455,7 @@ class Guilds extends Plugin implements IModule {
 					guildName: this.membersControl_fixString(dbRow.name)
 				});
 				str += "\n\n";
-				for(let member of members.values()) {
+				for(const member of members.values()) {
 					str += `- ${this.membersControl_fixString(member.displayName)}\n`;
 				}
 				statusMsg = (await statusMsg.edit("", {
@@ -1489,8 +1493,8 @@ class Guilds extends Plugin implements IModule {
 					return;
 				}
 
-				for(let mention of msg.mentions.users.values()) {
-					let member = msg.guild.members.get(mention.id);
+				for(const mention of msg.mentions.users.values()) {
+					const member = msg.guild.members.get(mention.id);
 					let adminRemoved = false;
 
 					if(!member) {
@@ -1654,8 +1658,8 @@ class Guilds extends Plugin implements IModule {
 		let str = "";
 
 		if(isRevoke && cz.invites) {
-			let a = cz.invites.length;
-			for(let [uid, mention] of msg.mentions.users) {
+			const a = cz.invites.length;
+			for(const [uid, mention] of msg.mentions.users) {
 				let index = cz.invites.indexOf(uid);
 				if(index === -1) {
 					str += (await localizeForUser(msg.member, "GUILDS_INVITE_NOTINVITED", {
@@ -1668,7 +1672,7 @@ class Guilds extends Plugin implements IModule {
 					username: escapeDiscordMarkdown(mention.username, true)
 				})) + "\n";
 			}
-			for(let uid of cz.invites) {
+			for(const uid of cz.invites) {
 				let index = cz.invites.indexOf(uid);
 				let member = msg.guild.members.get(uid);
 				if(member) {
@@ -1689,8 +1693,8 @@ class Guilds extends Plugin implements IModule {
 			revoked = a - cz.invites.length;
 		} else {
 			if(!cz.invites) { cz.invites = [] as string[]; }
-			for(let [userId, userObj] of msg.mentions.users) {
-				let member = msg.guild.members.get(userId);
+			for(const [userId, userObj] of msg.mentions.users) {
+				const member = msg.guild.members.get(userId);
 				if(!member) {
 					str += (await localizeForUser(msg.member, "GUILDS_INVITE_NOTAMEMBER", {
 						username: escapeDiscordMarkdown(userObj.username, true)
@@ -1758,7 +1762,7 @@ class Guilds extends Plugin implements IModule {
 	}
 
 	async getGuildsList(msg: Message) {
-		let pageVal = msg.content.slice(CMD_GUILDS_LIST.length);
+		const pageVal = msg.content.slice(CMD_GUILDS_LIST.length);
 		let list = 1;
 		if(pageVal !== "") {
 			list = Math.max(1, Math.abs(Math.round(parseInt(pageVal, 10))));
@@ -1769,7 +1773,8 @@ class Guilds extends Plugin implements IModule {
 				return;
 			}
 		}
-		let dbResp = await this.getGuilds(msg.guild, (10 * list) - 10, 10);
+
+		const dbResp = await this.getGuilds(msg.guild, (10 * list) - 10, 10);
 		if(dbResp.rows.length === 0) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_LIST_EMPTYPAGE")
@@ -1777,8 +1782,8 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let fields: IEmbedOptionsField[] = [];
-		for(let row of dbResp.rows) {
+		const fields: IEmbedOptionsField[] = [];
+		for(const row of dbResp.rows) {
 			fields.push({
 				inline: true,
 				name: row.name,

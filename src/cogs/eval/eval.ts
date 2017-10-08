@@ -12,6 +12,10 @@ const PREFIX = "``";
 const PREFIX_LENGTH = PREFIX.length;
 
 class EvalJS extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.core_features.eval";
+	}
+
 	log = getLogger("EvalJS");
 
 	constructor() {

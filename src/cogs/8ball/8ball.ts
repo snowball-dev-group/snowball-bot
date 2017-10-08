@@ -19,6 +19,10 @@ const ICONS = {
 	}
 })
 class Ball8 extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.features.8ball";
+	}
+
 	log = getLogger("8Ball");
 	responses = {
 		"affirmative": {
@@ -67,11 +71,11 @@ class Ball8 extends Plugin implements IModule {
 			return;
 		}
 
-		let u = msg.member || msg.author;
+		const u = msg.member || msg.author;
 
-		let random = new Random(Random.engines.mt19937().autoSeed());
+		const random = new Random(Random.engines.mt19937().autoSeed());
 
-		let localName = await localizeForUser(u, "8BALL_NAME");
+		const localName = await localizeForUser(u, "8BALL_NAME");
 
 		let message: Message;
 		try {
@@ -97,9 +101,9 @@ class Ball8 extends Plugin implements IModule {
 
 		await sleep(random.integer(1500, 3000));
 
-		let category = random.pick<string>(this.categories);
+		const category = random.pick<string>(this.categories);
 
-		let answer = random.pick<string>(this.responses[category].variants);
+		const answer = random.pick<string>(this.responses[category].variants);
 
 		try {
 			await message.edit("", {

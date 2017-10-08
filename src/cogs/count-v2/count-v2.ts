@@ -63,6 +63,9 @@ const STRINGS = {
 
 
 class CountV2 extends Plugin implements IModule {
+	public get signature() {
+		return "dafri.interactive.count-v2";
+	}
 	log: Function = getLogger("CountV2Channel");
 	dbClient: knex;
 	countRegex: RegExp;
@@ -343,7 +346,7 @@ class CountV2 extends Plugin implements IModule {
 				user: member.id
 			}).first("user", "exp", "streak");
 		} catch(err) {
-			this.log("warn", "Can't poll user out'a DB");
+			this.log("warn", "Can't poll user out'a DB", err);
 			userRow = undefined;
 		}
 
@@ -385,24 +388,20 @@ class CountV2 extends Plugin implements IModule {
 
 			userRow.streak += (xpOperation === XPOperation.Lower ? -1 : 1);
 
-			let pointsGain = userRow.streak * POINTS_GAIN;
-			pointsGain = Math.max(Math.min(pointsGain, 20), -20);
+			let pointsGain = Math.max(Math.min(userRow.streak * POINTS_GAIN, 20), -20);
 
 			userRow.exp += xpOperation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : POINTS_RAISED;
 
 			if((userRow.streak > 0 && xpOperation === XPOperation.Raise) || (userRow.streak < 0 && xpOperation === XPOperation.Lower)) {
 				userRow.exp += pointsGain;
-			} else {
-				pointsGain = 0;
-			}
-
+			} else { pointsGain = 0; }
 
 			try {
 				await this.dbClient(TABLENAME_SCOREBOARD).where({
 					user: userRow.user
 				}).update(userRow);
 			} catch(err) {
-				this.log("err", "Can't update element in database");
+				this.log("err", "Can't update element in database", err);
 				return undefined;
 			}
 
@@ -421,15 +420,15 @@ class CountV2 extends Plugin implements IModule {
 		if(!$discordBot.channels.has(CHANNELID_SCOREBOARD)) {
 			throw new Error("Scoreboard channel not found");
 		}
-		let ch = $discordBot.channels.get(CHANNELID_SCOREBOARD) as TextChannel;
+		const ch = $discordBot.channels.get(CHANNELID_SCOREBOARD) as TextChannel;
 
-		let messages = await ch.fetchMessages();
-		messages.forEach((message) => {
+		const messages = await ch.fetchMessages();
+		for(const message of messages.values()) {
 			if(message.embeds.length === 0 && message.author.id !== $botConfig.botOwner) {
 				message.delete();
-				return;
+				continue;
 			}
-			let puprose = message.embeds[0].footer.text;
+			const puprose = message.embeds[0].footer.text;
 			switch(puprose) {
 				case STRINGS.TOP_10: {
 					this.scoreboardMessages.top10 = message;
@@ -439,10 +438,10 @@ class CountV2 extends Plugin implements IModule {
 				} break;
 				default: break;
 			}
-		});
+		}
 
 		if(!this.scoreboardMessages.top10) {
-			let msg = await ch.send("", {
+			const msg = await ch.send("", {
 				embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
 					footerText: STRINGS.TOP_10
 				})
@@ -451,7 +450,7 @@ class CountV2 extends Plugin implements IModule {
 		}
 
 		if(!this.scoreboardMessages.latestChanges) {
-			let msg = await ch.send("", {
+			const msg = await ch.send("", {
 				embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
 					footerText: STRINGS.LATEST_CHANGES
 				})
@@ -472,18 +471,18 @@ class CountV2 extends Plugin implements IModule {
 		}
 
 		if(this.scoreboardMessages.latestChanges && playerUpdate) {
-			let lines = this.scoreboardMessages.latestChanges.embeds[0].description.split("\n").filter(l => l !== STRINGS.LOADING);
+			const lines = this.scoreboardMessages.latestChanges.embeds[0].description.split("\n").filter(l => l !== STRINGS.LOADING);
 			if(lines.length === 10) {
 				lines.splice(0, 1); // adding one line
 			}
 
 			// sorry, sorry... i'm sorry: 
 			// https://hydra-media.cursecdn.com/overwatch.gamepedia.com/e/e4/Mei_-_Sorry%2C_Sorry%2C_I%27m_Sorry_Sorry.mp3
-			let newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} \`${playerUpdate.member.displayName}\`: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : "+" + POINTS_RAISED} | ${playerUpdate.xp} ${playerUpdate.streak !== 0 ? `(**${playerUpdate.addition > 0 ? "+" + playerUpdate.addition : playerUpdate.addition}** - ${playerUpdate.streak > 0 ? "бонус за правильные ответы" : "штраф за неправильные ответы"})` : ""}`;
+			const newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} \`${playerUpdate.member.displayName}\`: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : "+" + POINTS_RAISED} | ${playerUpdate.xp} ${playerUpdate.streak !== 0 ? `(**${playerUpdate.addition > 0 ? "+" + playerUpdate.addition : playerUpdate.addition}** - ${playerUpdate.streak > 0 ? "бонус за правильные ответы" : "штраф за неправильные ответы"})` : ""}`;
 
 			lines.push(newLine);
 
-			let embed: any = {};
+			const embed: any = {};
 			embed.description = lines.join("\n");
 			embed.footer = { text: STRINGS.LATEST_CHANGES };
 
@@ -497,31 +496,31 @@ class CountV2 extends Plugin implements IModule {
 			try {
 				top10 = await this.dbClient(TABLENAME_SCOREBOARD).orderBy("exp", "DESC").limit(15);
 			} catch(err) {
-				this.log("err", "Can't get top 10 from database");
+				this.log("err", "Can't get top 10 from database!", err);
 				return;
 			}
 
-			let lines: string[] = [];
+			const lines: string[] = [];
 			let pos = 0;
-			top10.forEach((row) => {
+			for(const row of top10) {
 				if(row.exp < 10) { return; }
 				if(pos >= 10) { return; }
 				if(!this.scoreboardMessages.top10) {
 					return;
 				} else {
-					let member: GuildMember | undefined;
-					if(!(member = this.scoreboardMessages.top10.guild.members.get(row.user))) {
+					const member = this.scoreboardMessages.top10.guild.members.get(row.user);
+					if(!member) {
 						return;
-					} else {
-						pos++;
-						let str = pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : `**${pos}.**`;
-						str += ` \`${member.displayName}\`**-** ${row.exp} очков`;
-						lines.push(str);
 					}
-				}
-			});
+					pos++;
 
-			let embed: any = {};
+					let str = pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : `**${pos}.**`;
+					str += ` \`${member.displayName}\`**-** ${row.exp} очков`;
+					lines.push(str);
+				}
+			}
+
+			const embed: any = {};
 			embed.description = lines.join("\n");
 			embed.footer = { text: STRINGS.TOP_10 };
 

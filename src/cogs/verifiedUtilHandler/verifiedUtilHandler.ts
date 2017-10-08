@@ -4,6 +4,10 @@ import { messageEvent, guildMemberAddEvent, guildMemberRemoveEvent, init } from 
 import { getLogger } from "../utils/utils";
 
 class VerifiedUtilHandler extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.core_features.verified.handler";
+	}
+
 	log = getLogger("VerifiedHandler");
 
 	constructor() {

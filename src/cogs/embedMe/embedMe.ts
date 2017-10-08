@@ -12,6 +12,10 @@ import { getLogger } from "../utils/utils";
 	}
 })
 class EmbedME extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.features.embedme";
+	}
+
 	log = getLogger("EmbedME");
 
 	constructor() {
@@ -24,7 +28,7 @@ class EmbedME extends Plugin implements IModule {
 		if(msg.author && msg.author.bot) { return; }
 		if(!msg.content.startsWith("!embed")) { return; }
 		if(msg.content === "!embed") {
-			let str = await localizeForUser(msg.member, "EMBEDME_INFO");
+			const str = await localizeForUser(msg.member, "EMBEDME_INFO");
 			msg.channel.send(`:information_source: ${str}`);
 			return;
 		}
@@ -48,9 +52,7 @@ class EmbedME extends Plugin implements IModule {
 				}
 			},
 		});
-		if(msg.channel.type === "text") {
-			msg.delete();
-		}
+		if(msg.channel.type === "text") { msg.delete(); }
 	}
 
 	async unload() {

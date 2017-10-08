@@ -10,6 +10,10 @@ const FL_COLOR = 0x1E88E5;
 
 @command(Category.Utilites, "fl", "loc:FL_META_NAME")
 class ReverseLayout extends Plugin implements IModule {
+	public get signature() {
+		return "walpy.reverse_layout";
+	}
+
 	log = getLogger("fl");
 
 	constructor() {

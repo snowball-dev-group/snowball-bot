@@ -8,6 +8,9 @@ import { messageToExtra } from "../utils/failToDetail";
 
 @command(Category.Helpful, "sb_help", "loc:HELPFULCMD_CMDMETA_DESCRIPTION")
 class HelpfulCommand extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.core_features.helpfulcmd";
+	}
 
 	constructor() {
 		super({
