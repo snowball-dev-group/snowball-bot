@@ -54,7 +54,7 @@ interface IArgumentsMap {
 }
 
 export function addCommand(category: Category, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
-	let categoriesMap = init();
+	const categoriesMap = init();
 
 	let categoryMap = categoriesMap[category];
 	if(!categoryMap) {
@@ -79,7 +79,7 @@ export function command(category: Category, command: string, description: string
 export async function generateHelpContent(msg: Message) {
 	let rStr = "";
 	let user = msg.channel.type === "text" ? msg.member : msg.author;
-	let categories = init();
+	const categories = init();
 
 	for(let category in categories) {
 		let commands = categories[category];
@@ -89,8 +89,8 @@ export async function generateHelpContent(msg: Message) {
 
 		let str = "";
 
-		for(let command in commands) {
-			let target = commands[command];
+		for(const command in commands) {
+			const target = commands[command];
 			if(!target) { continue; }
 
 			if(target.specialCheck && !target.specialCheck(msg)) {
@@ -100,7 +100,7 @@ export async function generateHelpContent(msg: Message) {
 			str += `\n- ${command}`;
 			if(target.arguments) {
 				for(let argName in target.arguments) {
-					let argInfo = target.arguments[argName];
+					const argInfo = target.arguments[argName];
 					if(argName.startsWith("loc:")) {
 						argName = await localizeForUser(user, argName.slice("loc:".length));
 					}
@@ -108,14 +108,14 @@ export async function generateHelpContent(msg: Message) {
 						continue;
 					}
 					if(argInfo.values) {
-						let fixedValues: string[] = [];
+						const fixedValues: string[] = [];
 						for(let val of argInfo.values) {
 							if(val.startsWith("loc:")) {
 								val = await localizeForUser(user, val.slice("loc:".length));
 							}
 							fixedValues.push(val);
 						}
-						let vals = fixedValues.join("/");
+						const vals = fixedValues.join("/");
 						str += argInfo.optional ? ` [${vals}]` : ` <${vals}>`;
 					} else {
 						str += argInfo.optional ? ` [${argName}]` : ` <${argName}>`;
@@ -140,14 +140,14 @@ export async function generateHelpContent(msg: Message) {
 					}
 					str += "  - ";
 					if(argInfo.values) {
-						let fixedValues: string[] = [];
+						const fixedValues: string[] = [];
 						for(let val of argInfo.values) {
 							if(val.startsWith("loc:")) {
 								val = await localizeForUser(user, val.slice("loc:".length));
 							}
 							fixedValues.push(val);
 						}
-						let vals = fixedValues.join("/");
+						const vals = fixedValues.join("/");
 						str += argInfo.optional ? `[${vals}]` : `<${vals}>`;
 					} else {
 						str += argInfo.optional ? `[${argName}]` : `<${argName}>`;
