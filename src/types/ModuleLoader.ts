@@ -30,15 +30,16 @@ export const SCHEMA_MODULEINFO: ISchemaObject = {
 	}
 };
 
-export interface IConfig {
+export interface IModuleLoaderConfig {
 	/**
 	 * Base path of modules to load
 	 * Uses require.resolve to get correct path and check for errors
-	 * @example ./cogs/
+	 * @example `"./cogs/"`
 	 */
 	basePath: string;
 	/**
 	 * Names of modules that should be loaded by default
+	 * @example `["Whitelist", "Ping"]`
 	 */
 	defaultSet: string[];
 	/**
@@ -48,6 +49,7 @@ export interface IConfig {
 	/**
 	 * Name of module loaded
 	 * Will be used in log
+	 * @example MyCoolModuleLoader
 	 */
 	name: string;
 	/**
@@ -58,26 +60,57 @@ export interface IConfig {
 
 export interface IModule {
 	/**
+	 * Signature of module for other modules
+	 */
+	readonly signature: string;
+	init?(): Promise<void>;
+	/**
 	 * Unload function
 	 */
 	unload(reason?: string): Promise<boolean>;
 }
 
-export class Module extends EventEmitter {
+export enum ModuleLoadState {
+	/**
+	 * Module initialized and will be loaded as soon as `load` function will be called
+	 */
+	Initialized,
+	/**
+	 * Module loads, calling `load` will throw an error
+	 */
+	Loading,
+	/**
+	 * Module is loaded and ready to use & work
+	 */
+	Loaded,
+	/**
+	 * Module was unloaded using `unload` function call
+	 */
+	Unloaded,
+	/**
+	 * Module was unloaded but with `destroying` method
+	 */
+	Destroyed
+}
+
+export class ModuleBase<T> extends EventEmitter {
 	/**
 	 * Base information about module
 	 */
-	info: IModuleInfo;
+	readonly info: IModuleInfo;
 	/**
 	 * Loaded module
 	 * Will be empty if module isn't loaded yet
 	 */
-	base?: IModule;
+	base?: IModule & T;
 	/**
-	 * State of module loading
-	 * @returns {Boolean} true if loaded, else false
+	 * Module's signature used to identify this module by other modules
 	 */
-	loaded: boolean = false;
+	signature: string | null = null;
+	/**
+	 * Module loading state
+	 */
+	state: ModuleLoadState = ModuleLoadState.Initialized;
 
 	constructor(info: IModuleInfo) {
 		super();
@@ -89,14 +122,20 @@ export class Module extends EventEmitter {
 	 * @returns {Promise} Promise which'll be resolved once module is loaded
 	 */
 	async load() {
+		this.state = ModuleLoadState.Loading;
 		try {
 			let mod = require(this.info.path);
 			this.base = new mod(this.info.options);
-			if(this.base && this.base["init"] && typeof this.base["init"] === "function") {
-				await this.base["init"]();
+
+			if(this.base) {
+				const base = this.base;
+
+				this.signature = base.signature;
+				if(base.init) { await base.init(); }
 			}
-			this.loaded = true;
-			this.emit("loaded", this.base);
+
+			this.state = ModuleLoadState.Loaded;
+			this.emit("loaded", this.signature, this.base);
 		} catch(err) {
 			this.emit("error", {
 				state: "load#initialize",
@@ -113,12 +152,16 @@ export class Module extends EventEmitter {
 	 * @returns {Promise} Promise which'll be resolved once module is unloaded or destroyed
 	 */
 	async unload(reason: any = "unload") {
-		if(!this.loaded) { throw new Error("Module not loaded"); }
+		if(this.state !== ModuleLoadState.Loaded) { throw new Error("Module is not loaded"); }
+
+		this.signature = null;
+
 		if(!this.base) {
 			this.emit("error", {
 				state: "unload",
-				error: new Error("Module was already unloaded, base variable was undefined")
+				error: new Error("Module was already unloaded, base variable is `undefined`")
 			});
+			this.state = ModuleLoadState.Unloaded;
 			return;
 		} else if(typeof this.base.unload !== "function") {
 			try {
@@ -135,6 +178,7 @@ export class Module extends EventEmitter {
 					error: err
 				});
 			}
+			this.state = ModuleLoadState.Destroyed;
 		} else {
 			try {
 				let unloaded = await this.base.unload(reason);
@@ -152,36 +196,45 @@ export class Module extends EventEmitter {
 	}
 }
 
+/**
+ * Snowball's core module loader
+ * Loads all modules
+ */
 export class ModuleLoader {
 	/**
 	 * Basic configuration used at loader initialization
 	 */
-	config: IConfig;
+	public readonly config: IModuleLoaderConfig;
 	/**
 	 * Registry with modules
 	 */
-	registry: IHashMap<IModuleInfo> = {};
+	public registry: IHashMap<IModuleInfo> = {};
 	/**
 	 * Registry with currently loaded modules
 	 */
-	loadedModulesRegistry: IHashMap<Module> = {};
+	public loadedModulesRegistry: IHashMap<ModuleBase<any>> = {};
 
-	log: Function;
+	/**
+	 * Registry with currently loaded modules by signature
+	 */
+	public signaturesRegistry: IHashMap<ModuleBase<any>> = {};
 
-	constructor(config: IConfig) {
+	private log: Function;
+
+	constructor(config: IModuleLoaderConfig) {
 		this.config = config;
 		this.log = logger(config.name);
 
 		this.log("info", "Registering modules");
-		for(let i in config.registry) {
-			let value = config.registry[i];
-			this.register(value);
+		for(const registryName in config.registry) {
+			const moduleInfo = config.registry[registryName];
+			this.register(moduleInfo);
 		}
 	}
 
 	/**
 	 * Add new module to registry
-	 * @param info Information about module
+	 * @param {IModuleInfo} info Information about module
 	 */
 	register(info: IModuleInfo) {
 		this.registry[info.name] = info;
@@ -190,25 +243,31 @@ export class ModuleLoader {
 
 	/**
 	 * Load module by this name in registry
-	 * @param name Name in registry
+	 * @param {string|string[]} name Name(s) in registry
 	 * @returns {Promise} Promise which'll be resolved once module is loaded
 	 */
-	async load(name: string) {
+	async load(name: string | string[]) {
+		if(Array.isArray(name)) {
+			for(const n of name) { await this.load(n); }
+			return;
+		}
 		if(!this.registry[name]) {
-			let reason = "Module not found in registry. Use `ModuleLoader#register` to put your module in registry";
+			const reason = "Module not found in registry. Use `ModuleLoader#register` to put your module into registry";
 			this.log("err", "#load: attempt to load module", name, "failed:", reason);
 			throw new Error(reason);
 		}
 		if(this.loadedModulesRegistry[name]) {
-			let reason = "Module already loaded";
+			const reason = "Module already loaded";
 			this.log("err", "#load: attempt to load module", name, "failed:", reason);
 			throw new Error(reason);
 		}
-		let moduleInfo = this.registry[name];
+
+		const moduleInfo = this.registry[name];
 		if(!moduleInfo) {
 			this.log("err", "#load: module found in registry, but returned undefined value");
 			throw new Error("No module info");
 		}
+
 		moduleInfo.path = __dirname + "/../" + this.config.basePath + moduleInfo.path;
 
 		try {
@@ -219,40 +278,62 @@ export class ModuleLoader {
 			throw err;
 		}
 
-		let mod = new Module(moduleInfo);
+		const moduleKeeper = new ModuleBase(moduleInfo);
+
 		try {
-			await mod.load();
+			await moduleKeeper.load();
+
+			let violation:string|null = null;
+			if(!moduleKeeper.signature) {
+				violation = "empty signature";
+			} else if(this.signaturesRegistry[moduleKeeper.signature]) {
+				violation = "signature already registered";
+			}
+
+			if(violation) {
+				// any signature violation is unacceptable
+				this.log("err", "#load: signature violation found:", moduleKeeper.info.name, "-", violation, ", caused unload");
+				await moduleKeeper.unload("signature_violation");
+			}
 		} catch(err) {
-			this.log("err", "#load: module", mod.info.name, " rejected loading:", err);
+			this.log("err", "#load: module", moduleKeeper.info.name, " rejected loading:", err);
 			throw err;
 		}
-		this.log("ok", "#load: module", mod.info.name, "resolved (loading complete)");
-		this.loadedModulesRegistry[mod.info.name] = mod;
+
+		this.log("ok", "#load: module", moduleKeeper.info.name, "resolved (loading complete)");
+		this.loadedModulesRegistry[moduleKeeper.info.name] = moduleKeeper;
 	}
 
 	/**
 	 * Unload module by this name in currently loaded modules registry
-	 * @param name Name of loaded module
+	 * @param {string|string[]} name Name(s) of loaded module(s)
+	 * @param {boolean} skipCallingUnload `true` if module should be unloaded without calling for unload method. Don't use it unless you know that module doesn't handles any events or doesn't has dynamic variables
 	 * @returns {Promise} Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
 	 */
-	async unload(name: string, skipCallingUnload: boolean = false) {
+	async unload(name: string | string[], skipCallingUnload: boolean = false) {
+		if(Array.isArray(name)) {
+			for(const n of name) { await this.load(n); }
+			return;
+		}
 		if(!this.loadedModulesRegistry[name]) {
 			let reason = "Module not found or not loaded yet";
 			this.log("err", "#unload: check failed: ", reason);
 			throw new Error(reason);
 		}
-		let m = this.loadedModulesRegistry[name];
+		const moduleKeeper = this.loadedModulesRegistry[name];
+
+		if(!moduleKeeper) {
+			this.log("warn", "#unload: check failed: registry member is already `undefined`");
+			delete this.loadedModulesRegistry[name];
+			return;
+		}
+
 		if(skipCallingUnload) {
 			this.log("warn", "#unload: skiping calling `unload` method");
 			delete this.loadedModulesRegistry[name];
 		} else {
-			if(!m) {
-				this.log("warn", "#unload: check failed: registry member is already undefined");
-				delete this.loadedModulesRegistry.delete[name];
-				return;
-			}
 			try {
-				await m.unload();
+				await moduleKeeper.unload();
 			} catch(err) {
 				this.log("err", "#unload: module", name, "rejected to unload:", err);
 				throw err;
@@ -262,18 +343,23 @@ export class ModuleLoader {
 		}
 	}
 
+	/**
+	 * Loads modules from registry
+	 * By default loads only selected kit
+	 * @param {boolean} forceAll Use `true` to force load ALL modules in registry
+	 */
 	async loadModules(forceAll = false) {
 		let toLoad: string[] = [];
 		if(forceAll) {
-			toLoad = Array.from(Object.keys(this.config.registry));
+			toLoad = Object.keys(this.config.registry);
 		} else {
 			toLoad = this.config.defaultSet;
 		}
 
 		this.log("info", "Loading started");
 		this.log("info", !!this.config.queueModuleLoading ? "Queue mode enabled" : "Parallel mode enabled");
-		for(let modName of toLoad) {
-			let loadingPromise = this.load(modName);
+		for(const modName of toLoad) {
+			const loadingPromise = this.load(modName);
 			if(!!this.config.queueModuleLoading) {
 				await loadingPromise;
 			}
@@ -282,12 +368,10 @@ export class ModuleLoader {
 
 	/**
 	 * Unloads ALL modules
+	 * @deprecated Use `unload` function instead
 	 */
 	async unloadAll() {
-		this.log("info", "Unloading started");
-		for(let moduleName in this.loadedModulesRegistry) {
-			await this.unload(moduleName);
-		}
+		return await this.unload(Object.keys(this.loadedModulesRegistry));
 	}
 }
 
@@ -296,8 +380,8 @@ export class ModuleLoader {
 * @param obj {Array} Array of module info entries
 */
 export function convertToModulesMap(obj: IModuleInfo[]) {
-	let modulesMap: IHashMap<IModuleInfo> = {};
-	for(let moduleInfo of obj) {
+	const modulesMap: IHashMap<IModuleInfo> = {};
+	for(const moduleInfo of obj) {
 		modulesMap[moduleInfo.name] = moduleInfo;
 	}
 	return modulesMap;
