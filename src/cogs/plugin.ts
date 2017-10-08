@@ -163,10 +163,10 @@ export class Plugin {
 	}
 
 	public handleEvents() {
-		for(let key in this._eventsMap) {
-			let val = this._eventsMap[key];
+		for(const key in this._eventsMap) {
+			const val = this._eventsMap[key];
 			if(Array.isArray(val)) {
-				for(let handler of val) {
+				for(const handler of val) {
 					$discordBot.on(key, handler);
 				}
 			} else {
@@ -176,10 +176,10 @@ export class Plugin {
 	}
 
 	unhandleEvents() {
-		for(let key in this._eventsMap) {
-			let val = this._eventsMap[key];
+		for(const key in this._eventsMap) {
+			const val = this._eventsMap[key];
 			if(Array.isArray(val)) {
-				for(let handler of val) {
+				for(const handler of val) {
 					$discordBot.removeListener(key, handler);
 				}
 			} else {
