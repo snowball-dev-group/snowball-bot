@@ -23,6 +23,10 @@ interface IOverwatchHeroesProfilePluginInfo extends IOverwatchProfilePluginInfo 
 }
 
 export class OWHeroesProfilePlugin implements IProfilesPlugin {
+	public get signature() {
+		return "snowball.features.profile.plugins.overwatch.heroes";
+	}
+
 	async getSetupArgs(caller: GuildMember) {
 		return await localizeForUser(caller, "OWPROFILEPLUGIN_HEROES_ARGS");
 	}
@@ -155,7 +159,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		let str = "";
 
-		let tStrs = {
+		const tStrs = {
 			competitive: await localizeForUser(caller, "OWPROFILEPLUGIN_COMPETITIVE"),
 			quickplay: await localizeForUser(caller, "OWPROFILEPLUGIN_QUICKPLAY"),
 			title: await localizeForUser(caller, "OWPROFILEPLUGIN_HEROES_EMBED_TITLE")
@@ -165,12 +169,12 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			str += `<:competitive:322781963943673866> __**${tStrs.competitive}**__\n`;
 			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")) + "\n";
 		} else {
-			let compOveral = profile.stats.competitive.overall_stats;
+			const compOveral = profile.stats.competitive.overall_stats;
 			str += `${this.getTierEmoji(compOveral.tier)} __**${tStrs.competitive}**__\n`;
-			let stats: HeroStats = [];
+			const stats: HeroStats = [];
 			if(info.sortBy === "playtime") {
-				let heroesStats = profile.heroes.stats.competitive;
-				let sorted = Object.keys(heroesStats).map((heroName: Hero) => {
+				const heroesStats = profile.heroes.stats.competitive;
+				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
 					return {
 						hero: heroName,
 						playtime: heroesStats[heroName].general_stats.time_played
@@ -178,7 +182,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 				}).sort((a, b) => {
 					return b.playtime - a.playtime;
 				});
-				for(let heroPlaytime of sorted) {
+				for(const heroPlaytime of sorted) {
 					if(heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroPlaytime.hero,
@@ -187,8 +191,8 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					}
 				}
 			} else if(info.sortBy === "winrate") {
-				let heroesStats = profile.heroes.stats.competitive;
-				let sorted = Object.keys(heroesStats).map((heroName: Hero) => {
+				const heroesStats = profile.heroes.stats.competitive;
+				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
 					return {
 						hero: heroName,
 						games_won: heroesStats[heroName].general_stats.games_won
@@ -196,7 +200,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 				}).sort((a, b) => {
 					return b.games_won - a.games_won;
 				});
-				for(let heroWins of sorted) {
+				for(const heroWins of sorted) {
 					if(heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroWins.hero,
@@ -215,10 +219,10 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		if(!profile.stats.quickplay) {
 			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")) + "\n";
 		} else {
-			let stats: HeroStats = [];
+			const stats: HeroStats = [];
+			const heroesStats = profile.heroes.stats.quickplay;
 			if(info.sortBy === "playtime") {
-				let heroesStats = profile.heroes.stats.quickplay;
-				let sorted = Object.keys(heroesStats).map((heroName: Hero) => {
+				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
 					return {
 						hero: heroName,
 						playtime: heroesStats[heroName].general_stats.time_played
@@ -226,7 +230,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 				}).sort((a, b) => {
 					return b.playtime - a.playtime;
 				});
-				for(let heroPlaytime of sorted) {
+				for(const heroPlaytime of sorted) {
 					if(heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroPlaytime.hero,
@@ -235,8 +239,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					}
 				}
 			} else if(info.sortBy === "winrate") {
-				let heroesStats = profile.heroes.stats.quickplay;
-				let sorted = Object.keys(heroesStats).map((heroName: Hero) => {
+				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
 					return {
 						hero: heroName,
 						games_won: heroesStats[heroName].general_stats.games_won
@@ -244,7 +247,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 				}).sort((a, b) => {
 					return b.games_won - a.games_won;
 				});
-				for(let heroWins of sorted) {
+				for(const heroWins of sorted) {
 					if(heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroWins.hero,
@@ -280,7 +283,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 	async getString(heroesStats: HeroStats, caller: GuildMember) {
 		let str = "";
-		for(let stat of heroesStats) {
+		for(const stat of heroesStats) {
 			str += `${this.getHeroIcon(stat.hero)} `;
 			str += await this.getHeroString(stat.hero, caller);
 			str += ` - ${stat.stat}\n`;

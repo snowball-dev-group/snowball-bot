@@ -10,6 +10,9 @@ const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
 const LOG = getLogger("OWImagePlugin");
 
 export class ImageProfilePlugin implements IProfilesPlugin {
+	public get signature() {
+		return "snowball.features.profile.plugins.overwatch.avatar";
+	}
 
 	async getSetupArgs(caller: GuildMember) {
 		return await localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");

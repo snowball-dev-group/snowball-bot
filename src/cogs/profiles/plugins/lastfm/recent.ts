@@ -13,6 +13,10 @@ export interface ILastFMInfo {
 }
 
 export class LastFMRecentProfilePlugin implements IProfilesPlugin {
+	public get signature() {
+		return "snowball.features.profile.plugins.lastfm";
+	}
+
 	private apiKey: string;
 
 	constructor(apiKey: string) {
