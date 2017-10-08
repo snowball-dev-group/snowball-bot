@@ -94,7 +94,11 @@ declare global {
 		description: "loc:WHITELIST_META_WHITELIST_ARG1_DESC"
 	}
 }, isBotAdmin)
-class Whitelist extends Plugin implements IModule {
+export class Whitelist extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.core_features.whitelist";
+	}
+
 	log = getLogger("Whitelist");
 
 	alwaysWhitelisted: string[] = [];
@@ -117,21 +121,21 @@ class Whitelist extends Plugin implements IModule {
 		});
 		if(options) {
 			{
-				let alwaysWhitelisted = options["always_whitelisted"];
+				const alwaysWhitelisted = options["always_whitelisted"];
 				if(alwaysWhitelisted && alwaysWhitelisted instanceof Array) {
-					for(let g of alwaysWhitelisted as string[]) {
+					for(const g of alwaysWhitelisted as string[]) {
 						this.alwaysWhitelisted.push(g);
 					}
 				}
 			}
 			{
-				let minMembers = options["min_members"];
+				const minMembers = options["min_members"];
 				if(minMembers !== undefined && typeof minMembers === "number") {
 					this.minMembersRequired = Math.max(0, minMembers);
 				}
 			}
 			{
-				let maxMembers = options["max_members"];
+				const maxMembers = options["max_members"];
 				if(maxMembers !== undefined && typeof maxMembers === "number") {
 					this.maxMembersAllowed = Math.max(0, maxMembers);
 				}
@@ -143,7 +147,7 @@ class Whitelist extends Plugin implements IModule {
 				}
 			}
 			{
-				let defaultMode = options["default_mode"];
+				const defaultMode = options["default_mode"];
 				if(defaultMode !== undefined && typeof defaultMode === "number") {
 					this.defaultMode = defaultMode;
 				}
@@ -165,8 +169,8 @@ class Whitelist extends Plugin implements IModule {
 		this.log("info", "Whitelist module is here to protect your mod");
 		this.log("info", " Required members to stay:", this.minMembersRequired, "-", this.maxMembersAllowed);
 		this.log("info", " Always whitelisted servers:");
-		for(let whitelistedId of this.alwaysWhitelisted) {
-			let found = !!$discordBot.guilds.get(whitelistedId);
+		for(const whitelistedId of this.alwaysWhitelisted) {
+			const found = !!$discordBot.guilds.get(whitelistedId);
 			this.log(found ? "ok" : "warn", "  -", whitelistedId, found ? "(found)" : "(not found)");
 		}
 
@@ -178,9 +182,7 @@ class Whitelist extends Plugin implements IModule {
 
 	async fetchCurrentMode() {
 		let mode = await getGuildPref("global", "whitelist:mode", true) as number | undefined;
-		if(typeof mode !== "number") {
-			mode = this.defaultMode;
-		}
+		if(typeof mode !== "number") { mode = this.defaultMode; }
 		this.currentMode = this.parseMode(mode);
 		return this.currentMode;
 	}
@@ -266,8 +268,8 @@ class Whitelist extends Plugin implements IModule {
 	}
 
 	async checkGuilds() {
-		for(let g of $discordBot.guilds.values()) {
-			let whitelistStatus = await this.isWhitelisted(g);
+		for(const g of $discordBot.guilds.values()) {
+			const whitelistStatus = await this.isWhitelisted(g);
 			if(whitelistStatus.state === GUILD_STATE.EXPIRED) {
 				await this.leaveGuild(g, "WHITELIST_LEAVE_EXPIRED");
 			} else if(whitelistStatus.state === GUILD_STATE.TRIAL_EXPIRED) {
@@ -283,7 +285,7 @@ class Whitelist extends Plugin implements IModule {
 	calculateBotsPercentage(guild: Guild) {
 		let bots = 0;
 
-		for(let member of guild.members.values()) {
+		for(const member of guild.members.values()) {
 			if(member.user.bot) { bots++; }
 		}
 
@@ -314,7 +316,7 @@ class Whitelist extends Plugin implements IModule {
 	async sendMsg(guild: Guild, embed) {
 		let chToSendMessage: TextChannel | undefined = undefined;
 
-		for(let toCheck of POSSIBLE_CHAT_ROOMS) {
+		for(const toCheck of POSSIBLE_CHAT_ROOMS) {
 			chToSendMessage = (guild.channels.find((ch) => {
 				return ch.name.includes(toCheck) && ch.type === "text";
 			})) as TextChannel;
