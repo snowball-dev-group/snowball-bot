@@ -238,11 +238,12 @@ export class Humanizer {
 			unitName: Unit;
 		}> = [];
 
-		options.units.forEach((unitName, i) => {
+		for(let i = 0; i < options.units.length; i++) {
+			const unitName = options.units[i];
 			const unitMS = options.unitMeasures[unitName];
 
 			if(!unitMS) {
-				return; // unit always SHOULD BE assigned
+				continue; // unit always SHOULD BE assigned
 			}
 
 			let unitCount: number;
@@ -262,7 +263,7 @@ export class Humanizer {
 
 			// Remove what we just figured out.
 			ms -= unitCount * unitMS;
-		});
+		}
 
 		let firstOccupiedUnitIndex = 0;
 		pieces.some((piece, i) => {
