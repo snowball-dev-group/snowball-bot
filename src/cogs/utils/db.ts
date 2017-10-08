@@ -105,9 +105,8 @@ export async function createTableBySchema(tableName: string, schema:ITableSchema
 
 	return await connection.schema.createTable(tableName, tb => {
 		// let's build!
-		let keys = Object.keys(schema);
-		keys.forEach(key => {
-			let info = schema[key];
+		for(const key of Object.keys(schema)) {
+			const info = schema[key];
 			let typeInfo: ITypeInfo;
 
 			if(typeof info === "string") {
@@ -151,9 +150,10 @@ export async function createTableBySchema(tableName: string, schema:ITableSchema
 			if(typeInfo.comment) {
 				cb.comment(typeInfo.comment);
 			}
-			// if(typeInfo.collate) {
-			// 	cb.collate(typeInfo.collate);
-			// }
-		});
+			if(typeInfo.collate && cb["collate"]) {
+				// workaround for wrong typescript defs
+				cb["collate"](typeInfo.collate);
+			}
+		}
 	});
 }
