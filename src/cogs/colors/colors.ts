@@ -1,4 +1,4 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule, ModuleBase } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, Role, GuildMember } from "discord.js";
 import { getLogger, EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "../utils/utils";
@@ -10,6 +10,7 @@ import { getPreferenceValue, setPreferenceValue, removePreference } from "../uti
 import { randomPick } from "../utils/random";
 import { isVerified, isInitDone as isVerifiedEnabled } from "../utils/verified";
 import { messageToExtra } from "../utils/failToDetail";
+import { Whitelist } from "../whitelist/whitelist";
 
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";
@@ -97,18 +98,22 @@ function isChat(msg: Message) {
 	return isChat(msg) && checkPerms(msg.member);
 })
 class Colors extends Plugin implements IModule {
+	public get signature () {
+		return "snowball.features.colors";
+	}
+
 	// ===========================================
 	// INITIAL VARIABLES & CONSTRUCTOR
 	// ===========================================
 	log = getLogger("ColorsJS");
 	db = getDB();
+	whitelistModule:ModuleBase<Whitelist>|null = null;
 
 	constructor() {
 		super({
 			"message": (msg) => this.onMessage(msg),
 			"guildMemberAdd": (member) => this.onMemberJoin(member)
 		}, true);
-		// this.init();
 	}
 
 	// ===========================================
@@ -118,11 +123,14 @@ class Colors extends Plugin implements IModule {
 	async onMessage(msg: Message) {
 		if(msg.channel.type !== "text") { return; }
 		if(!msg.content || !msg.content.startsWith(COLORFUL_PREFIX)) { return; }
-		let args = msg.content.split(" ");
+		
+		const args = msg.content.split(" ");
+
 		if(args.length === 1 && args[0] === COLORFUL_PREFIX) {
 			return;
 		}
-		args.shift();
+		args.shift(); // skip prefix
+
 		try {
 			switch(args[0]) {
 				// add Синий, color_blue
@@ -157,11 +165,11 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let role = await getPreferenceValue(member.guild, "colors:join");
+		const role = await getPreferenceValue(member.guild, "colors:join");
 
 		if(typeof role !== "string") { return; }
 
-		let colorfulInfo = await this.getInfo(member.guild);
+		const colorfulInfo = await this.getInfo(member.guild);
 
 		let roles = Array.from(colorfulInfo.rolePrefixes.values());
 
@@ -170,22 +178,22 @@ class Colors extends Plugin implements IModule {
 			roles = roles.filter((r) => !r.required_role);
 			if(roles.length === 0) { return; } // no colors to give
 
-			let randomColor = randomPick(roles);
+			const randomColor = randomPick(roles);
 			try {
 				member.addRole(randomColor.role);
 			} catch(err) {
 				this.log("err", "Failed to assing random color", err, member.guild.id);
 				$snowball.captureException(err, {
 					extra: {
-						guildId: member.guild.id,
-						memberId: member.id,
-						roleId: randomColor.role,
+						guild: member.guild,
+						member: member,
+						randomColor,
 						originalError: err
 					}
 				});
 			}
 		} else {
-			let color = roles.find(r => r.role === role);
+			const color = roles.find(r => r.role === role);
 			if(!color) { return; } // color was removed prob
 
 			try {
@@ -194,9 +202,9 @@ class Colors extends Plugin implements IModule {
 				this.log("err", "Failed to assign color role", err, member.guild.id);
 				$snowball.captureException(err, {
 					extra: {
-						guildId: member.guild.id,
-						memberId: member.id,
-						roleId: color.role,
+						guild: member.guild,
+						member: member,
+						color,
 						originalError: err
 					}
 				});
@@ -210,11 +218,11 @@ class Colors extends Plugin implements IModule {
 
 	async assignColor(msg: Message, args: string[]) {
 		// Синий
-		let colorName = args.join(" ").trim();
+		const colorName = args.join(" ").trim();
 
-		let colorfulInfo = await this.getInfo(msg.guild);
+		const colorfulInfo = await this.getInfo(msg.guild);
 
-		let colorInfo = colorfulInfo.rolePrefixes.get(colorName);
+		const colorInfo = colorfulInfo.rolePrefixes.get(colorName);
 
 		if(!colorInfo) {
 			msg.channel.send("", {
@@ -244,7 +252,7 @@ class Colors extends Plugin implements IModule {
 			}
 		}
 
-		let colorRole = msg.guild.roles.get(colorInfo.role);
+		const colorRole = msg.guild.roles.get(colorInfo.role);
 
 		if(!colorRole) {
 			msg.channel.send("", {
@@ -260,11 +268,11 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_ASSIGN_CONFIRMATION", {
+		const _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_ASSIGN_CONFIRMATION", {
 			thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
 		});
 
-		let confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
+		const confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
 		if(!confirmation) {
 			msg.channel.send("", {
@@ -273,24 +281,24 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let toUnassign: Role[] = [] as Role[];
-		colorfulInfo.rolePrefixes.forEach(info => {
-			let role = msg.member.roles.get(info.role);
-			if(role) {
-				toUnassign.push(role);
-			}
-		});
+		const toUnassign: Role[] = [] as Role[];
+		for(const info of colorfulInfo.rolePrefixes.values()) {
+			const role = msg.member.roles.get(info.role);
+			if(role) { toUnassign.push(role); }
+		}
 
-		try {
-			await msg.member.removeRoles(toUnassign);
-		} catch(err) {
-			msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_FAILED_UNASSIGN")
-			});
-			$snowball.captureException(err, {
-				extra: messageToExtra(msg, { toUnassign })
-			});
-			return;
+		if(toUnassign.length > 0) {
+			try {
+				await msg.member.removeRoles(toUnassign);
+			} catch(err) {
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_FAILED_UNASSIGN")
+				});
+				$snowball.captureException(err, {
+					extra: messageToExtra(msg, { toUnassign })
+				});
+				return;
+			}
 		}
 
 		try {
@@ -311,9 +319,9 @@ class Colors extends Plugin implements IModule {
 	}
 
 	async resetColor(msg: Message) {
-		let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_RESET_CONFIRMATION");
+		const _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_RESET_CONFIRMATION");
 
-		let confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
+		const confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
 		if(!confirmation) {
 			msg.channel.send("", {
@@ -322,11 +330,11 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let colorfulInfo = await this.getInfo(msg.guild);
+		const colorfulInfo = await this.getInfo(msg.guild);
 
-		let toUnassign: Role[] = [];
-		for(let colorInfo of colorfulInfo.rolePrefixes.values()) {
-			let role = msg.member.roles.get(colorInfo.role);
+		const toUnassign: Role[] = [];
+		for(const colorInfo of colorfulInfo.rolePrefixes.values()) {
+			const role = msg.member.roles.get(colorInfo.role);
 			if(role) { toUnassign.push(role); }
 		}
 
@@ -348,6 +356,13 @@ class Colors extends Plugin implements IModule {
 		if(!checkPerms(msg.member)) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOPERMISSION")
+			});
+			return;
+		}
+
+		if(!msg.guild.me.permissions.has("MANAGE_ROLES")) {
+			msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_INVALIDBOTPERMS")
 			});
 			return;
 		}
@@ -379,17 +394,23 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let namedArgs = {
+		const namedArgs = {
 			required_role: args.length === 3 ? args[1] : undefined,
 			role: args.length === 3 ? args[2] : args[1],
 			name: args[0]
 		};
 
-
-		let colorRole = resolveGuildRole(namedArgs.role, msg.guild);
+		const colorRole = resolveGuildRole(namedArgs.role, msg.guild);
 		if(!colorRole) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ROLENOTFOUND")
+			});
+			return;
+		}
+
+		if(colorRole.calculatedPosition > msg.guild.me.highestRole.calculatedPosition) {
+			msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_INVALIDROLEPOSITION")
 			});
 			return;
 		}
@@ -407,8 +428,8 @@ class Colors extends Plugin implements IModule {
 			} else {
 				let requiredRolesNames = namedArgs.required_role.split("|").map(arg => arg.trim());
 				requiredRoles = [];
-				for(let nameToResolve of requiredRolesNames) {
-					let resolvedRole = resolveGuildRole(nameToResolve, msg.guild);
+				for(const nameToResolve of requiredRolesNames) {
+					const resolvedRole = resolveGuildRole(nameToResolve, msg.guild);
 					if(!resolvedRole) {
 						msg.channel.send("", {
 							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
@@ -454,16 +475,16 @@ class Colors extends Plugin implements IModule {
 
 		_confirmationString += "\n\n" + (await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_RIGHTSWARNING"));
 
-		let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+		const _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			custom: true,
 			string: _confirmationString
 		}, {
 				thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
 			});
 
-		let confirmed = await createConfirmationMessage(_confirmationEmbed, msg);
+		const confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
-		if(!confirmed) {
+		if(!confirmation) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_CANCELED")
 			});
@@ -559,8 +580,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		//
-		let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+		const _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			key: "COLORS_RENAME_CONFIRMATION",
 			formatOptions: {
 				before: args[0],
@@ -568,7 +588,7 @@ class Colors extends Plugin implements IModule {
 			}
 		});
 
-		let confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
+		const confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
 		if(!confirmation) {
 			msg.channel.send("", {
@@ -624,7 +644,7 @@ class Colors extends Plugin implements IModule {
 		// delete Синий
 		args.shift();
 
-		let colorName = args.join(" ").trim();
+		const colorName = args.join(" ").trim();
 
 		// Синий
 		if(colorName.length === 0) {
@@ -650,7 +670,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let colorRole = msg.guild.roles.get(colorInfo.role);
+		const colorRole = msg.guild.roles.get(colorInfo.role);
 
 		if(!colorRole) {
 			colorfulInfo.rolePrefixes.delete(colorName);
@@ -661,7 +681,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let confirmed = await createConfirmationMessage(
+		const confirmed = await createConfirmationMessage(
 			await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_DELETE_CONFIRMATION", {
 				thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
 			}),
@@ -699,7 +719,7 @@ class Colors extends Plugin implements IModule {
 	async getColorInfo(msg: Message, args: string[]) {
 		// info Синий
 		args.shift();
-		let colorName = (args as string[]).join(" ").trim();
+		const colorName = (args as string[]).join(" ").trim();
 
 		// Синий
 		if(colorName.length === 0) {
@@ -709,9 +729,9 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let colorfulInfo = await this.getInfo(msg.guild);
+		const colorfulInfo = await this.getInfo(msg.guild);
 
-		let colorInfo = colorfulInfo.rolePrefixes.get(colorName);
+		const colorInfo = colorfulInfo.rolePrefixes.get(colorName);
 
 		if(!colorInfo) {
 			msg.channel.send("", {
@@ -725,7 +745,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let colorRole = msg.guild.roles.get(colorInfo.role);
+		const colorRole = msg.guild.roles.get(colorInfo.role);
 		if(!colorRole) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_GETINFO_ROLEREMOVED")
@@ -744,7 +764,7 @@ class Colors extends Plugin implements IModule {
 			}
 		}
 
-		let fields: IEmbedOptionsField[] = [] as IEmbedOptionsField[];
+		const fields: IEmbedOptionsField[] = [] as IEmbedOptionsField[];
 
 		fields.push({
 			inline: true,
@@ -777,7 +797,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let colorfulInfo = await this.getInfo(msg.guild);
+		const colorfulInfo = await this.getInfo(msg.guild);
 
 		if(colorfulInfo.rolePrefixes.size === 0) {
 			msg.channel.send("", {
@@ -787,16 +807,16 @@ class Colors extends Plugin implements IModule {
 		}
 
 		let str = "";
-		for(let [name, colorInfo] of colorfulInfo.rolePrefixes) {
+		for(const [name, colorInfo] of colorfulInfo.rolePrefixes) {
 			str += `**${escapeDiscordMarkdown(name)}**\n`;
 			if(colorInfo.required_role) {
 				if(colorInfo.required_role instanceof Array) {
 					str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLES")) + "\n";
-					let foundOne = !!colorInfo.required_role.find(roleId => msg.guild.roles.has(roleId));
+					const foundOne = !!colorInfo.required_role.find(roleId => msg.guild.roles.has(roleId));
 					let notFoundOne = false;
 					str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLESSEARCH")) + "\n";
-					for(let roleId of colorInfo.required_role) {
-						let role = msg.guild.roles.get(roleId);
+					for(const roleId of colorInfo.required_role) {
+						const role = msg.guild.roles.get(roleId);
 						if(!role) {
 							if(!notFoundOne) { notFoundOne = true; }
 							str += "      " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLENOTFOUND", {
@@ -821,7 +841,7 @@ class Colors extends Plugin implements IModule {
 					str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLE", {
 						roleId: colorInfo.required_role
 					})) + "\n";
-					let role = msg.guild.roles.get(colorInfo.required_role);
+					const role = msg.guild.roles.get(colorInfo.required_role);
 					if(!role) {
 						str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEDELETED"));
 					} else {
@@ -835,7 +855,7 @@ class Colors extends Plugin implements IModule {
 			str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLE", {
 				roleId: colorInfo.role
 			})) + "\n";
-			let role = msg.guild.roles.get(colorInfo.role);
+			const role = msg.guild.roles.get(colorInfo.role);
 			if(!role) {
 				str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEDELETED"));
 			} else {
@@ -852,7 +872,7 @@ class Colors extends Plugin implements IModule {
 	}
 
 	async getColorsList(msg: Message) {
-		let colorfulInfo = await this.getInfo(msg.guild);
+		const colorfulInfo = await this.getInfo(msg.guild);
 
 		if(colorfulInfo.rolePrefixes.size === 0) {
 			msg.channel.send("", {
@@ -861,7 +881,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		let ok: string[] = [],
+		const ok: string[] = [],
 			unavailable: {
 				due_role: string[],
 				// due_deleted: WhyReason[]
@@ -870,10 +890,10 @@ class Colors extends Plugin implements IModule {
 					// due_deleted: []
 				};
 
-		colorfulInfo.rolePrefixes.forEach((colorInfo, colorName) => {
+		for(const [colorName, colorInfo] of colorfulInfo.rolePrefixes) {
 			if(!msg.guild.roles.has(colorInfo.role)) {
 				// unavailable.due_deleted.push(colorName);
-				return;
+				continue;
 			}
 			if(colorInfo.required_role) {
 				let isAvailable = false;
@@ -885,7 +905,7 @@ class Colors extends Plugin implements IModule {
 
 				if(!isAvailable) {
 					unavailable.due_role.push(colorName);
-					return;
+					continue;
 				}
 			}
 			// if(colorInfo.required_role && !msg.guild.roles.has(colorInfo.required_role)) {
@@ -897,9 +917,9 @@ class Colors extends Plugin implements IModule {
 			// 	return;
 			// }
 			ok.push(colorName);
-		});
+		}
 
-		let fields: IEmbedOptionsField[] = [];
+		const fields: IEmbedOptionsField[] = [];
 
 		fields.push({
 			inline: true,
@@ -943,8 +963,8 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(moduleWhitelist) {
-			let whitelistStatus = await moduleWhitelist.isWhitelisted(msg.guild);
+		if(this.whitelistModule && this.whitelistModule.base) {
+			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
 			if(whitelistStatus.state !== 0 && whitelistStatus.state === 1) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ONLYPARTNERED")
@@ -1001,9 +1021,9 @@ class Colors extends Plugin implements IModule {
 
 			// second arg = color name
 
-			let colorfulInfo = await this.getInfo(msg.guild);
+			const colorfulInfo = await this.getInfo(msg.guild);
 
-			let color = await colorfulInfo.rolePrefixes.get(args[1]);
+			const color = await colorfulInfo.rolePrefixes.get(args[1]);
 			if(!color) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOTFOUND")
@@ -1063,6 +1083,15 @@ class Colors extends Plugin implements IModule {
 		} else {
 			this.log("ok", "Nice! DB table is already created");
 		}
+		this.log("info", "Checking if could use whitelist module");
+		
+		const whitelistModule = $modLoader.signaturesRegistry["snowball.core_features.whitelist"];
+		if(!whitelistModule) {
+			this.log("warn", "Whitelist module not found");
+		} else {
+			this.whitelistModule = whitelistModule as ModuleBase<Whitelist>;
+		}
+
 		this.log("info", "Handling events");
 		this.handleEvents();
 		this.log("ok", "We're done here, LET'S GO TO WORK!");
@@ -1092,10 +1121,8 @@ class Colors extends Plugin implements IModule {
 			guildId
 		}).first();
 		if(!prefixes) {
-			if(deep) {
-				throw new Error("Cannot get colorful info!");
-			}
-			let emptyMap = new Map<string, string>();
+			if(deep) { throw new Error("Cannot get colorful info!"); }
+			const emptyMap = new Map<string, string>();
 			await this.db(TABLE_NAME).insert({
 				guildId: guildId,
 				rolePrefixes: JSON.stringify([...emptyMap])
