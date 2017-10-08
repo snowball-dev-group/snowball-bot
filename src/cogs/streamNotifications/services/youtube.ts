@@ -21,6 +21,10 @@ interface IServiceOptions {
 }
 
 class YouTubeStreamingService extends EventEmitter implements IStreamingService {
+	public get signature() {
+		return "snowball.features.stream_notifications.youtube";
+	}
+
 	public name = "youtube";
 
 	private options: IServiceOptions;
@@ -106,13 +110,13 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	private channelCache: IHashMap<ICacheItem<IYouTubeChannel>> = {};
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
-		for(let streamer of streamers) {
-			let resp = await fetch(this.getAPIURL_Stream(streamer.uid));
+		for(const streamer of streamers) {
+			const resp = await fetch(this.getAPIURL_Stream(streamer.uid));
 			if(resp.status !== 200) { continue; }
-			let videos = (await resp.json()) as IYouTubeListResponse<IYouTubeVideo>;
+			const videos = (await resp.json()) as IYouTubeListResponse<IYouTubeVideo>;
 			if(videos.items.length === 0) {
 				// probably we had stream before
-				let cachedStream = this.streamsCache[streamer.uid];
+				const cachedStream = this.streamsCache[streamer.uid];
 				if(cachedStream) {
 					this.emit("offline", {
 						status: "offline",
@@ -125,10 +129,10 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 				}
 			} else if(videos.items.length === 1) {
 				// what if we had old version?
-				let cachedVersion = this.streamsCache[streamer.uid];
-				let newStream = videos.items[0];
+				const cachedVersion = this.streamsCache[streamer.uid];
+				const newStream = videos.items[0];
 				if(cachedVersion) {
-					let cachedStream = cachedVersion.value;
+					const cachedStream = cachedVersion.value;
 
 					let updated = false;
 
@@ -169,18 +173,18 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	// ========================================
 
 	public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-		let cachedStream = stream.payload as IYouTubeVideo;
+		const cachedStream = stream.payload as IYouTubeVideo;
 		if(!cachedStream) {
 			throw new StreamingServiceError("YOUTUBE_CACHENOTFOUND", `Stream cache for channel with ID "${stream.streamer.uid}" not found`);
 		}
 
 		let cachedChannel = this.channelCache[stream.streamer.uid];
 		if(!cachedChannel || ((Date.now() - cachedChannel.cachedAt) > MAX_CHANNEL_CACHE_LIFE)) {
-			let resp = await fetch(this.getAPIURL_Channels(stream.streamer.uid, false));
+			const resp = await fetch(this.getAPIURL_Channels(stream.streamer.uid, false));
 			if(resp.status !== 200) {
 				throw new StreamingServiceError("YOUTUBE_CHANNELFETCH_FAILED", "Fething failed");
 			}
-			let channels = ((await resp.json()) as IYouTubeListResponse<IYouTubeChannel>).items;
+			const channels = ((await resp.json()) as IYouTubeListResponse<IYouTubeChannel>).items;
 			if(channels.length !== 1) {
 				throw new StreamingServiceError("YOUTUBE_CHANNELNOTFOUND", "Channel not found");
 			}
@@ -192,7 +196,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 
 		if(!cachedChannel) { throw new StreamingServiceError("YOUTUBE_CODEERROR", "Error in caching code. Something went wrong"); }
 
-		let channel = cachedChannel.value;
+		const channel = cachedChannel.value;
 
 		return {
 			footer: {

@@ -21,6 +21,10 @@ interface ICacheItem {
 }
 
 class TwitchStreamingService extends EventEmitter implements IStreamingService {
+	public get signature() {
+		return "snowball.features.stream_notifications.twitch";
+	}
+
 	public name = "twitch";
 
 	private log = getLogger("TwitchStreamingService");
@@ -125,14 +129,14 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 					return;
 				}
 
-				for(let streamer of chunk) {
-					let stream = streamsResp.streams.find((stream) => {
+				for(const streamer of chunk) {
+					const stream = streamsResp.streams.find((stream) => {
 						return (stream.channel._id + "") === streamer.uid;
 					});
-					let cacheItem = this.streamsMap[streamer.uid];
+					const cacheItem = this.streamsMap[streamer.uid];
 					if(stream) {
 						if(cacheItem) {
-							let cachedStream = cacheItem.value;
+							const cachedStream = cacheItem.value;
 							let updated = false;
 							// Stream name updated
 							if(stream.channel.status !== cachedStream.channel.status) { updated = true; }
@@ -189,8 +193,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				}
 			};
 
-			let chunks = chunk(streamers, 50);
-			for(let chunk of chunks) {
+			const chunks = chunk(streamers, 50);
+			for(const chunk of chunks) {
 				try {
 					await processChunk(chunk);
 				} catch(err) {

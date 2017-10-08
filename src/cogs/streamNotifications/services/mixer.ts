@@ -19,6 +19,10 @@ interface ICacheItem {
 }
 
 class MixerStreamingService extends EventEmitter implements IStreamingService {
+	public get signature() {
+		return "snowball.features.stream_notifications.mixer";
+	}
+
 	public name = "mixer";
 
 	private log = getLogger("MixerStreamingService");
