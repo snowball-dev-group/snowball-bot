@@ -7,6 +7,10 @@ import { commandRedirect, objectToMap, EmbedType, escapeDiscordMarkdown } from "
 import { default as fetch } from "node-fetch";
 
 class OwnerCommands extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.core_features.ownercmds";
+	}
+
 	log: Function = logger("OwnerCMDs");
 
 	constructor() {
