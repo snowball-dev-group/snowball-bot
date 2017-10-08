@@ -81,46 +81,46 @@ export class Localizer {
 		try {
 			this.langMaps = {};
 			this.log("info", "Started loading of language files");
-			for(let lang of this.opts.languages) {
+			for(const lang of this.opts.languages) {
 				if(!!this.langMaps[lang]) {
 					throw new Error(`Language "${lang}" is already registered`);
 				}
 
-				let z: IStringsMap = {};
+				let langStrings: IStringsMap = {};
 				try {
 					const content = await fs.readFile(pathJoin(this.opts.directory, `${lang}.json`), { "encoding": "utf8" });
-					z = JSON.parse(content);
+					langStrings = JSON.parse(content);
 				} catch(err) {
 					this.log("err", "Could not read", lang, "language file");
 				}
 
-				let shouldNotLoad = false, requiredMetaKey = "";
+				let rejectLoading = false, requiredMetaKey = "";
 				for(requiredMetaKey of REQUIRED_META_KEYS) {
-					if(!z[requiredMetaKey]) {
-						shouldNotLoad = true;
+					if(!langStrings[requiredMetaKey]) {
+						rejectLoading = true;
 						break;
 					}
 				}
 
-				if(shouldNotLoad) {
+				if(rejectLoading) {
 					this.log("err", "Could not load", lang, " language file. It misses", requiredMetaKey, "meta key, which is required");
 					continue;
 				}
 
-				this.langMaps[lang] = z;
+				this.langMaps[lang] = langStrings;
 
 				// Creating humanizer
 				this.humanizersMap[lang] = this.createCustomHumanizer(lang);
 			}
 
 			this.log("info", "Requesting source language");
-			const defLang = this.langMaps[this.opts.source_language];
-			if(!defLang) {
+			const defaultLanguage = this.langMaps[this.opts.source_language];
+			if(!defaultLanguage) {
 				throw new Error("Source language not found");
 			}
 
 			this.log("info", "Calculating language files coverages");
-			for(let langName of Object.keys(this.langMaps)) {
+			for(const langName of Object.keys(this.langMaps)) {
 				const langFile = this.langMaps[langName];
 				if(!langFile) { continue; }
 				if(langName === this.opts.source_language) {
@@ -129,7 +129,7 @@ export class Localizer {
 					this.langMaps[langName] = langFile;
 					continue;
 				}
-				langFile["+COVERAGE"] = (await this.testCoverage(langFile, defLang as IStringsMap)) + "";
+				langFile["+COVERAGE"] = (await this.testCoverage(langFile, defaultLanguage as IStringsMap)) + "";
 				langFile["+COMMUNITY_MANAGED"] = langFile["+COMMUNITY_MANAGED"] === "true" ? "true" : "false";
 				this.langMaps[langName] = langFile;
 				this.log("ok", `- ${langName} ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${langFile["+COVERAGE"]}`);
@@ -140,9 +140,9 @@ export class Localizer {
 		}
 
 		if(!this.langMaps[this.opts.source_language]) {
-			let estr = "Could not find source (fallback) language";
-			this.log("err", estr);
-			throw new Error(estr);
+			const errorStr = "Could not find source (fallback) language";
+			this.log("err", errorStr);
+			throw new Error(errorStr);
 		}
 
 		this._loadedLanguages = Object.keys(this.langMaps);
@@ -152,11 +152,11 @@ export class Localizer {
 	/**
 	 * Checks converage of default language by selected language's dictionary
 	 * @param langFile {object} Dictionary of strings
-	 * @param defLang {object} Default language
+	 * @param defaultLanguage {object} Default language
 	 */
-	private async testCoverage(langFile: IStringsMap, defLang = this.langMaps[this.opts.source_language] as IStringsMap) {
+	private async testCoverage(langFile: IStringsMap, defaultLanguage = this.langMaps[this.opts.source_language] as IStringsMap) {
 		let unique = 0;
-		for(let key of Object.keys(defLang)) {
+		for(const key of Object.keys(defaultLanguage)) {
 			// ignored keys
 			if(["+COVERAGE", "$schema"].includes(key)) { unique += 1; continue; }
 			// "" for empty crowdin translations
@@ -166,7 +166,7 @@ export class Localizer {
 				this.log("warn", `String "${key}" not translated in lang ${langFile["+NAME"]}`);
 			}
 		}
-		let coverage = (100 * (unique / Object.keys(defLang).length));
+		const coverage = (100 * (unique / Object.keys(defaultLanguage).length));
 		return Math.round(coverage * 1e2) / 1e2; // 99.99%
 	}
 
@@ -194,9 +194,9 @@ export class Localizer {
 	public getString(lang: string = this.opts.source_language, key: string, fallback: boolean = true) {
 		const langMap = this.langMaps[lang];
 		if(!langMap) {
-			let estr = "Could not find required language";
-			this.log("err", estr);
-			throw new Error(estr);
+			const errorStr = "Could not find required language";
+			this.log("err", errorStr);
+			throw new Error(errorStr);
 		}
 		let str = langMap[key];
 		if((!str || str === "") && fallback && lang !== this.opts.source_language) {
@@ -208,9 +208,9 @@ export class Localizer {
 				throw new Error(errStr);
 			}
 		} else if(!str) {
-			let errStr = `String "${key}" not found.`;
-			this.log("err", errStr);
-			throw new Error(errStr);
+			const errorStr = `String "${key}" not found.`;
+			this.log("err", errorStr);
+			throw new Error(errorStr);
 		}
 		return str;
 	}
@@ -281,7 +281,7 @@ export class Localizer {
 			ms: (milliseconds: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:MILLISECONDS", { milliseconds })
 		};
 		if(languageOverride) {
-			defaultDefinition = Object.assign(defaultDefinition, languageOverride);
+			defaultDefinition = Object.freeze(Object.assign({}, defaultDefinition, languageOverride));
 		}
 		return new Humanizer(defaultDefinition, defaultOptions);
 	}
