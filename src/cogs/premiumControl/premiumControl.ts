@@ -13,7 +13,7 @@ import { messageToExtra } from "../utils/failToDetail";
 
 const PREMIUMCTRL_PREFIX = `!premiumctl`;
 
-let whoCan = [$botConfig.botOwner];
+const whoCan = [$botConfig.botOwner];
 
 function isAdm(msg: Message) {
 	return isChat(msg) && whoCan.indexOf(msg.author.id) !== -1;
@@ -73,6 +73,10 @@ interface IPlgCfg {
 }, checkServerAdmin)
 @command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} resync`, "loc:PREMIUMCTL_META_RESYNC", undefined, isAdm)
 class PremiumControl extends Plugin implements IModule {
+	public get signature() {
+		return "snowball.core_features.premiumctl";
+	}
+
 	log = getLogger("PremiumControl");
 
 	constructor(cfg) {
@@ -81,7 +85,9 @@ class PremiumControl extends Plugin implements IModule {
 		}, true);
 
 		if(cfg) {
-			(cfg as IPlgCfg).whoCanGive.forEach(w => whoCan.push(w));
+			for(const w of (cfg as IPlgCfg).whoCanGive) {
+				if(!whoCan.includes(w)) { whoCan.push(w); }
+			}
 		}
 
 		// this.init();
@@ -94,7 +100,7 @@ class PremiumControl extends Plugin implements IModule {
 	async onMessage(msg: Message) {
 		if(msg.channel.type !== "text") { return; }
 		if(!msg.content || !msg.content.startsWith(PREMIUMCTRL_PREFIX)) { return; }
-		let args = msg.content.split(" ");
+		const args = msg.content.split(" ");
 		if(args.length === 1 && args[0] === PREMIUMCTRL_PREFIX) {
 			return;
 		}
@@ -148,7 +154,7 @@ class PremiumControl extends Plugin implements IModule {
 
 		// premiumctl:role
 		if(args[0].toLowerCase() !== "none") {
-			let role = await resolveGuildRole(args[0], msg.guild, false);
+			const role = await resolveGuildRole(args[0], msg.guild, false);
 			if(!role) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOTFOUND")
@@ -163,13 +169,13 @@ class PremiumControl extends Plugin implements IModule {
 				return;
 			}
 
-			let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+			const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 				key: "PREMIUMCTL_SETROLE_SETCONFIRMATION",
 				formatOptions: {
 					roleName: escapeDiscordMarkdown(role.name, true)
 				}
 			});
-			let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 
 			if(!confirmation) {
 				msg.channel.send("", {
@@ -178,14 +184,14 @@ class PremiumControl extends Plugin implements IModule {
 				return;
 			}
 
-			let currentPremiumRole = await getGuildPref(msg.guild, "premiumctl:role");
+			const currentPremiumRole = await getGuildPref(msg.guild, "premiumctl:role");
 			if(currentPremiumRole) {
-				let premiumRole = msg.guild.roles.get(currentPremiumRole);
+				const premiumRole = msg.guild.roles.get(currentPremiumRole);
 				if(premiumRole) {
-					let progMsg = (await msg.channel.send("", {
+					const progMsg = (await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_SETROLE_NONEREMOVING")
 					})) as Message;
-					for(let member of msg.guild.members.values()) {
+					for(const member of msg.guild.members.values()) {
 						try {
 							await member.removeRole(premiumRole);
 						} catch(err) {
@@ -204,7 +210,7 @@ class PremiumControl extends Plugin implements IModule {
 
 			this.performGuildSync(msg.guild);
 		} else {
-			let currentPremiumRole = await getGuildPref(msg.guild, "premiumctl:role");
+			const currentPremiumRole = await getGuildPref(msg.guild, "premiumctl:role");
 			if(!currentPremiumRole) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_SETROLE_ERR_NOTSET")
@@ -212,15 +218,16 @@ class PremiumControl extends Plugin implements IModule {
 				return;
 			}
 
-			let premiumRole = msg.guild.roles.get(currentPremiumRole);
+			const premiumRole = msg.guild.roles.get(currentPremiumRole);
 			if(premiumRole) {
-				let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+				const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 					key: "PREMIUMCTL_SETROLE_SETCONFIRMATION",
 					formatOptions: {
 						roleName: escapeDiscordMarkdown(premiumRole.name, true)
 					}
 				});
-				let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+
+				const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 				if(!confirmation) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
@@ -228,11 +235,11 @@ class PremiumControl extends Plugin implements IModule {
 					return;
 				}
 
-				let removingMsg = (await msg.channel.send("", {
+				const removingMsg = (await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_SETROLE_NONEREMOVING")
 				})) as Message;
 
-				for(let member of msg.guild.members.values()) {
+				for(const member of msg.guild.members.values()) {
 					try {
 						await member.removeRole(premiumRole);
 					} catch(err) {
@@ -248,7 +255,7 @@ class PremiumControl extends Plugin implements IModule {
 	}
 
 	async runResync(msg: Message) {
-		let _pgMsg = (await msg.channel.send("", {
+		const _pgMsg = (await msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_SYNCING")
 		})) as Message;
 		await this.performGuildsSync();
@@ -286,18 +293,18 @@ class PremiumControl extends Plugin implements IModule {
 			}
 		}
 
-		let subscriber = msg.mentions.users.first();
+		const subscriber = msg.mentions.users.first();
 		let currentPremium = await checkPremium(subscriber);
 		if(currentPremium) {
-			let dtString = moment(currentPremium.due_to, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-			let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+			const dtString = moment(currentPremium.due_to, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+			const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 				key: "PREMIUMCTL_GIVE_CONFIRMATION",
 				formatOptions: {
 					untilDate: dtString,
 					prefix: PREMIUMCTRL_PREFIX
 				}
 			});
-			let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 			if(!confirmation) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
@@ -306,7 +313,7 @@ class PremiumControl extends Plugin implements IModule {
 			}
 		}
 
-		let cDate = new Date(Date.now() + (timestring(args[1]) * 1000));
+		const cDate = new Date(Date.now() + (timestring(args[1]) * 1000));
 		let dtString = moment(cDate, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			key: "PREMIUMCTL_GIVE_CONFIRMATION1",
@@ -323,11 +330,11 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		let _cMsg = (await msg.channel.send("", {
+		const _cMsg = (await msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_PLSWAIT")
 		})) as Message;
 
-		let complete = await givePremium(subscriber, cDate, true);
+		const complete = await givePremium(subscriber, cDate, true);
 
 		if(!complete) {
 			_cMsg.edit("", {
@@ -350,7 +357,7 @@ class PremiumControl extends Plugin implements IModule {
 		}
 
 		dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 
 		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
 		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
@@ -406,11 +413,11 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		let subscriber = msg.mentions.users.first();
+		const subscriber = msg.mentions.users.first();
 		let currentPremium = await checkPremium(subscriber);
 
 		if(!currentPremium) {
-			let _redirectMsg = await (msg.channel.send("", {
+			const _redirectMsg = await (msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_GIVE_REDIRECT")
 			})) as Message;
 			setTimeout(() => _redirectMsg.delete(), 5000);
@@ -447,7 +454,7 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		let _cMsg = (await msg.channel.send("", {
+		const _cMsg = (await msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_RENEW_PROGRESS_STARTED")
 		})) as Message;
 
@@ -472,7 +479,7 @@ class PremiumControl extends Plugin implements IModule {
 		}
 
 		dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 
 		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
 		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
@@ -514,9 +521,9 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		let subscriber = msg.mentions.users.size === 0 ? msg.author : msg.mentions.users.first();
+		const subscriber = msg.mentions.users.size === 0 ? msg.author : msg.mentions.users.first();
 
-		let currentPremium = await checkPremium(subscriber);
+		const currentPremium = await checkPremium(subscriber);
 
 		if(!currentPremium) {
 			msg.channel.send("", {
@@ -525,9 +532,9 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		let dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		let durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
+		const dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
 		let msgStr = "";
 		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
@@ -566,9 +573,9 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		let subscriber = msg.mentions.users.first();
+		const subscriber = msg.mentions.users.first();
 
-		let currentPremium = await checkPremium(subscriber);
+		const currentPremium = await checkPremium(subscriber);
 		if(!currentPremium) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_NOTPREMIUMUSER")
@@ -576,11 +583,11 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		let dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		let dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		let durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
+		const dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
-		let sep = "----------------";
+		const sep = "----------------";
 		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n${sep}\n`;
 		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
@@ -594,11 +601,11 @@ class PremiumControl extends Plugin implements IModule {
 		msgStr += `${sep}\n`;
 		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_REMOVE_CONFIRMATION");
 
-		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			custom: true,
 			string: msgStr
 		});
-		let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 
 		if(!confirmation) {
 			msg.channel.send("", {
@@ -669,14 +676,14 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		for(let member of guild.members.values()) {
+		for(const member of guild.members.values()) {
 			if(member.highestRole.calculatedPosition > botMember.highestRole.calculatedPosition) {
 				// not managable?
 				done++;
 				continue;
 			}
 
-			let isPremium = await isPremiumUser(member);
+			const isPremium = await isPremiumUser(member);
 			if(isPremium && !member.roles.has(guildPremiumRole)) {
 				try {
 					await member.addRole(premiumRole);
@@ -726,7 +733,7 @@ class PremiumControl extends Plugin implements IModule {
 
 	async performGuildsSync(noLog = false) {
 		if(!noLog) { this.log("info", "Performing role sync in guilds..."); }
-		for(let guild of $discordBot.guilds.values()) {
+		for(const guild of $discordBot.guilds.values()) {
 			try {
 				await this.performGuildSync(guild, noLog);
 			} catch(err) {
@@ -743,7 +750,7 @@ class PremiumControl extends Plugin implements IModule {
 	roleSyncInterval: NodeJS.Timer;
 
 	async init() {
-		let subpluginInit = await init();
+		const subpluginInit = await init();
 		if(!subpluginInit) {
 			this.log("err", "Subplugin initalization failed");
 			return;
