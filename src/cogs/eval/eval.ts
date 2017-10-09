@@ -1,6 +1,6 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
-import { Message } from "discord.js";
+import { Message, GuildMember, User } from "discord.js";
 import { Context } from "vm";
 import { EmbedType, getLogger } from "../utils/utils";
 import util = require("util");
@@ -60,6 +60,24 @@ class EvalJS extends Plugin implements IModule {
 
 		// Parsing our script
 		let script = afterCmd.substring(PREFIX_LENGTH, afterCmd.length - PREFIX_LENGTH);
+
+		const user = message.member || message.author;
+
+		let resultMsg: Message;
+		try {
+			resultMsg = await message.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Information, user, {
+					custom: true,
+					string: "Please wait, we're executing code in current shard. It may take some time."
+				}, {
+						informationTitle: "Executing..."
+					})
+			}) as Message;
+		} catch(err) {
+			this.log("err", "Can't send message with output:", err);
+			return;
+		}
+
 		let startTime = Date.now();
 		try {
 			// Trying to run it
@@ -73,72 +91,71 @@ class EvalJS extends Plugin implements IModule {
 				$msg: message,
 				setTimeout: (handler, ms) => setTimeout(this.makeSafe(handler), ms),
 				setInterval: (handler, ms) => setInterval(this.makeSafe(handler), ms),
-				require: require
+				require: require,
+				process: undefined // should not have access to process thread
 			});
-			let diff = Date.now() - startTime;
 
-			let outputMsg: Message;
-			try {
-				outputMsg = await message.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Information, message.member, {
-						custom: true,
-						string: "Generating output. Please, wait..."
-					}, {
-							informationTitle: "Busy"
-						})
-				}) as Message;
-			} catch(err) {
-				this.log("err", "Can't send message with output:", err);
-				return;
+			const isPromise = output.constructor.name === "Promise";
+
+			if(isPromise) {
+				await this._outputEdit(resultMsg, user, startTime, output, "Waiting", EmbedType.Progress);
+				try {
+					// nothing bad happens if someone hacky created element using specially named class "Promise"
+					// it's just waste of time lul
+					let r = await output;
+					this._outputEdit(resultMsg, user, startTime, r, "Executed", EmbedType.OK);
+				} catch(err) {
+					this._outputEdit(resultMsg, user, startTime, err, "Executed with error", EmbedType.Warning);
+				}
+			} else {
+				this._outputEdit(resultMsg, user, startTime, output, "Executed", EmbedType.OK);
 			}
+		} catch(err) {
+			this._outputEdit(resultMsg, user, startTime, err, "Fault", EmbedType.Error);
+		}
+	}
 
-			let depth = 5;
-			let outputInsp: string = replaceAll(util.inspect(output, false, depth), "`", "'");
-			while(outputInsp.length > 2000 && depth > 0) {
-				outputInsp = replaceAll(util.inspect(output, false, --depth), "`", "'");
-			}
+	async _outputEdit(resultMsg: Message, member: GuildMember | User, startTime: number, output: any, text = "Executed", type: EmbedType) {
+		const diff = Date.now() - startTime;
+		try {
+			const outputInsp = this.outputToString(output);
 
-			if(depth === 0 || outputInsp.length > 2000) {
-				outputMsg.edit(undefined, {
-					embed: await generateLocalizedEmbed(EmbedType.Error, message.member, {
-						custom: true,
-						string: "Can't send output, it's longer than 2000 chars"
-					}, {
-							errorTitle: "There's an error"
-						})
-				});
-				return;
-			}
-
-			outputMsg.edit(undefined, {
-				embed: await generateLocalizedEmbed(EmbedType.OK, message.member, {
+			await resultMsg.edit(undefined, {
+				embed: await generateLocalizedEmbed(type, member, {
 					custom: true,
 					string: "```js\n" + outputInsp + "\n```"
 				}, {
-						okTitle: "Executed",
-						fields: [{
-							inline: false,
-							name: "Time spent",
-							value: `${diff}ms`
-						}]
-					})
-			});
+					fields: [{
+						inline: false,
+						name: "Time spent",
+						value: `${diff}ms`
+					}],
+					universalTitle: text
+				})
+			}, );
 		} catch(err) {
-			let diff = Date.now() - startTime;
-			message.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, message.member, {
+			await resultMsg.edit(undefined, {
+				embed: await generateLocalizedEmbed(EmbedType.Error, member, {
 					custom: true,
-					string: "\n```js\n" + replaceAll(util.inspect(err), "`", "'") + "\n```"
+					string: "Can't send result, it's longer than 2000 chars"
 				}, {
-						errorTitle: "Fault.",
-						fields: [{
-							inline: false,
-							name: "Time spent",
-							value: `${diff}ms`
-						}]
+						errorTitle: "There's an error"
 					})
 			});
+			return;
 		}
+	}
+
+	outputToString(output: any) {
+		let depth = 5;
+		let outputInsp: string = replaceAll(util.inspect(output, false, depth), "`", "'");
+		while(outputInsp.length > 2000 && depth > 0) {
+			outputInsp = replaceAll(util.inspect(output, false, --depth), "`", "'");
+		}
+		if(outputInsp.length > 2000) {
+			throw new Error("Large output");
+		}
+		return outputInsp;
 	}
 
 	async unload() {
