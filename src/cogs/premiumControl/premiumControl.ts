@@ -171,7 +171,7 @@ class PremiumControl extends Plugin implements IModule {
 
 			if(role.calculatedPosition > botMember.highestRole.calculatedPosition) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_ROLEHIGHTER")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_ROLEHIGHER")
 				});
 				return;
 			}
