@@ -119,9 +119,12 @@ export class ModuleBase<T> extends EventEmitter {
 
 	/**
 	 * Function to load module
-	 * @returns {Promise} Promise which'll be resolved once module is loaded
+	 * @returns {Promise<ModuleBase>} Promise which'll be resolved with this module's base once module is loaded
 	 */
 	async load() {
+		if(this.state !== ModuleLoadState.Initialized && this.state !== ModuleLoadState.Unloaded && this.state !== ModuleLoadState.Destroyed) {
+			throw new Error("Module is already loaded or loads. Unload it first!");
+		}
 		this.state = ModuleLoadState.Loading;
 		try {
 			let mod = require(this.info.path);
@@ -129,7 +132,6 @@ export class ModuleBase<T> extends EventEmitter {
 
 			if(this.base) {
 				const base = this.base;
-
 				this.signature = base.signature;
 				if(base.init) { await base.init(); }
 			}
@@ -143,13 +145,14 @@ export class ModuleBase<T> extends EventEmitter {
 			});
 			throw err;
 		}
+		return this;
 	}
 
 	/**
 	 * Function to unload or complete destroy module if it has no unload method
 	 * Very important to keep unload function in your module, else unloading can cause exceptions at running
-	 * @param reason Reason of unloading which'll be transmitted to module, by default "unload"
-	 * @returns {Promise} Promise which'll be resolved once module is unloaded or destroyed
+	 * @param reason Reason of unloading which'll be transmitted to module. By default "unload"
+	 * @returns {Promise<ModuleBase>} Promise which'll be resolved with this module's base once module is unloaded or destroyed
 	 */
 	async unload(reason: any = "unload") {
 		if(this.state !== ModuleLoadState.Loaded) { throw new Error("Module is not loaded"); }
@@ -162,7 +165,6 @@ export class ModuleBase<T> extends EventEmitter {
 				error: new Error("Module was already unloaded, base variable is `undefined`")
 			});
 			this.state = ModuleLoadState.Unloaded;
-			return;
 		} else if(typeof this.base.unload !== "function") {
 			try {
 				for(const key of Object.keys(this.base)) {
@@ -170,6 +172,7 @@ export class ModuleBase<T> extends EventEmitter {
 					delete this.base[key];
 				}
 				this.base = undefined;
+				this.state = ModuleLoadState.Destroyed;
 				this.emit("unloaded");
 				this.emit("destroyed");
 			} catch(err) {
@@ -185,6 +188,9 @@ export class ModuleBase<T> extends EventEmitter {
 				if(unloaded) {
 					this.emit("unloaded");
 					this.base = undefined;
+					this.state = ModuleLoadState.Unloaded;
+				} else {
+					throw new Error("Returned `false` what means module has troubles with unload");
 				}
 			} catch(err) {
 				this.emit("error", {
@@ -193,6 +199,20 @@ export class ModuleBase<T> extends EventEmitter {
 				});
 			}
 		}
+		return this;
+	}
+
+	/**
+	 * Clears require cache for this module
+	 * Useful while reloading module:
+	 *   In this case module file will be read from disk
+	 * @returns {ModuleBase} This module's base
+	 */
+	clearRequireCache() {
+		if(require.cache[this.info.path]) {
+			delete require.cache[this.info.path];
+		}
+		return this;
 	}
 }
 
@@ -244,11 +264,12 @@ export class ModuleLoader {
 	/**
 	 * Load module by this name in registry
 	 * @param {string|string[]} name Name(s) in registry
+	 * @param {boolean} clearRequireCache Require cache cleaning. `true` if `require` cache needed to be cleared before load
 	 * @returns {Promise} Promise which'll be resolved once module is loaded
 	 */
-	async load(name: string | string[]) {
+	async load(name: string | string[], clearRequireCache = false) {
 		if(Array.isArray(name)) {
-			for(const n of name) { await this.load(n); }
+			for(const n of name) { await this.load(n, clearRequireCache); }
 			return;
 		}
 		if(!this.registry[name]) {
@@ -281,6 +302,10 @@ export class ModuleLoader {
 		const moduleKeeper = new ModuleBase(moduleInfo);
 
 		try {
+			if(clearRequireCache) {
+				moduleKeeper.clearRequireCache();
+			}
+
 			await moduleKeeper.load();
 
 			let violation:string|null = null;
@@ -314,9 +339,10 @@ export class ModuleLoader {
 	 * Unload module by this name in currently loaded modules registry
 	 * @param {string|string[]} name Name(s) of loaded module(s)
 	 * @param {boolean} skipCallingUnload `true` if module should be unloaded without calling for unload method. Don't use it unless you know that module doesn't handles any events or doesn't has dynamic variables
+	 * @param {boolean} clearRequireCache `true` if `require` cache of this module file needed to cleared after unload. This works only if `skipCallingUnload` is `false`!
 	 * @returns {Promise} Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
 	 */
-	async unload(name: string | string[], skipCallingUnload: boolean = false) {
+	async unload(name: string | string[], skipCallingUnload: boolean = false, clearRequireCache = false) {
 		if(Array.isArray(name)) {
 			for(const n of name) { await this.load(n); }
 			return;
@@ -344,6 +370,9 @@ export class ModuleLoader {
 		} else {
 			try {
 				await moduleKeeper.unload();
+				if(clearRequireCache) {
+					moduleKeeper.clearRequireCache();
+				}
 			} catch(err) {
 				this.log("err", "#unload: module", name, "rejected to unload:", err);
 				throw err;
@@ -354,8 +383,8 @@ export class ModuleLoader {
 	}
 
 	/**
-	 * Loads modules from registry
-	 * By default loads only selected kit
+	 * Loads modules from registry with `require` cache clearing
+	 * By default loads only set passed as `defaultSet`
 	 * @param {boolean} forceAll Use `true` to force load ALL modules in registry
 	 */
 	async loadModules(forceAll = false) {
@@ -369,7 +398,7 @@ export class ModuleLoader {
 		this.log("info", "Loading started");
 		this.log("info", !!this.config.queueModuleLoading ? "Queue mode enabled" : "Parallel mode enabled");
 		for(const modName of toLoad) {
-			const loadingPromise = this.load(modName);
+			const loadingPromise = this.load(modName, true);
 			if(!!this.config.queueModuleLoading) {
 				await loadingPromise;
 			}
