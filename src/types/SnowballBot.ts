@@ -206,13 +206,14 @@ export class SnowballBot extends EventEmitter {
 			registry: convertToModulesMap(this._config.modules),
 			queueModuleLoading: !!this._config.queueModuleLoading
 		});
-		await this.modLoader.loadModules();
 
 		// Public module loader
 		Object.defineProperty(global, "$modLoader", {
 			configurable: false, enumerable: false,
 			writable: true, value: this.modLoader
 		});
+
+		await this.modLoader.loadModules();
 	}
 
 	/**
