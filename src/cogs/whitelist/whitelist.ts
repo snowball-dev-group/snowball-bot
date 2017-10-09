@@ -77,11 +77,6 @@ function isServerAdmin(msg: Message) {
 	return msg.channel.type === "text" && (msg.member.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === $botConfig.botOwner);
 }
 
-declare global {
-	// tslint:disable-next-line:no-unused-variable
-	let moduleWhitelist:Whitelist|undefined;
-}
-
 @command(Category.Helpful, "sb_pstatus", "loc:WHITELIST_META_PSTATUS", undefined, isServerAdmin)
 @command(Category.Helpful, "whitelist", "loc:WHITELIST_META_WHITELIST", {
 	"loc:WHITELIST_META_WHITELIST_ARG0": {
@@ -173,11 +168,6 @@ export class Whitelist extends Plugin implements IModule {
 			const found = !!$discordBot.guilds.get(whitelistedId);
 			this.log(found ? "ok" : "warn", "  -", whitelistedId, found ? "(found)" : "(not found)");
 		}
-
-		Object.defineProperty(global, "moduleWhitelist", {
-			writable: true, enumerable: true,
-			configurable: true, value: this
-		});
 	}
 
 	async fetchCurrentMode() {
