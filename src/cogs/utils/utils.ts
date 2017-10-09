@@ -68,31 +68,110 @@ export interface IEmbedOptionsField {
 }
 
 export interface IEmbedOptions {
+	/**
+	 * Text to show in footer
+	 */
 	footerText?: string;
+	/**
+	 * Footer options
+	 * Overrides `footerText` option
+	 */
 	footer?: {
+		/**
+		 * Text to show in footer
+		 */
 		text: string;
+		/**
+		 * Icon to show in footer
+		 */
 		icon_url?: string;
 	};
+	/**
+	 * Color of embed border
+	 */
 	color?: number;
+	/**
+	 * Author to show in embed
+	 * Replaces `author` provided by selected `EmbedType`
+	 */
 	author?: {
+		/**
+		 * Author's name
+		 */
 		name: string,
-		icon_url?: string,
-		url?: string
+		/**
+		 * Author's icon URL
+		 */
+		icon_url?: string;
+		/**
+		 * Author's URL
+		 */
+		url?: string;
 	};
+	/**
+	 * Fields in embed
+	 */
 	fields?: IEmbedOptionsField[];
+	/**
+	 * Title to show on top of message
+	 */
 	title?: string;
+	/**
+	 * If `type` is ` 0`, replaces default "Error" string with this
+	 */
 	errorTitle?: string;
+	/**
+	 * If `type` is `1`, replaces default "Success!" string with this
+	 */
 	okTitle?: string;
+	/**
+	 * If `type` is `2`, replaces default "Information" string with this
+	 */
 	informationTitle?: string;
+	/**
+	 * If `type` is `5`, replaces default "Tada!" string with this
+	 */
 	tadaTitle?: string;
+	/**
+	 * If `type` is `3`, replaces default "Loading..." string with this
+	 */
 	progressTitle?: string;
+	/**
+	 * If `type` is `6`, replaces default "Confirmation..." string with this
+	 */
 	questionTitle?: string;
+	/**
+	 * If `type` is `7`, replaces default "Warning!" string with this
+	 */
 	warningTitle?: string;
+	/**
+	 * Replaces default string of any type of embeds with this
+	 */
+	universalTitle?: string;
+	/**
+	 * URL of image to show in embed
+	 */
 	imageUrl?: string;
+	/**
+	 * Removes footer in embed
+	 * Useful while footer provided by selected `EmbedType` doesn't fit your needs :pray:
+	 */
 	clearFooter?: boolean;
+	/**
+	 * URL of thumbnail to show in embed
+	 */
 	thumbUrl?: string;
+	/**
+	 * Thumbnail's width
+	 */
 	thumbWidth?: number;
+	/**
+	 * Thumbnail's height
+	 */
 	thumbHeight?: number;
+	/**
+	 * Timestamp
+	 */
 	ts?: Date;
 }
 
@@ -159,22 +238,22 @@ export function generateEmbed(type: EmbedType, description: string, options?: IE
 	embed.description = description;
 	switch(type) {
 		case EmbedType.Error: {
-			embed.author.name = "Ошибка";
+			embed.author.name = "Error";
 			embed.author.icon_url = ICONS.ERROR;
 			embed.color = COLORS.ERROR;
 		} break;
 		case EmbedType.Information: {
-			embed.author.name = "Информация";
+			embed.author.name = "Information";
 			embed.author.icon_url = ICONS.INFO;
 			embed.color = COLORS.INFO;
 		} break;
 		case EmbedType.OK: {
-			embed.author.name = "Успех!";
+			embed.author.name = "Success!";
 			embed.author.icon_url = ICONS.OK;
 			embed.color = COLORS.OK;
 		} break;
 		case EmbedType.Tada: {
-			embed.author.name = "Та-да!";
+			embed.author.name = "Tada!";
 			embed.author.icon_url = ICONS.OK;
 			embed.thumbnail = {
 				url: ICONS.TADA
@@ -182,17 +261,17 @@ export function generateEmbed(type: EmbedType, description: string, options?: IE
 			embed.color = COLORS.OK;
 		} break;
 		case EmbedType.Progress: {
-			embed.author.name = "Загрузка...";
+			embed.author.name = "Loading...";
 			embed.author.icon_url = ICONS.PROGRESS;
 			embed.color = COLORS.PROGRESS;
 		} break;
 		case EmbedType.Question: {
-			embed.author.name = "Подтверждение...";
+			embed.author.name = "Confirmation...";
 			embed.author.icon_url = ICONS.CONFIRMATION;
 			embed.color = COLORS.CONFIRMATION;
 		} break;
 		case EmbedType.Warning: {
-			embed.author.name = "Предупреждение!";
+			embed.author.name = "Warning!";
 			embed.author.icon_url = ICONS.WARNING;
 			embed.thumbnail = {
 				url: ICONS.WARNING
@@ -223,6 +302,9 @@ export function generateEmbed(type: EmbedType, description: string, options?: IE
 			embed.author.name = options.questionTitle;
 		} else if(type === EmbedType.Warning && options.warningTitle) {
 			embed.author.name = options.warningTitle;
+		}
+		if(options.universalTitle && embed.author) {
+			embed.author.name = options.universalTitle;
 		}
 		if(options.author) {
 			// full override
