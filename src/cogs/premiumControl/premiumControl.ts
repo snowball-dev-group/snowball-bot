@@ -162,6 +162,13 @@ class PremiumControl extends Plugin implements IModule {
 				return;
 			}
 
+			if(role.managed) {
+				msg.channel.send("" , {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_MANAGED")
+				});
+				return;
+			}
+
 			if(role.calculatedPosition > botMember.highestRole.calculatedPosition) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_ROLEHIGHTER")
@@ -645,13 +652,6 @@ class PremiumControl extends Plugin implements IModule {
 			};
 		}
 
-		const botMember = guild.members.get($discordBot.user.id);
-		
-		if(!botMember) {
-			this.log("err", "Could not get bot in current guild", guild.id);
-			return;
-		}
-
 		let done = 0;
 
 		const premiumRole = guild.roles.get(guildPremiumRole);
@@ -664,21 +664,29 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		if(!botMember.permissions.hasPermission("MANAGE_ROLES")) {
+		if(!guild.me.permissions.hasPermission("MANAGE_ROLES")) {
 			this.log("warn", "Bot doesn't has permission to manage roles on guild", guild.id);
 			await delGuildPref(guild, "premiumctl:role");
 			return;
 		}
 
-		if(premiumRole.calculatedPosition > botMember.highestRole.calculatedPosition) {
+		if(premiumRole.managed) {
+			this.log("warn", "Premium role is managed, means controlled by integration", guild.id);
+			await delGuildPref(guild, "premiumctl:role");
+			return;
+		}
+
+		if(premiumRole.calculatedPosition >= guild.me.highestRole.calculatedPosition) {
 			this.log("warn", "Premium role is above bot's one, so bot can't give it");
 			await delGuildPref(guild, "premiumctl:role");
 			return;
 		}
 
+		// sync
+
 		for(const member of guild.members.values()) {
-			if(member.highestRole.calculatedPosition > botMember.highestRole.calculatedPosition) {
-				// not managable?
+			if(member.highestRole.calculatedPosition >= guild.me.highestRole.calculatedPosition) {
+				// we can't give role to member because this member has role highness that ours
 				done++;
 				continue;
 			}
