@@ -294,6 +294,12 @@ export class ModuleLoader {
 				// any signature violation is unacceptable
 				this.log("err", "#load: signature violation found:", moduleKeeper.info.name, "-", violation, ", caused unload");
 				await moduleKeeper.unload("signature_violation");
+				return;
+			}
+
+			if(moduleKeeper.signature) {
+				// typescript workaround
+				this.signaturesRegistry[moduleKeeper.signature] = moduleKeeper;
 			}
 		} catch(err) {
 			this.log("err", "#load: module", moduleKeeper.info.name, " rejected loading:", err);
@@ -326,6 +332,10 @@ export class ModuleLoader {
 			this.log("warn", "#unload: check failed: registry member is already `undefined`");
 			delete this.loadedModulesRegistry[name];
 			return;
+		}
+
+		if(moduleKeeper.signature) {
+			delete this.signaturesRegistry[moduleKeeper.signature];
 		}
 
 		if(skipCallingUnload) {
