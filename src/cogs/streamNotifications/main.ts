@@ -1,6 +1,6 @@
 import { IModule, ModuleLoader, convertToModulesMap, IModuleInfo, ModuleBase, ModuleLoadState } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
-import { Message, Guild, TextChannel, GuildMember } from "discord.js";
+import { Message, Guild, TextChannel, GuildMember, DiscordAPIError } from "discord.js";
 import { getLogger } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import { simpleCmdParse } from "../utils/text";
@@ -749,9 +749,7 @@ class StreamNotifications extends Plugin implements IModule {
 					count: results.length,
 					page
 				}
-			}, {
-					fields
-				})
+			}, { fields })
 		});
 	}
 
@@ -787,7 +785,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	checknNotifyInterval: NodeJS.Timer;
 
-	private handlers : {
+	private _handlers: {
 		online: IHashMap<StreamStatusChangedHandler[]>,
 		updated: IHashMap<StreamStatusChangedHandler[]>,
 		offline: IHashMap<StreamStatusChangedHandler[]>
@@ -798,8 +796,8 @@ class StreamNotifications extends Plugin implements IModule {
 	};
 
 	async handleNotifications() {
-		for (const providerName in this.servicesLoader.loadedModulesRegistry) {
-			const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService>|undefined;
+		for(const providerName in this.servicesLoader.loadedModulesRegistry) {
+			const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService> | undefined;
 
 			if(!mod || !mod.base) {
 				this.log("err", `${providerName} is still not loaded (?!)`);
@@ -807,7 +805,7 @@ class StreamNotifications extends Plugin implements IModule {
 			}
 
 			const provider = mod.base as IStreamingService;
-			
+
 			for(const a of ["online", "updated", "offline"]) {
 				const action = a as StreamStatusChangedAction;
 				const handler = (status) => {
@@ -819,9 +817,9 @@ class StreamNotifications extends Plugin implements IModule {
 					}
 				};
 				provider.on(action, handler);
-				let handlersCollection = this.handlers[action][providerName];
+				let handlersCollection = this._handlers[action][providerName];
 				if(!handlersCollection) {
-					handlersCollection = this.handlers[action][providerName] = [] as StreamStatusChangedHandler[];
+					handlersCollection = this._handlers[action][providerName] = [] as StreamStatusChangedHandler[];
 				}
 				handlersCollection.push(handler);
 			}
@@ -890,13 +888,16 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 	}
 
-	async pushNotification(guild:Guild, result: IStreamStatus, subscription:ISubscriptionRow, notification?:INotification) {
+	async pushNotification(guild: Guild, result: IStreamStatus, subscription: ISubscriptionRow, notification?: INotification) {
 		const providerName = subscription.provider;
-		const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService>|undefined;
+
+		const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService> | undefined;
+
 		if(!mod || !mod.base) {
 			this.log("warn", "WARN:", providerName, "not found as loaded service");
 			return;
 		}
+
 		const service = mod.base as IStreamingService;
 
 		if((!result.updated && result.status !== "offline") && notification) {
@@ -954,9 +955,11 @@ class StreamNotifications extends Plugin implements IModule {
 					return (await (channel as TextChannel).fetchMessage(notification.messageId));
 				} catch(err) {
 					this.log("err", "Could not find message with ID", notification.messageId, "to update message", err);
-					if(err.code && err.code === 10008) {
-						// message removed
-						this.log("warn", "Notification was removed");
+
+					if(err instanceof DiscordAPIError) {
+						// so we probably don't have access or something
+						// we don't need to attempt updating message
+						// so removing this notification :shrug:
 						await this.deleteNotification(notification);
 					}
 
@@ -982,7 +985,8 @@ class StreamNotifications extends Plugin implements IModule {
 			}
 
 			if(result.status === "offline") {
-				await this.deleteNotification(notification); // we don't need it anymore
+				await this.deleteNotification(notification);
+				// we don't need it anymore
 			} else {
 				notification.streamId = result.id;
 				notification.sentAt = Date.now();
@@ -1102,7 +1106,7 @@ class StreamNotifications extends Plugin implements IModule {
 		return (await this.db(TABLE.notifications).select()) as INotification[];
 	}
 
-	async getSubscriptionsByFilter(filter: SubscriptionFilter) : Promise<ISubscriptionRawRow[]> {
+	async getSubscriptionsByFilter(filter: SubscriptionFilter): Promise<ISubscriptionRawRow[]> {
 		return await this.db(TABLE.subscriptions).select().where(filter) as ISubscriptionRawRow[];
 	}
 
@@ -1167,7 +1171,7 @@ class StreamNotifications extends Plugin implements IModule {
 		return await this.db(TABLE.notifications).where(notification).delete();
 	}
 
-	async getNotification(provider: string, streamerId: string, streamId: string, guild: Guild|string) {
+	async getNotification(provider: string, streamerId: string, streamId: string, guild: Guild | string) {
 		return await this.db(TABLE.notifications).where({
 			provider,
 			streamerId,
@@ -1266,14 +1270,14 @@ class StreamNotifications extends Plugin implements IModule {
 				if(typeof msg !== "object") { return; }
 				if(!msg.type || !msg.payload) { return; }
 				if(msg.type !== "streams:free") { return; }
-				
+
 				this.log("info", "Received message", msg);
 
 				let payload = msg.payload as {
 					provider: string;
 					uid: string;
 				};
-				
+
 				let mod = this.servicesLoader.loadedModulesRegistry[payload.provider];
 				if(!mod) { this.log("warn", "Provider not found", payload.provider, "- message ignored"); return; }
 				if(mod.state !== ModuleLoadState.Loaded || !mod.base) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
@@ -1304,7 +1308,7 @@ class StreamNotifications extends Plugin implements IModule {
 							notification: INotification,
 							result: IStreamStatus
 						};
-						this.pushNotification(guild, notifyAbout.result,notifyAbout.subscription, notifyAbout.notification);
+						this.pushNotification(guild, notifyAbout.result, notifyAbout.subscription, notifyAbout.notification);
 					}
 				}
 			});
