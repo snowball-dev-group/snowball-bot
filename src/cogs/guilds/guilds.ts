@@ -1785,7 +1785,7 @@ class Guilds extends Plugin implements IModule {
 		const fields: IEmbedOptionsField[] = [];
 		for(const row of dbResp.rows) {
 			fields.push({
-				inline: true,
+				inline: false,
 				name: row.name,
 				value: row.description && row.description.length > 0 ? row.description : await localizeForUser(msg.member, "GUILDS_LIST_DESCRIPTIONPLACEHOLDER")
 			});
