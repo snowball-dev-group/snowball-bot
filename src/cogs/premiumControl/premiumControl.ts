@@ -152,6 +152,13 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
+		if(args.length === 0) {
+			msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_SETROLE_DESC")
+			});
+			return;
+		}
+
 		// premiumctl:role
 		if(args[0].toLowerCase() !== "none") {
 			const role = await resolveGuildRole(args[0], msg.guild, false);
