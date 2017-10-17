@@ -130,7 +130,7 @@ const CMD_GUILDS_MEMBERS = `${BASE_PREFIX} members`;
 const DEFAULT_ROLE_PREFIX = `!`;
 
 function isServerAdmin(member: GuildMember) {
-	return member.hasPermission(["MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"], undefined, false, true);
+	return member.permissions.has(["MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"], true);
 }
 
 function rightsCheck(member: GuildMember, row?: IGuildRow, noAdmins = false) {

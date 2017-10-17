@@ -164,7 +164,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	isAdmin(member: GuildMember) {
-		return member.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"], true, true, true);
+		return member.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"], true);
 	}
 
 	async guildSwitch(msg: Message) {

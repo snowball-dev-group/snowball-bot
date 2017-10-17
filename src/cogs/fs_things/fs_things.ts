@@ -103,7 +103,7 @@ class FanServerThings extends Plugin implements IModule {
 	}
 
 	async nickCheck(member: GuildMember, oldMember?: GuildMember) {
-		if(member.hasPermission(["ADMINISTRATOR"]) || member.hasPermission(["MANAGE_MESSAGES", "BAN_MEMBERS", "KICK_MEMBERS"])) {
+		if(member.permissions.has(["ADMINISTRATOR"]) || member.permissions.has(["MANAGE_MESSAGES", "BAN_MEMBERS", "KICK_MEMBERS"])) {
 			// admin / moderator
 			return;
 		}

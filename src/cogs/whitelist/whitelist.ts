@@ -74,7 +74,7 @@ function isBotAdmin(msg: Message) {
 }
 
 function isServerAdmin(msg: Message) {
-	return msg.channel.type === "text" && (msg.member.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === $botConfig.botOwner);
+	return msg.channel.type === "text" && (msg.member.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === $botConfig.botOwner);
 }
 
 @command(Category.Helpful, "sb_pstatus", "loc:WHITELIST_META_PSTATUS", undefined, isServerAdmin)
@@ -342,7 +342,7 @@ export class Whitelist extends Plugin implements IModule {
 	}
 
 	isAdmin(m: GuildMember) {
-		return m.hasPermission(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || m.id === $botConfig.botOwner;
+		return m.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || m.id === $botConfig.botOwner;
 	}
 
 	async onMessage(msg: Message) {

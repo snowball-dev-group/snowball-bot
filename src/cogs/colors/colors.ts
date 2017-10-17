@@ -27,7 +27,7 @@ interface IColorfulGuildInfo {
 }
 
 function checkPerms(member: GuildMember) {
-	return member.hasPermission(["MANAGE_ROLES", "MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"]);
+	return member.permissions.has(["MANAGE_ROLES", "MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"]);
 }
 
 function isChat(msg: Message) {
