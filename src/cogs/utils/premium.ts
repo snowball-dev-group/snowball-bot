@@ -124,12 +124,12 @@ export async function getPremium(person: GuildMember | User, internalCallSign?: 
 			// we can assume, that user doesn't has premium
 			// so we caching this for next uses
 			cache[person.id] = null;
-		}
 
-		return {
-			source: "db",
-			result: undefined
-		};
+			return {
+				source: "db",
+				result: undefined
+			};
+		}
 	}
 
 	if(!premiumRow) {
