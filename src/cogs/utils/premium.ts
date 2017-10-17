@@ -1,6 +1,7 @@
 import { getDB, createTableBySchema } from "./db";
 import { User, GuildMember } from "discord.js";
 import { getLogger } from "./utils";
+import { IHashMap } from "../../types/Interfaces";
 
 const PREMIUM_TABLE = "premiums";
 const LOG = getLogger("Premium");
@@ -10,7 +11,7 @@ let db = getDB(),
 	complete = false,
 	retry = true;
 
-let cache = new Map<string, IPremiumRow | "nope">();
+const cache:IHashMap<IPremiumRow|null> = {};
 
 export interface IPremiumRow {
 	id: string;
@@ -81,7 +82,7 @@ export async function deletePremium(person: GuildMember | User): Promise<boolean
 
 	LOG("info", logPrefix, "Checking current premium");
 
-	let currentPremium = await checkPremium(person, INTERNALCALLSIGN);
+	let currentPremium = (await checkPremium(person, INTERNALCALLSIGN));
 
 	if(!currentPremium) {
 		let str = "Nothing to delete";
@@ -93,7 +94,7 @@ export async function deletePremium(person: GuildMember | User): Promise<boolean
 
 	try {
 		await db(PREMIUM_TABLE).where(toRaw(currentPremium)).delete();
-		cache.set(person.id, "nope");
+		cache[person.id] = null;
 	} catch(err) {
 		LOG("err", logPrefix, "DB calling failed", err);
 		throw err;
@@ -102,37 +103,63 @@ export async function deletePremium(person: GuildMember | User): Promise<boolean
 	return true;
 }
 
-export async function checkPremium(person: GuildMember | User, internalCallSign?: string): Promise<IPremiumRow | undefined> {
+export async function getPremium(person: GuildMember | User, internalCallSign?: string): Promise<{ result: IPremiumRow|undefined, source: "db" | "cache" }> {
 	if(!(await init())) { throw new Error("Initialization failed"); }
 
-	let cached = cache.get(person.id);
+	const cached = cache[person.id];
 	let premiumRow: IPremiumRawRow | undefined = undefined;
-	if(cached !== "nope" && cached !== undefined) {
+	let fetchedFromDB = false;
+
+	if(cached !== null && cached !== undefined) {
+		// was cached
 		premiumRow = toRaw(cached);
-	} else {
+	} else if(cached === undefined) {
+		// wasn't cached, so fetching from db
 		premiumRow = await db(PREMIUM_TABLE).where({
 			"id": person.id
 		}).first() as IPremiumRawRow;
+
+		if(!premiumRow) {
+			// at this moment if premium wasn't returned
+			// we can assume, that user doesn't has premium
+			// so we caching this for next uses
+			cache[person.id] = null;
+		}
+
+		return {
+			source: "db",
+			result: undefined
+		};
 	}
 
-	if(!premiumRow) { return; }
-	else if(premiumRow) {
-		if(internalCallSign && internalCallSign !== INTERNALCALLSIGN) {
-			LOG("err", "Security issue", `#checkPremium(${person.id})`, ":: trying call with sign", internalCallSign);
-			throw new EvalError("You cannot call this function with `internalCallSign`");
-		} else if(!internalCallSign) {
-			if(premiumRow.due_to < Date.now()) {
-				await deletePremium(person);
-				return;
-			}
+	if(!premiumRow) {
+		return {
+			source: fetchedFromDB ? "db" : "cache",
+			result: undefined
+		};
+	}
+
+	if(internalCallSign && internalCallSign !== INTERNALCALLSIGN) {
+		LOG("err", "Security issue", `#checkPremium(${person.id})`, ":: trying call with sign", internalCallSign);
+		throw new EvalError("You cannot call this function with `internalCallSign`");
+	} else if(!internalCallSign) {
+		if(premiumRow.due_to < Date.now()) {
+			await deletePremium(person);
+			return {
+				result: undefined,
+				source: "db"
+			};
 		}
 	}
 
-	let standard = toStandard(premiumRow);
+	return {
+		source: "db",
+		result: cache[person.id] = toStandard(premiumRow)
+	};
+}
 
-	cache.set(person.id, standard);
-
-	return standard;
+export async function checkPremium(person: GuildMember | User, internalCallSign?: string): Promise<IPremiumRow | undefined> {
+	return (await getPremium(person, internalCallSign)).result;
 }
 
 function toStandard(row: IPremiumRawRow): IPremiumRow {
@@ -176,20 +203,20 @@ export async function givePremium(person: GuildMember | User, dueTo: Date, overr
 		LOG("info", logPrefix, "Calculation of difference done");
 		if(diff < 0) {
 			LOG("err", logPrefix, "Seems override isn't present, but dueTo date is lower than current, error found");
-			let err = new Error("Can't renew premium, use override");
+			const err = new Error("Can't renew premium, use override");
 			err.name = "ERR_PREMIUM_DIFFLOW";
 			throw err;
 		}
 		let nDate = currentPremium.due_to.getTime() + diff;
 		LOG("info", logPrefix, "Adding new premium subscription");
 		try {
-			let raw: IPremiumRawRow = {
+			const raw: IPremiumRawRow = {
 				id: person.id,
 				subscribed_at: Date.now(),
 				due_to: nDate
 			};
 			await db(PREMIUM_TABLE).where(toRaw(currentPremium)).update(raw);
-			cache.set(person.id, toStandard(raw));
+			cache[person.id] = toStandard(raw);
 		} catch(err) {
 			LOG("err", logPrefix, "Updating failed", err);
 			throw err;
@@ -198,13 +225,13 @@ export async function givePremium(person: GuildMember | User, dueTo: Date, overr
 	}
 
 	try {
-		let raw: IPremiumRawRow = {
+		const raw: IPremiumRawRow = {
 			id: person.id,
 			subscribed_at: Date.now(),
 			due_to: dueTo.getTime()
 		};
 		await db(PREMIUM_TABLE).insert(raw);
-		cache.set(person.id, toStandard(raw));
+		cache[person.id] = toStandard(raw);
 	} catch(err) {
 		LOG("err", logPrefix, "Inserting failed", err);
 		throw err;
