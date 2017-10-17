@@ -173,8 +173,8 @@ export class ModuleBase<T> extends EventEmitter {
 				}
 				this.base = undefined;
 				this.state = ModuleLoadState.Destroyed;
-				this.emit("unloaded");
 				this.emit("destroyed");
+				this.emit("unloaded");
 			} catch(err) {
 				this.emit("error", {
 					state: "unload#destoy",
@@ -299,7 +299,20 @@ export class ModuleLoader {
 			throw err;
 		}
 
-		const moduleKeeper = new ModuleBase(moduleInfo);
+		const moduleKeeper = new ModuleBase<any>(moduleInfo);
+		const keeperLogPrefix = `ModuleKeeper(${moduleInfo.name}) =>`;
+
+		// handling events
+		moduleKeeper.on("error", (errInfo: any) => {
+			this.log("err", keeperLogPrefix, "ERROR:", errInfo);
+		}).on("loaded", (signature: string) => {
+			this.log("ok", keeperLogPrefix, "LOADED:", { signature });
+		}).on("unloaded", () => {
+			this.log("info", keeperLogPrefix, "UNLOADED");
+		}).on("destroyed", () => {
+			this.log("info", keeperLogPrefix, "DESTROYED");
+			this.log("warn", keeperLogPrefix, "WARNING: Destroying should be avoided, it's totally unsafe and can lead to memory leaks. Please contact module maintainer and ask to fix this problem.");
+		});
 
 		try {
 			if(clearRequireCache) {
@@ -327,7 +340,7 @@ export class ModuleLoader {
 				this.signaturesRegistry[moduleKeeper.signature] = moduleKeeper;
 			}
 		} catch(err) {
-			this.log("err", "#load: module", moduleKeeper.info.name, " rejected loading:", err);
+			this.log("err", "#load: module", moduleKeeper.info.name, " rejected loading");
 			throw err;
 		}
 
