@@ -2,7 +2,7 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, DiscordAPIError } from "discord.js";
 import { command, Category } from "../utils/help";
-import { init, checkPremium, givePremium, deletePremium, isPremium as isPremiumUser } from "../utils/premium";
+import { init, checkPremium, givePremium, deletePremium, getPremium } from "../utils/premium";
 import { getLogger, EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
 import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser } from "../utils/ez-i18n";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "../utils/guildPrefs";
@@ -20,7 +20,7 @@ function isAdm(msg: Message) {
 }
 
 function checkServerAdmin(msg: Message) {
-	return isChat(msg) && msg.member && msg.member.hasPermission(["ADMINISTRATOR", "MANAGE_CHANNELS", "MANAGE_GUILD", "MANAGE_ROLES"]);
+	return isChat(msg) && msg.member && msg.member.permissions.has(["ADMINISTRATOR", "MANAGE_CHANNELS", "MANAGE_GUILD", "MANAGE_ROLES"]);
 }
 
 function isChat(msg: Message) {
@@ -145,7 +145,7 @@ class PremiumControl extends Plugin implements IModule {
 			throw new Error("Unexpected behaviour, should have botMember set as GuildMember but got nothing");
 		}
 
-		if(!botMember.permissions.hasPermission("MANAGE_ROLES")) {
+		if(!botMember.permissions.has("MANAGE_ROLES")) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOPERMS")
 			});
@@ -642,10 +642,12 @@ class PremiumControl extends Plugin implements IModule {
 	// ================================
 
 	async performGuildSync(guild: Guild, noLog = false) {
-		if(!noLog) { this.log("info", `Started role sync on guild "${guild.name}"`); }
+		const logPrefix = `Sync (${guild.id} / ${guild.name}):`;
+		if(!noLog) { this.log("info", logPrefix, "Started role sync..."); }
+
 		const guildPremiumRole = await getGuildPref(guild, "premiumctl:role");
 		if(!guildPremiumRole) {
-			if(!noLog) { this.log("warn", "Guild doesn't has premium role"); }
+			if(!noLog) { this.log("warn", logPrefix, "No premium role, aborting"); }
 			return {
 				done: false,
 				err: "noPremiumRole"
@@ -653,31 +655,33 @@ class PremiumControl extends Plugin implements IModule {
 		}
 
 		let done = 0;
+		let reused = 0;
+		let fetched = 0;
 
 		const premiumRole = guild.roles.get(guildPremiumRole);
 
 		// checks
 
 		if(!premiumRole) {
-			this.log("warn", "Premium role was deleted on guild", guild.id);
+			this.log("warn", logPrefix, "Premium role was deleted on guild", guild.id);
 			await delGuildPref(guild, "premiumctl:role");
 			return;
 		}
 
-		if(!guild.me.permissions.hasPermission("MANAGE_ROLES")) {
-			this.log("warn", "Bot doesn't has permission to manage roles on guild", guild.id);
+		if(!guild.me.permissions.has("MANAGE_ROLES")) {
+			this.log("warn", logPrefix, "Bot doesn't has permission to manage roles on guild", guild.id);
 			await delGuildPref(guild, "premiumctl:role");
 			return;
 		}
 
 		if(premiumRole.managed) {
-			this.log("warn", "Premium role is managed, means controlled by integration", guild.id);
+			this.log("warn", logPrefix, "Premium role is managed, means controlled by integration", guild.id);
 			await delGuildPref(guild, "premiumctl:role");
 			return;
 		}
 
 		if(premiumRole.calculatedPosition >= guild.me.highestRole.calculatedPosition) {
-			this.log("warn", "Premium role is above bot's one, so bot can't give it");
+			this.log("warn", logPrefix, "Premium role is above bot's one, so bot can't give it");
 			await delGuildPref(guild, "premiumctl:role");
 			return;
 		}
@@ -691,11 +695,15 @@ class PremiumControl extends Plugin implements IModule {
 				continue;
 			}
 
-			const isPremium = await isPremiumUser(member);
-			if(isPremium && !member.roles.has(guildPremiumRole)) {
+			const premiumResponse = await getPremium(member);
+
+			// counting
+			if(premiumResponse.source === "db") { fetched++; } else { reused++; }
+
+			if(!!premiumResponse.result && !member.roles.has(guildPremiumRole)) {
 				try {
+					if(!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has no premium role, adding...`); }
 					await member.addRole(premiumRole);
-					done++;
 				} catch(err) {
 					if(err instanceof DiscordAPIError) {
 						let breakSync = false;
@@ -709,14 +717,16 @@ class PremiumControl extends Plugin implements IModule {
 
 						if(breakSync) { break; }
 					}
-					this.log("err", `Failed to assign premium role to member "${member.displayName}"...`);
+					this.log("err", logPrefix, `Failed to assign premium role to member "${member.displayName}"...`);
 				}
-			} else if(!isPremium && member.roles.has(guildPremiumRole)) {
+				done++;
+			} else if(!premiumResponse.result && member.roles.has(guildPremiumRole)) {
 				try {
+					if(!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has premium role without premium, removing...`); }
 					await member.removeRole(premiumRole);
 					done++;
 				} catch(err) {
-					this.log("err", `Failed to unassign premium role from member "${member.displayName}"...`);
+					this.log("err", logPrefix, `Failed to unassign premium role from member "${member.displayName}"...`);
 				}
 			} else {
 				done++;
@@ -725,14 +735,14 @@ class PremiumControl extends Plugin implements IModule {
 
 		let donePerc = (done / guild.members.size) * 100;
 		if(donePerc < 50) {
-			if(!noLog) { this.log("warn", "Errors due syncing for more than 50% members of guild"); }
+			if(!noLog) { this.log("warn", logPrefix, "Errors due syncing for more than 50% members of guild"); }
 			return {
 				done: false,
 				err: "moreThan50PercFailed"
 			};
 		}
 
-		if(!noLog) { this.log("ok", "Sync complete without errors"); }
+		if(!noLog) { this.log("ok", logPrefix, `Sync complete without errors: ${fetched} fetched, ${reused} reused`); }
 		return {
 			done: true,
 			err: undefined
@@ -741,7 +751,12 @@ class PremiumControl extends Plugin implements IModule {
 
 	async performGuildsSync(noLog = false) {
 		if(!noLog) { this.log("info", "Performing role sync in guilds..."); }
-		for(const guild of $discordBot.guilds.values()) {
+
+		const guilds = Array.from($discordBot.guilds.values()).sort((g1, g2) => {
+			return g1.memberCount - g2.memberCount;
+		});
+
+		for(const guild of guilds) {
 			try {
 				await this.performGuildSync(guild, noLog);
 			} catch(err) {
