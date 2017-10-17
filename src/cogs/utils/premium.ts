@@ -108,12 +108,13 @@ export async function getPremium(person: GuildMember | User, internalCallSign?: 
 
 	const cached = cache[person.id];
 	let premiumRow: IPremiumRawRow | undefined = undefined;
-	let fetchedFromDB = false;
+	let source:"db"|"cache" = "cache";
 
 	if(cached !== null && cached !== undefined) {
 		// was cached
 		premiumRow = toRaw(cached);
 	} else if(cached === undefined) {
+		source = "db";
 		// wasn't cached, so fetching from db
 		premiumRow = await db(PREMIUM_TABLE).where({
 			"id": person.id
@@ -126,16 +127,16 @@ export async function getPremium(person: GuildMember | User, internalCallSign?: 
 			cache[person.id] = null;
 
 			return {
-				source: "db",
-				result: undefined
+				result: undefined,
+				source
 			};
 		}
 	}
 
 	if(!premiumRow) {
 		return {
-			source: fetchedFromDB ? "db" : "cache",
-			result: undefined
+			result: undefined,
+			source
 		};
 	}
 
@@ -147,14 +148,14 @@ export async function getPremium(person: GuildMember | User, internalCallSign?: 
 			await deletePremium(person);
 			return {
 				result: undefined,
-				source: "db"
+				source
 			};
 		}
 	}
 
 	return {
-		source: "db",
-		result: cache[person.id] = toStandard(premiumRow)
+		result: cache[person.id] = toStandard(premiumRow),
+		source
 	};
 }
 
