@@ -83,7 +83,7 @@ interface INotification {
 const LOCALIZED = (str: string) => `STREAMING_${str.toUpperCase()}`;
 
 function rightsCheck(member: GuildMember) {
-	return member.hasPermission(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.hasPermission(["ADMINISTRATOR"]) || member.id === $botConfig.botOwner;
+	return member.permissions.has(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.permissions.has(["ADMINISTRATOR"]) || member.id === $botConfig.botOwner;
 }
 
 function helpCheck(msg: Message) {
