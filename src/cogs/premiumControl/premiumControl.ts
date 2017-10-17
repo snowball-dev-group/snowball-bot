@@ -154,7 +154,12 @@ class PremiumControl extends Plugin implements IModule {
 
 		if(args.length === 0) {
 			msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_SETROLE_DESC")
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					key: "PREMIUMCTL_SETROLE_DESC",
+					formatOptions: {
+						prefix: PREMIUMCTRL_PREFIX
+					}
+				})
 			});
 			return;
 		}
