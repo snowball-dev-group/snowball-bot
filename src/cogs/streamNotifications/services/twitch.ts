@@ -209,8 +209,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
-		let stream = streamStatus.payload as ITwitchStream;
+		const stream = streamStatus.payload as ITwitchStream;
 		if(!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
+		const gameName = stream.game ? stream.game : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
 		return {
 			footer: {
 				icon_url: TWITCH_ICON,
@@ -240,9 +241,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				)
 			},
 			fields: [{
-				inline: true,
+				inline: gameName.length < 25,
 				name: $localizer.getString(lang, "STREAMING_GAME_NAME"),
-				value: stream.game ? stream.game : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
+				value: gameName
 			}, {
 				inline: true,
 				name: $localizer.getString(lang, "STREAMING_MATURE_NAME"),

@@ -202,10 +202,11 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-		let cache = stream.payload as ICacheItem;
+		const cache = stream.payload as ICacheItem;
 		if(!cache) {
 			throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure: payload not found");
 		}
+		const gameName = cache.channel.type ? cache.channel.type.name : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
 		return {
 			footer: {
 				icon_url: MIXER_ICON,
@@ -234,9 +235,9 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 				)
 			},
 			fields: [{
-				inline: true,
+				inline: gameName.length < 25,
 				name: $localizer.getString(lang, "STREAMING_GAME_NAME"),
-				value: cache.channel.type ? cache.channel.type.name : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN")
+				value: gameName
 			}, {
 				inline: true,
 				name: $localizer.getString(lang, "STREAMING_MATURE_NAME"),
