@@ -42,12 +42,22 @@ interface IArgumentsMap {
 	[argName: string]: IArgumentInfo;
 }
 
+function categoryLocalizedName(category: string) {
+	return `HELP_CATEGORY_${category.toUpperCase()}`;
+}
+
 export function addCommand(category: string, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
 	const categoriesMap = init();
 
 	let categoryMap = categoriesMap[category];
 	if(!categoryMap) {
 		categoryMap = categoriesMap[category] = {};
+	}
+
+	try {
+		$localizer.getString($localizer.sourceLanguage, categoryLocalizedName(category));
+	} catch (err) {
+		throw new Error(`Could not find localized name for the category "${category}"`);
 	}
 
 	categoryMap[command] = {
@@ -71,9 +81,7 @@ export async function generateHelpContent(msg: Message) {
 
 	for(let category in categories) {
 		let commands = categories[category];
-		if(!commands) {
-			continue;
-		}
+		if(!commands) { continue; }
 
 		let str = "";
 
@@ -149,8 +157,9 @@ export async function generateHelpContent(msg: Message) {
 				}
 			}
 		}
+
 		if(str.trim().length > 0) {
-			let catName = await localizeForUser(user, `HELP_CATEGORY_${category}`.toUpperCase());
+			let catName = await localizeForUser(user, categoryLocalizedName(category));
 			rStr += `\n# ${catName}\n${str}`;
 		}
 	}
