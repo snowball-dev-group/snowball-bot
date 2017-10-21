@@ -10,7 +10,8 @@ export enum Category {
 	Colors,
 	Premium,
 	Guilds,
-	Language
+	Language,
+	VoiceRole
 }
 
 export interface IArgumentInfo {
