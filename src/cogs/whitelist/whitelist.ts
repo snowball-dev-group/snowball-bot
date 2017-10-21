@@ -11,6 +11,7 @@ import * as moment from "moment-timezone";
 import { createConfirmationMessage } from "../utils/interactive";
 
 const POSSIBLE_CHAT_ROOMS = ["admins", "admin-channel", "admin_channel", "admins-chat", "admins_chat", "admin", "mod-channel", "mods-channel", "mods", "mods-chat", "mod_chat", "chat", "general"];
+const HELP_CATEGORY = "WHITELIST";
 
 enum GUILD_STATE {
 	/**
@@ -77,8 +78,8 @@ function isServerAdmin(msg: Message) {
 	return msg.channel.type === "text" && (msg.member.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === $botConfig.botOwner);
 }
 
-@command("HELPFUL", "sb_pstatus", "loc:WHITELIST_META_PSTATUS", undefined, isServerAdmin)
-@command("HELPFUL", "whitelist", "loc:WHITELIST_META_WHITELIST", {
+@command(HELP_CATEGORY, "sb_pstatus", "loc:WHITELIST_META_PSTATUS", undefined, isServerAdmin)
+@command(HELP_CATEGORY, "whitelist", "loc:WHITELIST_META_WHITELIST", {
 	"loc:WHITELIST_META_WHITELIST_ARG0": {
 		optional: false,
 		description: "loc:WHITELIST_META_WHITELIST_ARG0_DESC",
