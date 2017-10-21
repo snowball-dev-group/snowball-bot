@@ -614,7 +614,7 @@
     "TATSUMAKIPROFILEPLUGIN_REP": "{rep, plural, none {нет репутации} one {# балл репутации} few {# балла репутации} other {# баллов репутации}}",
 	"VOICEROLE_META_SET": "Устанавливает голосовую роль на сервере",
 	"VOICEROLE_META_DELETE": "Убирает голосовую роль сервера",
-    "VOICEROLE_META_SET_ARG0": "роль",
+    "VOICEROLE_META_SET_ARG0": ", роль",
     "VOICEROLE_META_SET_ARG0_DESC": "роль для установки",
     "VOICEROLE_META_SPECIFICDELETE": "Убирает голосовую роль для определенного канала",
     "VOICEROLE_META_SPECIFICDELETE_ARG0": "голосовой канал",
