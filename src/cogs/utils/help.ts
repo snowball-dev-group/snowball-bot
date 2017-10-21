@@ -48,7 +48,6 @@ export function addCommand(category: string, command: string, description: strin
 	let categoryMap = categoriesMap[category];
 	if(!categoryMap) {
 		categoryMap = categoriesMap[category] = {};
-		if(!categoryMap) { return; } // category not found
 	}
 
 	categoryMap[command] = {
