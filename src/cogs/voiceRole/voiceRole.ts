@@ -8,11 +8,19 @@ import { isVerified, isInitDone as isVerifiedEnabled } from "../utils/verified";
 import * as knex from "knex";
 import { replaceAll } from "../utils/text";
 import { messageToExtra } from "../utils/failToDetail";
-// import { command as docCmd , Category } from "./utils/help";
+import { command, Category as CommandCategory } from "../utils/help";
+import { createConfirmationMessage } from "../utils/interactive";
 
 const TABLE_NAME = "voice_role";
 const SPECIFIC_TABLE_NAME = "specificvoicerole";
 const PREFIX = "!voiceRole";
+const MANAGE_PERMS = (member: GuildMember) => (member.permissions.has(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"]) || member.permissions.has("ADMINISTRATOR"));
+const LOCALIZED = (str: string) => `VOICEROLE_${str.toUpperCase()}`;
+
+const HELP_CHECKS = {
+	default: (msg: Message) => msg.channel.type === "text" && MANAGE_PERMS(msg.member)
+};
+const HELP_CATEGORY = CommandCategory.Utilites;
 
 interface IGuildRow {
 	/**
@@ -33,6 +41,29 @@ interface ISpecificRoleRow {
 	voice_role: string;
 }
 
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} set`, `loc:${LOCALIZED("META_SET")}`, {
+	[`loc:${LOCALIZED("META_SET_ARG0")}`]: {
+		description: `loc:${LOCALIZED("META_SET_ARG0_DESC")}`,
+		optional: false
+	}
+}, HELP_CHECKS.default)
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} delete`, `loc:${LOCALIZED("META_DELETE")}`, undefined, HELP_CHECKS.default)
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} specific set`, `loc:${LOCALIZED("META_SPECIFICSET")}`, {
+	[`loc:${LOCALIZED("META_SPECIFICSET_ARG0")}`]: {
+		description: `loc:${LOCALIZED("META_SPECIFICSET_ARG0_DESC")}`,
+		optional: false
+	},
+	[`loc:${LOCALIZED("META_SET_ARG0")}`]: {
+		description: `loc:${LOCALIZED("META_SET_ARG0_DESC")}`,
+		optional: false
+	}
+}, HELP_CHECKS.default)
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} speficic delete`, `loc:${LOCALIZED("META_SPECIFICDELETE")}`, {
+	[`loc:${LOCALIZED("META_SPECIFICDELETE_ARG0")}`]: {
+		description: `loc:${LOCALIZED("META_SPECIFICDELETE_ARG0_DESC")}`,
+		optional: false
+	}
+}, HELP_CHECKS.default)
 class VoiceRole extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.features.voicerole";
@@ -77,7 +108,7 @@ class VoiceRole extends Plugin implements IModule {
 		// stage three: create table if not exists
 		if(!dbStatus) {
 			this.log("warn", "Table in DB is not created. Going to create it right now");
-			let creationStatus = await this.createTable();
+			const creationStatus = await this.createTable();
 			if(!creationStatus) {
 				this.log("err", "Table creation failed.");
 				return;
@@ -98,7 +129,7 @@ class VoiceRole extends Plugin implements IModule {
 		// stage five: creating specific table if not exists
 		if(!specificDBStatus) {
 			this.log("warn", "Specific table not created in DB. Going to create it right meow");
-			let creationStatus = await this.createSpecificTable();
+			const creationStatus = await this.createSpecificTable();
 			if(!creationStatus) {
 				this.log("err", "Specific table creation failed.");
 				return;
@@ -190,16 +221,16 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async getGuildRow(guild: Guild) {
-		let element: null | IGuildRow = await this.searchGuildRow(guild);
+		const element: null | IGuildRow = await this.searchGuildRow(guild);
 
-		if(!element) {
-			await this.db(TABLE_NAME).insert({
-				guild_id: guild.id,
-				voice_role: "-"
-			});
-		} else {
+		if(element) {
 			return element;
 		}
+
+		await this.db(TABLE_NAME).insert({
+			guild_id: guild.id,
+			voice_role: "-"
+		});
 
 		return this.searchGuildRow(guild);
 	}
@@ -209,13 +240,13 @@ class VoiceRole extends Plugin implements IModule {
 			guild_id: guild.id
 		})) || []) as ISpecificRoleRow[];
 		const map = new Map<string, ISpecificRoleRow | ISpecificRoleRow[]>();
-		for(const r of rows) {
+		for(const row of rows) {
 			if(method === "channel") {
-				map.set(r.channel_id, r);
+				map.set(row.channel_id, row);
 			} else {
-				const current = map.get(r.voice_role);
+				const current = map.get(row.voice_role);
 				if(current) {
-					map.set(r.voice_role, ([] as ISpecificRoleRow[]).concat(current).concat(r));
+					map.set(row.voice_role, ([] as ISpecificRoleRow[]).concat(current).concat(row));
 				}
 			}
 		}
@@ -229,14 +260,14 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async updateSpecificRole(row: ISpecificRoleRow) {
-		let current = await this.getSpecificRow(row.channel_id);
+		const current = await this.getSpecificRow(row.channel_id);
 		if(!current) {
 			await this.db(SPECIFIC_TABLE_NAME).insert(row);
-		} else {
-			await this.db(SPECIFIC_TABLE_NAME).where({
-				channel_id: row.channel_id
-			}).update(row);
+			return;
 		}
+		await this.db(SPECIFIC_TABLE_NAME).where({
+			channel_id: row.channel_id
+		}).update(row);
 	}
 
 	async deleteSpecificRow(row: ISpecificRoleRow) {
@@ -251,7 +282,7 @@ class VoiceRole extends Plugin implements IModule {
 
 	async VCR_Cleanup(guild: Guild, role?: Role) {
 		if(!role) {
-			let row = await this.getGuildRow(guild);
+			const row = await this.getGuildRow(guild);
 
 			if(row && row.voice_role !== "-") {
 				if(!guild.roles.has(row.voice_role)) {
@@ -263,30 +294,30 @@ class VoiceRole extends Plugin implements IModule {
 		}
 
 		let allSpecificRows = await this.getAllSpecificRowsOfGuild(guild, "role");
-		let changed = false; // to check if something changed
+		let changes = false; // to check if something changed
 
 		// slight optimization
-		let k = async (s: ISpecificRoleRow) => {
+		const checkRow = async (s: ISpecificRoleRow) => {
 			if(!guild.channels.has(s.channel_id)) {
-				changed = true;
+				changes = true;
 				await this.deleteSpecificRow(s);
 			} else {
 				if(!guild.roles.has(s.voice_role)) {
-					changed = true;
+					changes = true;
 					await this.deleteSpecificRow(s);
 				}
 			}
 		};
-		for(const specific of allSpecificRows.values()) {
 
+		for(const specific of allSpecificRows.values()) {
 			if(specific instanceof Array) {
-				for(const s of specific) { await k(s); }
+				for(const s of specific) { await checkRow(s); }
 			} else {
-				k(specific);
+				checkRow(specific);
 			}
 		}
 
-		if(changed) {
+		if(changes) {
 			// because we made a lot of changes before
 			allSpecificRows = await this.getAllSpecificRowsOfGuild(guild, "role");
 		}
@@ -361,9 +392,9 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async VCR_Give(member: GuildMember) {
-		let row = await this.getGuildRow(member.guild);
-		let anothaRow = member.voiceChannel ? await this.getSpecificRow(member.voiceChannel) : undefined;
-		if(!row && !anothaRow) { return; }
+		const row = await this.getGuildRow(member.guild);
+		const specificRow = member.voiceChannel ? await this.getSpecificRow(member.voiceChannel) : undefined;
+		if(!row && !specificRow) { return; }
 
 		if(row && member.voiceChannel) {
 			// we have row & user in voice channel
@@ -386,26 +417,26 @@ class VoiceRole extends Plugin implements IModule {
 			}
 		}
 
-		if(anothaRow) {
+		if(specificRow) {
 			// we found specific role for this voice channel
-			if(!member.guild.roles.has(anothaRow.voice_role)) {
+			if(!member.guild.roles.has(specificRow.voice_role)) {
 				// but sadly bad admin removed it, can remove row
-				await this.deleteSpecificRow(anothaRow);
+				await this.deleteSpecificRow(specificRow);
 			} else {
 				// dear, do you have this specific role already?
-				if(!member.roles.has(anothaRow.voice_role)) {
+				if(!member.roles.has(specificRow.voice_role)) {
 					// nope, take it
-					await member.addRole(anothaRow.voice_role);
+					await member.addRole(specificRow.voice_role);
 				}
 			}
 		}
 	}
 
 	async VCR_Remove(member: GuildMember, newMember?: GuildMember) {
-		let row = await this.getGuildRow(member.guild);
-		let anothaRow = member.voiceChannel ? await this.getSpecificRow(member.voiceChannel) : undefined;
+		const row = await this.getGuildRow(member.guild);
+		const specificRow = member.voiceChannel ? await this.getSpecificRow(member.voiceChannel) : undefined;
 
-		if(!row && !anothaRow) { return; }
+		if(!row && !specificRow) { return; }
 
 		if(!newMember || !newMember.voiceChannel) {
 			// checking IF user not in voice channel anymore
@@ -428,105 +459,49 @@ class VoiceRole extends Plugin implements IModule {
 			}
 		}
 
-		if(anothaRow && member.voiceChannel) {
+		if(specificRow && member.voiceChannel) {
 			// we had specific role for old channel
 			// time to test if everything is OK
-			if(!member.guild.roles.has(anothaRow.voice_role)) {
+			if(!member.guild.roles.has(specificRow.voice_role)) {
 				// sadly, but this means not everything is OK
 				// we have no specific role no more on this guild
 				// time to delete specific row
-				await this.deleteSpecificRow(anothaRow);
+				await this.deleteSpecificRow(specificRow);
 			} else {
 				// there we got good answer means everything is OK
 				// we can remove old specific role
-				if(member.roles.has(anothaRow.voice_role)) {
-					await member.removeRole(anothaRow.voice_role);
+				if(member.roles.has(specificRow.voice_role)) {
+					await member.removeRole(specificRow.voice_role);
 				}
 			}
 		}
 	}
 
 	async voiceRoleSetting(msg: Message) {
-		let hasPermissionToChange = msg.member.hasPermission(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"]) || msg.member.hasPermission("ADMINISTRATOR");
+		const hasPermissionToChange = MANAGE_PERMS(msg.member);
 
 		if(!hasPermissionToChange) {
-			msg.channel.send(await localizeForUser(msg.member, "VOICEROLE_NOPERMS"));
+			msg.channel.send(await localizeForUser(msg.member, LOCALIZED("NOPERMS")));
 			return;
 		}
 
-		let cmd = msg.content.slice(PREFIX.length + 1);
-		if(cmd === "" || cmd === "help") {
+		const subCommand = msg.content.slice(PREFIX.length + 1);
+		if(subCommand === "" || subCommand === "help") {
 			msg.channel.send((
-				await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_TITLE")) +
-				"\n" + (await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP")) +
-				"\n" + (await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_SPECIFIC")
+				await localizeForUser(msg.member,
+					LOCALIZED("SETTING_HELP_TITLE"))) +
+				"\n" + (await localizeForUser(msg.member, LOCALIZED("SETTING_HELP"))) +
+				"\n" + (await localizeForUser(msg.member, LOCALIZED("SETTING_HELP_SPECIFIC"))
 				));
 			return;
 		}
 
-		if(cmd.startsWith("set ")) {
+		if(subCommand.startsWith("set ")) {
 			// #SetGuildVoiceRole
-			let resolvableRole = resolveGuildRole(cmd.slice("set ".length), msg.guild);
-			if(!resolvableRole) {
+			const resolvedRole = resolveGuildRole(subCommand.slice("set ".length), msg.guild, false);
+			if(!resolvedRole) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
-				});
-				return;
-			}
-
-			let row = await this.getGuildRow(msg.guild);
-
-			if(!row) {
-				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND")
-				});
-				return;
-			}
-
-			if(row.voice_role !== "-") {
-				for(const member of msg.guild.members.values()) {
-					if(!row) { continue; }
-					if(member.roles.has(row.voice_role)) {
-						await member.removeRole(row.voice_role);
-					}
-				}
-			}
-
-			row.voice_role = resolvableRole.id;
-
-			try {
-				await this.updateGuildRow(row);
-				await this.VCR_Cleanup(msg.guild);
-				msg.react("👍");
-			} catch(err) {
-				$snowball.captureException(err, {
-					level: "warning",
-					extra: { row, ...messageToExtra(msg) }
-				});
-				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_SAVING")
-				});
-			}
-
-			return;
-		} else if(cmd === "set") {
-			// #HelpSetGuildVoiceRole
-
-			msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-					custom: true,
-					string: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_SET"), "\n", "\n\t")
-				})
-			});
-			return;
-		}
-
-		if(cmd.startsWith("delete")) {
-			// #DeleteGuildVoiceRole
-			let resolvableRole = resolveGuildRole(cmd.slice("delete ".length), msg.guild);
-			if(!resolvableRole) {
-				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLENOTFOUND"))
 				});
 				return;
 			}
@@ -535,108 +510,295 @@ class VoiceRole extends Plugin implements IModule {
 
 			if(!row) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBGUILDNOTFOUND"))
+				});
+				return;
+			}
+
+			const cleanupFault = async (err) => {
+				$snowball.captureException(err, {
+					extra: {
+						row, newRole: resolvedRole,
+						...messageToExtra(msg)
+					}
+				});
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLECLEANUP"))
+				});
+			};
+
+			const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
+				key: LOCALIZED("SETTING_CONFIRMATION_SET"),
+				formatOptions: {
+					role: replaceAll(resolvedRole.name, "`", "'")
+				}
+			}), msg);
+
+			if(!confirmation) {
+				await msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CANCELED"))
 				});
 				return;
 			}
 
 			if(row.voice_role !== "-") {
-				for(const member of msg.guild.members.values()) {
-					if(member.roles.has(row.voice_role)) {
-						await member.removeRole(row.voice_role);
+				try {
+					for(const member of msg.guild.members.values()) {
+						if(!row) { continue; }
+						if(member.roles.has(row.voice_role)) {
+							await member.removeRole(row.voice_role);
+						}
 					}
+				} catch(err) {
+					return await cleanupFault(err);
 				}
 			}
 
-			row.voice_role = "-";
+			row.voice_role = resolvedRole.id;
 
 			try {
 				await this.updateGuildRow(row);
-				await this.VCR_Cleanup(msg.guild);
-				msg.react("👍");
 			} catch(err) {
 				$snowball.captureException(err, {
-					level: "warning",
-					extra: { ...messageToExtra(msg), row, voiceRoleDeleted: true }
+					extra: { row, newRole: resolvedRole, ...messageToExtra(msg) }
 				});
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_SAVING"))
 				});
+				return;
 			}
 
+			try {
+				await this.VCR_Cleanup(msg.guild);
+			} catch(err) {
+				return await cleanupFault(err);
+			}
+
+			msg.react("👍");
+
 			return;
-		} else if(cmd === "delete") {
-			// #HelpDeleteGuildVoiceRole
+		} else if(subCommand === "set") {
+			// #HelpSetGuildVoiceRole
 
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					custom: true,
-					string: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_DELETE"), "\n", "\n\t")
+					string: replaceAll(await localizeForUser(msg.member, LOCALIZED("SETTING_HELP_SET")), "\n", "\n\t")
 				})
 			});
 			return;
 		}
 
-		if(cmd.startsWith("specific set")) {
-			let args = cmd.slice("specific set".length).split(",").map(arg => arg.trim());
+		if(subCommand.startsWith("delete")) {
+			const row = await this.getGuildRow(msg.guild);
+
+			if(!row) {
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBGUILDNOTFOUND"))
+				});
+				return;
+			}
+
+			const cleanupFault = async (err) => {
+				$snowball.captureException(err, {
+					extra: {
+						row,
+						...messageToExtra(msg)
+					}
+				});
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLECLEANUP"))
+				});
+			};
+
+			if(row.voice_role === "-") {
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, LOCALIZED("SETTING_FAULT_VRNOTSET"))
+				});
+				return;
+			}
+
+			const updateRow = async () => {
+				try {
+					await this.updateGuildRow(row);
+				} catch(err) {
+					$snowball.captureException(err, {
+						extra: { ...messageToExtra(msg), row, voiceRoleDeleted: true }
+					});
+					msg.channel.send("", {
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+					});
+					return false;
+				}
+				return true;
+			};
+
+			const resolvedRole = msg.guild.roles.get(row.voice_role);
+
+			if(!resolvedRole) {
+				row.voice_role = "-";
+				if(await updateRow()) {
+					msg.channel.send("", {
+						embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("SETTING_FASTDELETE"))
+					});
+				}
+				return;
+			}
+
+			const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
+				key: LOCALIZED("SETTING_CONFIRMATION_DELETE"),
+				formatOptions: {
+					role: replaceAll(resolvedRole.name, "`", "'"),
+					notice: await localizeForUser(msg.member, LOCALIZED("SETTING_CONFIRMATIONS_NOTICE"))
+				}
+			}), msg);
+
+			if(!confirmation) {
+				await msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CANCELED"))
+				});
+				return;
+			}
+
+			try {
+				for(const member of msg.guild.members.values()) {
+					if(member.roles.has(row.voice_role)) {
+						await member.removeRole(row.voice_role);
+					}
+				}
+			} catch(err) {
+				return await cleanupFault(err);
+			}
+
+			row.voice_role = "-";
+
+			await updateRow();
+
+			try {
+				await this.VCR_Cleanup(msg.guild);
+			} catch(err) {
+				return await cleanupFault(err);
+			}
+
+			msg.react("👍");
+
+			return;
+		} else if(subCommand === "delete") {
+			// #HelpDeleteGuildVoiceRole
+
+			msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					custom: true,
+					string: replaceAll(await localizeForUser(msg.member, LOCALIZED("SETTING_HELP_DELETE")), "\n", "\n\t")
+				})
+			});
+			return;
+		}
+
+		if(subCommand.startsWith("specific set ")) {
+			const args = subCommand.slice("specific set".length).split(",").map(arg => arg.trim());
 			if(args.length > 2) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ARGERR")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ARGERR"))
 				});
 				return;
 			}
-			let resolvedChannel = resolveGuildChannel(args[0], msg.guild, false);
+
+			const resolvedChannel = resolveGuildChannel(args[0], msg.guild, false);
 			if(!resolvedChannel) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELERR")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CHANNELERR"))
 				});
 				return;
-			}
-			if(resolvedChannel.type !== "voice") {
+			} else if(resolvedChannel.type !== "voice") {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELTYPEERR")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CHANNELTYPEERR"))
 				});
 				return;
 			}
-			let resolvedRole = resolveGuildRole(args[1], msg.guild, false);
+
+			const resolvedRole = resolveGuildRole(args[1], msg.guild, false);
 			if(!resolvedRole) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLENOTFOUND"))
+				});
+				return;
+			}
+
+			const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
+				key: LOCALIZED("SETTING_SPECIFIC_CONFIRMATION"),
+				formatOptions: {
+					role: replaceAll(resolvedRole.name, "`", "'"),
+					voiceChannel: replaceAll(resolvedChannel.name, "`", "'")
+				}
+			}), msg);
+
+			if(!confirmation) {
+				await msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CANCELED"))
 				});
 				return;
 			}
 
 			const current = await this.getSpecificRow(resolvedChannel as VoiceChannel);
+
 			if(current) {
 				const oldRole = current.voice_role;
 				current.voice_role = resolvedRole.id;
+
 				const progMsg = (await msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
+					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, LOCALIZED("SETTING_SAVING"))
 				})) as Message;
-				try {
-					for(const member of msg.guild.members.values()) {
-						if(member.roles.has(oldRole)) {
-							member.removeRole(oldRole);
-						}
-					}
-					await this.updateSpecificRole(current);
-					await this.VCR_Cleanup(msg.guild);
-					progMsg.edit("", {
-						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SAVING_DONE")
-					});
-					msg.react("👍");
-				} catch(err) {
+
+				const cleanupFault = async (err) => {
 					$snowball.captureException(err, {
-						level: "warning",
 						extra: {
-							current, oldRole, newRole: resolvedRole.id,
+							current, oldRole, newRole: resolvedRole,
 							...messageToExtra(msg)
 						}
 					});
 					msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLECLEANUP"))
 					});
+				};
+
+				try {
+					for(const member of msg.guild.members.values()) {
+						if(member.roles.has(oldRole)) {
+							await member.removeRole(oldRole);
+						}
+					}
+				} catch(err) {
+					await cleanupFault(err);
+					return;
 				}
+
+				try {
+					await this.updateSpecificRole(current);
+				} catch(err) {
+					$snowball.captureException(err, {
+						extra: {
+							current, oldRole, newRole: resolvedRole,
+							...messageToExtra(msg)
+						}
+					});
+					msg.channel.send("", {
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+					});
+					return;
+				}
+
+				try {
+					await this.VCR_Cleanup(msg.guild);
+				} catch(err) {
+					return await cleanupFault(err);
+				}
+
+				progMsg.edit("", {
+					embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("SETTING_SAVING_DONE"))
+				});
+				msg.react("👍");
+
 				return;
 			}
 
@@ -647,55 +809,54 @@ class VoiceRole extends Plugin implements IModule {
 			};
 
 			const progMsg = (await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_SAVING")
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("SETTING_SAVING"))
 			})) as Message;
 			try {
 				await this.updateSpecificRole(newRow);
 				await this.VCR_Cleanup(msg.guild);
 			} catch(err) {
 				$snowball.captureException(err, {
-					level: "warning",
 					extra: {
 						current, new: newRow,
 						...messageToExtra(msg)
 					}
 				});
 				progMsg.edit("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
 				});
 			}
 
 			progMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SETTINGDONE")
+				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("SETTING_SETTINGDONE"))
 			});
 			msg.react("👍");
 
 			return;
-		} else if(cmd === "specific set") {
+		} else if(subCommand === "specific set") {
 			// #HelpSpecificSetGuildVoiceRole
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-					key: "VOICEROLE_SETTING_HELP_SPECIFIC_SET",
+					key: LOCALIZED("SETTING_HELP_SPECIFIC_SET"),
 					formatOptions: {
-						argInfo: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_ARGINFO_SPECIFIC"), "\n", "\n\t")
+						argInfo: replaceAll(await localizeForUser(msg.member, LOCALIZED("SETTING_ARGINFO_SPECIFIC")), "\n", "\n\t")
 					}
 				})
 			});
 			return;
 		}
 
-		if(cmd.startsWith("specific delete")) {
-			let resolvedChannel = resolveGuildChannel(msg.content.slice("specific delete".length), msg.guild);
+		if(subCommand.startsWith("specific delete ")) {
+			const resolvedChannel = resolveGuildChannel(subCommand.slice("specific delete ".length), msg.guild, false);
 			if(!resolvedChannel) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELERR")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CHANNELERR"))
 				});
 				return;
 			}
 
 			if(resolvedChannel.type !== "voice") {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELTYPEERR")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CHANNELTYPEERR"))
 				});
 				return;
 			}
@@ -704,49 +865,102 @@ class VoiceRole extends Plugin implements IModule {
 
 			if(!current) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_FAULT_NOSPECIFICROLE")
+					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("SETTING_FAULT_NOSPECIFICROLE"))
+				});
+				return;
+			}
+
+			const resolvedRole = msg.guild.roles.get(current.voice_role);
+			if(!resolvedRole) {
+				// removing faster!
+				try {
+					await this.deleteSpecificRow(current);
+				} catch(err) {
+					$snowball.captureException(err, {
+						extra: {
+							specificDeleted: false, current,
+							...messageToExtra(msg)
+						}
+					});
+					msg.channel.send("", {
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+					});
+					return;
+				}
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("SETTING_SPECIFIC_FASTDELETE"))
+				});
+				return;
+			}
+
+			const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
+				key: LOCALIZED("SETTING_SPECIFIC_DELETECONFIRMATION"),
+				formatOptions: {
+					role: replaceAll(resolvedRole.name, "`", "'"),
+					voiceChannel: replaceAll(resolvedChannel.name, "`", "'"),
+					notice: await localizeForUser(msg.member, LOCALIZED("SETTING_CONFIRMATIONS_NOTICE"))
+				}
+			}), msg);
+
+			if(!confirmation) {
+				await msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CANCELED"))
 				});
 				return;
 			}
 
 			const progMsg = (await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
+				embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, LOCALIZED("SETTING_SAVING"))
 			})) as Message;
+
 			try {
 				await this.deleteSpecificRow(current);
+			} catch(err) {
+				$snowball.captureException(err, {
+					extra: {
+						specificDeleted: false, current,
+						...messageToExtra(msg)
+					}
+				});
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+				});
+				return;
+			}
+
+			try {
 				for(const member of msg.guild.members.values()) {
 					if(member.roles.has(current.voice_role)) {
-						member.removeRole(current.voice_role);
+						await member.removeRole(current.voice_role);
 					}
 				}
 				await this.VCR_Cleanup(msg.guild);
 			} catch(err) {
 				$snowball.captureException(err, {
-					level: "warning",
 					extra: {
 						specificDeleted: true, current,
 						...messageToExtra(msg)
 					}
 				});
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLECLEANUP"))
 				});
 				return;
 			}
 
 			progMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SPEFIC_DELETED")
+				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("SETTING_SPEFIC_DELETED"))
 			});
 			msg.react("👍");
 
 			return;
-		} else if(cmd === "specific delete") {
+		} else if(subCommand === "specific delete") {
 			// #HelpSpecificDeleteGuildVoiceRole
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-					key: "VOICEROLE_SETTING_HELP_SPECIFIC_DELETE",
+					key: LOCALIZED("SETTING_HELP_SPECIFIC_DELETE"),
 					formatOptions: {
-						argInfo: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_ARGINFO_SPECIFIC"), "\n", "\n\t")
+						argInfo: replaceAll(await localizeForUser(msg.member, LOCALIZED("SETTING_ARGINFO_SPECIFIC")), "\n", "\n\t")
 					}
 				})
 			});
