@@ -4,7 +4,7 @@ import { join as pathJoin } from "path";
 import * as cluster from "cluster";
 
 const coreInfo = {
-	"version": "0.9.996-prerelease"
+	"version": "0.9.998-prerelease"
 };
 
 const SHARD_TIMEOUT = 30000; // ms

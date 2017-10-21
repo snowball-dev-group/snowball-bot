@@ -25,7 +25,7 @@
   "name": "snowballbot-discord",
   "displayName": "Discord Snowball bot",
   "author": "DaFri_Nochiterov",
-  "version": "0.0.1",
+  "version": "0.9.998",
   "main": "init.js",
   "devDependencies": {
     "@types/async": "^2.0.44",
