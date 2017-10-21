@@ -1,7 +1,7 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember } from "discord.js";
-import { command, Category } from "../utils/help";
+import { command } from "../utils/help";
 import { localizeForUser, getPrefsNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed, getUserLanguage } from "../utils/ez-i18n";
 import { startsOrEqual, slice } from "../utils/text";
 import { EmbedType, getLogger } from "../utils/utils";
@@ -15,9 +15,10 @@ const CMD = {
 	GUILDS_SWITCH: `${BASE_PREFIX} guild switch`,
 	GUILDS_ENFORCE: `${BASE_PREFIX} guild enforce`
 };
+const HELP_CATEGORY = "LANGUAGE";
 
-@command(Category.Language, slice(BASE_PREFIX, 1), "loc:LANGUAGE_META_DEFAULT")
-@command(Category.Language, slice(CMD.SWITCH, 1), "loc:LANGUAGE_META_SWITCH", {
+@command(HELP_CATEGORY, slice(BASE_PREFIX, 1), "loc:LANGUAGE_META_DEFAULT")
+@command(HELP_CATEGORY, slice(CMD.SWITCH, 1), "loc:LANGUAGE_META_SWITCH", {
 	"loc:LANGUAGE_META_SWITCH_ARG0": {
 		optional: false,
 		description: "loc:LANGUAGE_META_SWITCH_ARG0_DESC"
@@ -215,7 +216,6 @@ class SetLanguageCommand extends Plugin implements IModule {
 	async guildEnforce(msg: Message) {
 		if(msg.channel.type !== "text") {
 			msg.channel.send("", {
-				// LANGUAGE_GUILD_SWITCH_ONLYGUILDS => "Это работает только в гильдиях"
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
 			});
 			return;

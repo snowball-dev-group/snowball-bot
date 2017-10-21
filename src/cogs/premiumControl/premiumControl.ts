@@ -1,7 +1,7 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, DiscordAPIError } from "discord.js";
-import { command, Category } from "../utils/help";
+import { command } from "../utils/help";
 import { init, checkPremium, givePremium, deletePremium, getPremium } from "../utils/premium";
 import { getLogger, EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
 import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser } from "../utils/ez-i18n";
@@ -12,8 +12,8 @@ import * as moment from "moment-timezone";
 import { messageToExtra } from "../utils/failToDetail";
 
 const PREMIUMCTRL_PREFIX = `!premiumctl`;
-
 const whoCan = [$botConfig.botOwner];
+const HELP_CATEGORY = "PREMIUM";
 
 function isAdm(msg: Message) {
 	return isChat(msg) && whoCan.indexOf(msg.author.id) !== -1;
@@ -31,14 +31,14 @@ interface IPlgCfg {
 	whoCanGive: string[];
 }
 
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} checkout`, "loc:PREMIUMCTL_META_CHECKOUT", {
+@command(HELP_CATEGORY, `${PREMIUMCTRL_PREFIX.slice(1)} checkout`, "loc:PREMIUMCTL_META_CHECKOUT", {
 	"loc:PREMIUMCTL_META_MENTION": {
 		optional: true,
 		description: "loc:PREMIUMCTL_META_CHECKOUT_ARG0_DESC",
 		specialCheck: isAdm
 	}
 }, isChat)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} give`, "", {
+@command(HELP_CATEGORY, `${PREMIUMCTRL_PREFIX.slice(1)} give`, "", {
 	"loc:PREMIUMCTL_META_MENTION": {
 		optional: false,
 		description: "loc:PREMIUMCTL_META_GIVE_ARG0_DESC"
@@ -48,7 +48,7 @@ interface IPlgCfg {
 		description: "loc:PREMIUMCTL_META_GIVE_ARG1_DESC"
 	}
 }, isAdm)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} renew`, "loc:PREMIUMCTL_META_RENEW", {
+@command(HELP_CATEGORY, `${PREMIUMCTRL_PREFIX.slice(1)} renew`, "loc:PREMIUMCTL_META_RENEW", {
 	"loc:PREMIUMCTL_META_MENTION": {
 		optional: false,
 		description: "loc:PREMIUMCTL_META_RENEW_ARG0_DESC"
@@ -58,20 +58,20 @@ interface IPlgCfg {
 		description: "loc:PREMIUMCTL_META_RENEW_ARG1_DESC"
 	}
 }, isAdm)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} delete`, "loc:PREMIUMCTL_META_DELETE", {
+@command(HELP_CATEGORY, `${PREMIUMCTRL_PREFIX.slice(1)} delete`, "loc:PREMIUMCTL_META_DELETE", {
 	"loc:PREMIUMCTL_META_MENTION": {
 		optional: false,
 		description: "loc:PREMIUMCTL_META_DELETE_ARG0_DESC"
 	}
 }, isAdm)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} role`, "loc:PREMIUMCTL_META_ROLE", {
+@command(HELP_CATEGORY, `${PREMIUMCTRL_PREFIX.slice(1)} role`, "loc:PREMIUMCTL_META_ROLE", {
 	"loc:PREMIUMCTL_META_ROLE_ARG0": {
 		optional: false,
 		description: "loc:PREMIUMCTL_META_ROLE_ARG0_DESC",
 		values: ["loc:PREMIUMCTL_META_ROLE_ARG0_VALUES0", "none"]
 	}
 }, checkServerAdmin)
-@command(Category.Premium, `${PREMIUMCTRL_PREFIX.slice(1)} resync`, "loc:PREMIUMCTL_META_RESYNC", undefined, isAdm)
+@command(HELP_CATEGORY, `${PREMIUMCTRL_PREFIX.slice(1)} resync`, "loc:PREMIUMCTL_META_RESYNC", undefined, isAdm)
 class PremiumControl extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.core_features.premiumctl";

@@ -2,13 +2,13 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from ".././plugin";
 import { Message, GuildMember, TextChannel } from "discord.js";
 import { getLogger, EmbedType, generateEmbed } from "../utils/utils";
-import { command, Category } from "../utils/help";
+import { command } from "../utils/help";
 import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
 
 const FL_ICON = "http://i.imgur.com/Aby4Pt4.png";
 const FL_COLOR = 0x1E88E5;
 
-@command(Category.Utilites, "fl", "loc:FL_META_NAME")
+@command("UTILITES", "fl", "loc:FL_META_NAME")
 class ReverseLayout extends Plugin implements IModule {
 	public get signature() {
 		return "walpy.reverse_layout";

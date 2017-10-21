@@ -8,7 +8,7 @@ import { isVerified, isInitDone as isVerifiedEnabled } from "../utils/verified";
 import * as knex from "knex";
 import { replaceAll } from "../utils/text";
 import { messageToExtra } from "../utils/failToDetail";
-import { command, Category as CommandCategory } from "../utils/help";
+import { command } from "../utils/help";
 import { createConfirmationMessage } from "../utils/interactive";
 
 const TABLE_NAME = "voice_role";
@@ -20,7 +20,7 @@ const LOCALIZED = (str: string) => `VOICEROLE_${str.toUpperCase()}`;
 const HELP_CHECKS = {
 	default: (msg: Message) => msg.channel.type === "text" && MANAGE_PERMS(msg.member)
 };
-const HELP_CATEGORY = CommandCategory.Utilites;
+const HELP_CATEGORY = "VOICEROLE";
 
 interface IGuildRow {
 	/**

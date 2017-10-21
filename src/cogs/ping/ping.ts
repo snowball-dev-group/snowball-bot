@@ -1,11 +1,11 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
-import { command, Category } from "../utils/help";
+import { command } from "../utils/help";
 import { getLogger } from "../utils/utils";
 
-@command(Category.Utilites, "ping", "loc:PING_CMDMETA_DEFAULT_DESCRIPTION")
-@command(Category.Utilites, "ping_embed", "loc:PING_CMDMETA_EMBED_DESCRIPTION")
+@command("UTILITES", "ping", "loc:PING_CMDMETA_DEFAULT_DESCRIPTION")
+@command("UTILITES", "ping_embed", "loc:PING_CMDMETA_EMBED_DESCRIPTION")
 class Ping extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.core_features.ping";

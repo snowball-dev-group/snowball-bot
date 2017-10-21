@@ -1,12 +1,12 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
-import { generateHelpContent, command, Category } from "../utils/help";
+import { generateHelpContent, command } from "../utils/help";
 import { EmbedType } from "../utils/utils";
 import { generateLocalizedEmbed } from "../utils/ez-i18n";
 import { messageToExtra } from "../utils/failToDetail";
 
-@command(Category.Helpful, "sb_help", "loc:HELPFULCMD_CMDMETA_DESCRIPTION")
+@command("HELPFUL", "sb_help", "loc:HELPFULCMD_CMDMETA_DESCRIPTION")
 class HelpfulCommand extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.core_features.helpfulcmd";

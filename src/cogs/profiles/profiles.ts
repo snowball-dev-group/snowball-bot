@@ -7,7 +7,7 @@ import { IProfilesPlugin, IAddedProfilePlugin, AddedProfilePluginType } from "./
 import { timeDiff } from "../utils/time";
 import { default as fetch } from "node-fetch";
 import * as util from "util";
-import { command as docCmd, Category } from "../utils/help";
+import { command as docCmd } from "../utils/help";
 import { isPremium } from "../utils/premium";
 import { localizeForUser, generateLocalizedEmbed, getUserLanguage, humanizeDurationForUser } from "../utils/ez-i18n";
 import { INullableHashMap } from "../../types/Interfaces";
@@ -31,6 +31,7 @@ interface IUserActivity {
 }
 
 const TABLE_NAME = "profiles";
+const HELP_CATEGORY = "PROFILES";
 const DB_PROFILE_PROPS = {
 	real_name: "string?",
 	activity: "number?",
@@ -49,19 +50,19 @@ function isChat(msg: Message) {
 	return msg.channel.type === "text";
 }
 
-@docCmd(Category.Profiles, "profile", "loc:PROFILES_META_PROFILE", {
+@docCmd(HELP_CATEGORY, "profile", "loc:PROFILES_META_PROFILE", {
 	"loc:PROFILES_META_PROFILE_ARG0": {
 		optional: true,
 		description: "loc:PROFILES_META_PROFILE_ARG0_DESC"
 	}
 }, isChat)
-@docCmd(Category.Profiles, "set_bio", "loc:PROFILES_META_SETBIO", {
+@docCmd(HELP_CATEGORY, "set_bio", "loc:PROFILES_META_SETBIO", {
 	"loc:PROFILES_META_SETBIO_ARG0": {
 		optional: false,
 		description: "loc:PROFILES_META_SETBIO_ARG0_DESC"
 	}
 }, isChat)
-@docCmd(Category.Profiles, "edit_profile", "loc:PROFILES_META_EDITPROFILE", {
+@docCmd(HELP_CATEGORY, "edit_profile", "loc:PROFILES_META_EDITPROFILE", {
 	"loc:PROFILES_META_EDITPROFILE_ARG0": {
 		optional: false,
 		description: "loc:PROFILES_META_EDITPROFILE_ARG0_DESC",
@@ -76,7 +77,7 @@ function isChat(msg: Message) {
 		description: "loc:PROFILES_META_EDITPROFILE_ARG2_DESC"
 	}
 }, isChat)
-@docCmd(Category.Profiles, "profile_plugins", "loc:PROFILES_META_PROFILEPLUGINS", undefined, isChat)
+@docCmd(HELP_CATEGORY, "profile_plugins", "loc:PROFILES_META_PROFILEPLUGINS", undefined, isChat)
 class Profiles extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.features.profile";

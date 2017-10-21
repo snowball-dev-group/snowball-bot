@@ -1,7 +1,7 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, TextChannel, GuildMember } from "discord.js";
-import { command, Category } from "../utils/help";
+import { command } from "../utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
 import { simpleCmdParse, canBeSnowflake } from "../utils/text";
 import { EmbedType, getLogger, escapeDiscordMarkdown } from "../utils/utils";
@@ -77,8 +77,8 @@ function isServerAdmin(msg: Message) {
 	return msg.channel.type === "text" && (msg.member.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_ROLES", "MANAGE_CHANNELS"]) || msg.author.id === $botConfig.botOwner);
 }
 
-@command(Category.Helpful, "sb_pstatus", "loc:WHITELIST_META_PSTATUS", undefined, isServerAdmin)
-@command(Category.Helpful, "whitelist", "loc:WHITELIST_META_WHITELIST", {
+@command("HELPFUL", "sb_pstatus", "loc:WHITELIST_META_PSTATUS", undefined, isServerAdmin)
+@command("HELPFUL", "whitelist", "loc:WHITELIST_META_WHITELIST", {
 	"loc:WHITELIST_META_WHITELIST_ARG0": {
 		optional: false,
 		description: "loc:WHITELIST_META_WHITELIST_ARG0_DESC",

@@ -2,18 +2,6 @@
 import { Message } from "discord.js";
 import { localizeForUser } from "./ez-i18n";
 
-export enum Category {
-	Helpful,
-	Utilites,
-	Fun,
-	Profiles,
-	Colors,
-	Premium,
-	Guilds,
-	Language,
-	VoiceRole
-}
-
 export interface IArgumentInfo {
 	description: string;
 	optional: boolean;
@@ -54,7 +42,7 @@ interface IArgumentsMap {
 	[argName: string]: IArgumentInfo;
 }
 
-export function addCommand(category: Category, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
+export function addCommand(category: string, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
 	const categoriesMap = init();
 
 	let categoryMap = categoriesMap[category];
@@ -70,7 +58,7 @@ export function addCommand(category: Category, command: string, description: str
 	};
 }
 
-export function command(category: Category, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
+export function command(category: string, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
 	return (target) => {
 		addCommand(category, command, description, args, specialCheck);
 		return target;
@@ -163,8 +151,7 @@ export async function generateHelpContent(msg: Message) {
 			}
 		}
 		if(str.trim().length > 0) {
-			let catName = Category[category];
-			catName = await localizeForUser(user, `HELP_CATEGORY_${catName}`.toUpperCase());
+			let catName = await localizeForUser(user, `HELP_CATEGORY_${category}`.toUpperCase());
 			rStr += `\n# ${catName}\n${str}`;
 		}
 	}

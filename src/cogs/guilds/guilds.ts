@@ -8,7 +8,7 @@ import { createConfirmationMessage, waitForMessages } from "../utils/interactive
 import * as ua from "universal-analytics";
 import { parse as parseURI } from "url";
 import { replaceAll } from "../utils/text";
-import { Category, command } from "../utils/help";
+import { command } from "../utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
 import { randomString } from "../utils/random";
 import { IPCMessage } from "../../types/Types";
@@ -128,6 +128,7 @@ const CMD_GUILDS_INFO = `${BASE_PREFIX} info`;
 const CMD_GUILDS_INVITE = `${BASE_PREFIX} invite`;
 const CMD_GUILDS_MEMBERS = `${BASE_PREFIX} members`;
 const DEFAULT_ROLE_PREFIX = `!`;
+const HELP_CATEGORY = "GUILDS";
 
 function isServerAdmin(member: GuildMember) {
 	return member.permissions.has(["MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"], true);
@@ -154,13 +155,13 @@ function defHelpCheck(msg: Message) {
 	return msg.channel.type === "text";
 }
 
-@command(Category.Guilds, BASE_PREFIX.slice(1), "loc:GUILDS_META_JOINLEAVE", {
+@command(HELP_CATEGORY, BASE_PREFIX.slice(1), "loc:GUILDS_META_JOINLEAVE", {
 	"loc:GUILDS_META_GUILDNAME": {
 		optional: false,
 		description: "loc:GUILDS_META_JOINLEAVE_ARG0_DESC"
 	}
 }, defHelpCheck)
-@command(Category.Guilds, CMD_GUILDS_CREATE.slice(1), "loc:GUILDS_META_CREATE", {
+@command(HELP_CATEGORY, CMD_GUILDS_CREATE.slice(1), "loc:GUILDS_META_CREATE", {
 	"loc:GUILDS_META_GUILDNAME": {
 		optional: false,
 		description: "loc:GUILDS_META_CREATE_ARG0_DESC"
@@ -170,7 +171,7 @@ function defHelpCheck(msg: Message) {
 		description: "loc:GUILDS_META_CREATE_ARG1_DESC"
 	}
 }, helpCheck)
-@command(Category.Guilds, CMD_GUILDS_EDIT.slice(1), "loc:GUILDS_META_EDIT", {
+@command(HELP_CATEGORY, CMD_GUILDS_EDIT.slice(1), "loc:GUILDS_META_EDIT", {
 	"loc:GUILDS_META_GUILDNAME": {
 		optional: false,
 		description: "loc:GUILDS_META_EDIT_ARG0_DESC"
@@ -184,7 +185,7 @@ function defHelpCheck(msg: Message) {
 		description: "loc:GUILDS_META_EDIT_ARG2_DESC"
 	}
 }, helpCheck)
-@command(Category.Guilds, CMD_GUILDS_INVITE.slice(1), "loc:GUILDS_META_INVITE", {
+@command(HELP_CATEGORY, CMD_GUILDS_INVITE.slice(1), "loc:GUILDS_META_INVITE", {
 	"loc:GUILDS_META_GUILDNAME": {
 		optional: false,
 		description: "loc:GUILDS_META_INVITE_ARG0_DESC"
@@ -198,19 +199,19 @@ function defHelpCheck(msg: Message) {
 		description: "loc:GUILDS_META_INVITE_ARG2_DESC"
 	}
 })
-@command(Category.Guilds, CMD_GUILDS_DELETE.slice(1), "loc:GUILDS_META_DELETE", {
+@command(HELP_CATEGORY, CMD_GUILDS_DELETE.slice(1), "loc:GUILDS_META_DELETE", {
 	"loc:GUILDS_META_GUILDNAME": {
 		optional: false,
 		description: "loc:GUILDS_META_DELETE_ARG0_DESC"
 	}
 }, helpCheck)
-@command(Category.Guilds, CMD_GUILDS_LIST.slice(1), "loc:GUILDS_META_LIST", {
+@command(HELP_CATEGORY, CMD_GUILDS_LIST.slice(1), "loc:GUILDS_META_LIST", {
 	"loc:GUILDS_META_LIST_ARG0": {
 		optional: true,
 		description: "loc:GUILDS_META_LIST_ARG0_DESC"
 	}
 }, defHelpCheck)
-@command(Category.Guilds, CMD_GUILDS_INFO.slice(1), "loc:GUILDS_META_INFO", {
+@command(HELP_CATEGORY, CMD_GUILDS_INFO.slice(1), "loc:GUILDS_META_INFO", {
 	"loc:GUILDS_META_GUILDNAME": {
 		optional: true,
 		description: "loc:GUILDS_META_INFO_ARG0_DESC"

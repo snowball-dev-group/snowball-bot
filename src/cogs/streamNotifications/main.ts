@@ -8,7 +8,7 @@ import { generateLocalizedEmbed, getGuildLanguage } from "../utils/ez-i18n";
 import { EmbedType, sleep, IEmbedOptionsField, IEmbed } from "../utils/utils";
 import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IStreamStatus, StreamStatusChangedHandler, StreamStatusChangedAction } from "./baseService";
 import { createConfirmationMessage } from "../utils/interactive";
-import { command, Category as CommandCategory } from "../utils/help";
+import { command } from "../utils/help";
 import { IHashMap } from "../../types/Interfaces";
 import { messageToExtra } from "../utils/failToDetail";
 
@@ -81,6 +81,7 @@ interface INotification {
 }
 
 const LOCALIZED = (str: string) => `STREAMING_${str.toUpperCase()}`;
+const HELP_CATEGORY = "HELPFUL";
 
 function rightsCheck(member: GuildMember) {
 	return member.permissions.has(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.permissions.has(["ADMINISTRATOR"]) || member.id === $botConfig.botOwner;
@@ -90,7 +91,7 @@ function helpCheck(msg: Message) {
 	return msg.channel.type === "text" && rightsCheck(msg.member);
 }
 
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_ADD")}`, {
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_ADD")}`, {
 	"loc:STREAMING_META_ADD_ARG0": {
 		description: "loc:STREAMING_META_ADD_ARG0_DESC",
 		optional: false
@@ -100,7 +101,7 @@ function helpCheck(msg: Message) {
 		optional: false
 	}
 }, helpCheck)
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)} remove`, `loc:${LOCALIZED("META_REMOVE")}`, {
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} remove`, `loc:${LOCALIZED("META_REMOVE")}`, {
 	"loc:STREAMING_META_ADD_ARG0": {
 		description: "loc:STREAMING_META_ADD_ARG0_DESC",
 		optional: false
@@ -110,7 +111,7 @@ function helpCheck(msg: Message) {
 		optional: false
 	}
 }, helpCheck)
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)} edit`, `loc:${LOCALIZED("META_EDIT")}`, {
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} edit`, `loc:${LOCALIZED("META_EDIT")}`, {
 	"loc:STREAMING_META_ADD_ARG0": {
 		description: "loc:STREAMING_META_ADD_ARG0_DESC",
 		optional: false
@@ -128,13 +129,13 @@ function helpCheck(msg: Message) {
 		optional: false
 	}
 }, helpCheck)
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_SETCHANNEL")}`, {
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_SETCHANNEL")}`, {
 	"loc:STREAMING_META_ADD_ARG0": {
 		description: "loc:STREAMING_META_SETCHANNEL_ARG0_DESC",
 		optional: false
 	}
 }, helpCheck)
-@command(CommandCategory.Helpful, `${PREFIX.slice(1)}`, `loc:${LOCALIZED("META_LIST")}`, {
+@command(HELP_CATEGORY, `${PREFIX.slice(1)}`, `loc:${LOCALIZED("META_LIST")}`, {
 	"loc:STREAMING_META_ADD_ARG0": {
 		description: "loc:STREAMING_META_LIST_ARG0_DESC",
 		optional: true

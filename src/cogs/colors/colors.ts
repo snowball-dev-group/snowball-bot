@@ -3,7 +3,7 @@ import { Plugin } from "../plugin";
 import { Message, Guild, Role, GuildMember } from "discord.js";
 import { getLogger, EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "../utils/utils";
 import { getDB } from "../utils/db";
-import { command as cmd, Category } from "../utils/help";
+import { command as cmd } from "../utils/help";
 import { createConfirmationMessage } from "../utils/interactive";
 import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
 import { getPreferenceValue, setPreferenceValue, removePreference } from "../utils/guildPrefs";
@@ -15,6 +15,7 @@ import { Whitelist } from "../whitelist/whitelist";
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";
 const COLORFUL_HELP_PREFIX = COLORFUL_PREFIX.slice(1);
+const HELP_CATEGORY = "COLORS";
 
 interface IColorfulGuildColorInfo {
 	required_role?: string[] | string;
@@ -34,20 +35,20 @@ function isChat(msg: Message) {
 	return msg.channel.type === "text";
 }
 
-@cmd(Category.Colors, COLORFUL_HELP_PREFIX, "loc:COLORS_META_ASSIGN", {
+@cmd(HELP_CATEGORY, COLORFUL_HELP_PREFIX, "loc:COLORS_META_ASSIGN", {
 	"loc:COLORS_META_COLORNAME": {
 		optional: false,
 		description: "loc:COLORS_META_ASSIGN_ARG_DESC"
 	}
 }, isChat)
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} list`, "loc:COLORS_META_LIST", undefined, isChat)
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} info`, "loc:COLORS_META_INFO", {
+@cmd(HELP_CATEGORY, `${COLORFUL_HELP_PREFIX} list`, "loc:COLORS_META_LIST", undefined, isChat)
+@cmd(HELP_CATEGORY, `${COLORFUL_HELP_PREFIX} info`, "loc:COLORS_META_INFO", {
 	"loc:COLORS_META_COLORNAME": {
 		optional: false,
 		description: "loc:COLORS_META_INFO_ARG_DESC"
 	}
 }, isChat)
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} onjoin`, "loc:COLORS_META_ONJOIN", {
+@cmd(HELP_CATEGORY, `${COLORFUL_HELP_PREFIX} onjoin`, "loc:COLORS_META_ONJOIN", {
 	"loc:COLORS_META_ONJOIN_ARG0": {
 		optional: false,
 		values: ["off", "set", "random"],
@@ -60,8 +61,8 @@ function isChat(msg: Message) {
 }, (msg: Message) => {
 	return isChat(msg) && checkPerms(msg.member);
 })
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} reset`, "loc:COLORS_META_RESET", undefined, isChat)
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} add`, "loc:COLORS_META_ADD", {
+@cmd(HELP_CATEGORY, `${COLORFUL_HELP_PREFIX} reset`, "loc:COLORS_META_RESET", undefined, isChat)
+@cmd(HELP_CATEGORY, `${COLORFUL_HELP_PREFIX} add`, "loc:COLORS_META_ADD", {
 	"loc:COLORS_META_COLORNAME": {
 		optional: false,
 		description: "loc:COLORS_META_ADD_ARG0_DESC"
@@ -77,7 +78,7 @@ function isChat(msg: Message) {
 }, (msg: Message) => {
 	return isChat(msg) && checkPerms(msg.member);
 })
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} rename`, "loc:COLORS_META_RENAME", {
+@cmd(HELP_CATEGORY, `${COLORFUL_HELP_PREFIX} rename`, "loc:COLORS_META_RENAME", {
 	"loc:COLORS_META_RENAME_ARG0": {
 		optional: false,
 		description: "loc:COLORS_META_RENAME_ARG0_DESC"
@@ -89,7 +90,7 @@ function isChat(msg: Message) {
 }, (msg: Message) => {
 	return isChat(msg) && checkPerms(msg.member);
 })
-@cmd(Category.Colors, `${COLORFUL_HELP_PREFIX} delete`, "loc:COLORS_META_DELETE", {
+@cmd(HELP_CATEGORY, `${COLORFUL_HELP_PREFIX} delete`, "loc:COLORS_META_DELETE", {
 	"loc:COLORS_META_COLORNAME": {
 		optional: false,
 		description: "loc:COLORS_META_DELETE_ARG_DESC"
