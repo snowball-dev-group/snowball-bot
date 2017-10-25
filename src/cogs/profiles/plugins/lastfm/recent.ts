@@ -12,15 +12,28 @@ export interface ILastFMInfo {
 	username: string;
 }
 
+export interface ILastFMPluginConfig {
+	apiKey: string;
+	emojiIconID: string;
+}
+
 export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 	public get signature() {
 		return "snowball.features.profile.plugins.lastfm";
 	}
 
-	private apiKey: string;
+	private config: ILastFMPluginConfig;
+	private _emoji: string;
 
-	constructor(apiKey: string) {
-		this.apiKey = apiKey;
+	constructor(config: ILastFMPluginConfig) {
+		this.config = config;
+		const _emojiErr = new Error("Emoji not found");
+		if(!this.config.emojiIconID) {
+			throw _emojiErr;
+		}
+		const emoji = $discordBot.emojis.find("id", this.config.emojiIconID);
+		if(!emoji) { throw _emojiErr; }
+		this._emoji = emoji.toString();
 	}
 
 	async getSetupArgs(caller: GuildMember) {
@@ -36,7 +49,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 
 		try {
 			LOG("info", logPrefix, "Getting recent tracks...");
-			await getOrFetchRecents(js.username, this.apiKey);
+			await getOrFetchRecents(js.username, this.config.apiKey);
 		} catch(err) {
 			LOG("err", logPrefix, "Failed to get recent tracks", err);
 			throw new Error("Can't get recent tracks.");
@@ -57,12 +70,12 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 		let profile: IRecentTracksResponse | undefined = undefined;
 		try {
 			LOG("info", logPrefix, "Getting recent tracks...");
-			profile = await getOrFetchRecents(info.username, this.apiKey);
+			profile = await getOrFetchRecents(info.username, this.config.apiKey);
 		} catch(err) {
 			LOG("err", logPrefix, "Failed to get recent tracks", err);
 			return {
 				inline: true,
-				name: "<:lastfm:306344550744457217> Last.FM",
+				name: `${this.config.emojiIconID} Last.FM`,
 				value: `❌ ${err.message}`
 			};
 		}
@@ -71,7 +84,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 			LOG("err", logPrefix, "No 'profile' variable!");
 			return {
 				inline: true,
-				name: "<:lastfm:306344550744457217> Last.FM",
+				name: `${this._emoji} Last.FM`,
 				value: "❌ " + await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ERR_INVALIDRESP")
 			};
 		}
@@ -87,7 +100,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 
 			return {
 				inline: true,
-				name: "<:lastfm:306344550744457217> Last.FM",
+				name: `${this._emoji} Last.FM`,
 				value: str
 			};
 		} catch(err) {
