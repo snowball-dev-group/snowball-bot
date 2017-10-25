@@ -1,19 +1,32 @@
-import { IModule, ModuleLoader, ModuleBase, convertToModulesMap, ModuleLoadState } from "../../types/ModuleLoader";
-import { Plugin } from "../plugin";
-import { Message, GuildMember, User, Guild } from "discord.js";
-import { getLogger, EmbedType, IEmbedOptionsField, escapeDiscordMarkdown, IEmbed } from "../utils/utils";
-import { getDB, createTableBySchema } from "../utils/db";
-import { IProfilesPlugin, IAddedProfilePlugin, AddedProfilePluginType } from "./plugins/plugin";
-import { timeDiff } from "../utils/time";
-import { default as fetch } from "node-fetch";
+import { Guild, GuildMember, Message, User } from "discord.js";
+import fetch from "node-fetch";
 import * as util from "util";
+import { Humanizer } from "../../types/Humanizer";
+import { INullableHashMap } from "../../types/Interfaces";
+import { convertToModulesMap, IModule, IModuleInfo, ModuleBase, ModuleLoader, ModuleLoadState } from "../../types/ModuleLoader";
+import { Plugin } from "../plugin";
+import { createTableBySchema, getDB } from "../utils/db";
+import { generateLocalizedEmbed, getUserLanguage, humanizeDurationForUser, localizeForUser } from "../utils/ez-i18n";
 import { command as docCmd } from "../utils/help";
 import { isPremium } from "../utils/premium";
-import { localizeForUser, generateLocalizedEmbed, getUserLanguage, humanizeDurationForUser } from "../utils/ez-i18n";
-import { INullableHashMap } from "../../types/Interfaces";
-import { Humanizer } from "../../types/Humanizer";
+import { timeDiff } from "../utils/time";
+import { EmbedType, escapeDiscordMarkdown, getLogger, IEmbed, IEmbedOptionsField } from "../utils/utils";
+import { AddedProfilePluginType, IAddedProfilePlugin, IProfilesPlugin } from "./plugins/plugin";
 
-interface IDBUserProfile {
+export interface IProfilesModuleConfig {
+	emojis: {
+		premium: string;
+		admin: string;
+		online: string;
+		idle: string;
+		dnd: string;
+		streaming: string;
+		offline: string;
+	};
+	plugins: IModuleInfo[];
+}
+
+export interface IDBUserProfile {
 	real_name?: string;
 	activity?: string;
 	bio?: string;
@@ -24,7 +37,7 @@ interface IDBUserProfile {
 	status_changed?: string;
 }
 
-interface IUserActivity {
+export interface IUserActivity {
 	link?: string;
 	text: string;
 	emoji: string;
@@ -83,18 +96,26 @@ class Profiles extends Plugin implements IModule {
 		return "snowball.features.profile";
 	}
 
-	plugLoader: ModuleLoader;
+	pluginsLoader: ModuleLoader;
 	log = getLogger("ProfilesJS");
 	db = getDB();
-	options: any;
+	config: IProfilesModuleConfig;
 	customHumanizers: INullableHashMap<Humanizer> = {};
 
-	constructor(options: any) {
+	constructor(config: IProfilesModuleConfig) {
 		super({
 			"message": (msg: Message) => this.onMessage(msg),
 			"presenceUpdate": (oldMember: GuildMember, newMember: GuildMember) => this.onPresenseUpdate(oldMember, newMember)
 		}, true);
-		this.options = options;
+
+		for(const emojiName in config.emojis) {
+			const emojiId = config.emojis[emojiName];
+			const emoji = $discordBot.emojis.get(emojiId);
+			if(!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
+			config.emojis[emojiName] = emoji.toString();
+		}
+
+		this.config = Object.freeze(config);
 	}
 
 	// =====================================
@@ -141,8 +162,8 @@ class Profiles extends Plugin implements IModule {
 	async sendPluginsList(msg: Message) {
 		let str = "# " + await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE");
 
-		for(const name in this.plugLoader.loadedModulesRegistry) {
-			const plugin = this.plugLoader.loadedModulesRegistry[name] as ModuleBase<IProfilesPlugin>;
+		for(const name in this.pluginsLoader.loadedModulesRegistry) {
+			const plugin = this.pluginsLoader.loadedModulesRegistry[name] as ModuleBase<IProfilesPlugin>;
 			str += `\n- ${name}`;
 			if(!plugin || !plugin.base) { return; }
 			const plug = plugin.base;
@@ -243,7 +264,7 @@ class Profiles extends Plugin implements IModule {
 				return;
 			}
 
-			const mod = this.plugLoader.loadedModulesRegistry[param] as ModuleBase<IProfilesPlugin>|undefined;
+			const mod = this.pluginsLoader.loadedModulesRegistry[param] as ModuleBase<IProfilesPlugin> | undefined;
 
 			if(!mod) {
 				await msg.channel.send("", {
@@ -349,7 +370,7 @@ class Profiles extends Plugin implements IModule {
 					delete customize["image_url"];
 				}
 			} else {
-				if(!this.plugLoader.loadedModulesRegistry[param]) {
+				if(!this.pluginsLoader.loadedModulesRegistry[param]) {
 					await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
 					});
@@ -416,23 +437,23 @@ class Profiles extends Plugin implements IModule {
 
 	getUserStatusEmoji(user: User | GuildMember | string) {
 		switch(typeof user !== "string" ? user.presence.status : user) {
-			case "online": { return "<:online:313949006864711680>"; }
-			case "idle": { return "<:away:313949134954561536>"; }
-			case "dnd": { return "<:dnd:313949206119186432>"; }
-			case "streaming": { return "<:streaming:313949265888280586>"; }
-			default: { return "<:offline:313949330283167748>"; }
+			case "online": { return this.config.emojis.online; }
+			case "idle": { return this.config.emojis.idle; }
+			case "dnd": { return this.config.emojis.dnd; }
+			case "streaming": { return this.config.emojis.streaming; }
+			default: { return this.config.emojis.offline; }
 		}
 	}
 
 	async getUserStatusString(user: User | GuildMember | string, localizingFor: GuildMember | User) {
-		const lF = async (str: string) => { return await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`); };
+		const localizeStatus = async (str: string) => { return await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`); };
 		switch(typeof user !== "string" ? user.presence.status : user) {
-			case "online": { return await lF("online"); }
-			case "idle": { return await lF("idle"); }
-			case "dnd": { return await lF("dnd"); }
-			case "streaming": { return lF("streaming"); }
-			case "playing": { return lF("playing"); }
-			default: { return lF("offline"); }
+			case "online": { return await localizeStatus("online"); }
+			case "idle": { return await localizeStatus("idle"); }
+			case "dnd": { return await localizeStatus("dnd"); }
+			case "streaming": { return localizeStatus("streaming"); }
+			case "playing": { return localizeStatus("playing"); }
+			default: { return localizeStatus("offline"); }
 		}
 	}
 
@@ -480,9 +501,9 @@ class Profiles extends Plugin implements IModule {
 		}
 
 		if(member.id === $botConfig.botOwner) {
-			statusString = `<:adm_badge:313954950143279117> ${statusString}`;
+			statusString = `${this.config.emojis.admin} ${statusString}`;
 		} else if((await isPremium(member))) {
-			statusString = `<:premium:315520823504928768> ${statusString}`;
+			statusString = `${this.config.emojis.premium} ${statusString}`;
 		}
 
 		if(dbProfile.status_changed) {
@@ -524,9 +545,9 @@ class Profiles extends Plugin implements IModule {
 			description: statusString,
 			fields: fields,
 			footer: {
-				text: await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME", {
+				text: joinedDate !== 0 ? await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME", {
 					duration: this.serverTimeHumanize(timeDiff(joinedDate, Date.now(), "ms"), 2, true, await getUserLanguage(member))
-				}),
+				}) : await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME_NOTFOUND"),
 				icon_url: msg.guild.iconURL
 			},
 			image: undefined,
@@ -544,6 +565,7 @@ class Profiles extends Plugin implements IModule {
 				repushAfterPush = true;
 				return;
 			}
+
 			pushing = true;
 			if(!pushedMessage) {
 				pushedMessage = await msg.channel.send("", {
@@ -567,8 +589,9 @@ class Profiles extends Plugin implements IModule {
 
 			if(repushAfterPush) {
 				repushAfterPush = false;
-				pushUpdate();
+				await pushUpdate();
 			}
+
 			return pushedMessage;
 		};
 
@@ -585,7 +608,7 @@ class Profiles extends Plugin implements IModule {
 
 			if(customize.plugins) {
 				for(const pluginName of Object.keys(customize.plugins)) {
-					const mod: ModuleBase<IProfilesPlugin> | undefined = this.plugLoader.loadedModulesRegistry[pluginName];
+					const mod: ModuleBase<IProfilesPlugin> | undefined = this.pluginsLoader.loadedModulesRegistry[pluginName];
 					if(!mod) {
 						// not found, skipping
 						continue;
@@ -728,7 +751,8 @@ class Profiles extends Plugin implements IModule {
 	// =====================================
 
 	async init() {
-		const options = this.options;
+		const options = this.config;
+
 		try {
 			this.db = getDB();
 		} catch(err) {
@@ -758,22 +782,22 @@ class Profiles extends Plugin implements IModule {
 			}
 		}
 
-		const plugins = convertToModulesMap(options);
+		const plugins = convertToModulesMap(options.plugins);
 
-		this.plugLoader = new ModuleLoader({
+		this.pluginsLoader = new ModuleLoader({
 			name: "Profiles:Plugins",
 			basePath: "./cogs/profiles/plugins/",
 			registry: plugins,
 			defaultSet: Object.keys(plugins)
 		});
 
-		await this.plugLoader.loadModules();
+		await this.pluginsLoader.loadModules();
 
 		this.handleEvents();
 	}
 
 	async unload() {
-		this.plugLoader.unloadAll();
+		this.pluginsLoader.unloadAll();
 		this.unhandleEvents();
 		return true;
 	}
