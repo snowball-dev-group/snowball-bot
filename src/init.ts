@@ -16,7 +16,7 @@ const SHARD_TIMEOUT = 30000; // ms
 	try {
 		log("info", "Loading config...");
 
-		let env = (process.env["NODE_ENV"] || "development");
+		const env = (process.env["NODE_ENV"] || "development");
 
 		try {
 			config = require(`./config/configuration.${env}.json`);
