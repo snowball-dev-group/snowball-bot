@@ -44,7 +44,14 @@ function isHostBanned(host: string) {
 	return BANNED_HOSTS.includes(host);
 }
 
-interface IGuildRow {
+export interface IGuildsModuleConfig {
+	emojis: {
+		greenTick: string;
+		redTick: string;
+	};
+}
+
+export interface IGuildRow {
 	/**
 	 * Discord Guild SNOWFLAKE
 	 */
@@ -75,7 +82,7 @@ interface IGuildRow {
 	ownerId: string;
 }
 
-interface IGuildCustomize {
+export interface IGuildCustomize {
 	/**
 	 * Guild admins who can control it
 	 */
@@ -225,13 +232,19 @@ class Guilds extends Plugin implements IModule {
 	log = getLogger("Guilds");
 	db = getDB();
 
+	config: IGuildsModuleConfig;
+
 	pendingInvites: { [uid: string]: { code: string; } } = {};
 	processMessageListener?: ((msg: any) => void);
 
-	constructor() {
+	constructor(config: IGuildsModuleConfig) {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
+
+		if(!config) {
+			throw new Error("No config passed");
+		}
 
 		if($botConfig.sharded) {
 			this.processMessageListener = (msg) => {
@@ -249,6 +262,15 @@ class Guilds extends Plugin implements IModule {
 			};
 			process.on("message", this.processMessageListener);
 		}
+
+		for(const emojiName in config.emojis) {
+			const emojiId = config.emojis[emojiName];
+			const emoji = $discordBot.emojis.get(emojiId);
+			if(!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
+			config.emojis[emojiName] = emoji.toString();
+		}
+
+		this.config = config;
 
 		// this.init();
 	}
@@ -1315,7 +1337,9 @@ class Guilds extends Plugin implements IModule {
 		fields.push({
 			name: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBER"),
 			value: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBER_VALUE", {
-				member: isMember
+				member: isMember,
+				greenTick: this.config.emojis.greenTick,
+				redTick: this.config.emojis.redTick
 			}),
 			inline: true
 		});
@@ -1334,7 +1358,9 @@ class Guilds extends Plugin implements IModule {
 				}
 			} else {
 				str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_INVITED", {
-					invited: cz.invites && cz.invites.includes(msg.author.id)
+					invited: cz.invites && cz.invites.includes(msg.author.id),
+					greenTick: this.config.emojis.greenTick,
+					redTick: this.config.emojis.redTick
 				});
 			}
 			fields.push({
