@@ -511,6 +511,7 @@
     "PROFILES_PROFILE_LOADING": "Загрузка плагина...",
     "PROFILES_PROFILE_MAXPLUGINSERR": "Максимальное количество встраиваемых плагинов - 10",
     "PROFILES_PROFILE_MEMBERTIME": "Участник уже {duration}",
+    "PROFILES_PROFILE_MEMBERTIME_NOTFOUND": "Дата вступления неизвестна",
     "PROFILES_PROFILE_MEMBERTIME:DURATION:MINUTES": "{minutes, plural, one {# минуту} few {# минуты} other {# минут}}",
     "PROFILES_PROFILE_MEMBERTIME:DURATION:SECONDS": "{seconds, plural, one {# секунду} few {# секунды} other {# секунд}}",
     "PROFILES_PROFILE_MEMBERTIME:DURATION:WEEKS": "{weeks, plural, one {# неделю} few {# недели} other {# недель}}",
