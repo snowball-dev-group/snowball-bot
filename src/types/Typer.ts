@@ -210,7 +210,7 @@ export class Typer {
             }
 
             // => => Checking if `val` is fails at `regexp` test
-            if(valType === "string" && schema.regexp && schema.regexp.test(val)) {
+            if(valType === "string" && schema.regexp && !schema.regexp.test(val)) {
                 throw new TyperError("Value failed at RegExp test", path, {
                     isRegExpFailed: true,
                     schemaRef: schema
