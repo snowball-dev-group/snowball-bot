@@ -7,7 +7,12 @@ import { localizeForUser } from "../../../utils/ez-i18n";
 const LOG = getLogger("TatsuPlugin");
 
 export interface ITatsumakiInfo {
-	uid:string;
+	uid: string;
+}
+
+export interface ITatsumakiPluginConfig {
+	apiKey: string;
+	iconEmojiId: string;
 }
 
 export class TatsumakiProfilePlugin implements IProfilesPlugin {
@@ -15,25 +20,31 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		return "snowball.features.profile.plugins.tatsumaki";
 	}
 
-	private apiKey:string;
+	private config: ITatsumakiPluginConfig;
 
-	constructor(apiKey:string) {
-		this.apiKey = apiKey;
+	constructor(config: ITatsumakiPluginConfig) {
+		if(!config) {
+			throw new Error("No config passed");
+		}
+		const emoji = $discordBot.emojis.get(config.iconEmojiId);
+		if(!emoji) { throw new Error(`Emoji with icon by ID "${config.iconEmojiId}" not found`); }
+		config.iconEmojiId = emoji.toString();
+		this.config = config;
 	}
 
 	async getSetupArgs() {
 		return null;
 	}
 
-	async setup(_str:string, member:GuildMember) {
-		let js:ITatsumakiInfo = {
+	async setup(_str: string, member: GuildMember) {
+		const js: ITatsumakiInfo = {
 			uid: member.id
 		};
 
 		try {
-			await getTatsuProfile(js.uid, this.apiKey);
+			await getTatsuProfile(js.uid, this.config.apiKey);
 		} catch(err) {
-			LOG("err", `${js.uid} (setup)| Can't get Tatsumaki profile`, err);
+			LOG("err", `${js.uid}: Can't get Tatsumaki profile`, err, "(setup)");
 			throw new Error("Failed to get Tatsumaki profile!");
 		}
 
@@ -43,18 +54,16 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		};
 	}
 
-	async getEmbed(info:ITatsumakiInfo|string, caller:GuildMember) : Promise<IEmbedOptionsField> {
+	async getEmbed(info: ITatsumakiInfo | string, caller: GuildMember): Promise<IEmbedOptionsField> {
 		if(typeof info !== "object") {
 			info = JSON.parse(info) as ITatsumakiInfo;
 		}
 
-		let logPrefix = `${info.uid} (getEmbed)|`;
-		let profile:IUserInfo|undefined = undefined;
+		const logPrefix = `${info.uid}:`;
+		let profile: IUserInfo | undefined = undefined;
 
 		try {
-			LOG("info", "Getting Tatsumaki profile...");
-			profile = await getTatsuProfile(info.uid, this.apiKey);
-			LOG("ok", logPrefix, "Got Tatsumaki profile!");
+			profile = await getTatsuProfile(info.uid, this.config.apiKey);
 		} catch(err) {
 			LOG("err", logPrefix, "Error", err);
 			throw new Error("Failed to get Tatsumaki profile.");
@@ -86,7 +95,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		try {
 			return {
 				inline: true,
-				name: "<:tatsu:306223189628026881> Tatsumaki",
+				name: `${this.config.iconEmojiId} Tatsumaki`,
 				value: str
 			};
 		} catch(err) {
