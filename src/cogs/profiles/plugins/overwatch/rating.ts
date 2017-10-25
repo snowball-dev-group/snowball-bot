@@ -9,9 +9,42 @@ const ACCEPTED_REGIONS = ["eu", "kr", "us"];
 const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
 const LOG = getLogger("OWRatingPlugin");
 
+export interface IOWStatsPluginConfig {
+	emojis: {
+		competitive: string;
+		quickplay: string;
+		overwatchIcon: string;
+		bronze: string;
+		silver: string;
+		gold: string;
+		platinum: string;
+		diamond: string;
+		master: string;
+		grandmaster: string;
+		norating: string;
+	};
+}
+
 export class OWStatsProfilePlugin implements IProfilesPlugin {
 	public get signature() {
 		return "snowball.features.profile.plugins.overwatch.stats";
+	}
+
+	config: IOWStatsPluginConfig;
+
+	constructor(config: IOWStatsPluginConfig) {
+		if(!config) {
+			throw new Error("No config passed");
+		}
+
+		for(const emojiName of Object.keys(config.emojis)) {
+			const emojiId = config.emojis[emojiName];
+			const emoji = $discordBot.emojis.get(emojiId);
+			if(!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
+			config.emojis[emojiName] = emoji.toString();
+		}
+
+		this.config = Object.freeze(config);
 	}
 
 	async getSetupArgs(caller: GuildMember) {
@@ -142,7 +175,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			tie: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_TIE")
 		};
 
-		str += `<:competitive:322781963943673866> __**${tStrs.competitive}**__\n`;
+		str += `${this.config.emojis.norating} __**${tStrs.competitive}**__\n`;
 
 		if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
 			str += this.getTierEmoji(null);
@@ -161,7 +194,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			})) + ")";
 		}
 
-		str += `\n<:quick:322781693205282816> __**${tStrs.quickplay}**__\n`;
+		str += `\n${this.config.emojis.quickplay} __**${tStrs.quickplay}**__\n`;
 
 		if(!profile.stats.quickplay) {
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
@@ -186,22 +219,14 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		return {
 			inline: true,
-			name: "<:ow:306134976670466050> Overwatch",
+			name: `${this.config.emojis.overwatchIcon} Overwatch`,
 			value: str
 		};
 	}
 
 	getTierEmoji(tier: "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master" | "grandmaster" | null) {
-		switch(tier) {
-			default: return "<:bronze:306194850796273665>";
-			case null: return "<:no_rating:322361682460672000>";
-			case "silver": return "<:silver:306194903464148992>";
-			case "gold": return "<:gold:306194951568621568>";
-			case "platinum": return "<:platinum:306195013929533441>";
-			case "diamond": return "<:diamond:306195127226073089>";
-			case "master": return "<:master:306195210348527626>";
-			case "grandmaster": return "<:grandmaster:306195240568487936>";
-		}
+		if(!tier) { return this.config.emojis.norating; }
+		return this.config.emojis[tier];
 	}
 
 	async unload() { return true; }
