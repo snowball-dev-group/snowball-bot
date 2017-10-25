@@ -22,9 +22,66 @@ interface IOverwatchHeroesProfilePluginInfo extends IOverwatchProfilePluginInfo 
 	sortBy: Sorts;
 }
 
+interface IOWHeroesPluginConfig {
+	emojis: {
+		quickplay: string;
+		competitive: string;
+		overwatchIcon: string;
+		ana: string;
+		zenyatta: string;
+		zarya: string;
+		winston: string;
+		widowmaker: string;
+		torbjorn: string;
+		tracer: string;
+		symmetra: string;
+		sombra: string;
+		soldier76: string;
+		reinhardt: string;
+		reaper: string;
+		pharah: string;
+		orisa: string;
+		mercy: string;
+		mei: string;
+		mccree: string;
+		lucio: string;
+		junkrat: string;
+		roadhog: string;
+		hanzo: string;
+		genji: string;
+		dva: string;
+		bastion: string;
+		doomfist: string;
+		bronze: string;
+		silver: string;
+		gold: string;
+		platinum: string;
+		diamond: string;
+		master: string;
+		grandmaster: string;
+	};
+}
+
 export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	public get signature() {
 		return "snowball.features.profile.plugins.overwatch.heroes";
+	}
+
+	config: IOWHeroesPluginConfig;
+
+	constructor(config: IOWHeroesPluginConfig) {
+		if(!config) {
+			throw new Error("No config passed");
+		}
+
+		for(const emojiName of Object.keys(config.emojis)) {
+			const emojiId = config.emojis[emojiName];
+			const emoji = $discordBot.emojis.get(emojiId);
+			if(!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
+			config.emojis[emojiName] = emoji.toString();
+		}
+
+		this.config = Object.freeze(config);
 	}
 
 	async getSetupArgs(caller: GuildMember) {
@@ -166,7 +223,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		};
 
 		if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
-			str += `<:competitive:322781963943673866> __**${tStrs.competitive}**__\n`;
+			str += `${this.config.emojis.competitive} __**${tStrs.competitive}**__\n`;
 			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")) + "\n";
 		} else {
 			const compOveral = profile.stats.competitive.overall_stats;
@@ -214,7 +271,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			str += await this.getString(stats, caller);
 		}
 
-		str += `\n<:quick:322781693205282816> __**${tStrs.quickplay}**__\n`;
+		str += `\n${this.config.emojis.quickplay} __**${tStrs.quickplay}**__\n`;
 
 		if(!profile.stats.quickplay) {
 			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")) + "\n";
@@ -263,21 +320,15 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		return {
 			inline: true,
-			name: `<:ow:306134976670466050> ${tStrs.title}`,
+			name: `${this.config.emojis.overwatchIcon} ${tStrs.title}`,
 			value: str
 		};
 	}
 
 	getTierEmoji(tier: Tier) {
 		switch(tier) {
-			default: return "<:bronze:306194850796273665>";
-			case null: return "<:no_rating:322361682460672000>";
-			case "silver": return "<:silver:306194903464148992>";
-			case "gold": return "<:gold:306194951568621568>";
-			case "platinum": return "<:platinum:306195013929533441>";
-			case "diamond": return "<:diamond:306195127226073089>";
-			case "master": return "<:master:306195210348527626>";
-			case "grandmaster": return "<:grandmaster:306195240568487936>";
+			case null: return this.config.emojis.bronze;
+			default: return this.config.emojis[tier];
 		}
 	}
 
@@ -292,34 +343,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	}
 
 	getHeroIcon(hero: Hero): string {
-		switch(hero) {
-			case "ana": return "<:ana:322800139402084352>";
-			case "zenyatta": return "<:zen:322800138168827905>";
-			case "zarya": return "<:zarya:322800138944774144>";
-			case "winston": return "<:winston:322800138768613378>";
-			case "widowmaker": return "<:widow:322800138932191232>";
-			case "torbjorn": return "<:torb:322800138974396425>";
-			case "tracer": return "<:tracer:322800138789847040>";
-			case "symmetra": return "<:sym:322800138747772928>";
-			case "sombra": return "<:sombra:322800138823139339>";
-			case "soldier76": return "<:soldier:322800138370416640>";
-			case "reinhardt": return "<:rh:322800140819890176>";
-			case "reaper": return "<:reaper:322800138412359682>";
-			case "pharah": return "<:pharah:322800139096031242>";
-			case "orisa": return "<:orisa:322800139112808459>";
-			case "mercy": return "<:mercy:322800138596777984>";
-			case "mei": return "<:mei:322800139851005953>";
-			case "mccree": return "<:mcree:322800138693115904>";
-			case "lucio": return "<:lucio:322800138177347595>";
-			case "junkrat": return "<:junk:322800139578376192>";
-			case "roadhog": return "<:hog:322800138559029268>";
-			case "hanzo": return "<:hanzo:322800138873602058>";
-			case "genji": return "<:genji:322800138550771713>";
-			case "dva": return "<:dva:322800138391257099>";
-			case "bastion": return "<:bast:322800138630201355>";
-			case "doomfist": return "<:doomfist:332697596810493963>";
-			default: return "?";
-		}
+		return this.config.emojis[hero] || "?";
 	}
 
 	getPlaytimeStr(playtime: number, language: string) {
