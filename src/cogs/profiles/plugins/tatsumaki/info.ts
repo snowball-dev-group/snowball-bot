@@ -12,7 +12,7 @@ export interface ITatsumakiInfo {
 
 export interface ITatsumakiPluginConfig {
 	apiKey: string;
-	iconEmojiId: string;
+	emojiIconID: string;
 }
 
 export class TatsumakiProfilePlugin implements IProfilesPlugin {
@@ -26,9 +26,9 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		if(!config) {
 			throw new Error("No config passed");
 		}
-		const emoji = $discordBot.emojis.get(config.iconEmojiId);
-		if(!emoji) { throw new Error(`Emoji with icon by ID "${config.iconEmojiId}" not found`); }
-		config.iconEmojiId = emoji.toString();
+		const emoji = $discordBot.emojis.get(config.emojiIconID);
+		if(!emoji) { throw new Error(`Emoji with icon by ID "${config.emojiIconID}" not found`); }
+		config.emojiIconID = emoji.toString();
 		this.config = config;
 	}
 
@@ -95,7 +95,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		try {
 			return {
 				inline: true,
-				name: `${this.config.iconEmojiId} Tatsumaki`,
+				name: `${this.config.emojiIconID} Tatsumaki`,
 				value: str
 			};
 		} catch(err) {
