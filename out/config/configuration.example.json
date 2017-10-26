@@ -174,7 +174,7 @@
         "name": "fl",
         "path": "fl/fl"
     }],
-    "autoLoad": ["ping", "eval", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "premiumControl", "guilds", "verificationhandler", "setLanguage"],
+    "autoLoad": ["ping", "eval", "setLanguage", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "premiumControl", "guilds", "verificationhandler"],
     "botOwner": "80351110224678912",
     "localizerOptions": {
         "languages": ["ru-RU", "en-US", "uk-UA"],
