@@ -1213,13 +1213,11 @@ class StreamNotifications extends Plugin implements IModule {
 				},
 				mentionsEveryone: {
 					type: "TEXT",
-					comment: "A list of channels with turned on everyone mention",
-					default: "[]"
+					comment: "A list of channels with turned on everyone mention"
 				},
 				subscribedTo: {
 					type: "TEXT",
-					comment: "A list of subscriptions",
-					default: "[]"
+					comment: "A list of subscriptions"
 				}
 			});
 		}
