@@ -34,24 +34,96 @@
     }, {
         "name": "profiles",
         "path": "profiles/profiles",
-        "options": [{
-            "name": "overwatch-rating",
-            "path": "overwatch/rating"
-        },{
-            "name": "overwatch-avatar",
-            "path": "overwatch/avatar"
-        }, {
-            "name": "tatsumaki-info",
-            "path": "tatsumaki/info",
-            "options": "TATSUMAKI_API_KEY"
-        }, {
-            "name": "lastfm",
-            "path": "lastfm/recent",
-            "options": "LASTFM_APIKEY"
-        }, {
-            "name": "overwatch-heroes",
-            "path": "overwatch/heroes"
-        }]
+        "options": {
+            "emojis": {
+                "premium": "315520823504928768",
+                "admin": "343481245679878154",
+                "online": "372893447247495168",
+                "idle": "372893387445239820",
+                "dnd": "372893539790749707",
+                "streaming": "372893507783884800",
+                "offline": "372893570883125248"
+            },
+            "plugins": [{
+                "name": "overwatch-rating",
+                "path": "overwatch/rating",
+                "options": {
+                    "emojis": {
+                        "competitive": "372827474922569728",
+                        "quickplay": "372827474465259530",
+                        "overwatchIcon": "372828830366171136",
+                        "bronze": "372900701816356864",
+                        "silver": "372900701468098560",
+                        "gold": "372902310008979456",
+                        "platinum": "372900701564698626",
+                        "diamond": "372902117851004928",
+                        "master": "372900702747492352",
+                        "grandmaster": "372900703250677760",
+                        "norating": "372827474775506954"
+                    }
+                }
+            },{
+                "name": "overwatch-avatar",
+                "path": "overwatch/avatar"
+            }, {
+                "name": "tatsumaki-info",
+                "path": "tatsumaki/info",
+                "options": {
+                    "apiKey": "TATSUMAKI_API_KEY",
+                    "emojiIconID": "372905773983858691"
+                }
+            }, {
+                "name": "lastfm",
+                "path": "lastfm/recent",
+                "options": {
+                    "apiKey": "LASTFM_APIKEY",
+                    "emojiIconID": "372905367694344194"
+                }
+            }, {
+                "name": "overwatch-heroes",
+                "path": "overwatch/heroes",
+                "options": {
+                    "emojis": {
+                        "competitive": "372827474922569728",
+                        "quickplay": "372827474465259530",
+                        "overwatchIcon": "372828830366171136",
+                        "bronze": "372900701816356864",
+                        "silver": "372900701468098560",
+                        "gold": "372902310008979456",
+                        "platinum": "372900701564698626",
+                        "diamond": "372902117851004928",
+                        "master": "372900702747492352",
+                        "grandmaster": "372900703250677760",
+                        "norating": "372827474775506954",
+                        "ana": "322800139402084352",
+                        "zenyatta": "322800138168827905",
+                        "zarya": "322800138944774144",
+                        "winston": "322800138768613378",
+                        "widowmaker": "322800138932191232",
+                        "torbjorn": "322800138974396425",
+                        "tracer": "322800138789847040",
+                        "symmetra": "322800138747772928",
+                        "sombra": "322800138823139339",
+                        "soldier76": "322800138370416640",
+                        "reinhardt": "322800140819890176",
+                        "reaper": "322800138412359682",
+                        "pharah": "322800139096031242",
+                        "orisa": "322800139112808459",
+                        "mercy": "322800138596777984",
+                        "mei": "322800139851005953",
+                        "mccree": "322800138693115904",
+                        "lucio": "322800138177347595",
+                        "junkrat": "322800139578376192",
+                        "roadhog": "322800138559029268",
+                        "hanzo": "322800138873602058",
+                        "genji": "322800138550771713",
+                        "dva": "322800138391257099",
+                        "bastion": "322800138630201355",
+                        "doomfist": "332697596810493963"
+                    }
+                }
+            }]
+        }
     }, {
         "name": "colors",
         "path": "colors/colors"
@@ -60,7 +132,13 @@
         "path": "premiumControl/premiumControl"
     }, {
         "name": "guilds",
-        "path": "guilds/guilds"
+        "path": "guilds/guilds",
+        "options": {
+            "emojis": {
+                "greenTick": "372907144019968001",
+                "redTick": "372907418520256512"
+            }
+        }
     }, {
         "name": "verificationhandler",
         "path": "verifiedUtilHandler/verifiedUtilHandler"
