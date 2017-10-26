@@ -1,19 +1,17 @@
 {
-    "version": "0.1.0",
-    "isShellCommand": true,
+    "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "runBuildScript",
-            "isBuildCommand": true,
-            "problemMatcher": "$tsc",
-            "command": "grunt"
-        },
-        {
-            "taskName": "runTsc",
-            "isBuildCommand": true,
-            "command": "tsc",
-            "args": ["-p", "."],
-            "problemMatcher": "$tsc"
+            "type": "grunt",
+            "task": "default",
+            "identifier": "runGruntBuild",
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
