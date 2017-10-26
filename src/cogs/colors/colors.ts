@@ -755,13 +755,19 @@ class Colors extends Plugin implements IModule {
 		}
 
 		let isAvailable = true;
+		const requiredRoles:string[] = [];
 
 		if(colorInfo.required_role) {
 			isAvailable = false;
 			if(colorInfo.required_role instanceof Array) {
-				isAvailable = !!colorInfo.required_role.find(roleId => msg.member.roles.has(roleId));
+				isAvailable = !!colorInfo.required_role.find(roleId => {
+					const hasRole = msg.member.roles.has(roleId);
+					if(!hasRole) { requiredRoles.push(roleId); }
+					return hasRole;
+				});
 			} else {
 				isAvailable = msg.member.roles.has(colorInfo.required_role);
+				if(!isAvailable) { requiredRoles.push(colorInfo.required_role); }
 			}
 		}
 
@@ -781,6 +787,25 @@ class Colors extends Plugin implements IModule {
 				roleId: colorRole.id
 			})
 		});
+
+		if(colorInfo.required_role && !isAvailable && requiredRoles.length > 0) {
+			// constucting "good" array of names
+			const requiredRolesToObtain = (() => {
+				const arr: string[] = [];
+				for(const requiredRoleId of requiredRoles) {
+					const role = msg.guild.roles.get(requiredRoleId);
+					if(role) { arr.push(role.name); }
+				}
+				arr.map(roleName => `- ${roleName}`);
+				return arr;
+			})();
+
+			fields.push({
+				inline: false,
+				name: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_REQUIREDROLES"),
+				value: requiredRolesToObtain.join("\n")
+			});
+		}
 
 		msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_GETINFO_DESCRIPTION", {
