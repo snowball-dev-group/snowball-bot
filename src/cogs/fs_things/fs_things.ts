@@ -71,6 +71,24 @@ class FanServerThings extends Plugin implements IModule {
 			this.log("err", "Fan Server's guild not found");
 			return;
 		}
+
+		for(const roleId of options.subRoles) {
+			const subRole = fsGuild.roles.get(roleId);
+			if(!subRole) {
+				this.log("err", "One of the subroles is not found:", roleId);
+				throw new Error(`Invalid subscriber role reference: ${roleId}`);
+			}
+			this.log("ok", `Found subscriber role: ${subRole.id} - ${subRole.name}`);
+		}
+
+		const oneSubRole = fsGuild.roles.get(options.oneSubRole);
+		if(!oneSubRole) {
+			this.log("err", `Could not find general subscribers role: ${options.oneSubRole}`);
+			throw new Error(`Invalid general role reference: ${options.oneSubRole}`);
+		}
+
+		this.log("ok", `Found general subscriber role: ${oneSubRole.id} - ${oneSubRole.name}`);
+
 		this.handleEvents();
 	}
 
@@ -107,6 +125,7 @@ class FanServerThings extends Plugin implements IModule {
 			// admin / moderator
 			return;
 		}
+
 		if(!this.nickRegexp.test(member.displayName) && member.displayName !== this.options.wrongNickFallback) {
 			if(oldMember) {
 				if(!this.nickRegexp.test(oldMember.displayName) && oldMember.displayName !== this.options.wrongNickFallback) {
@@ -123,31 +142,40 @@ class FanServerThings extends Plugin implements IModule {
 	async onFSUpdate(oldMember: GuildMember, newMember: GuildMember) {
 		await this.nickCheck(newMember, oldMember);
 
-		// checking if member has atleast one sub role
-		const subRole = newMember.roles.find((r) => this.options.subRoles.includes(r.id));
+		// finding subscription roles
+		const subRole = newMember.roles.filter((r) => this.options.subRoles.includes(r.id));
+		// checking if member has general subscribers role
 		const oneSubRole = newMember.roles.find((r) => this.options.oneSubRole === r.id);
 
 		// let removedRoles = oldMember.roles.filter((r) => !newMember.roles.has(r.id));
 		const newRoles = newMember.roles.filter((r) => !oldMember.roles.has(r.id));
 
-		if(!!subRole && !oneSubRole) {
+		if(subRole.size > 0 && !oneSubRole) {
 			const newSubRoles = newRoles.filter((r) => this.options.subRoles.includes(r.id));
+
+			this.log("info", `${newMember.displayName} (ID: ${newMember.id}) - found subscriber role(s): ${subRole.map(r => r.name).join(", ")}`);
 
 			// has subrole but not onesub role
 			await newMember.addRole(this.options.oneSubRole);
 
 			const random = new Random(Random.engines.mt19937().autoSeed());
 
-			const ancChannel = newMember.guild.channels.find("id", this.options.subAncChannel);
-			if(!!ancChannel) {
-				for(const nSubRole of newSubRoles.keys()) {
-					const texts = this.options.texts.filter(r => r.roleId === nSubRole);
-					if(texts.length === 0) { continue; }
-					const randText: ISubText = random.pick(texts);
-					(ancChannel as TextChannel).send(randText.text.replace("++", newMember.toString()));
+			// not going to search channel if none of the subscriber roles is NEW
+			if(newSubRoles.size > 0) {
+				const announceChannel = newMember.guild.channels.find("id", this.options.subAncChannel);
+				if(!!announceChannel) {
+					for(const newSubscriberRole of newSubRoles.keys()) {
+						const texts = this.options.texts.filter(r => r.roleId === newSubscriberRole);
+						if(texts.length === 0) { continue; }
+						const randText: ISubText = random.pick(texts);
+						// as we already know - announceChannel has TextChannel type
+						(announceChannel as TextChannel).send(randText.text.replace("++", newMember.toString()));
+					}
 				}
 			}
-		} else if(!subRole && !!oneSubRole) {
+		} else if(subRole.size === 0 && !!oneSubRole) {
+			this.log("info", `${newMember.displayName} (ID: ${newMember.id}) - has no subscriber role(s), but has general one, removing`);
+
 			// doesn't has sub role but has onesub role
 			await newMember.removeRole(this.options.oneSubRole);
 		}
