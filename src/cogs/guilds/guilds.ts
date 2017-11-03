@@ -454,7 +454,12 @@ class Guilds extends Plugin implements IModule {
 			let roleName = `${DEFAULT_ROLE_PREFIX}${args[0]}`;
 
 			// creating role
-			let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_CREATE_ROLECREATING_CONFIRMATION");
+			let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
+				key: "GUILDS_CREATE_ROLECREATING_CONFIRMATION",
+				formatOptions: {
+					roleName
+				}
+			});
 
 			let confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
