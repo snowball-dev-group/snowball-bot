@@ -1,3 +1,4 @@
+import { isPremium } from "../utils/premium";
 import { Plugin } from "../plugin";
 import { IModule } from "../../types/ModuleLoader";
 import { GuildMember, TextChannel } from "discord.js";
@@ -41,6 +42,8 @@ interface IOptions {
 	modRoles: string[];
 
 	nickRegexp: string;
+	
+	nickSkipped: string[];
 
 	wrongNickFallback: string;
 }
@@ -124,6 +127,35 @@ class FanServerThings extends Plugin implements IModule {
 		if(member.permissions.has(["ADMINISTRATOR"]) || member.permissions.has(["MANAGE_MESSAGES", "BAN_MEMBERS", "KICK_MEMBERS"])) {
 			// admin / moderator
 			return;
+		}
+
+		if(this.options.nickSkipped) {
+			for(const skipArgument of this.options.nickSkipped) {
+				switch(skipArgument.toLowerCase()) {
+					case "$snowball_premium": {
+						if(await isPremium(member)) {
+							return;
+						} else { continue; }
+					}
+					case "$sub_role": {
+						if(member.roles.has(this.options.oneSubRole)) {
+							return;
+						} else { continue; }
+					}
+					default: {
+						if(skipArgument.startsWith("@")) {
+							if(member.id === skipArgument.slice(1)) {
+								return;
+							} else { continue; }
+						} else if(skipArgument.startsWith("&")) {
+							if(member.roles.has(skipArgument.slice(1))) {
+								return;
+							} else { continue; }
+						}
+						this.log("err", "Invalid skip argument provided", skipArgument);
+					} break;
+				}
+			}
 		}
 
 		if(!this.nickRegexp.test(member.displayName) && member.displayName !== this.options.wrongNickFallback) {
