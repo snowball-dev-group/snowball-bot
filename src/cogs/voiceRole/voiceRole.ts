@@ -144,6 +144,10 @@ class VoiceRole extends Plugin implements IModule {
 
 		// stage eight: do cleanup for all guilds
 		for(const guild of $discordBot.guilds.values()) {
+			if(!guild.available) {
+				this.log("warn", `Cleanup ignored at Guild: "${guild.name}" because it isnt' available at the moment`);
+				return;
+			}
 			this.log("info", `Cleanup started at Guild: "${guild.name}"`);
 			await this.VCR_Cleanup(guild);
 		}
