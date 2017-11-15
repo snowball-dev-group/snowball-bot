@@ -657,6 +657,11 @@ class PremiumControl extends Plugin implements IModule {
 		const logPrefix = `Sync (${guild.id} / ${guild.name}):`;
 		if(!noLog) { this.log("info", logPrefix, "Started role sync..."); }
 
+		if(!guild.available) {
+			this.log("warn", logPrefix, "Guild unavailable");
+			return;
+		}
+
 		const guildPremiumRole = await getGuildPref(guild, "premiumctl:role");
 		if(!guildPremiumRole) {
 			if(!noLog) { this.log("warn", logPrefix, "No premium role, aborting"); }
