@@ -584,6 +584,8 @@
     "STREAMING_META_SETCHANNEL": "Установка канала, куда будут приходить оповещения из Discord",
     "STREAMING_META_SETCHANNEL_ARG0": "#упоминание-канала",
     "STREAMING_META_SETCHANNEL_ARG0_DESC": "упоминание канала в Discord",
+    "STREAMING_META_SUBSCRIBE": "Подписаться на уведомления о стримах",
+    "STREAMING_META_UNSUBSCRIBE": "Отписаться от уведомлений",
     "STREAMING_MIXER_CACHEFAULT": "Ошибка получения кэша. Критическая ошибка",
     "STREAMING_MIXER_NOTFOUND": "Такого канала Mixer не существует",
     "STREAMING_MIXER_SOMETHINGWRONG": "Mixer сейчас недоступен. Пожалуйста, попробуйте позже",
