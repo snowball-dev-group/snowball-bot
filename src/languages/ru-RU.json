@@ -537,6 +537,8 @@
     "STREAMING_ADD_CONFIRMATION": "Вы действительно хотите добавить канал `{streamerName}` (ID: `{streamerId}`) для оповещения?",
     "STREAMING_ADD_CONFIRMATION_DM": "Вы действительно хотите подписаться на оповещения о стримах `{streamerName}` (ID: `{streamerId}`)?\n\nВсе уведомления будут присылаться в личные сообщения, в любой момент подписку можно будет отменить одной командой",
     "STREAMING_ADD_DONE": "Добавление канала для оповещения завершено",
+    "STREAMING_ADD_FAULT_NOPREMIUM": "Только премиальные подписчики могут иметь более {limit, plural, one {# подписки} other {# подписок}}.\nПосетите наш сервер, чтобы подробнее узнать о премиальных подписках.",
+    "STREAMING_ADD_FAULT_NOPARTNER": "Только партнёры могут иметь более {limit, plural, one {# подписки} other {# подписок}}.\nПосетите наш сервер, чтобы подробнее узнать о партнёрской программе.",
     "STREAMING_ADD_FAULT_ALREADYSUBBED": "Вы уже подписаны на этот канал!",
     "STREAMING_ADD_FAULT_DESTROYED": "Подписка была уничтожена пока ожидалось подтверждение",
     "STREAMING_ADD_FAULT_PROVIDERNOTFOUND": "Такой сервис не найден",
