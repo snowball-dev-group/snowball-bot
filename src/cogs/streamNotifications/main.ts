@@ -1,3 +1,4 @@
+import { Whitelist } from "../whitelist/whitelist";
 import { IModule, ModuleLoader, convertToModulesMap, IModuleInfo, ModuleBase, ModuleLoadState } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, TextChannel, GuildMember, DiscordAPIError, User, DMChannel } from "discord.js";
@@ -11,6 +12,7 @@ import { createConfirmationMessage } from "../utils/interactive";
 import { command } from "../utils/help";
 import { IHashMap } from "../../types/Interfaces";
 import { messageToExtra } from "../utils/failToDetail";
+import { isPremium } from "../utils/premium";
 
 const PREFIX = "!streams";
 const MAX_NOTIFIED_LIFE = 86400000; // ms
@@ -20,6 +22,20 @@ const TABLE = {
 	settings: "sn_settings",
 	notifications: "sn_notifications"
 };
+
+interface INotificationsModuleSettings {
+	/**
+	 * Streaming services
+	 */
+	services: IModuleInfo[];
+	/**
+	 * Limits for non-premium and not-partnered users
+	 */
+	limits: {
+		guilds: number;
+		users: number;
+	};
+}
 
 interface ISubscriptionRawRow {
 	provider: string;
@@ -82,6 +98,10 @@ interface INotification {
 
 const LOCALIZED = (str: string) => `STREAMING_${str.toUpperCase()}`;
 const HELP_CATEGORY = "HELPFUL";
+const DEFAULT_LIMITS = {
+	users: 20,
+	guilds: 20
+};
 
 function rightsCheck(member: GuildMember) {
 	return member.permissions.has(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.permissions.has(["ADMINISTRATOR"]) || member.id === $botConfig.botOwner;
@@ -170,17 +190,19 @@ class StreamNotifications extends Plugin implements IModule {
 		return "snowball.features.stream_notifications";
 	}
 
-	log = getLogger("StreamNotifications");
-	db = getDB();
-	servicesLoader: ModuleLoader;
-	servicesList: IHashMap<IModuleInfo>;
+	private log = getLogger("StreamNotifications");
+	private db = getDB();
+	private servicesLoader: ModuleLoader;
+	private servicesList: IHashMap<IModuleInfo>;
+	private whitelistModule: ModuleBase<Whitelist>;
+	private options: INotificationsModuleSettings;
 
-	constructor(options) {
+	constructor(options: INotificationsModuleSettings) {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
 
-		this.servicesList = convertToModulesMap(options);
+		this.servicesList = convertToModulesMap(options.services);
 
 		this.servicesLoader = new ModuleLoader({
 			name: "StreamNotifications:Services",
@@ -188,6 +210,18 @@ class StreamNotifications extends Plugin implements IModule {
 			registry: this.servicesList,
 			defaultSet: []
 		});
+
+		if(!options.limits) {
+			options.limits = DEFAULT_LIMITS;
+		} else {
+			for(const key of Object.keys(DEFAULT_LIMITS)) {
+				if(typeof options.limits[key] !== "number") {
+					options.limits[key] = DEFAULT_LIMITS[key];
+				}
+			}
+		}
+
+		this.options = options;
 	}
 
 	// =======================================
@@ -435,6 +469,40 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
+		const subject = scope === "guild" ? msg.guild : msg.author;
+
+		const rawSettings = await this.createOrGetSettings(subject);
+		const settings = rawSettings ? await this.convertToNormalSettings(rawSettings) : undefined;
+
+		if(!settings) {
+			throw new Error("Unexpected behavior. No `settings` passed");
+		}
+
+		if(scope === "user" && (this.options.limits.users && settings.subscribedTo.length >= this.options.limits.users) && !isPremium(msg.author)) {
+			await msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, {
+					key: LOCALIZED("ADD_FAULT_NOPREMIUM"),
+					formatOptions: {
+						limit: this.options.limits.users
+					}
+				})
+			});
+			return;
+		} else if((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds &&  settings.subscribedTo.length >= this.options.limits.users)) {
+			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
+			if(whitelistStatus.state !== 0 && whitelistStatus.state === 1) {
+				msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+						key: LOCALIZED("ADD_FAULT_NOPARTNER"),
+						formatOptions: {
+							limit: this.options.limits.guilds
+						}
+					})
+				});
+				return;
+			}
+		}
+
 		const providerName = args[0].toLowerCase();
 		const providerModule = this.servicesLoader.loadedModulesRegistry[providerName];
 
@@ -515,8 +583,6 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 			return;
 		}
-
-		const subject = scope === "guild" ? msg.guild : msg.author;
 		
 		const subscriberId = scope === "guild" ? msg.guild.id : `u${msg.author.id}`;
 
@@ -532,24 +598,18 @@ class StreamNotifications extends Plugin implements IModule {
 		subscribers.push(subscriberId);
 		subscription.subscribers = JSON.stringify(subscribers);
 
-		const rawSettings = await this.createOrGetSettings(subject);
+		const index = settings.subscribedTo.findIndex((streamer) => {
+			return !!subscription && streamer.serviceName === providerName && streamer.uid === subscription.uid;
+		});
 
-		const settings = rawSettings ? await this.convertToNormalSettings(rawSettings) : undefined;
-
-		if(settings) {
-			const index = settings.subscribedTo.findIndex((streamer) => {
-				return !!subscription && streamer.serviceName === providerName && streamer.uid === subscription.uid;
+		if(index === -1) {
+			settings.subscribedTo.push({
+				serviceName: providerName,
+				uid: subscription.uid,
+				username: subscription.username
 			});
 
-			if(index === -1) {
-				settings.subscribedTo.push({
-					serviceName: providerName,
-					uid: subscription.uid,
-					username: subscription.username
-				});
-
-				await this.updateSettings(this.convertToRawSettings(settings));
-			}
+			await this.updateSettings(this.convertToRawSettings(settings));
 		}
 
 		await this.updateSubscription(subscription);
@@ -1365,6 +1425,13 @@ class StreamNotifications extends Plugin implements IModule {
 
 		for(let serviceName in this.servicesList) {
 			await this.servicesLoader.load(serviceName);
+		}
+
+		const whitelistModule = $modLoader.signaturesRegistry["snowball.core_features.whitelist"];
+		if(!whitelistModule) {
+			this.log("warn", "Whitelist module not found :CCCCC");
+		} else {
+			this.whitelistModule = whitelistModule as ModuleBase<Whitelist>;
 		}
 
 		if($botConfig.mainShard) {
