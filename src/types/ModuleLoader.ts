@@ -351,15 +351,17 @@ export class ModuleLoader {
 	/**
 	 * Unload module by this name in currently loaded modules registry
 	 * @param {string|string[]} name Name(s) of loaded module(s)
+	 * @param {string} reason Reason to unload module
 	 * @param {boolean} skipCallingUnload `true` if module should be unloaded without calling for unload method. Don't use it unless you know that module doesn't handles any events or doesn't has dynamic variables
 	 * @param {boolean} clearRequireCache `true` if `require` cache of this module file needed to cleared after unload. This works only if `skipCallingUnload` is `false`!
 	 * @returns {Promise} Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
 	 */
-	async unload(name: string | string[], skipCallingUnload: boolean = false, clearRequireCache = false) {
+	async unload(name: string | string[], reason: string = "manual", skipCallingUnload: boolean = false, clearRequireCache = false) {
 		if(Array.isArray(name)) {
-			for(const n of name) { await this.load(n); }
+			for(const n of name) { await this.unload(n, reason); }
 			return;
 		}
+
 		if(!this.loadedModulesRegistry[name]) {
 			let reason = "Module not found or not loaded yet";
 			this.log("err", "#unload: check failed: ", reason);
@@ -382,7 +384,7 @@ export class ModuleLoader {
 			delete this.loadedModulesRegistry[name];
 		} else {
 			try {
-				await moduleKeeper.unload();
+				await moduleKeeper.unload(reason);
 				if(clearRequireCache) {
 					moduleKeeper.clearRequireCache();
 				}
