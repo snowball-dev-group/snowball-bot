@@ -91,10 +91,16 @@ function helpCheck(msg: Message) {
 	return msg.channel.type === "text" && rightsCheck(msg.member);
 }
 
-function dmCmdCheck(msg: Message) {
-	return ["dm", "text"].includes(msg.channel.type);
-}
-
+@command(HELP_CATEGORY, `${PREFIX.slice(1)}`, `loc:${LOCALIZED("META_LIST")}`, {
+	"loc:STREAMING_META_ADD_ARG0": {
+		description: "loc:STREAMING_META_LIST_ARG0_DESC",
+		optional: true
+	},
+	"loc:STREAMING_META_LIST_ARG1": {
+		description: "loc:STREAMING_META_LIST_ARG1_DESC",
+		optional: false
+	}
+}, (msg) => msg.channel.type === "dm" ? true : rightsCheck(msg.member))
 @command(HELP_CATEGORY, `${PREFIX.slice(1)} add`, `loc:${LOCALIZED("META_ADD")}`, {
 	"loc:STREAMING_META_ADD_ARG0": {
 		description: "loc:STREAMING_META_ADD_ARG0_DESC",
@@ -114,7 +120,7 @@ function dmCmdCheck(msg: Message) {
 		description: "loc:STREAMING_META_ADD_ARG1_DESC",
 		optional: false
 	}
-}, dmCmdCheck)
+})
 @command(HELP_CATEGORY, `${PREFIX.slice(1)} remove`, `loc:${LOCALIZED("META_REMOVE")}`, {
 	"loc:STREAMING_META_ADD_ARG0": {
 		description: "loc:STREAMING_META_ADD_ARG0_DESC",
@@ -134,7 +140,7 @@ function dmCmdCheck(msg: Message) {
 		description: "loc:STREAMING_META_REMOVE_ARG1_DESC",
 		optional: false
 	}
-}, dmCmdCheck)
+})
 @command(HELP_CATEGORY, `${PREFIX.slice(1)} edit`, `loc:${LOCALIZED("META_EDIT")}`, {
 	"loc:STREAMING_META_ADD_ARG0": {
 		description: "loc:STREAMING_META_ADD_ARG0_DESC",
@@ -156,16 +162,6 @@ function dmCmdCheck(msg: Message) {
 @command(HELP_CATEGORY, `${PREFIX.slice(1)} set_channel`, `loc:${LOCALIZED("META_SETCHANNEL")}`, {
 	"loc:STREAMING_META_SETCHANNEL_ARG0": {
 		description: "loc:STREAMING_META_SETCHANNEL_ARG0_DESC",
-		optional: false
-	}
-}, helpCheck)
-@command(HELP_CATEGORY, `${PREFIX.slice(1)}`, `loc:${LOCALIZED("META_LIST")}`, {
-	"loc:STREAMING_META_ADD_ARG0": {
-		description: "loc:STREAMING_META_LIST_ARG0_DESC",
-		optional: true
-	},
-	"loc:STREAMING_META_LIST_ARG1": {
-		description: "loc:STREAMING_META_LIST_ARG1_DESC",
 		optional: false
 	}
 }, helpCheck)
