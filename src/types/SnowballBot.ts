@@ -174,7 +174,7 @@ export class SnowballBot extends EventEmitter {
 		 */
 		private readonly _config: IBotConfig,
 		/**
-		 * International configuration
+		 * Internal configuration
 		 */
 		private readonly _internalConfiguration: IInternalBotConfig) {
 
@@ -289,6 +289,8 @@ export class SnowballBot extends EventEmitter {
 			}
 		});
 
+		this._discordClient.on("warn", (info) => this._log("warn", info));
+
 		// Global bot variable, which should be used by plugins
 		Object.defineProperty(global, "$discordBot", {
 			configurable: false, enumerable: false,
@@ -359,5 +361,15 @@ export class SnowballBot extends EventEmitter {
 			throw new Error("Discord client not requires reconnecting");
 		}
 		return await this._discordClient.login(this._config.token);
+	}
+
+	/**
+	 * Forces all modules to unload and shutdowns Discord connection
+	 * @param reason Reason of shutdown whcih will be transfered to all modules
+	 */
+	public async shutdown(reason = "unknown") {
+		this._log("info", `Shutting down with reason: "${reason}"`);
+		await this.modLoader.unload(Object.keys(this.modLoader.loadedModulesRegistry));
+		await this._discordClient.destroy();
 	}
 }
