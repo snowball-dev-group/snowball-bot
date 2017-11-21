@@ -510,6 +510,7 @@
     "PROFILES_PROFILE_INVALID_LINK": "Неправильная ссылка или аргументы отсутствуют.",
     "PROFILES_PROFILE_LOADING": "Загрузка плагина...",
     "PROFILES_PROFILE_MAXPLUGINSERR": "Максимальное количество встраиваемых плагинов - 10",
+    "PROFILES_PROFILE_BOT": "Бот",
     "PROFILES_PROFILE_MEMBERTIME": "Участник уже {duration}",
     "PROFILES_PROFILE_BOTADDED": "Добавлен {duration} назад",
     "PROFILES_PROFILE_MEMBERTIME_NOTFOUND": "Дата вступления неизвестна",
