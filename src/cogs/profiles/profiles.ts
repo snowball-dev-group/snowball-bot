@@ -542,7 +542,7 @@ class Profiles extends Plugin implements IModule {
 			});
 			statusString += ` (${sDiff})`;
 		} else {
-			statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_BOT");
+			statusString += ` (${(await localizeForUser(msg.member, "PROFILES_PROFILE_BOT")).toUpperCase()})`;
 		}
 
 		const fields: IEmbedOptionsField[] = [];
