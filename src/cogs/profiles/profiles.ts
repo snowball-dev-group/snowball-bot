@@ -10,7 +10,7 @@ import { generateLocalizedEmbed, getUserLanguage, humanizeDurationForUser, local
 import { command as docCmd } from "../utils/help";
 import { isPremium } from "../utils/premium";
 import { timeDiff } from "../utils/time";
-import { EmbedType, escapeDiscordMarkdown, getLogger, IEmbed, IEmbedOptionsField } from "../utils/utils";
+import { EmbedType, escapeDiscordMarkdown, getLogger, IEmbed, IEmbedOptionsField, resolveGuildMember } from "../utils/utils";
 import { AddedProfilePluginType, IAddedProfilePlugin, IProfilesPlugin } from "./plugins/plugin";
 
 export interface IProfilesModuleConfig {
@@ -182,15 +182,40 @@ class Profiles extends Plugin implements IModule {
 		let profileOwner: GuildMember | undefined = undefined;
 		if(msg.content === "!profile") {
 			profileOwner = msg.member;
-		} else if(msg.content.startsWith("!profile ") && msg.mentions.users.size === 1) {
-			const mentioned = msg.mentions.users.first();
-			if(!(profileOwner = msg.guild.members.get(mentioned.id))) {
-				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTAMEMBER")
-				});
-				return;
+		} else if(msg.content.startsWith("!profile ")) {
+			const mentionsCount = msg.mentions.users.size;
+			if(mentionsCount === 1) {
+				const mentioned = msg.mentions.users.first();
+				if(!(profileOwner = msg.guild.members.get(mentioned.id))) {
+					msg.channel.send("", {
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTAMEMBER")
+					});
+					return;
+				}
+			} else if(mentionsCount > 1) {
+				return; // as we don't show profiles fr more than one user
+			} else {
+				const resolvedMember = await (async () => {
+					try {
+						return await resolveGuildMember(msg.content.slice("!profile ".length), msg.guild, false, false);
+					} catch (err) {
+						// in case of some error
+						return undefined;
+					}
+				})();
+
+				if(!resolvedMember) {
+					msg.channel.send("", {
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTFOUND")
+					});
+					return;
+				}
+
+				profileOwner = resolvedMember;
 			}
-		} else {
+		}
+
+		if(!profileOwner) {
 			return;
 		}
 

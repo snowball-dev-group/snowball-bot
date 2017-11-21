@@ -516,6 +516,7 @@
     "PROFILES_PROFILE_MEMBERTIME:DURATION:SECONDS": "{seconds, plural, one {# секунду} few {# секунды} other {# секунд}}",
     "PROFILES_PROFILE_MEMBERTIME:DURATION:WEEKS": "{weeks, plural, one {# неделю} few {# недели} other {# недель}}",
     "PROFILES_PROFILE_NOTAMEMBER": "Упомянутый пользователь не является участником данной гильдии.",
+    "PROFILES_PROFILE_NOTFOUND": "Был долгий и упорный поиск... К несчастью, никого мы не нашли. Возможно, Вы неправильно набрали имя?",
     "PROFILES_PROFILE_PLUGIN_404": "Такой плагин не найден.",
     "PROFILES_PROFILE_PLUGIN_NOT_LOADED": "Плагин не загружен. Установка невозможна.",
     "PROFILES_PROFILE_PLUGIN_REMOVED": "Плагин `{pluginName}` удален",

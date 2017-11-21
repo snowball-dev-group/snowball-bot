@@ -1,5 +1,5 @@
 import * as createLogger from "loggy";
-import { Guild } from "discord.js";
+import { Guild, GuildMember } from "discord.js";
 import { replaceAll } from "./text";
 
 export function stringifyError(err, filter = null, space = 2) {
@@ -373,7 +373,7 @@ export function getLogger(name: string): ILoggerFunction {
 export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true) {
 	if(/[0-9]+/.test(nameOrID)) {
 		// it's can be ID
-		let role = guild.roles.get(nameOrID);
+		const role = guild.roles.get(nameOrID);
 		if(role) { return role; }
 	}
 	// going to search
@@ -385,13 +385,64 @@ export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true) 
 
 export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true) {
 	if(/[0-9]+/.test(nameOrID)) {
-		let ch = guild.channels.get(nameOrID);
+		const ch = guild.channels.get(nameOrID);
 		if(ch) { return ch; }
 	}
 
 	return guild.channels.find((vc) => {
 		if(strict) { return vc.name === nameOrID; }
 		else { return vc.name.includes(nameOrID); }
+	});
+}
+
+const caseSwitch = (str: string, sw: boolean) => {
+	return sw ? str.toLowerCase() : str;
+};
+
+export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false) : Promise<GuildMember|undefined> {
+	if(/[0-9]+/.test(nameOrID)) {
+		const member = await (async () => {
+			try {
+				return await guild.fetchMember(nameOrID);
+			} catch (err) {
+				return undefined;
+			}
+		})();
+		if(member) { return member; }
+	}
+
+	// doing some quick conversations
+	caseStrict = !caseStrict;
+	nameOrID = caseSwitch(nameOrID, !caseStrict);
+
+	// tag parts
+	const tagParts = nameOrID.includes("#") ? (nameOrID.startsWith("@") ? nameOrID.slice(1) : nameOrID).split("#") : undefined;
+
+	if(tagParts) {
+		if(tagParts.length !== 2) {
+			throw new Error(`Invalid tag given. Expected "username#discrim", got ${tagParts.length} unknown parts.`);
+		} else if(/[0-9]{4}/.test(tagParts[1])) {
+			throw new Error("Invalid discrim given.");
+		} else if(tagParts[0].includes("@")) {
+			throw new Error("Invalid username given.");
+		}
+	}
+
+	return guild.members.find((member) => {
+		if(tagParts) { // tag strict equality check
+			const splitdtag = caseSwitch(member.user.tag, caseStrict).split("#");
+			if(splitdtag.length !== 2) { return false; } // invalid tag skip
+			return splitdtag[1] === tagParts[1] && (strict ? splitdtag[0] === tagParts[0] : tagParts[0].length === 0 ? true : splitdtag[0].includes(tagParts[0]));
+		}
+
+		const nickname = member.nickname ? caseSwitch(member.nickname, caseStrict) : undefined;
+		const username = caseSwitch(member.user.username, caseStrict);
+
+		if(strict) {
+			return (nickname && nickname === nameOrID) || username === nameOrID;
+		} else {
+			return (nickname && nickname.includes(nameOrID)) || username.includes(nameOrID);
+		}
 	});
 }
 
