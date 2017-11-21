@@ -499,6 +499,8 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async sendProfile(msg: Message, dbProfile: IDBUserProfile, member: GuildMember) {
+		const isBot = member.user.bot;
+
 		let statusString = "";
 		statusString += await this.getUserStatusEmoji(member) + " ";
 		statusString += await this.getUserStatusString(member, msg.member);
@@ -531,7 +533,7 @@ class Profiles extends Plugin implements IModule {
 			statusString = `${this.config.emojis.premium} ${statusString}`;
 		}
 
-		if(dbProfile.status_changed) {
+		if(!isBot && dbProfile.status_changed) {
 			const changedAt = new Date(dbProfile.status_changed).getTime();
 			const diff = Date.now() - changedAt;
 			const sDiff = await humanizeDurationForUser(member, diff, undefined, {
@@ -539,6 +541,8 @@ class Profiles extends Plugin implements IModule {
 				largest: 2
 			});
 			statusString += ` (${sDiff})`;
+		} else {
+			statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_BOT");
 		}
 
 		const fields: IEmbedOptionsField[] = [];
@@ -570,7 +574,7 @@ class Profiles extends Plugin implements IModule {
 			description: statusString,
 			fields: fields,
 			footer: {
-				text: joinedDate !== 0 ? await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME", {
+				text: joinedDate !== 0 ? await localizeForUser(msg.member, isBot ? "PROFILES_PROFILE_MEMBERTIME" : "PROFILES_PROFILE_BOTADDED", {
 					duration: this.serverTimeHumanize(timeDiff(joinedDate, Date.now(), "ms"), 2, true, await getUserLanguage(member))
 				}) : await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME_NOTFOUND"),
 				icon_url: msg.guild.iconURL
