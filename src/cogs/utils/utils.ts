@@ -413,7 +413,7 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 
 	// doing some quick conversations
 	caseStrict = !caseStrict;
-	nameOrID = caseSwitch(nameOrID, !caseStrict);
+	nameOrID = caseSwitch(nameOrID, caseStrict);
 
 	// tag parts
 	const tagParts = nameOrID.includes("#") ? (nameOrID.startsWith("@") ? nameOrID.slice(1) : nameOrID).split("#") : undefined;
