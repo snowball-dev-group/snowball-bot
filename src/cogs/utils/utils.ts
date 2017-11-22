@@ -421,7 +421,7 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 	if(tagParts) {
 		if(tagParts.length !== 2) {
 			throw new Error(`Invalid tag given. Expected "username#discrim", got ${tagParts.length} unknown parts.`);
-		} else if(/[0-9]{4}/.test(tagParts[1])) {
+		} else if(!/[0-9]{4}/.test(tagParts[1])) {
 			throw new Error("Invalid discrim given.");
 		} else if(tagParts[0].includes("@")) {
 			throw new Error("Invalid username given.");
