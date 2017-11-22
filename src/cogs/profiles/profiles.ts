@@ -536,7 +536,7 @@ class Profiles extends Plugin implements IModule {
 		if(!isBot && dbProfile.status_changed) {
 			const changedAt = new Date(dbProfile.status_changed).getTime();
 			const diff = Date.now() - changedAt;
-			const sDiff = await humanizeDurationForUser(member, diff, undefined, {
+			const sDiff = await humanizeDurationForUser(msg.member, diff, undefined, {
 				round: true,
 				largest: 2
 			});
