@@ -432,7 +432,13 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 		if(tagParts) { // tag strict equality check
 			const splitdtag = caseSwitch(member.user.tag, caseStrict).split("#");
 			if(splitdtag.length !== 2) { return false; } // invalid tag skip
-			return splitdtag[1] === tagParts[1] && (strict ? splitdtag[0] === tagParts[0] : tagParts[0].length === 0 ? true : splitdtag[0].includes(tagParts[0]));
+
+			return (splitdtag[1] === tagParts[1]) && // tag check
+				(strict ? ( // strict check
+					splitdtag[0] === tagParts[0]
+				) : ( // non-strict check
+					tagParts[0].length === 0 ? true : splitdtag[0].includes(tagParts[0])
+				));
 		}
 
 		const nickname = member.nickname ? caseSwitch(member.nickname, caseStrict) : undefined;
