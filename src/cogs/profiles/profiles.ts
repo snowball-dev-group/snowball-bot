@@ -575,7 +575,7 @@ class Profiles extends Plugin implements IModule {
 			fields: fields,
 			footer: {
 				text: joinedDate !== 0 ? await localizeForUser(msg.member, !isBot ? "PROFILES_PROFILE_MEMBERTIME" : "PROFILES_PROFILE_BOTADDED", {
-					duration: this.serverTimeHumanize(timeDiff(joinedDate, Date.now(), "ms"), 2, true, await getUserLanguage(member))
+					duration: this.serverTimeHumanize(timeDiff(joinedDate, Date.now(), "ms"), 2, true, await getUserLanguage(msg.member))
 				}) : await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME_NOTFOUND"),
 				icon_url: msg.guild.iconURL
 			},
