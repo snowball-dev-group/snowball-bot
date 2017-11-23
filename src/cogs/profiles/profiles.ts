@@ -209,7 +209,7 @@ class Profiles extends Plugin implements IModule {
 						return undefined;
 					}
 				})();
-				this.log("info", `Resolving hook took ${rst}ms on guild ${msg.guild.id} for search '${searchTerm}'`);
+				this.log("info", `Resolving hook took ${(Date.now() - rst)}ms on guild ${msg.guild.id} for search '${searchTerm}'`);
 
 				if(!resolvedMember) {
 					msg.channel.send("", {
