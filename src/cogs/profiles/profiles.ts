@@ -141,6 +141,7 @@ class Profiles extends Plugin implements IModule {
 
 	async onPresenseUpdate(old: GuildMember, member: GuildMember) {
 		const profile = await this.getOrCreateProfile(member, member.guild);
+		
 		if(old.presence.status !== member.presence.status) {
 			if(old.presence.game && member.presence.game) {
 				if(old.presence.game.equals(member.presence.game)) {
@@ -152,6 +153,7 @@ class Profiles extends Plugin implements IModule {
 				return; // game not changed ?
 			}
 		}
+
 		profile.status_changed = (new Date()).toISOString();
 		this.updateProfile(profile);
 	}
@@ -181,6 +183,7 @@ class Profiles extends Plugin implements IModule {
 
 	async showProfile(msg: Message) {
 		let profileOwner: GuildMember | undefined = undefined;
+
 		if(msg.content === "!profile") {
 			profileOwner = msg.member;
 		} else if(msg.content.startsWith("!profile ")) {
@@ -196,14 +199,17 @@ class Profiles extends Plugin implements IModule {
 			} else if(mentionsCount > 1) {
 				return; // as we don't show profiles fr more than one user
 			} else {
+				const searchTerm = msg.content.slice("!profile ".length);
+				const rst = Date.now();
 				const resolvedMember = await (async () => {
 					try {
-						return await resolveGuildMember(msg.content.slice("!profile ".length), msg.guild, false, false);
+						return await resolveGuildMember(searchTerm, msg.guild, false, false);
 					} catch(err) {
 						// in case of some error
 						return undefined;
 					}
 				})();
+				this.log("info", `Resolving hook took ${rst}ms on guild ${msg.guild.id} for search '${searchTerm}'`);
 
 				if(!resolvedMember) {
 					msg.channel.send("", {
@@ -229,6 +235,7 @@ class Profiles extends Plugin implements IModule {
 		if(msg.author.id !== $botConfig.botOwner) {
 			return;
 		}
+
 		const args = msg.content.slice("!add_badge ".length).split(",").map(arg => arg.trim());
 		if(args.length !== 4) {
 			// uid, gid, add/remove, badgeid
@@ -248,8 +255,10 @@ class Profiles extends Plugin implements IModule {
 			});
 			return;
 		}
+
 		let param = msg.content.slice("!edit_profile ".length);
 		const profile = await this.getOrCreateProfile(msg.member, msg.guild);
+
 		if(param.startsWith("set ")) {
 			param = param.slice("set ".length);
 			const firstSpaceIndex = param.indexOf(" ");
