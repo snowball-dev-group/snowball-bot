@@ -428,28 +428,31 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 		}
 	}
 
-	return guild.members.find((member) => {
+	for(const member of guild.members.values()) {
 		if(tagParts) { // tag strict equality check
 			const splitdtag = caseSwitch(member.user.tag, caseStrict).split("#");
-			if(splitdtag.length !== 2) { return false; } // invalid tag skip
+			if(splitdtag.length !== 2) { continue; } // invalid tag skip
 
-			return (splitdtag[1] === tagParts[1]) && // tag check
-				(strict ? ( // strict check
-					splitdtag[0] === tagParts[0]
-				) : ( // non-strict check
-					tagParts[0].length === 0 ? true : splitdtag[0].includes(tagParts[0])
-				));
+			if((splitdtag[1] === tagParts[1]) && (strict ? (splitdtag[0] === tagParts[0]) : (tagParts[0].length === 0 ? true : splitdtag[0].includes(tagParts[0])))) {
+				return member;
+			}
+
+			continue;
 		}
 
 		const nickname = member.nickname ? caseSwitch(member.nickname, caseStrict) : undefined;
 		const username = caseSwitch(member.user.username, caseStrict);
 
 		if(strict) {
-			return (nickname && nickname === nameOrID) || username === nameOrID;
+			if((nickname && nickname === nameOrID) || username === nameOrID) {
+				return member;
+			}
 		} else {
-			return (nickname && nickname.includes(nameOrID)) || username.includes(nameOrID);
+			if((nickname && nickname.includes(nameOrID)) || username.includes(nameOrID)) {
+				return member;
+			}
 		}
-	});
+	}
 }
 
 export function sleep<T>(delay: number = 1000, value?: T): Promise<T> {
