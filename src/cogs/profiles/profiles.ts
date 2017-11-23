@@ -1,3 +1,4 @@
+import { getPreferenceValue } from "../utils/userPrefs";
 import { Guild, GuildMember, Message, User } from "discord.js";
 import fetch from "node-fetch";
 import * as util from "util";
@@ -198,7 +199,7 @@ class Profiles extends Plugin implements IModule {
 				const resolvedMember = await (async () => {
 					try {
 						return await resolveGuildMember(msg.content.slice("!profile ".length), msg.guild, false, false);
-					} catch (err) {
+					} catch(err) {
 						// in case of some error
 						return undefined;
 					}
@@ -498,24 +499,24 @@ class Profiles extends Plugin implements IModule {
 		});
 	}
 
-	async sendProfile(msg: Message, dbProfile: IDBUserProfile, member: GuildMember) {
-		const isBot = member.user.bot;
+	async sendProfile(msg: Message, dbProfile: IDBUserProfile, target: GuildMember) {
+		const isBot = target.user.bot;
 
 		let statusString = "";
-		statusString += await this.getUserStatusEmoji(member) + " ";
-		statusString += await this.getUserStatusString(member, msg.member);
+		statusString += await this.getUserStatusEmoji(target) + " ";
+		statusString += await this.getUserStatusString(target, msg.member);
 
-		if(member.presence.game && !dbProfile.activity) {
+		if(target.presence.game && !dbProfile.activity) {
 			statusString = "";
 
-			if(member.presence.game.streaming) {
+			if(target.presence.game.streaming) {
 				statusString += await this.getUserStatusEmoji("streaming") + " ";
 				statusString += await this.getUserStatusString("streaming", msg.member) + " ";
-				statusString += `[${escapeDiscordMarkdown(member.presence.game.name)}](${member.presence.game.url})`;
+				statusString += `[${escapeDiscordMarkdown(target.presence.game.name)}](${target.presence.game.url})`;
 			} else {
-				statusString += await this.getUserStatusEmoji(member) + " ";
+				statusString += await this.getUserStatusEmoji(target) + " ";
 				statusString += await this.getUserStatusString("playing", msg.member) + " ";
-				statusString += `в **${escapeDiscordMarkdown(member.presence.game.name)}**`;
+				statusString += `в **${escapeDiscordMarkdown(target.presence.game.name)}**`;
 			}
 		} else if(dbProfile.activity) {
 			const jsonActivity = JSON.parse(dbProfile.activity) as IUserActivity;
@@ -527,10 +528,16 @@ class Profiles extends Plugin implements IModule {
 			statusString += " **" + ((text) => (jsonActivity.link ? `[${text}](${jsonActivity.link})` : text))(escapeDiscordMarkdown(jsonActivity.text)) + "**";
 		}
 
-		if(member.id === $botConfig.botOwner) {
+		if(target.id === $botConfig.botOwner) {
 			statusString = `${this.config.emojis.admin} ${statusString}`;
-		} else if((await isPremium(member))) {
+		} else if((await isPremium(target))) {
 			statusString = `${this.config.emojis.premium} ${statusString}`;
+		}
+
+		const additionalBadges = await getPreferenceValue(target, "profiles:badges", true);
+		if(Array.isArray(additionalBadges)) {
+			const badgesLine = additionalBadges.join(" ");
+			statusString = `${badgesLine}`;
 		}
 
 		if(!isBot && dbProfile.status_changed) {
@@ -560,15 +567,15 @@ class Profiles extends Plugin implements IModule {
 		let joinedDate = new Date(dbProfile.joined).getTime();
 
 		if(joinedDate === 0) {
-			dbProfile.joined = member.joinedAt.toISOString();
+			dbProfile.joined = target.joinedAt.toISOString();
 			await this.updateProfile(dbProfile);
-			joinedDate = member.joinedAt.getTime();
+			joinedDate = target.joinedAt.getTime();
 		}
 
 		const embed = {
 			author: {
-				icon_url: member.user.displayAvatarURL.replace("?size=2048", "?size=512"),
-				name: member.displayName
+				icon_url: target.user.displayAvatarURL.replace("?size=2048", "?size=512"),
+				name: target.displayName
 			},
 			title: dbProfile.real_name ? dbProfile.real_name : undefined,
 			description: statusString,
@@ -581,9 +588,9 @@ class Profiles extends Plugin implements IModule {
 			},
 			image: undefined,
 			thumbnail: {
-				url: member.user.displayAvatarURL
+				url: target.user.displayAvatarURL
 			},
-			timestamp: member.user.createdAt.toISOString()
+			timestamp: target.user.createdAt.toISOString()
 		} as IEmbed;
 
 		let pushing = false;
