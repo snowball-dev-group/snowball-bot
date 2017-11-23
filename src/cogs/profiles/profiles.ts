@@ -1,4 +1,4 @@
-import { getPreferenceValue } from "../utils/userPrefs";
+import { getPreferenceValue as getUserPrefValue } from "../utils/userPrefs";
 import { Guild, GuildMember, Message, User } from "discord.js";
 import fetch from "node-fetch";
 import * as util from "util";
@@ -543,10 +543,10 @@ class Profiles extends Plugin implements IModule {
 			statusString = `${this.config.emojis.premium} ${statusString}`;
 		}
 
-		const additionalBadges = await getPreferenceValue(target, "profiles:badges", true);
+		const additionalBadges = await getUserPrefValue(target.user, "profiles:badges", true);
 		if(Array.isArray(additionalBadges)) {
 			const badgesLine = additionalBadges.join(" ");
-			statusString = `${badgesLine}`;
+			statusString = `${badgesLine} ${statusString}`;
 		}
 
 		if(!isBot && dbProfile.status_changed) {
