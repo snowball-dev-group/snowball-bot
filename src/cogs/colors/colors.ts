@@ -11,20 +11,30 @@ import { randomPick } from "../utils/random";
 import { isVerified, isInitDone as isVerifiedEnabled } from "../utils/verified";
 import { messageToExtra } from "../utils/failToDetail";
 import { Whitelist } from "../whitelist/whitelist";
+import * as knex from "knex";
+import { join as pathJoin } from "path";
+import { IHashMap } from "../../types/Interfaces";
 
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";
 const COLORFUL_HELP_PREFIX = COLORFUL_PREFIX.slice(1);
 const HELP_CATEGORY = "COLORS";
+const DB_VERSION = 2;
 
-interface IColorfulGuildColorInfo {
+export interface IColorfulGuildColorInfo {
 	required_role?: string[] | string;
 	role: string;
 }
 
-interface IColorfulGuildInfo {
+export interface IColorfulGuildInfo {
 	guildId: string;
-	rolePrefixes: Map<string, IColorfulGuildColorInfo>;
+	rolePrefixes: IHashMap<IColorfulGuildColorInfo>;
+}
+
+export interface IColorfulMigration {
+	perform(db: knex, tableName: string) : Promise<boolean>;
+	description: string;
+	name: string;
 }
 
 function checkPerms(member: GuildMember) {
@@ -172,7 +182,7 @@ class Colors extends Plugin implements IModule {
 
 		const colorfulInfo = await this.getInfo(member.guild);
 
-		let roles = Array.from(colorfulInfo.rolePrefixes.values());
+		let roles = Object.values(colorfulInfo.rolePrefixes);
 
 		if(role === "random") {
 			// pick random
@@ -223,7 +233,7 @@ class Colors extends Plugin implements IModule {
 
 		const colorfulInfo = await this.getInfo(msg.guild);
 
-		const colorInfo = colorfulInfo.rolePrefixes.get(colorName);
+		const colorInfo = colorfulInfo.rolePrefixes[colorName];
 
 		if(!colorInfo) {
 			msg.channel.send("", {
@@ -283,7 +293,7 @@ class Colors extends Plugin implements IModule {
 		}
 
 		const toUnassign: Role[] = [] as Role[];
-		for(const info of colorfulInfo.rolePrefixes.values()) {
+		for(const info of Object.values(colorfulInfo.rolePrefixes)) {
 			const role = msg.member.roles.get(info.role);
 			if(role) { toUnassign.push(role); }
 		}
@@ -334,7 +344,7 @@ class Colors extends Plugin implements IModule {
 		const colorfulInfo = await this.getInfo(msg.guild);
 
 		const toUnassign: Role[] = [];
-		for(const colorInfo of colorfulInfo.rolePrefixes.values()) {
+		for(const colorInfo of Object.values(colorfulInfo.rolePrefixes)) {
 			const role = msg.member.roles.get(colorInfo.role);
 			if(role) { toUnassign.push(role); }
 		}
@@ -388,7 +398,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(colorfulInfo.rolePrefixes.has(args[0])) {
+		if(!!colorfulInfo.rolePrefixes[args[0]]) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ALREADYEXISTS")
 			});
@@ -512,17 +522,17 @@ class Colors extends Plugin implements IModule {
 		// re-request colorful info, because it can be changed
 		colorfulInfo = await this.getInfo(msg.guild);
 
-		if(colorfulInfo.rolePrefixes.has(namedArgs.name)) {
+		if(!!colorfulInfo.rolePrefixes[namedArgs.name]) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ALREADYEXISTS")
 			});
 			return;
 		}
 
-		colorfulInfo.rolePrefixes.set(namedArgs.name, {
+		colorfulInfo.rolePrefixes[namedArgs.name] = {
 			required_role: !!requiredRoles ? requiredRoles instanceof Array ? requiredRoles.map(r => r.id) : requiredRoles.id : undefined,
 			role: namedArgs.role
-		});
+		};
 
 		await this.updateInfo(colorfulInfo);
 
@@ -555,7 +565,7 @@ class Colors extends Plugin implements IModule {
 
 		let colorfulInfo = await this.getInfo(msg.guild);
 
-		let previousColor = colorfulInfo.rolePrefixes.get(args[0]);
+		let previousColor = colorfulInfo.rolePrefixes[args[0]];
 
 		if(!previousColor) {
 			msg.channel.send("", {
@@ -569,7 +579,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(colorfulInfo.rolePrefixes.has(args[1])) {
+		if(colorfulInfo.rolePrefixes.has[args[1]]) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					key: "COLORS_RENAME_ALREADYEXISTS",
@@ -600,7 +610,7 @@ class Colors extends Plugin implements IModule {
 
 		colorfulInfo = await this.getInfo(msg.guild);
 
-		previousColor = colorfulInfo.rolePrefixes.get(args[0]);
+		previousColor = colorfulInfo.rolePrefixes[args[0]];
 
 		if(!previousColor) {
 			msg.channel.send("", {
@@ -614,7 +624,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(colorfulInfo.rolePrefixes.has(args[1])) {
+		if(!!colorfulInfo.rolePrefixes[args[1]]) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					key: "COLORS_RENAME_CONFIRMATIONWAITBINDED",
@@ -626,9 +636,9 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		colorfulInfo.rolePrefixes.set(args[1], previousColor);
+		colorfulInfo.rolePrefixes[args[1]] = previousColor;
 
-		colorfulInfo.rolePrefixes.delete(args[0]);
+		delete colorfulInfo.rolePrefixes[args[0]];
 
 		await this.updateInfo(colorfulInfo);
 
@@ -657,7 +667,7 @@ class Colors extends Plugin implements IModule {
 
 		let colorfulInfo = await this.getInfo(msg.guild);
 
-		let colorInfo = colorfulInfo.rolePrefixes.get(colorName);
+		let colorInfo = colorfulInfo.rolePrefixes[colorName];
 
 		if(!colorInfo) {
 			msg.channel.send("", {
@@ -674,7 +684,7 @@ class Colors extends Plugin implements IModule {
 		const colorRole = msg.guild.roles.get(colorInfo.role);
 
 		if(!colorRole) {
-			colorfulInfo.rolePrefixes.delete(colorName);
+			delete colorfulInfo.rolePrefixes[colorName];
 			await this.updateInfo(colorfulInfo);
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_DELETE_REMOVEDWITHOUTCONFIRMATION")
@@ -699,7 +709,7 @@ class Colors extends Plugin implements IModule {
 		// because it can be updated due confirmation
 		colorfulInfo = await this.getInfo(msg.guild);
 
-		colorInfo = colorfulInfo.rolePrefixes.get(colorName);
+		colorInfo = colorfulInfo.rolePrefixes[colorName];
 
 		if(!colorInfo) {
 			msg.channel.send("", {
@@ -708,7 +718,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		colorfulInfo.rolePrefixes.delete(colorName);
+		delete colorfulInfo.rolePrefixes[colorName];
 
 		await this.updateInfo(colorfulInfo);
 
@@ -732,7 +742,7 @@ class Colors extends Plugin implements IModule {
 
 		const colorfulInfo = await this.getInfo(msg.guild);
 
-		const colorInfo = colorfulInfo.rolePrefixes.get(colorName);
+		const colorInfo = colorfulInfo.rolePrefixes[colorName];
 
 		if(!colorInfo) {
 			msg.channel.send("", {
@@ -825,7 +835,7 @@ class Colors extends Plugin implements IModule {
 
 		const colorfulInfo = await this.getInfo(msg.guild);
 
-		if(colorfulInfo.rolePrefixes.size === 0) {
+		if(Object.keys(colorfulInfo.rolePrefixes).length === 0) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_DIAG_NOCOLORS")
 			});
@@ -833,7 +843,8 @@ class Colors extends Plugin implements IModule {
 		}
 
 		let str = "";
-		for(const [name, colorInfo] of colorfulInfo.rolePrefixes) {
+		for(const name in colorfulInfo.rolePrefixes) {
+			const colorInfo = colorfulInfo.rolePrefixes[name];
 			str += `**${escapeDiscordMarkdown(name)}**\n`;
 			if(colorInfo.required_role) {
 				if(colorInfo.required_role instanceof Array) {
@@ -900,7 +911,7 @@ class Colors extends Plugin implements IModule {
 	async getColorsList(msg: Message) {
 		const colorfulInfo = await this.getInfo(msg.guild);
 
-		if(colorfulInfo.rolePrefixes.size === 0) {
+		if(Object.keys(colorfulInfo.rolePrefixes).length === 0) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_LIST_NOCOLORS")
 			});
@@ -916,7 +927,8 @@ class Colors extends Plugin implements IModule {
 					// due_deleted: []
 				};
 
-		for(const [colorName, colorInfo] of colorfulInfo.rolePrefixes) {
+		for(const colorName in colorfulInfo.rolePrefixes) {
+			const colorInfo = colorfulInfo.rolePrefixes[colorName];
 			if(!msg.guild.roles.has(colorInfo.role)) {
 				// unavailable.due_deleted.push(colorName);
 				continue;
@@ -1049,7 +1061,7 @@ class Colors extends Plugin implements IModule {
 
 			const colorfulInfo = await this.getInfo(msg.guild);
 
-			const color = await colorfulInfo.rolePrefixes.get(args[1]);
+			const color = await colorfulInfo.rolePrefixes[args[1]];
 			if(!color) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOTFOUND")
@@ -1101,6 +1113,7 @@ class Colors extends Plugin implements IModule {
 					tb.string("rolePrefixes", 10240).notNullable();
 					// JSON<name:String, prefix:String>
 				});
+				await setPreferenceValue("global", "colors:dbversion", DB_VERSION);
 			} catch(err) {
 				this.log("err", "Can't create table in database!", err);
 				$snowball.captureException(err);
@@ -1118,6 +1131,30 @@ class Colors extends Plugin implements IModule {
 			this.whitelistModule = whitelistModule as ModuleBase<Whitelist>;
 		}
 
+		let currentDBVersion = await getPreferenceValue("global", "colors:dbversion", true) as number|null;
+		if(!currentDBVersion || currentDBVersion < DB_VERSION) {
+			this.log("info", "Outdated DB detected. Performing migrations...");
+
+			if(!currentDBVersion) { currentDBVersion = 1; }
+
+			for(let nextVersion = currentDBVersion; nextVersion < DB_VERSION; nextVersion++) {
+				const migrationVersion = nextVersion + 1;
+				const migrationClass = require(pathJoin(__dirname, "migrations", `migration-${migrationVersion}.js`));
+				const migration = new migrationClass() as IColorfulMigration;
+				const result = await migration.perform(this.db, TABLE_NAME);
+				if(!result) { throw new Error(`Unsuccessful migration - ${currentDBVersion} to ${migrationVersion}`); }
+				this.log("ok", `Migration complete to version ${migrationVersion}`);
+				await setPreferenceValue("global", "colors:dbversion", migrationVersion);
+			}
+
+			currentDBVersion = await getPreferenceValue("global", "colors:dbversion", true) as null|number;
+			if(!currentDBVersion) { throw new Error("Version unknown after migrations. Unexpected behavior"); }
+
+			this.log("ok", `Migrations are complete, new version - ${currentDBVersion}`);
+		}
+
+		this.log("info", `Current DB version - ${currentDBVersion}, latest DB version - ${DB_VERSION}`);
+
 		this.log("info", "Handling events");
 		this.handleEvents();
 		this.log("ok", "We're done here, LET'S GO TO WORK!");
@@ -1129,7 +1166,7 @@ class Colors extends Plugin implements IModule {
 	 */
 	async updateInfo(info: IColorfulGuildInfo) {
 		let inf = info as any;
-		inf.rolePrefixes = JSON.stringify([...info.rolePrefixes]);
+		inf.rolePrefixes = JSON.stringify(info.rolePrefixes);
 		await this.db(TABLE_NAME).where({
 			guildId: info.guildId
 		}).update(inf);
@@ -1148,14 +1185,13 @@ class Colors extends Plugin implements IModule {
 		}).first();
 		if(!prefixes) {
 			if(deep) { throw new Error("Cannot get colorful info!"); }
-			const emptyMap = new Map<string, string>();
 			await this.db(TABLE_NAME).insert({
 				guildId: guildId,
-				rolePrefixes: JSON.stringify([...emptyMap])
+				rolePrefixes: JSON.stringify({})
 			});
 			return await this.getInfo(guildId, true) as IColorfulGuildInfo;
 		}
-		prefixes.rolePrefixes = new Map(JSON.parse(prefixes.rolePrefixes)) as Map<string, IColorfulGuildColorInfo>;
+		prefixes.rolePrefixes = JSON.parse(prefixes.rolePrefixes);
 		return prefixes as IColorfulGuildInfo;
 	}
 
