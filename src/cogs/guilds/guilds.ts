@@ -1483,16 +1483,49 @@ class Guilds extends Plugin implements IModule {
 
 		switch(action) {
 			case "list": {
-				let str = "#" + await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST", {
+				let str = "# " + await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST", {
 					guildName: this.membersControl_fixString(dbRow.name)
 				});
-				str += "\n\n";
+				
+				let ownerStr: string|undefined;
+				const admins: string[] = [];
+				const otherMembers: string[] = [];
+
 				for(const member of members.values()) {
-					str += `- ${this.membersControl_fixString(member.displayName)}\n`;
+					const memberEntry = `- ${this.membersControl_fixString(member.displayName)}`;
+
+					const isOwner = rightsCheck(member, dbRow, true);
+					if(isOwner) {
+						ownerStr = memberEntry;
+						continue;
+					} // owner
+
+					if(!isOwner && rightsCheck(member, dbRow, false)) {
+						admins.push(memberEntry);
+						continue;
+					}
+
+					otherMembers.push(memberEntry);
 				}
+
+				let membersStr = "";
+				membersStr += "## " + (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_OWNER")) + "\n";
+				membersStr += `- ${ownerStr || "[Owner left](This guild is owned by server)"}\n\n`;
+
+				if(admins.length > 0) {
+					membersStr += "## " + (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_ADMINS")) + "\n";
+					membersStr += admins.join("\n") + "\n\n";
+				}
+
+				membersStr += "## " + (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_EVERYONE")) + "\n";
+				membersStr += otherMembers.join("\n");
+
+				str += `\n\n${membersStr}`;
+
 				statusMsg = (await statusMsg.edit("", {
 					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_MEMBERSCONTROL_SENDING")
 				})) as Message;
+
 				try {
 					await msg.author.send(str, {
 						split: true,
