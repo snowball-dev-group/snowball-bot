@@ -589,7 +589,7 @@
     "STREAMING_META_LIST_ARG1": "страница",
     "STREAMING_META_LIST_ARG1_DESC": "номер страницы к отображению",
     "STREAMING_META_REMOVE": "Удалить канал из списка оповещения о стримах",
-    "STREAMING_META_SETCHANNEL": "Установка канала, куда будут приходить оповещения из Discord",
+    "STREAMING_META_SETCHANNEL": "Установка канала, куда будут приходить оповещения о стримах",
     "STREAMING_META_SETCHANNEL_ARG0": "#упоминание-канала",
     "STREAMING_META_SETCHANNEL_ARG0_DESC": "упоминание канала в Discord",
     "STREAMING_META_SUBSCRIBE": "Подписаться на уведомления о стримах",
