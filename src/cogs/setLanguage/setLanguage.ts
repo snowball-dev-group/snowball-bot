@@ -7,6 +7,7 @@ import { startsOrEqual, slice } from "../utils/text";
 import { EmbedType, getLogger } from "../utils/utils";
 import { setPreferenceValue as setUserPref } from "../utils/userPrefs";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref } from "../utils/guildPrefs";
+import { IHashMap } from "../../types/Interfaces";
 
 const BASE_PREFIX = "!sb_lang";
 const CMD = {
@@ -16,6 +17,12 @@ const CMD = {
 	GUILDS_ENFORCE: `${BASE_PREFIX} guild enforce`
 };
 const HELP_CATEGORY = "LANGUAGE";
+
+interface ISetLanguageCommandOptions {
+	no_lazy: boolean;
+	crowdinLink: string;
+	flags: IHashMap<string>;
+}
 
 @command(HELP_CATEGORY, slice(BASE_PREFIX, 1), "loc:LANGUAGE_META_DEFAULT")
 @command(HELP_CATEGORY, slice(CMD.SWITCH, 1), "loc:LANGUAGE_META_SWITCH", {
@@ -32,15 +39,17 @@ class SetLanguageCommand extends Plugin implements IModule {
 	prefs = getPrefsNames();
 	log = getLogger("SetLanguage");
 	noLazy = false;
+	flags:IHashMap<string> = {};
 	crowdinLink: string;
 
-	constructor(options) {
+	constructor(options: ISetLanguageCommandOptions) {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		});
 		if(options) {
 			this.noLazy = !!options["no_lazy"];
 			this.crowdinLink = options.crowdinLink;
+			this.flags = options.flags || {};
 		} else { throw new Error("No options found"); }
 	}
 
@@ -86,21 +95,23 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 	async getCurrentLang(msg: Message) {
 		const u = msg.member || msg.author;
-		let str = await localizeForUser(u, "LANGUAGE_CURRENTLANG", {
-			lang: `${await localizeForUser(u, "+NAME")} (${await localizeForUser(u, "+COUNTRY")})`,
-			coverage: await localizeForUser(u, "+COVERAGE")
+		const langCode = await getUserLanguage(u);
+		let str = $localizer.getFormattedString(langCode, "LANGUAGE_CURRENTLANG", {
+			lang: `${$localizer.getString(langCode, "+NAME")} (${$localizer.getString(langCode, "+COUNTRY")})`,
+			coverage: $localizer.getString(langCode, "+COVERAGE")
 		});
-		if(!(await localizeForUser(u, "+COMMUNITY_MANAGED") === "false")) {
-			const userLangCode = await getUserLanguage(u);
+		if(!($localizer.getString(langCode, "+COMMUNITY_MANAGED") === "false")) {
 			str += "\n\n";
-			str += await localizeForUser(u, "LANGUAGE_COMMUNITYMANAGED", {
-				crowdinLink: `${this.crowdinLink}/${userLangCode}`
+			str += $localizer.getFormattedString(langCode, "LANGUAGE_COMMUNITYMANAGED", {
+				crowdinLink: `${this.crowdinLink}/${langCode}`
 			});
 		}
 		msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 				custom: true,
 				string: str
+			}, {
+				thumbUrl: this.flags[langCode] || undefined
 			})
 		});
 	}
