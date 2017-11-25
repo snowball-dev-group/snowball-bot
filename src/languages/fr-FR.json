@@ -6,6 +6,7 @@
     "+FL_SUPPORTED": "true",
     "+NAME": "Français",
     "+SHORT_CODE": "fr",
+    "+CROWDIN_CODE": "fr",
     "@HUMANIZE:DURATION:DAYS": "{days, plural, one {# jour} other {# jours}}",
     "@HUMANIZE:DURATION:HOURS": "{hours, plural, one {# heure} other {# heures}}",
     "@HUMANIZE:DURATION:MINUTES": "{minutes, plural, one {# minute} other {# minutes}}",

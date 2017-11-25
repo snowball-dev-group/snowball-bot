@@ -6,6 +6,7 @@
     "+FL_SUPPORTED": "true",
     "+NAME": "Українська",
     "+SHORT_CODE": "uk",
+    "+CROWDIN_CODE": "uk",
     "@HUMANIZE:DURATION:DAYS": "{days, plural, one {# день} few {# дні} other {# днів}}",
     "@HUMANIZE:DURATION:HOURS": "{hours, plural, one {# година} few {# години} other {# годин}}",
     "@HUMANIZE:DURATION:MINUTES": "{minutes, plural, one {# хвилина} few {# хвилини} other {# хвилин}}",
