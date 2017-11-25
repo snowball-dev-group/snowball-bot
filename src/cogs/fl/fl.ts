@@ -5,7 +5,6 @@ import { getLogger, EmbedType, generateEmbed } from "../utils/utils";
 import { command } from "../utils/help";
 import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
 
-const FL_ICON = "http://i.imgur.com/Aby4Pt4.png";
 const FL_COLOR = 0x1E88E5;
 
 @command("UTILITES", "fl", "loc:FL_META_NAME")
@@ -106,9 +105,6 @@ class ReverseLayout extends Plugin implements IModule {
 						name: user.displayName,
 						icon_url: (user instanceof GuildMember ? user.user : user).displayAvatarURL
 					},
-					thumbUrl: FL_ICON,
-					thumbWidth: 32,
-					thumbHeight: 32,
 					footer: {
 						icon_url: $discordBot.user.displayAvatarURL,
 						text: await localizeForUser(msg.member, "FL_MESSAGE_INREPLY", {
