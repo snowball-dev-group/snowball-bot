@@ -103,7 +103,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		if(!($localizer.getString(langCode, "+COMMUNITY_MANAGED") === "false")) {
 			str += "\n\n";
 			str += $localizer.getFormattedString(langCode, "LANGUAGE_COMMUNITYMANAGED", {
-				crowdinLink: `${this.crowdinLink}/${langCode}`
+				crowdinLink: `${this.crowdinLink}/${$localizer.getString(langCode, "+CROWDIN_CODE")}`
 			});
 		}
 		msg.channel.send("", {
