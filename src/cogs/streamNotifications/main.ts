@@ -1121,7 +1121,7 @@ class StreamNotifications extends Plugin implements IModule {
 			try {
 				const escapedUsername = escapeDiscordMarkdown(subscription.username, true);
 				await msg.edit(shouldMentionEveryone ?
-					"@everyone " + $localizer.getFormattedString(embedLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
+					(result.status === "offline" ? "~~@everyone~~ "  : "@everyone ") + $localizer.getFormattedString(embedLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
 						username: escapedUsername
 					})
 					: (
