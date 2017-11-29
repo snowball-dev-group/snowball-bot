@@ -22,6 +22,6 @@ Profiles - plugin that allows to create server members their own profiles with a
 
 - **UTILITY** `premium`
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

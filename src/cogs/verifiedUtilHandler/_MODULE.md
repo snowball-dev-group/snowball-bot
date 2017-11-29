@@ -12,6 +12,6 @@ Verification handler
 
 - **UTILITY** `verified`
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

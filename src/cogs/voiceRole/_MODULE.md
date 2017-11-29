@@ -12,6 +12,6 @@ Module that allows to create 'voice roles' on servers, when members joins in voi
 
 - **UTILITY** `ez-i18n`
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

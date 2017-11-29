@@ -8,6 +8,6 @@ Evil eval in Node "virtual machine", so it won't crash your process, hopefully..
 
 ### `eval` (**main**)
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

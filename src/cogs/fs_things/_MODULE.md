@@ -27,6 +27,6 @@ Does simple things like checks username and syncs all subscriber roles (as it se
 
 [string]:https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

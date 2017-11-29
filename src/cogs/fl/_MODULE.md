@@ -8,6 +8,6 @@ Module to switch layout of your latest message, so no `руддщ цщкдв!` a
 
 ### `fl` (**main**)
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[Andrey Lysenkov](https://gitlab.com/AndreyLysenkov)**

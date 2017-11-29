@@ -19,6 +19,6 @@ Commands to give, remove and renew premium subscriptions.
 
 - **UTILITY** `premium`
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

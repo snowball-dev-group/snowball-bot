@@ -27,6 +27,6 @@ Whitelist control plugin that allows you to ban, activate and deactivate some se
 
 - **UTILITY** `ez-i18n`
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

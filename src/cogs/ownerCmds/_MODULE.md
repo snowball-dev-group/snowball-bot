@@ -8,6 +8,6 @@ Owner commands to `!change_avy` (profile picture), `!change_nickname` and `!chan
 
 ### `ownerCmds` (**main**)
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

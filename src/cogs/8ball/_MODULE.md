@@ -8,7 +8,7 @@ Magic 8 ball replies to questions that could be answered with `yes`/`no`. Like `
 
 ### `8ball` (**main**)
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - 8Ball answers were found on Wikipedia
   - [Source: Wikipedia](https://en.wikipedia.org/wiki/Magic_8-Ball)

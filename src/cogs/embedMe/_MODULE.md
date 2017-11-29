@@ -8,6 +8,6 @@ Allows to embed content into the `embed` block. Supports all of Discord markdown
 
 ### `embedMe` (**main**)
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**

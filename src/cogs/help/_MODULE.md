@@ -12,6 +12,6 @@ Special module to `!send_help_pls`.
 
 - **UTILITY** `help`
 
-## Contibutors & Sources
+## Contributors & Sources
 
 - Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**
