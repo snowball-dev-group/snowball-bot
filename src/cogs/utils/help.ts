@@ -42,7 +42,7 @@ interface IArgumentsMap {
 	[argName: string]: IArgumentInfo;
 }
 
-function categoryLocalizedName(category: string) {
+export function categoryLocalizedName(category: string) {
 	return `HELP_CATEGORY_${category.toUpperCase()}`;
 }
 
