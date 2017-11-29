@@ -1,7 +1,7 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember } from "discord.js";
-import { command } from "../utils/help";
+import { categoryLocalizedName, command } from "../utils/help";
 import { localizeForUser, getPrefsNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed, getUserLanguage } from "../utils/ez-i18n";
 import { startsOrEqual, slice } from "../utils/text";
 import { EmbedType, getLogger } from "../utils/utils";
@@ -107,7 +107,14 @@ class SetLanguageCommand extends Plugin implements IModule {
 			await this.getCodes(msg);
 		} else {
 			await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member || msg.author, "LANGUAGE_UNKNOWNCOMMAND")
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member || msg.author, {
+					key: "LANGUAGE_UNKNOWNCOMMAND",
+					formatOptions: {
+						cmd_switch: CMD.SWITCH,
+						cmd_codes: CMD.CODES,
+						resolved_category: await localizeForUser(msg.member || msg.author, categoryLocalizedName(HELP_CATEGORY))
+					}
+				})
 			});
 		}
 	}
