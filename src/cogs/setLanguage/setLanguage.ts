@@ -31,6 +31,20 @@ interface ISetLanguageCommandOptions {
 		description: "loc:LANGUAGE_META_SWITCH_ARG0_DESC"
 	}
 })
+@command(HELP_CATEGORY, slice(CMD.CODES, 1), "loc:LANGUAGE_META_CODES")
+@command(HELP_CATEGORY, slice(CMD.GUILDS_SWITCH), "loc:LANGUAGE_META_GUILDSWITCH", {
+	"loc:LANGUAGE_META_SWITCH_ARG0": {
+		optional: false,
+		description: "loc:LANGUAGE_META_SWITCH_ARG0_DESC"
+	}
+})
+@command(HELP_CATEGORY, slice(CMD.GUILDS_ENFORCE), "loc:LANGUAGE_META_GUILDENFORCE", {
+	"loc:LANGUAGE_META_GUILDENFORCE_ARG0": {
+		optional: false,
+		values: ["true", "false"],
+		description: "loc:LANGUAGE_META_GUILDENFORCE_ARG0_DESC"
+	}
+})
 class SetLanguageCommand extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.core_features.setlanguage";
@@ -80,6 +94,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		if(msg.channel.type !== "dm" && msg.channel.type !== "text") {
 			return;
 		}
+		if(!msg.content.startsWith(BASE_PREFIX)) { return; }
 		if(msg.content === BASE_PREFIX) {
 			return this.getCurrentLang(msg);
 		} else if(startsOrEqual(CMD.SWITCH, msg.content)) {
@@ -90,6 +105,10 @@ class SetLanguageCommand extends Plugin implements IModule {
 			return await this.guildEnforce(msg);
 		} else if(startsOrEqual(CMD.CODES, msg.content)) {
 			await this.getCodes(msg);
+		} else {
+			await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member || msg.author, "LANGUAGE_UNKNOWNCOMMAND")
+			});
 		}
 	}
 
@@ -106,7 +125,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				crowdinLink: `${this.crowdinLink}/${$localizer.getString(langCode, "+CROWDIN_CODE")}`
 			});
 		}
-		msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 				custom: true,
 				string: str
@@ -119,7 +138,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 	async switchLanguage(msg: Message) {
 		const u = msg.member || msg.author;
 		if(msg.content === CMD.SWITCH) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 					key: "LANGUAGE_SWITCH_USAGE",
 					formatOptions: {
@@ -133,7 +152,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		if(msg.channel.type !== "dm") {
 			const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
 			if(enforcingEnabled) {
-				msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ENFORCEDLANG")
 				});
 				return;
@@ -141,14 +160,14 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 		const lang = msg.content.slice(CMD.SWITCH.length).trim();
 		if(!$localizer.languageExists(lang)) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, u, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
 			});
 			return;
 		}
 		await setUserPref(u, this.prefs.user, lang);
 		await forceUserLanguageUpdate(u);
-		msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, u, {
 				key: "LANGUAGE_SWITCH_DONE",
 				formatOptions: {
@@ -169,7 +188,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			str += ` - ${(await $localizer.getString(lang, "+COVERAGE"))}%`;
 			str += `${!(await $localizer.getString(lang, "+COMMUNITY_MANAGED") === "false") ? ` ${await localizeForUser(u, "LANGUAGE_CODES_ITEM_CM")}` : ""}\n`;
 		}
-		msg.channel.send(str, {
+		await msg.channel.send(str, {
 			code: "md",
 			split: true
 		});
@@ -181,19 +200,19 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 	async guildSwitch(msg: Message) {
 		if(msg.channel.type !== "text") {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
 			});
 			return;
 		}
 		if(!this.isAdmin(msg.member)) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_NOPERMISSIONS")
 			});
 			return;
 		}
 		if(msg.content === CMD.GUILDS_SWITCH) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "LANGUAGE_GUILD_SWITCH_USAGE",
 					formatOptions: {
@@ -206,7 +225,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 		const lang = msg.content.slice(CMD.GUILDS_SWITCH.length).trim();
 		if(!$localizer.languageExists(lang)) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
 			});
 			return;
@@ -214,7 +233,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
 		await setGuildPref(msg.guild, this.prefs.guild, lang);
 		await forceGuildLanguageUpdate(msg.guild);
-		msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 				key: enforcingEnabled ? "LANGUAGE_GUILD_SWITCH_DONE" : "LANGUAGE_GUILD_SWITCH_DONE_ENFORCING",
 				formatOptions: {
@@ -226,26 +245,26 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 	async guildEnforce(msg: Message) {
 		if(msg.channel.type !== "text") {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
 			});
 			return;
 		}
 		if(!this.isAdmin(msg.member)) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_NOPERMISSIONS")
 			});
 			return;
 		}
 		if(msg.content === CMD.GUILDS_ENFORCE) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "LANGUAGE_GUILD_ENFORCE_USAGE")
 			});
 			return;
 		}
 		const arg = msg.content.slice(CMD.GUILDS_ENFORCE.length).trim();
 		if(!["true", "false"].includes(arg)) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ENFORCE_ARGERR")
 			});
 			return;
@@ -253,7 +272,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
 		const shouldEnableEnforcing = arg === "true";
 		if((enforcingEnabled && shouldEnableEnforcing) || (!enforcingEnabled && !shouldEnableEnforcing)) {
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "LANGUAGE_GUILD_ENFORCE_ALREADY",
 					formatOptions: {
@@ -265,7 +284,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 		await setGuildPref(msg.guild, this.prefs.guildEnforce, shouldEnableEnforcing);
 		await forceGuildEnforceUpdate(msg.guild);
-		msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 				key: "LANGUAGE_GUILD_ENFORCE_CHANGED",
 				formatOptions: {
