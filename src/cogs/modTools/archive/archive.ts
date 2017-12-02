@@ -90,7 +90,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 			return;
 		}
 
-		if(!getPreferenceValue(msg.guild, "features:archive:enabled", true)) {
+		if((await getPreferenceValue(msg.guild, "features:archive:enabled", true)) === false) {
 			this.log("info", `Access to the feature archive denied in guild ${msg.guild.id} (requested-in: ${msg.id})`);
 			return;
 		}
