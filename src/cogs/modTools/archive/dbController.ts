@@ -30,12 +30,12 @@ export class ArchiveDBController {
 			this._log("info", "[init] Table not found, creating started");
 
 			await this._db.schema.createTable(this._tableName, (tb) => {
-				tb.string("guildId").nullable().comment("Guild ID");
-				tb.string("channelId").notNullable().comment("Channel ID");
-				tb.string("messageId").notNullable().comment("Message ID");
-				tb.string("authorId").nullable().comment("Author ID");
-				tb.string("content", 4000).comment("Content of the message. NULL if there's no content"); // i'm bad at math
-				tb.string("other", 10000).comment("JSON with other stuff like attachments and embeds");  // lol
+				tb.string("guildId").nullable();
+				tb.string("channelId").notNullable();
+				tb.string("messageId").notNullable();
+				tb.string("authorId").nullable();
+				tb.string("content", 4000); // i'm bad at math
+				tb.string("other", 10000);  // lol
 			});
 
 			this._log("info", `[init] Table '${this._tableName.length}' successfully created.`);
