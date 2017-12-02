@@ -151,7 +151,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		const other = message.other ? <IEmulatedContents>JSON.parse(message.other) : undefined;
 		const date = SnowflakeUtil.deconstruct(message.messageId).timestamp;
 
-		return await msg.channel.send({
+		await msg.channel.send({
 			embed: <IEmbed>{
 				author: {
 					icon_url: author ? author.displayAvatarURL : undefined,
@@ -185,10 +185,10 @@ class ModToolsArchive extends Plugin implements IModule {
 							value: await (async () => {
 								let str = "";
 								for(const attachment of other.attachments) {
-									str += await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE", {
+									str += (await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE", {
 										link: attachment.file.url,
 										fileName: attachment.file.name
-									});
+									})) + "\n";
 								}
 								return str;
 							})()
@@ -204,6 +204,16 @@ class ModToolsArchive extends Plugin implements IModule {
 				timestamp: date
 			}
 		});
+
+		if(other && other.embeds && other.embeds.length > 0) {
+			for(const embed of other.embeds) {
+				await msg.channel.send(await localizeForUser(msg.member, "ARCHIVE_MESSAGE_EMBEDMESSAGE_DESCRIPTION", {
+					id: message.messageId
+				}), {
+					embed: <any>embed
+				});
+			}
+		}
 	}
 
 	async subcmd_archive(msg: Message, parsed: ISimpleCmdParseResult) {
