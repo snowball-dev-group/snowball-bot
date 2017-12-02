@@ -110,45 +110,45 @@ export function convertAttachment(attachment: MessageAttachment) : IEmulatedAtta
 
 export function convertEmbed(embed: MessageEmbed) : IEmulatedEmbed {
 	return {
-		author: embed.author && {
+		author: embed.author ? {
 			name: embed.author.name,
 			url: embed.author.url,
 			icon_url: embed.author.iconURL
-		},
+		} : undefined,
 		title: embed.title,
 		description: embed.description,
-		fields: embed.fields && embed.fields.length > 0 && embed.fields.map((f) => {
+		fields: (embed.fields && embed.fields.length > 0) ? embed.fields.map((f) => {
 			return {
 				inline: f.inline,
 				name: f.name,
 				value: f.value
 			};
-		}),
-		footer: embed.footer && {
+		}) : undefined,
+		footer: embed.footer ? {
 			text: embed.footer.text,
 			icon_url: embed.footer.iconURL
-		},
+		} : undefined,
 		color: embed.color,
-		thumbnail: embed.thumbnail && {
+		thumbnail: embed.thumbnail ? {
 			height: embed.thumbnail.height,
 			width: embed.thumbnail.width,
 			url: embed.thumbnail.url
-		},
-		image: embed.image && {
+		} : undefined,
+		image: embed.image ? {
 			width: embed.image.width,
 			height: embed.image.height,
 			url: embed.image.url
-		},
-		video: embed.video && {
+		} : undefined,
+		video: embed.video ? {
 			width: embed.video.url,
 			height: embed.video.height,
 			url: embed.video.url
-		},
+		} : undefined,
 		url: embed.url,
-		provider: embed.provider && {
+		provider: embed.provider ? {
 			name: embed.provider.name,
 			url: embed.provider.url
-		},
+		} : undefined,
 		timestamp: embed.createdTimestamp
 	};
 }
@@ -208,44 +208,44 @@ export interface IEmulatedAttachment {
 }
 
 export interface IEmulatedEmbed {
-    author: {
+    author?: {
         name: string;
-        url: string;
-        icon_url: string;
+        url?: string;
+        icon_url?: string;
     };
-    title: string;
-    description: string;
-    fields: boolean | Array<{
-        inline: boolean;
+    title?: string;
+    description?: string;
+    fields?: boolean | Array<{
+        inline?: boolean;
         name: string;
         value: string;
     }>;
-    footer: {
+    footer?: {
         text: string;
-        icon_url: string;
+        icon_url?: string;
     };
-    color: number;
-    thumbnail: {
-        height: number;
-        width: number;
+    color?: number;
+    thumbnail?: {
+        height?: number;
+        width?: number;
         url: string;
     };
-    image: {
-        width: number;
-        height: number;
+    image?: {
+        width?: number;
+        height?: number;
         url: string;
     };
-    video: {
-        width: string;
-        height: number;
+    video?: {
+        width?: string;
+        height?: number;
         url: string;
     };
     url: string;
-    provider: {
+    provider?: {
         name: string;
         url: string;
     };
-    timestamp: number;
+    timestamp?: number;
 }
 
 export interface IEmulatedContents {
