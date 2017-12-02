@@ -59,6 +59,7 @@
     "ARCHIVE_MESSAGE_FIELD_EMBEDS_VALUE": "Сообщение содержало {count, plural, one {# встриваемый объект} few {# встраиваемых объекта} other {# встраиваемых объектов}}. Они будут отправлены в следующих сообщениях.",
     "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_TITLE": "Файлы",
     "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE": "[Файл `{fileName}`]({link})",
+    "ARCHIVE_MESSAGE_EMBEDMESSAGE_DESCRIPTION": "Это встраиваемый объект сообщения с ID {id}",
     "COLORS_ADD_ALREADYEXISTS": "**Такой цвет уже добавлен.** Удалите существующий с помощью аргумента 'delete'",
     "COLORS_ADD_ARGSERR": "**Необходимо 2-3 аргумента**. `!color add <название>[, необходимые|роли], <название или ID роли>`",
     "COLORS_ADD_CONFIRMATION": "Вы собираетесь добавить цвет `{colorName}`, роль которого - `{colorRoleName}` (`{colorHEX}`, цвет показан справа)",
