@@ -57,23 +57,21 @@ class MessagesToDBTest extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
-		if(!this.options.bots && msg.author.bot) { return; }
+		if(this.options.bots !== undefined && !this.options.bots && msg.author.bot) { return; }
 		if(!!this.options.banned) {
 			if(!!this.options.banned.authors && this.options.banned.authors.includes(msg.author.id)) {
-				this.log("warn", `Don't pushing message from ${msg.author.id} since it included in banned authors`);
 				return;
 			} else if(!!this.options.banned.channels && this.options.banned.channels.includes(msg.channel.id)) {
-				this.log("warn", `Don't pushing message from ${msg.channel.id} channel since it included in banned channels`);
 				return;
 			} else if(!!this.options.banned.guilds && !!msg.guild && this.options.banned.guilds.includes(msg.guild.id)) {
-				this.log("warn", `Don't pushing message from ${msg.guild.id} guild since it included in banned channels`);
 				return;
 			}
 		}
-		const start = Date.now();
-		const _ret = await this.recordMessage(msg);
-		this.log("ok", `Pushed message ${msg.id} (AID: ${msg.author.id}, CID: ${msg.channel.id}, GID: ${msg.guild ? msg.guild.id : "dm"}) in ${Date.now() - start}ms`, _ret);
-
+		try {
+			await this.recordMessage(msg);
+		} catch (err) {
+			this.log("err", "Failed to push message", err);
+		}
 		try {
 			await this.handleCommand(msg);
 		} catch(err) {
