@@ -3,7 +3,7 @@ import { replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
 import { Message, Guild, SnowflakeUtil, Attachment, TextChannel } from "discord.js";
-import { EmbedType, escapeDiscordMarkdown, getLogger, resolveGuildChannel, resolveGuildMember } from "../../utils/utils";
+import { EmbedType, getLogger, resolveGuildChannel, resolveGuildMember } from "../../utils/utils";
 import { getDB } from "../../utils/db";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
@@ -337,8 +337,6 @@ class MessagesToDBTest extends Plugin implements IModule {
 		const payload = convertToDBMessage(msg);
 		return await this.controller.insertMessage(payload);
 	}
-
-
 
 	async init() {
 		this.controller = new ArchiveDBController();
