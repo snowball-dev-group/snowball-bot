@@ -2,7 +2,7 @@ import { IHashMap } from "../../../types/Interfaces";
 import { replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
-import { Message, Guild, SnowflakeUtil, Attachment, TextChannel, User, GuildMember } from "discord.js";
+import { Message, Guild, SnowflakeUtil, Attachment, TextChannel, User } from "discord.js";
 import { EmbedType, getLogger, resolveGuildChannel, resolveGuildMember } from "../../utils/utils";
 import { getDB } from "../../utils/db";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
