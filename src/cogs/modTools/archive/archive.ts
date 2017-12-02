@@ -1,10 +1,11 @@
-import { simpleCmdParse } from "../../utils/text";
+import { IHashMap } from "../../../types/Interfaces";
+import { replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
-import { Message, Guild, SnowflakeUtil, Attachment } from "discord.js";
+import { Message, Guild, SnowflakeUtil, Attachment, TextChannel } from "discord.js";
 import { EmbedType, escapeDiscordMarkdown, getLogger, resolveGuildChannel, resolveGuildMember } from "../../utils/utils";
 import { getDB } from "../../utils/db";
-import { generateLocalizedEmbed } from "../../utils/ez-i18n";
+import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
 import { getPreferenceValue } from "../../utils/guildPrefs";
 
@@ -23,7 +24,9 @@ const TARGETTING = Object.freeze({
 		MENTION: /^<#([0-9]{18})>$/
 	}
 });
+
 const DEFAULT_LENGTH = 50; // lines per file
+const MESSAGES_LIMIT = 1000;
 
 interface IMessagesToDBTestOptions {
 	banned?: {
@@ -49,7 +52,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
 		if(!options) { throw new Error("No options given"); }
-		this.options = options || { };
+		this.options = options || {};
 		this.log("info", "The settings are:", options);
 	}
 
@@ -73,7 +76,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 
 		try {
 			await this.handleCommand(msg);
-		} catch (err) {
+		} catch(err) {
 			this.log("err", "Handling commands failure", err);
 		}
 	}
@@ -94,7 +97,13 @@ class MessagesToDBTest extends Plugin implements IModule {
 
 		if(msg.content === PREFIX) {
 			return await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "ARCHIVE_HELP")
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					key: "ARCHIVE_HELP",
+					formatOptions: {
+						limit: MESSAGES_LIMIT,
+						prefix: PREFIX
+					}
+				})
 			});
 		}
 
@@ -105,30 +114,44 @@ class MessagesToDBTest extends Plugin implements IModule {
 
 		if(!POSSIBLE_TARGETS.includes(target.toLowerCase())) {
 			return await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_UNKNOWN_TARGET")
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+					key: "ARCHIVE_UNKNOWN_TARGET",
+					formatOptions: {
+						prefix: PREFIX
+					}
+				})
 			});
 		}
 
-		this.log("info", "Parsed command:", parsed);
-
-		let foundMessages:IDBMessage[]|undefined = undefined;
+		let foundMessages: IDBMessage[] | undefined = undefined;
 		let lines = DEFAULT_LENGTH;
 
 		if(parsed.args && parsed.args.length >= 1 && /^[0-9]{1,4}$/.test(parsed.args[parsed.args.length - 1])) {
 			lines = parseInt(parsed.args[parsed.args.length - 1], 10);
 			parsed.args.splice(-1, 1);
-			if(lines > 1000) {
-				return;
+			if(lines > MESSAGES_LIMIT) {
+				return await msg.channel.send({
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+						key: "ARCHIVE_INVALID_LENGTH",
+						formatOptions: {
+							limit: MESSAGES_LIMIT
+						}
+					})
+				});
 			}
 		}
-
-		this.log("info", "After-line result:", parsed);
 
 		switch(target) {
 			case "user": {
 				if(!parsed.args || parsed.args.length === 0) {
-					// TODO: add message about no arguments
-					return;
+					return await msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+							key: "ARCHIVE_REQUIRES_ARGS_USER",
+							formatOptions: {
+								prefix: PREFIX
+							}
+						})
+					});
 				}
 
 				const resolvedTargets = await (async (toResolve: string[]) => {
@@ -136,15 +159,13 @@ class MessagesToDBTest extends Plugin implements IModule {
 					for(let target of toResolve) {
 						try {
 							const resolvedTarget = (await this.resolveUserTarget(target, msg.guild)).id;
-							this.log("ok", "Resolved target -", resolvedTarget);
 							resolved.push(resolvedTarget);
-						} catch (err) {
-							this.log("err", "Resolving failed", err);
+						} catch(err) {
 							await msg.channel.send({
 								embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
-									key: "ARCHIVE_ERR_RESOLVING",
+									key: "ARCHIVE_ERR_RESOLVING_USER",
 									formatOptions: {
-										argument: escapeDiscordMarkdown(target, true)
+										search: replaceAll(target, "``", "''")
 									}
 								})
 							});
@@ -155,7 +176,6 @@ class MessagesToDBTest extends Plugin implements IModule {
 				})(parsed.args);
 
 				if(!resolvedTargets) {
-					this.log("info", "No resolved target returned");
 					return;
 				}
 
@@ -174,32 +194,45 @@ class MessagesToDBTest extends Plugin implements IModule {
 				let users: string[] = [];
 
 				if(parsed.args && parsed.args.length > 0) {
-					// checking all the ids!
 					for(const target of parsed.args) {
 						if(target.startsWith("u:")) {
-							// usertarget
 							try {
 								users.push((await this.resolveUserTarget(target.slice("u:".length).trim(), msg.guild)).id);
-							} catch (err) {
-								this.log("err", "Error resolving user", err);
-								// TODO: invalid user message
-								return;
+							} catch(err) {
+								return await msg.channel.send({
+									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+										key: "ARCHIVE_ERR_RESOLVING_USER",
+										formatOptions: {
+											search: replaceAll(target, "``", "''")
+										}
+									})
+								});
 							}
 						} else {
 							try {
 								const channel = await this.resolveGuildChannel(target, msg.guild);
 								if(!channel) {
-									// TODO: add message about wrong channel
 									throw new Error("No channel returned");
 								} else if(channel.type !== "text") {
-									// TODO: add message about wrong channel type!!
-									throw new Error("Invalid channel type");
+									return await msg.channel.send({
+										embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+											key: "ARCHIVE_ERR_RESOLVING_CHANNEL_TYPEINVALID",
+											formatOptions: {
+												argument: replaceAll(target, "``", "''")
+											}
+										})
+									});
 								}
 								channels.push(channel.id);
-							} catch (err) {
-								this.log("err", "Error resolving channel", err);
-								// TODO: channel error
-								return;
+							} catch(err) {
+								return await msg.channel.send({
+									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+										key: "ARCHIVE_ERR_RESOLVING_CHANNEL",
+										formatOptions: {
+											search: replaceAll(target, "``", "''")
+										}
+									})
+								});
 							}
 						}
 					}
@@ -216,17 +249,26 @@ class MessagesToDBTest extends Plugin implements IModule {
 			} break;
 		}
 
-		if(!foundMessages || foundMessages.length === 0) {
-			// TODO: nothing found message
-			this.log("warn", "Returned no messages, possible searching failure.");
-			return;
+		if(foundMessages && foundMessages.length > 0) { // easy filtering from sniffing other channels
+			let cache: IHashMap<TextChannel | null> = {};
+			foundMessages = foundMessages.filter((m) => {
+				const cachedChannel = (cache[m.channelId] !== undefined ? cache[m.channelId] : undefined);
+				const channel = cachedChannel === undefined ? (cache[m.channelId] = <TextChannel>msg.guild.channels.get(m.channelId) || null) : undefined;
+				if(channel === null || channel === undefined) {
+					return true;
+				} else {
+					return channel.permissionsFor(msg.member).has(["READ_MESSAGES", "READ_MESSAGE_HISTORY"]);
+				}
+			});
+		} else {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "ARCHIVE_ERR_NOTHINGFOUND")
+			});
 		}
 
 		let result = await this.messagesToString(foundMessages.reverse());
 
-		await msg.channel.send({
-			file: new Attachment(Buffer.from(result), `archive_${Date.now()}.txt`)
-		});
+		return await msg.channel.send(await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }), new Attachment(Buffer.from(result), `archive_${Date.now()}.txt`));
 	}
 
 	async resolveUserTarget(resolvableUser: string, guild: Guild) {
