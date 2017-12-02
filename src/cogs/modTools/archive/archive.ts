@@ -2,7 +2,7 @@ import { IHashMap } from "../../../types/Interfaces";
 import { replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
-import { Message, Guild, SnowflakeUtil, Attachment, TextChannel } from "discord.js";
+import { Message, Guild, SnowflakeUtil, Attachment, TextChannel, User, GuildMember } from "discord.js";
 import { EmbedType, getLogger, resolveGuildChannel, resolveGuildMember } from "../../utils/utils";
 import { getDB } from "../../utils/db";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
@@ -141,6 +141,14 @@ class MessagesToDBTest extends Plugin implements IModule {
 			}
 		}
 
+		const caches: {
+			users: IHashMap<User>,
+			channels: IHashMap<TextChannel>
+		} = {
+				users: {},
+				channels: {}
+			};
+
 		switch(target) {
 			case "user": {
 				if(!parsed.args || parsed.args.length === 0) {
@@ -197,7 +205,9 @@ class MessagesToDBTest extends Plugin implements IModule {
 					for(const target of parsed.args) {
 						if(target.startsWith("u:")) {
 							try {
-								users.push((await this.resolveUserTarget(target.slice("u:".length).trim(), msg.guild)).id);
+								const user = await this.resolveUserTarget(target.slice("u:".length).trim(), msg.guild);
+								caches.users[user.id] = user;
+								users.push(user.id);
 							} catch(err) {
 								return await msg.channel.send({
 									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
@@ -213,7 +223,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 								const channel = await this.resolveGuildChannel(target, msg.guild);
 								if(!channel) {
 									throw new Error("No channel returned");
-								} else if(channel.type !== "text") {
+								} else if(!(channel instanceof TextChannel)) {
 									return await msg.channel.send({
 										embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 											key: "ARCHIVE_ERR_RESOLVING_CHANNEL_TYPEINVALID",
@@ -223,6 +233,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 										})
 									});
 								}
+								caches.channels[channel.id] = channel;
 								channels.push(channel.id);
 							} catch(err) {
 								return await msg.channel.send({
@@ -246,14 +257,14 @@ class MessagesToDBTest extends Plugin implements IModule {
 			} break;
 			default: {
 				this.log("err", "Unknown target found", target);
-			} break;
+				return;
+			}
 		}
 
 		if(foundMessages && foundMessages.length > 0) { // easy filtering from sniffing other channels
-			let cache: IHashMap<TextChannel | null> = {};
 			foundMessages = foundMessages.filter((m) => {
-				const cachedChannel = (cache[m.channelId] !== undefined ? cache[m.channelId] : undefined);
-				const channel = cachedChannel === undefined ? (cache[m.channelId] = <TextChannel>msg.guild.channels.get(m.channelId) || null) : undefined;
+				const cachedChannel = (caches.channels[m.channelId] !== undefined ? caches.channels[m.channelId] : undefined);
+				const channel = cachedChannel === undefined ? (caches.channels[m.channelId] = <TextChannel>msg.guild.channels.get(m.channelId) || null) : undefined;
 				if(channel === null || channel === undefined) {
 					return true;
 				} else {
@@ -266,7 +277,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 			});
 		}
 
-		let result = await this.messagesToString(foundMessages.reverse());
+		let result = await this.messagesToString(foundMessages.reverse(), caches.users);
 
 		return await msg.channel.send(await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }), new Attachment(Buffer.from(result), `archive_${Date.now()}.txt`));
 	}
@@ -283,7 +294,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 		}
 
 		const resolvedMember = await resolveGuildMember(resolvableUser, guild, false, false);
-		if(resolvedMember) { return resolvedMember; }
+		if(resolvedMember) { return resolvedMember.user; }
 
 		if(!SNOWFLAKE_REGEXP.test(resolvableUser)) {
 			throw new Error("Bad ID");
@@ -306,11 +317,21 @@ class MessagesToDBTest extends Plugin implements IModule {
 		throw new Error("Channel not found");
 	}
 
-	async messagesToString(messages: IDBMessage[]) {
+	async messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = {}) {
 		let str = "";
 		for(const messageEntry of messages) {
 			const parsedDate = (SnowflakeUtil.deconstruct(messageEntry.messageId)).date;
-			str += `${parsedDate.toISOString()} (${messageEntry.guildId} / ${messageEntry.channelId} / ${messageEntry.authorId} / ${messageEntry.messageId}) ${messageEntry.content}`;
+			str += `${parsedDate.toISOString()} (${messageEntry.guildId} / ${messageEntry.channelId} / ${messageEntry.authorId} / ${messageEntry.messageId}) `;
+
+			let author = cache[messageEntry.authorId];
+			if(!author && author !== null) {
+				author = cache[messageEntry.authorId] = await (async () => {
+					try { return await $discordBot.fetchUser(messageEntry.authorId); } catch(err) { return null; }
+				})();
+			}
+			
+			str += `${!author ? messageEntry.authorId : author.tag}: ${messageEntry.content}`;
+
 			if(messageEntry.other) {
 				const parsedContent = <IEmulatedContents>JSON.parse(messageEntry.other);
 				if(parsedContent.attachments) {
