@@ -149,7 +149,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		const author = await this.resolveUserTarget(message.authorId, msg.guild);
 		const member = msg.guild.member(author);
 		const other = message.other ? <IEmulatedContents>JSON.parse(message.other) : undefined;
-		const date = SnowflakeUtil.deconstruct(message.messageId).timestamp;
+		const date = SnowflakeUtil.deconstruct(message.messageId).date.toISOString();
 
 		await msg.channel.send({
 			embed: <IEmbed>{
