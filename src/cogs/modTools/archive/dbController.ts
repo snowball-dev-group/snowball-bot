@@ -83,6 +83,14 @@ export class ArchiveDBController {
 		req = req.limit(limit).orderBy("messageId", "desc");
 		return await req;
 	}
+
+	/**
+	 * Gets first message selected by specified ID as is
+	 * @param messageId {string} Discord Message ID
+	 */
+	async getMessage(messageId: string): Promise<IDBMessage> {
+		return await this._db(this._tableName).first("*").where("messageId", messageId);
+	}
 }
 
 // ======================

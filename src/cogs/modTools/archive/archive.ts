@@ -1,21 +1,22 @@
 import { IHashMap } from "../../../types/Interfaces";
-import { replaceAll, simpleCmdParse } from "../../utils/text";
+import { ISimpleCmdParseResult, replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
 import { Message, Guild, SnowflakeUtil, Attachment, TextChannel, User } from "discord.js";
-import { EmbedType, getLogger, resolveGuildChannel, resolveGuildMember } from "../../utils/utils";
+import { EmbedType, getLogger, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
 import { getDB } from "../../utils/db";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
 import { getPreferenceValue } from "../../utils/guildPrefs";
 
 const PREFIX = "!archive";
+const MSG_PREFIX = "!message";
 const POSSIBLE_TARGETS = ["user", "channel", "guild"];
 // targetting:
 //  user & resolvableUser
 //  guild & resolvableUser
 //  channel & resolvableChannel & resolvableUser?
-const SNOWFLAKE_REGEXP = /[0-9]{18}/;
+const SNOWFLAKE_REGEXP = /^[0-9]{18}$/;
 const TARGETTING = Object.freeze({
 	RESOLVABLE_USER: {
 		MENTION: /^<@!?([0-9]{18})>$/,
@@ -37,9 +38,9 @@ interface IMessagesToDBTestOptions {
 	bots: boolean;
 }
 
-class MessagesToDBTest extends Plugin implements IModule {
+class ModToolsArchive extends Plugin implements IModule {
 	public get signature() {
-		return "snowball.tests.messages_to_db";
+		return "snowball.modtools.archive";
 	}
 
 	log = getLogger("MessagesToDBTest");
@@ -51,7 +52,6 @@ class MessagesToDBTest extends Plugin implements IModule {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
-		if(!options) { throw new Error("No options given"); }
 		this.options = options || {};
 		this.log("info", "The settings are:", options);
 	}
@@ -80,7 +80,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 	}
 
 	async handleCommand(msg: Message) {
-		if(!msg.content.startsWith(PREFIX)) {
+		if(!msg.content.startsWith(PREFIX) && !msg.content.startsWith(MSG_PREFIX)) {
 			return;
 		}
 
@@ -93,6 +93,120 @@ class MessagesToDBTest extends Plugin implements IModule {
 			return;
 		}
 
+		const parsed = simpleCmdParse(msg.content);
+		
+		switch(parsed.command) {
+			case PREFIX: return await this.subcmd_archive(msg, parsed);
+			case MSG_PREFIX: return await this.subcmd_message(msg, parsed);
+		}
+	}
+
+	async subcmd_message(msg: Message, parsed: ISimpleCmdParseResult) {
+		const msgId = parsed.subCommand;
+		if(msg.content === PREFIX || !msgId) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					key: "ARCHIVE_MESSAGE_HELP",
+					formatOptions: {
+						prefix: MSG_PREFIX
+					}
+				})
+			});
+		}
+
+		if(!SNOWFLAKE_REGEXP.test(msgId)) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_INVALID_ID")
+			});
+		}
+
+		const message = await this.controller.getMessage(msgId);
+
+		if(!message) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOTFOUND")
+			});
+		}
+
+		if(message.guildId !== msg.guild.id) {
+			return;
+		}
+
+		const channel = await this.resolveGuildChannel(message.channelId, msg.guild);
+
+		if(!channel) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_CHANNELNOTFOUND")
+			});
+		}
+
+		if(!channel.permissionsFor(msg.member).has(["READ_MESSAGES", "READ_MESSAGE_HISTORY"])) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOPERMISSIONS")
+			});
+		}
+
+		const author = await this.resolveUserTarget(message.authorId, msg.guild);
+		const member = msg.guild.member(author);
+		const other = message.other ? <IEmulatedContents>JSON.parse(message.other) : undefined;
+		const date = SnowflakeUtil.deconstruct(message.messageId).timestamp;
+
+		return await msg.channel.send({
+			embed: <IEmbed>{
+				author: {
+					icon_url: author ? author.displayAvatarURL : undefined,
+					name: author ? `${author.tag}${member && member.nickname ? ` (${member.displayName})` : ""}` : message.authorId
+				},
+				color: member ? member.displayColor : undefined,
+				title: await localizeForUser(msg.member, "ARCHIVE_MESSAGE_TITLE", {
+					id: message.messageId
+				}),
+				description: message.content ? message.content : undefined,
+				image: other && other.attachments.length === 1 ? {
+					url: other.attachments[0].file.url
+				} : undefined,
+				fields: other && ((other.attachments && other.attachments.length > 1) || (other.embeds && other.embeds.length > 0)) ? await (async () => {
+					const fields:IEmbedOptionsField[] = [];
+
+					if(other.embeds && other.embeds.length > 0) {
+						fields.push({
+							inline: true,
+							name: await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_EMBEDS_TITLE"),
+							value: await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_EMBEDS_VALUE", {
+								count: other.embeds.length
+							})
+						});
+					}
+
+					if(other.attachments && other.attachments.length > 1) {
+						fields.push({
+							inline: true,
+							name: await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_TITLE"),
+							value: await (async () => {
+								let str = "";
+								for(const attachment of other.attachments) {
+									str += await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE", {
+										link: attachment.file.url,
+										fileName: attachment.file.name
+									});
+								}
+								return str;
+							})()
+						});
+					}
+
+					return fields;
+				})() : undefined,
+				footer: {
+					text: `#${channel.name}`,
+					icon_url: msg.guild.iconURL || undefined
+				},
+				timestamp: date
+			}
+		});
+	}
+
+	async subcmd_archive(msg: Message, parsed: ISimpleCmdParseResult) {
 		if(msg.content === PREFIX) {
 			return await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
@@ -105,7 +219,7 @@ class MessagesToDBTest extends Plugin implements IModule {
 			});
 		}
 
-		const parsed = simpleCmdParse(msg.content);
+		
 		const target = parsed.subCommand;
 
 		if(!target) { return; } // ???
@@ -369,4 +483,4 @@ class MessagesToDBTest extends Plugin implements IModule {
 	}
 }
 
-module.exports = MessagesToDBTest;
+module.exports = ModToolsArchive;

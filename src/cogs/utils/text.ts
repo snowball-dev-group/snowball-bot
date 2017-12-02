@@ -19,7 +19,7 @@ export function replaceAll(str: string, search: string, replacement: string) {
 	return str.replace(new RegExp(search, "g"), replacement);
 }
 
-export function simpleCmdParse(str: string) {
+export function simpleCmdParse(str: string) : ISimpleCmdParseResult {
 	let args = str.split(" ");
 	let cmd = args.shift(); // !cmd
 	let subCmd = args.shift(); // subcmd / undefined
@@ -29,6 +29,12 @@ export function simpleCmdParse(str: string) {
 		subCommand: subCmd,
 		args: args.length > 0 ? args : undefined
 	};
+}
+
+export interface ISimpleCmdParseResult {
+    command?: string;
+    subCommand?: string;
+    args?: string[];
 }
 
 export function canBeSnowflake(str: string) {
