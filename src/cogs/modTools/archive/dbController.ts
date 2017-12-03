@@ -5,7 +5,9 @@ import { Message, MessageAttachment, MessageEmbed } from "discord.js";
 const DEFAULT_TABLE_NAME = "messages";
 const ERRORS = {
 	INIT_NOT_COMPLETE: new Error("Initialization is not complete. Please call `#init` before using controller's functions. This will ensure that database is created and controller is able to manipulate required data"),
-	EMPTY_FILTER: new Error("The current passed filter is empty. You must set at lease one property, otherwise results will be always null")
+	EMPTY_FILTER: new Error("The current passed filter is empty. You must set at lease one property, otherwise results will be always null"),
+	INVALID_LIMIT_PASSED: new Error("Invalid `limit` has passed. It's lower than 1. Valid values are >1."),
+	INVALID_OFFSET_PASSED: new Error("Invalid `offset` has passed. It's lower than zero. Valid values are >0.")
 };
 
 let totalInstances = 0;
@@ -62,10 +64,15 @@ export class ArchiveDBController {
 	 * @param filter.channelId {string|string[]} Selector by Channel ID(s)
 	 * @param filter.messageId {string|string[]} Selector by Message ID(s)
 	 */
-	async search(filter: IDBSearchFilter, limit = 50): Promise<IDBMessage[]> {
+	async search(filter: IDBSearchFilter, limit = 50, offset = 0): Promise<IDBMessage[]> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		if(!FILTER_PROPERTIES.find(prop => !isNullOrEmptyArray(filter[prop]))) {
 			throw ERRORS.EMPTY_FILTER;
+		}
+		if(limit < 1) {
+			throw ERRORS.INVALID_LIMIT_PASSED;
+		} else if(offset < 0) {
+			throw ERRORS.INVALID_OFFSET_PASSED;
 		}
 		let req = this._db(this._tableName).select("*");
 		if(filter.messageId) {
@@ -81,6 +88,9 @@ export class ArchiveDBController {
 			req = Array.isArray(filter.authorId) ? req.where("authorId", "in", filter.authorId) : req.where("authorId", filter.authorId);
 		}
 		req = req.limit(limit).orderBy("messageId", "desc");
+		if(offset > 0) {
+			req = req.offset(offset);
+		}
 		return await req;
 	}
 

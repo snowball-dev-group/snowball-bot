@@ -60,6 +60,7 @@
     "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_TITLE": "Файлы",
     "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE": "[Файл `{fileName}`]({link})",
     "ARCHIVE_MESSAGE_EMBEDMESSAGE_DESCRIPTION": "Это встраиваемый объект сообщения с ID {id}",
+    "ARCHIVE_MESSAGE_NOPERMS": "Только участники с правом \"Управлять сообщениями\" могут изучать удаленные сообщения.",
     "COLORS_ADD_ALREADYEXISTS": "**Такой цвет уже добавлен.** Удалите существующий с помощью аргумента 'delete'",
     "COLORS_ADD_ARGSERR": "**Необходимо 2-3 аргумента**. `!color add <название>[, необходимые|роли], <название или ID роли>`",
     "COLORS_ADD_CONFIRMATION": "Вы собираетесь добавить цвет `{colorName}`, роль которого - `{colorRoleName}` (`{colorHEX}`, цвет показан справа)",

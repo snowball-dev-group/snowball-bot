@@ -18,6 +18,7 @@ const POSSIBLE_TARGETS = ["user", "channel", "guild"];
 //  guild & resolvableUser
 //  channel & resolvableChannel & resolvableUser?
 const SNOWFLAKE_REGEXP = /^[0-9]{18}$/;
+const NUMBER_REGEXP = /^[0-9]{1,5}$/;
 const TARGETTING = Object.freeze({
 	RESOLVABLE_USER: {
 		MENTION: /^<@!?([0-9]{18})>$/,
@@ -28,7 +29,7 @@ const TARGETTING = Object.freeze({
 });
 
 const DEFAULT_LENGTH = 50; // lines per file
-const MESSAGES_LIMIT = 1000;
+const MESSAGES_LIMIT = 5000;
 
 interface IMessagesToDBTestOptions {
 	banned?: {
@@ -256,8 +257,9 @@ class ModToolsArchive extends Plugin implements IModule {
 
 		let foundMessages: IDBMessage[] | undefined = undefined;
 		let lines = DEFAULT_LENGTH;
+		let offset = 0;
 
-		if(parsed.args && parsed.args.length >= 1 && /^[0-9]{1,4}$/.test(parsed.args[parsed.args.length - 1])) {
+		if(parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(parsed.args[parsed.args.length - 1])) {
 			lines = parseInt(parsed.args[parsed.args.length - 1], 10);
 			parsed.args.splice(-1, 1);
 			if(lines > MESSAGES_LIMIT) {
@@ -270,6 +272,11 @@ class ModToolsArchive extends Plugin implements IModule {
 					})
 				});
 			}
+		}
+
+		if(parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(parsed.args[parsed.args.length - 1])) {
+			offset = parseInt(parsed.args[parsed.args.length - 1], 10);
+			parsed.args.splice(-1, 1);
 		}
 
 		const caches: {
@@ -321,12 +328,12 @@ class ModToolsArchive extends Plugin implements IModule {
 				foundMessages = await this.controller.search({
 					guildId: msg.guild.id,
 					authorId: resolvedTargets.length === 1 ? resolvedTargets[0] : resolvedTargets
-				}, lines);
+				}, lines, offset);
 			} break;
 			case "guild": {
 				foundMessages = await this.controller.search({
 					guildId: msg.guild.id
-				}, lines);
+				}, lines, offset);
 			} break;
 			case "channel": {
 				let channels: string[] = [];
@@ -384,7 +391,7 @@ class ModToolsArchive extends Plugin implements IModule {
 					guildId: msg.guild.id,
 					channelId: channels.length > 0 ? (channels.length === 1 ? channels[0] : channels) : msg.channel.id,
 					authorId: users.length > 0 ? users : undefined
-				}, lines);
+				}, lines, offset);
 			} break;
 			default: {
 				this.log("err", "Unknown target found", target);
