@@ -1,3 +1,4 @@
+import { messageToExtra } from "../../utils/failToDetail";
 import { IHashMap } from "../../../types/Interfaces";
 import { ISimpleCmdParseResult, replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
@@ -69,12 +70,14 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 		try {
 			await this.recordMessage(msg);
-		} catch (err) {
+		} catch(err) {
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			this.log("err", "Failed to push message", err);
 		}
 		try {
 			await this.handleCommand(msg);
 		} catch(err) {
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			this.log("err", "Handling commands failure", err);
 		}
 	}
@@ -84,19 +87,15 @@ class ModToolsArchive extends Plugin implements IModule {
 			return;
 		}
 
-		if(!msg.member.permissions.has("MANAGE_MESSAGES")) {
-			return;
-		}
-
 		if((await getPreferenceValue(msg.guild, "features:archive:enabled", true)) === false) {
 			this.log("info", `Access to the feature archive denied in guild ${msg.guild.id} (requested-in: ${msg.id})`);
 			return;
 		}
 
 		const parsed = simpleCmdParse(msg.content);
-		
+
 		switch(parsed.command) {
-			case PREFIX: return await this.subcmd_archive(msg, parsed);
+			case PREFIX: return msg.member.permissions.has("MANAGE_MESSAGES") && await this.subcmd_archive(msg, parsed);
 			case MSG_PREFIX: return await this.subcmd_message(msg, parsed);
 		}
 	}
@@ -146,10 +145,20 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		const author = await this.resolveUserTarget(message.authorId, msg.guild);
-		const member = msg.guild.member(author);
+		const originalMessage = await (async () => {
+			try { return await (<TextChannel>channel).fetchMessage(message.messageId); } catch(err) { return undefined; }
+		})();
+
+		if(!originalMessage && msg.member.permissions.has("MANAGE_MESSAGES")) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "NO_PERMISSION")
+			});
+		}
+
+		const author = (originalMessage && originalMessage.author) || await this.resolveUserTarget(message.authorId, msg.guild);
+		const member = (originalMessage && originalMessage.member) || msg.guild.member(author);
 		const other = message.other ? <IEmulatedContents>JSON.parse(message.other) : undefined;
-		const date = SnowflakeUtil.deconstruct(message.messageId).date.toISOString();
+		const date = originalMessage ? originalMessage.createdAt.toISOString() : SnowflakeUtil.deconstruct(message.messageId).date.toISOString();
 
 		await msg.channel.send({
 			embed: <IEmbed>{
@@ -166,7 +175,7 @@ class ModToolsArchive extends Plugin implements IModule {
 					url: other.attachments[0].file.url
 				} : undefined,
 				fields: other && ((other.attachments && other.attachments.length > 1) || (other.embeds && other.embeds.length > 0)) ? await (async () => {
-					const fields:IEmbedOptionsField[] = [];
+					const fields: IEmbedOptionsField[] = [];
 
 					if(other.embeds && other.embeds.length > 0) {
 						fields.push({
@@ -210,8 +219,8 @@ class ModToolsArchive extends Plugin implements IModule {
 				await msg.channel.send(await localizeForUser(msg.member, "ARCHIVE_MESSAGE_EMBEDMESSAGE_DESCRIPTION", {
 					id: message.messageId
 				}), {
-					embed: <any>embed
-				});
+						embed: <any>embed
+					});
 			}
 		}
 	}
@@ -229,7 +238,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		
+
 		const target = parsed.subCommand;
 
 		if(!target) { return; } // ???
@@ -451,7 +460,7 @@ class ModToolsArchive extends Plugin implements IModule {
 					try { return await $discordBot.fetchUser(messageEntry.authorId); } catch(err) { return null; }
 				})();
 			}
-			
+
 			str += `${!author ? messageEntry.authorId : author.tag}: ${messageEntry.content}`;
 
 			if(messageEntry.other) {
