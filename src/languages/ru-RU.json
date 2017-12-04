@@ -56,7 +56,7 @@
     "ARCHIVE_MESSAGE_NOPERMISSIONS": "Сообщение найдено, но Вы не имеете доступа к каналу, в который оно было отправлено.",
     "ARCHIVE_MESSAGE_TITLE": "Сообщение (ID: {id})",
     "ARCHIVE_MESSAGE_FIELD_EMBEDS_TITLE": "Встраиваемые объекты",
-    "ARCHIVE_MESSAGE_FIELD_EMBEDS_VALUE": "Сообщение содержало {count, plural, one {# встриваемый объект} few {# встраиваемых объекта} other {# встраиваемых объектов}}. Они будут отправлены в следующих сообщениях.",
+    "ARCHIVE_MESSAGE_FIELD_EMBEDS_VALUE": "Сообщение содержало {count, plural, one {# встраиваемый объект} few {# встраиваемых объекта} other {# встраиваемых объектов}}. Они будут отправлены в следующих сообщениях.",
     "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_TITLE": "Файлы",
     "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE": "[Файл `{fileName}`]({link})",
     "ARCHIVE_MESSAGE_EMBEDMESSAGE_DESCRIPTION": "Это встраиваемый объект сообщения с ID {id}",
