@@ -7,12 +7,13 @@ import { INullableHashMap } from "../../types/Interfaces";
 import { convertToModulesMap, IModule, IModuleInfo, ModuleBase, ModuleLoader, ModuleLoadState } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { createTableBySchema, getDB } from "../utils/db";
-import { generateLocalizedEmbed, getUserLanguage, humanizeDurationForUser, localizeForUser } from "../utils/ez-i18n";
+import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "../utils/ez-i18n";
 import { command as docCmd } from "../utils/help";
 import { isPremium } from "../utils/premium";
 import { timeDiff } from "../utils/time";
 import { EmbedType, escapeDiscordMarkdown, getLogger, IEmbed, IEmbedOptionsField, resolveGuildMember } from "../utils/utils";
 import { AddedProfilePluginType, IAddedProfilePlugin, IProfilesPlugin } from "./plugins/plugin";
+import { messageToExtra } from "../utils/failToDetail";
 
 export interface IProfilesModuleConfig {
 	emojis: {
@@ -105,8 +106,20 @@ class Profiles extends Plugin implements IModule {
 
 	constructor(config: IProfilesModuleConfig) {
 		super({
-			"message": (msg: Message) => this.onMessage(msg),
-			"presenceUpdate": (oldMember: GuildMember, newMember: GuildMember) => this.onPresenseUpdate(oldMember, newMember)
+			"message": async (msg: Message) => {
+				try {
+					await this.onMessage(msg);
+				} catch (err) {
+					$snowball.captureException(err, { extra: messageToExtra(err) });
+				}
+			},
+			"presenceUpdate": async (oldMember: GuildMember, newMember: GuildMember) => {
+				try {
+					await this.onPresenсeUpdate(oldMember, newMember);
+				} catch (err) {
+					$snowball.captureException(err, { extra: { oldMember, newMember } });
+				}
+			}
 		}, true);
 
 		for(const emojiName in config.emojis) {
@@ -139,23 +152,23 @@ class Profiles extends Plugin implements IModule {
 		// }
 	}
 
-	async onPresenseUpdate(old: GuildMember, member: GuildMember) {
+	async onPresenсeUpdate(old: GuildMember, member: GuildMember) {
 		const profile = await this.getOrCreateProfile(member, member.guild);
 		
 		if(old.presence.status !== member.presence.status) {
-			if(old.presence.game && member.presence.game) {
-				if(old.presence.game.equals(member.presence.game)) {
+			if(old.presence.activity && member.presence.activity) {
+				if(old.presence.activity.equals(member.presence.activity)) {
 					return; // nothing changed
 				}
 			}
 		} else {
-			if(old.presence.game && member.presence.game && old.presence.game.equals(member.presence.game)) {
+			if(old.presence.activity && member.presence.activity && old.presence.activity.equals(member.presence.activity)) {
 				return; // game not changed ?
 			}
 		}
 
 		profile.status_changed = (new Date()).toISOString();
-		this.updateProfile(profile);
+		await this.updateProfile(profile);
 	}
 
 	// =====================================
@@ -191,7 +204,7 @@ class Profiles extends Plugin implements IModule {
 			if(mentionsCount === 1) {
 				const mentioned = msg.mentions.users.first();
 				if(!(profileOwner = msg.guild.members.get(mentioned.id))) {
-					msg.channel.send("", {
+					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTAMEMBER")
 					});
 					return;
@@ -212,7 +225,7 @@ class Profiles extends Plugin implements IModule {
 				this.log("info", `Resolving hook took ${(Date.now() - rst)}ms on guild ${msg.guild.id} for search '${searchTerm}'`);
 
 				if(!resolvedMember) {
-					msg.channel.send("", {
+					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTFOUND")
 					});
 					return;
@@ -239,7 +252,7 @@ class Profiles extends Plugin implements IModule {
 		const args = msg.content.slice("!add_badge ".length).split(",").map(arg => arg.trim());
 		if(args.length !== 4) {
 			// uid, gid, add/remove, badgeid
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_ADDBADGE_ARGSERR")
 			});
 			return;
@@ -248,7 +261,7 @@ class Profiles extends Plugin implements IModule {
 
 	async editProfile(msg: Message) {
 		if(msg.content === "!edit_profile") {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: {
 					description: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PROFILES_PROFILE_DESCRIPTION")
 				}
@@ -270,7 +283,7 @@ class Profiles extends Plugin implements IModule {
 
 				if(param === "image") {
 					if(arg === "" || (!arg.startsWith("http://") && !arg.startsWith("https://"))) {
-						await msg.channel.send("", {
+						await msg.channel.send({
 							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_INVALID_LINK")
 						});
 						return;
@@ -278,14 +291,14 @@ class Profiles extends Plugin implements IModule {
 					try {
 						await fetch(encodeURI(arg));
 					} catch(err) {
-						await msg.channel.send("", {
+						await msg.channel.send({
 							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_DOWNLOAD_FAILED")
 						});
 						return;
 					}
 
 					customize["image_url"] = encodeURI(arg);
-					await msg.channel.send("", {
+					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PROFILES_PROFILE_IMAGE_SET", {
 							imageUrl: encodeURI(arg)
 						})
@@ -302,14 +315,14 @@ class Profiles extends Plugin implements IModule {
 			const mod = this.pluginsLoader.loadedModulesRegistry[param] as ModuleBase<IProfilesPlugin> | undefined;
 
 			if(!mod) {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
 				});
 				return;
 			}
 
 			if(mod.state !== ModuleLoadState.Loaded || !mod.base) {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_NOT_LOADED")
 				});
 				return;
@@ -321,7 +334,7 @@ class Profiles extends Plugin implements IModule {
 			try {
 				completeInfo = await plugin.setup(arg, msg.member, msg);
 			} catch(err) {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_SETUP_FAILED", {
 						fields: [{
 							name: "Подробности",
@@ -341,13 +354,13 @@ class Profiles extends Plugin implements IModule {
 			if(completeInfo.type === AddedProfilePluginType.Embed) {
 				let embedsCount = Object.keys(customize.plugins).map(e => customize.plugins[e]).filter(e => e.type === AddedProfilePluginType.Embed).length;
 				if(embedsCount > 4 && !(await isPremium(msg.member))) {
-					msg.channel.send("", {
+					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PREMIUMERR")
 					});
 					return;
 				}
 				if(embedsCount > 9) {
-					msg.channel.send("", {
+					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_MAXPLUGINSERR")
 					});
 					return;
@@ -360,7 +373,7 @@ class Profiles extends Plugin implements IModule {
 
 			await this.updateProfile(profile);
 
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, "PROFILES_PROFILE_SETUP_COMPLETE")
 			});
 		} else if(param === "set") {
@@ -370,7 +383,7 @@ class Profiles extends Plugin implements IModule {
 				keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION"),
 				valueDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_VALUE_DEFINITION")
 			};
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, `\`set [${strs.key}] [${strs.value}]\``, {
 					fields: [{
 						name: `\`${strs.key}\``, inline: false, value: strs.keyDef
@@ -385,7 +398,7 @@ class Profiles extends Plugin implements IModule {
 				key: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY"),
 				keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION")
 			};
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, `\`remove [${strs.key}]\``, {
 					fields: [{
 						name: `\`${strs.key}\``, inline: false, value: strs.keyDef
@@ -406,7 +419,7 @@ class Profiles extends Plugin implements IModule {
 				}
 			} else {
 				if(!this.pluginsLoader.loadedModulesRegistry[param]) {
-					await msg.channel.send("", {
+					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
 					});
 					return;
@@ -421,7 +434,7 @@ class Profiles extends Plugin implements IModule {
 
 			await this.updateProfile(profile);
 
-			msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, `custom:${doneStr}`)
 			});
 		}
@@ -433,7 +446,7 @@ class Profiles extends Plugin implements IModule {
 				aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME"),
 				def_aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_DEFINITON")
 			};
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					custom: true,
 					string: `\`!set_bio [${strs.aboutMe}]\``
@@ -450,7 +463,7 @@ class Profiles extends Plugin implements IModule {
 
 		const newBio = msg.content.slice("!set_bio ".length);
 		if(newBio.length >= 1024) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_INVALIDTEXT")
 			});
 			return;
@@ -460,11 +473,9 @@ class Profiles extends Plugin implements IModule {
 		profile.bio = newBio;
 		await this.updateProfile(profile);
 
-		await msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PROFILES_PROFILE_UPDATED")
 		});
-
-		return;
 	}
 
 	// async editActivity(msg:Message) {
@@ -515,17 +526,17 @@ class Profiles extends Plugin implements IModule {
 		statusString += await this.getUserStatusEmoji(target) + " ";
 		statusString += await this.getUserStatusString(target, msg.member);
 
-		if(target.presence.game && !dbProfile.activity) {
+		if(target.presence.activity && !dbProfile.activity) {
 			statusString = "";
 
-			if(target.presence.game.streaming) {
+			if(target.presence.activity.type === "STREAMING") {
 				statusString += await this.getUserStatusEmoji("streaming") + " ";
 				statusString += await this.getUserStatusString("streaming", msg.member) + " ";
-				statusString += `[${escapeDiscordMarkdown(target.presence.game.name)}](${target.presence.game.url})`;
-			} else {
+				statusString += `[${escapeDiscordMarkdown(target.presence.activity.name)}](${target.presence.activity.url})`;
+			} else if(target.presence.activity.type === "PLAYING") {
 				statusString += await this.getUserStatusEmoji(target) + " ";
 				statusString += await this.getUserStatusString("playing", msg.member) + " ";
-				statusString += `в **${escapeDiscordMarkdown(target.presence.game.name)}**`;
+				statusString += `в **${escapeDiscordMarkdown(target.presence.activity.name)}**`;
 			}
 		} else if(dbProfile.activity) {
 			const jsonActivity = JSON.parse(dbProfile.activity) as IUserActivity;
@@ -552,10 +563,7 @@ class Profiles extends Plugin implements IModule {
 		if(!isBot && dbProfile.status_changed) {
 			const changedAt = new Date(dbProfile.status_changed).getTime();
 			const diff = Date.now() - changedAt;
-			const sDiff = await humanizeDurationForUser(msg.member, diff, undefined, {
-				round: true,
-				largest: 2
-			});
+			const sDiff = await this.serverTimeHumanize(diff, 2, true, await getUserLanguage(msg.member));
 			statusString += ` (${sDiff})`;
 		} else {
 			statusString += ` (${(await localizeForUser(msg.member, "PROFILES_PROFILE_BOT")).toUpperCase()})`;
@@ -581,9 +589,9 @@ class Profiles extends Plugin implements IModule {
 			joinedDate = target.joinedAt.getTime();
 		}
 
-		const embed = {
+		const embed = <IEmbed>{
 			author: {
-				icon_url: target.user.displayAvatarURL.replace("?size=2048", "?size=512"),
+				icon_url: target.user.displayAvatarURL({ format: "webp", size: 128 }),
 				name: target.displayName
 			},
 			title: dbProfile.real_name ? dbProfile.real_name : undefined,
@@ -593,14 +601,14 @@ class Profiles extends Plugin implements IModule {
 				text: joinedDate !== 0 ? await localizeForUser(msg.member, !isBot ? "PROFILES_PROFILE_MEMBERTIME" : "PROFILES_PROFILE_BOTADDED", {
 					duration: this.serverTimeHumanize(timeDiff(joinedDate, Date.now(), "ms"), 2, true, await getUserLanguage(msg.member))
 				}) : await localizeForUser(msg.member, "PROFILES_PROFILE_MEMBERTIME_NOTFOUND"),
-				icon_url: msg.guild.iconURL
+				icon_url: msg.guild.iconURL({ format: "webp", size: 128 })
 			},
 			image: undefined,
 			thumbnail: {
-				url: target.user.displayAvatarURL
+				url: target.user.displayAvatarURL(target.user.avatar.startsWith("a_") ? { format: "gif" } : { format: "png", size: 512 })
 			},
 			timestamp: target.user.createdAt.toISOString()
-		} as IEmbed;
+		};
 
 		let pushing = false;
 		let repushAfterPush = false;
@@ -613,7 +621,7 @@ class Profiles extends Plugin implements IModule {
 
 			pushing = true;
 			if(!pushedMessage) {
-				pushedMessage = await msg.channel.send("", {
+				pushedMessage = await msg.channel.send({
 					embed: embed as any
 				}) as Message;
 				pushing = false;
@@ -757,7 +765,7 @@ class Profiles extends Plugin implements IModule {
 			bio: null,
 			activity: null,
 			customize: "{}",
-			joined: member.joinedAt.toISOString(),
+			joined: member.joinedAt ? member.joinedAt.toISOString() : undefined,
 			status_changed: (new Date()).toISOString()
 		});
 	}
