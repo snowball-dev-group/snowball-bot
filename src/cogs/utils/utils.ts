@@ -323,7 +323,7 @@ export function generateEmbed(type: EmbedType, description: string, options?: IE
 			if(type !== EmbedType.Empty) {
 				embed.footer = {
 					text: $discordBot.user.username,
-					icon_url: $discordBot.user.displayAvatarURL
+					icon_url: $discordBot.user.displayAvatarURL({ format: "webp", size: 128 })
 				};
 			}
 		}
@@ -403,7 +403,7 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 	if(/[0-9]+/.test(nameOrID)) {
 		const member = await (async () => {
 			try {
-				return await guild.fetchMember(nameOrID);
+				return await guild.members.fetch(nameOrID);
 			} catch (err) {
 				return undefined;
 			}
