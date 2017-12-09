@@ -3,7 +3,7 @@ import { IHashMap } from "../../../types/Interfaces";
 import { ISimpleCmdParseResult, replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
-import { Message, Guild, SnowflakeUtil, Attachment, TextChannel, User } from "discord.js";
+import { Message, Guild, SnowflakeUtil, MessageAttachment as Attachment, TextChannel, User } from "discord.js";
 import { EmbedType, getLogger, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
 import { getDB } from "../../utils/db";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
@@ -140,14 +140,14 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		if(!channel.permissionsFor(msg.member).has(["READ_MESSAGES", "READ_MESSAGE_HISTORY"])) {
+		if(!channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"])) {
 			return await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOPERMISSIONS")
 			});
 		}
 
 		const originalMessage = await (async () => {
-			try { return await (<TextChannel>channel).fetchMessage(message.messageId); } catch(err) { return undefined; }
+			try { return await (<TextChannel>channel).messages.fetch(message.messageId); } catch(err) { return undefined; }
 		})();
 
 		if(!originalMessage && msg.member.permissions.has("MANAGE_MESSAGES")) {
@@ -164,7 +164,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		await msg.channel.send({
 			embed: <IEmbed>{
 				author: {
-					icon_url: author ? author.displayAvatarURL : undefined,
+					icon_url: author ? author.displayAvatarURL({ format: "webp", size: 128 }) : undefined,
 					name: author ? `${author.tag}${member && member.nickname ? ` (${member.displayName})` : ""}` : message.authorId
 				},
 				color: member ? member.displayColor : undefined,
@@ -209,7 +209,7 @@ class ModToolsArchive extends Plugin implements IModule {
 				})() : undefined,
 				footer: {
 					text: `#${channel.name}`,
-					icon_url: msg.guild.iconURL || undefined
+					icon_url: msg.guild.iconURL({ format: "webp", size: 128 }) || undefined
 				},
 				timestamp: date
 			}
@@ -406,7 +406,7 @@ class ModToolsArchive extends Plugin implements IModule {
 				if(channel === null || channel === undefined) {
 					return true;
 				} else {
-					return channel.permissionsFor(msg.member).has(["READ_MESSAGES", "READ_MESSAGE_HISTORY"]);
+					return channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
 				}
 			});
 		} else {
@@ -438,7 +438,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			throw new Error("Bad ID");
 		}
 
-		return (await $discordBot.fetchUser(resolvableUser));
+		return (await $discordBot.users.fetch(resolvableUser));
 	}
 
 	async resolveGuildChannel(resolvableChannel: string, guild: Guild) {
@@ -464,7 +464,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			let author = cache[messageEntry.authorId];
 			if(!author && author !== null) {
 				author = cache[messageEntry.authorId] = await (async () => {
-					try { return await $discordBot.fetchUser(messageEntry.authorId); } catch(err) { return null; }
+					try { return await $discordBot.users.fetch(messageEntry.authorId); } catch(err) { return null; }
 				})();
 			}
 

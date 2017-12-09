@@ -14,7 +14,7 @@ import { createConfirmationMessage } from "../utils/interactive";
 const TABLE_NAME = "voice_role";
 const SPECIFIC_TABLE_NAME = "specificvoicerole";
 const PREFIX = "!voiceRole";
-const MANAGE_PERMS = (member: GuildMember) => (member.permissions.has(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"]) || member.permissions.has("ADMINISTRATOR"));
+const MANAGE_PERMS = (member: GuildMember) => (member.permissions.has(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.permissions.has("ADMINISTRATOR"));
 const LOCALIZED = (str: string) => `VOICEROLE_${str.toUpperCase()}`;
 
 const HELP_CHECKS = {

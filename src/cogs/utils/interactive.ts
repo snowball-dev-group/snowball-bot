@@ -91,7 +91,7 @@ export async function waitForMessages(channel: TextChannel | DMChannel, rules: I
 		return rules.authors.includes(msg.author.id) && rules.variants.includes(msg.content);
 	}, {
 			errors: ["time"],
-			maxMatches: rules.maxMatches,
+			maxProcessed: rules.maxMatches,
 			time: rules.time,
 			max: rules.max
 		});

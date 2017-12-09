@@ -138,7 +138,7 @@ const DEFAULT_ROLE_PREFIX = `!`;
 const HELP_CATEGORY = "GUILDS";
 
 function isServerAdmin(member: GuildMember) {
-	return member.permissions.has(["MANAGE_CHANNELS", "MANAGE_ROLES_OR_PERMISSIONS"], true);
+	return member.permissions.has(["MANAGE_CHANNELS", "MANAGE_ROLES"], true);
 }
 
 function rightsCheck(member: GuildMember, row?: IGuildRow, noAdmins = false) {
@@ -471,10 +471,11 @@ class Guilds extends Plugin implements IModule {
 			}
 
 			role = await msg.guild.createRole({
-				permissions: [],
-				name: roleName,
-				mentionable: false,
-				hoist: false
+				data: {
+					permissions: [],
+					hoist: false, mentionable: false,
+					name: roleName
+				}
 			});
 		} else {
 			role = resolveGuildRole(args[1], msg.guild);
@@ -1038,7 +1039,7 @@ class Guilds extends Plugin implements IModule {
 				string: str
 			}, {
 					author: {
-						icon_url: msg.author.avatarURL,
+						icon_url: msg.author.avatarURL({ format: "webp", size: 128 }),
 						name: msg.member.displayName
 					}
 				});
@@ -1273,7 +1274,7 @@ class Guilds extends Plugin implements IModule {
 				}
 			}, {
 					author: {
-						icon_url: msg.author.displayAvatarURL,
+						icon_url: msg.author.displayAvatarURL({ format: "webp", size: 128 }),
 						name: msg.member.displayName
 					}
 				})
@@ -1381,17 +1382,17 @@ class Guilds extends Plugin implements IModule {
 			}, {
 					fields,
 					author: guildAuthor ? {
-						icon_url: guildAuthor.user.displayAvatarURL,
+						icon_url: guildAuthor.user.displayAvatarURL({ format: "webp", size: 128 }),
 						name: guildAuthor.displayName
 					} : {
-							icon_url: msg.guild.iconURL,
+							icon_url: msg.guild.iconURL({ format: "webp", size: 128 }),
 							name: msg.guild.name
 						},
 					imageUrl: cz.image_url,
 					thumbUrl: cz.icon_url,
 					title: dbRow.name,
 					footer: {
-						icon_url: msg.guild.iconURL,
+						icon_url: msg.guild.iconURL({ format: "webp", size: 128 }),
 						text: msg.guild.name
 					},
 					ts: role.createdAt

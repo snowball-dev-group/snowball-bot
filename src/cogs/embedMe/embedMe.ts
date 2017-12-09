@@ -39,13 +39,13 @@ class EmbedME extends Plugin implements IModule {
 		await msg.channel.send("", {
 			embed: {
 				author: {
-					icon_url: msg.author.avatarURL,
+					icon_url: msg.author.avatarURL({ format: "webp", size: 128 }),
 					name: msg.member ? msg.member.displayName : msg.author.username
 				},
 				description: mContent,
 				timestamp: msg.createdAt,
 				footer: {
-					icon_url: $discordBot.user.displayAvatarURL,
+					icon_url: $discordBot.user.displayAvatarURL({ format: "webp", size: 128 }),
 					text: await localizeForUser(msg.member, "EMBEDME_EMBED", {
 						botName: $discordBot.user.username
 					})

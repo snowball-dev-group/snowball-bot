@@ -63,7 +63,7 @@ class OwnerCommands extends Plugin implements IModule {
 						let newUser = await $discordBot.user.setAvatar(await resp.buffer());
 						msg.channel.send("", {
 							embed: await generateLocalizedEmbed(EmbedType.OK, u, "OWNERCMDS_CHANGEAVY_DONE", {
-								imageUrl: newUser.displayAvatarURL
+								imageUrl: newUser.displayAvatarURL({ format: "png", size: 1024 })
 							})
 						});
 					} catch(err) {

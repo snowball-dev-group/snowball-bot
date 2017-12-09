@@ -422,7 +422,7 @@ class CountV2 extends Plugin implements IModule {
 		}
 		const ch = $discordBot.channels.get(CHANNELID_SCOREBOARD) as TextChannel;
 
-		const messages = await ch.fetchMessages();
+		const messages = await ch.messages.fetch();
 		for(const message of messages.values()) {
 			if(message.embeds.length === 0 && message.author.id !== $botConfig.botOwner) {
 				message.delete();

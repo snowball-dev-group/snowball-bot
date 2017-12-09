@@ -181,7 +181,7 @@ class PremiumControl extends Plugin implements IModule {
 				return;
 			}
 
-			if(role.calculatedPosition > botMember.highestRole.calculatedPosition) {
+			if(role.position > botMember.highestRole.position) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_ROLEHIGHER")
 				});
@@ -697,7 +697,7 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		if(premiumRole.calculatedPosition >= guild.me.highestRole.calculatedPosition) {
+		if(premiumRole.position >= guild.me.highestRole.position) {
 			this.log("warn", logPrefix, "Premium role is above bot's one, so bot can't give it");
 			await delGuildPref(guild, "premiumctl:role");
 			return;
@@ -706,7 +706,7 @@ class PremiumControl extends Plugin implements IModule {
 		// sync
 
 		for(const member of guild.members.values()) {
-			if(member.highestRole.calculatedPosition >= guild.me.highestRole.calculatedPosition) {
+			if(member.highestRole.position >= guild.me.highestRole.position) {
 				// we can't give role to member because this member has role highness that ours
 				done++;
 				continue;

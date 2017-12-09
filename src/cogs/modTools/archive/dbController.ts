@@ -112,8 +112,7 @@ export function convertAttachment(attachment: MessageAttachment) : IEmulatedAtta
 		id: attachment.id,
 		file: {
 			url: attachment.url,
-			name: attachment.filename,
-			size: attachment.filesize
+			name: attachment.name
 		}
 	};
 }
@@ -159,7 +158,7 @@ export function convertEmbed(embed: MessageEmbed) : IEmulatedEmbed {
 			name: embed.provider.name,
 			url: embed.provider.url
 		} : undefined,
-		timestamp: embed.createdTimestamp
+		timestamp: embed.timestamp
 	};
 }
 
@@ -213,13 +212,12 @@ export interface IEmulatedAttachment {
     file: {
         url: string;
         name: string;
-        size: number;
     };
 }
 
 export interface IEmulatedEmbed {
     author?: {
-        name: string;
+        name?: string;
         url?: string;
         icon_url?: string;
     };
@@ -231,7 +229,7 @@ export interface IEmulatedEmbed {
         value: string;
     }>;
     footer?: {
-        text: string;
+        text?: string;
         icon_url?: string;
     };
     color?: number;
@@ -248,7 +246,7 @@ export interface IEmulatedEmbed {
     video?: {
         width?: string;
         height?: number;
-        url: string;
+        url?: string;
     };
     url: string;
     provider?: {

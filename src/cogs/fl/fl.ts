@@ -55,7 +55,7 @@ class ReverseLayout extends Plugin implements IModule {
 		}
 
 		// fetch last messages in channel
-		const messages = await msg.channel.fetchMessages();
+		const messages = await msg.channel.messages.fetch();
 		if(!messages) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_CANTFETCH")
@@ -103,10 +103,10 @@ class ReverseLayout extends Plugin implements IModule {
 				embed: await generateEmbed(EmbedType.Empty, reversed, {
 					author: {
 						name: user.displayName,
-						icon_url: (user instanceof GuildMember ? user.user : user).displayAvatarURL
+						icon_url: (user instanceof GuildMember ? user.user : user).displayAvatarURL({ format: "webp", size: 128 })
 					},
 					footer: {
-						icon_url: $discordBot.user.displayAvatarURL,
+						icon_url: $discordBot.user.displayAvatarURL({ format: "webp", size: 128 }),
 						text: await localizeForUser(msg.member, "FL_MESSAGE_INREPLY", {
 							botname: $discordBot.user.username
 						})

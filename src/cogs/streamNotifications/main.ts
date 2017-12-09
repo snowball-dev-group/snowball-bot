@@ -987,7 +987,7 @@ class StreamNotifications extends Plugin implements IModule {
 					// user subscriber
 
 					const userId = subscriberId.slice(1);
-					const user = await $discordBot.fetchUser(userId);
+					const user = await $discordBot.users.fetch(userId);
 
 					if(!user) {
 						this.log("warn", "Could not find subscribed user", userId);
@@ -1101,7 +1101,7 @@ class StreamNotifications extends Plugin implements IModule {
 		if((result.updated || result.status === "offline") && (notification && notification.channelId === channel.id)) {
 			const msg = await (async () => {
 				try {
-					return (await channel.fetchMessage(notification.messageId));
+					return (await channel.messages.fetch(notification.messageId));
 				} catch(err) {
 					this.log("err", "Could not find message with ID", notification.messageId, "to update message", err);
 

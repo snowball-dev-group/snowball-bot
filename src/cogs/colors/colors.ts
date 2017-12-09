@@ -38,7 +38,7 @@ export interface IColorfulMigration {
 }
 
 function checkPerms(member: GuildMember) {
-	return member.permissions.has(["MANAGE_ROLES", "MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"]);
+	return member.permissions.has(["MANAGE_ROLES", "MANAGE_GUILD"]);
 }
 
 function isChat(msg: Message) {
@@ -419,7 +419,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(colorRole.calculatedPosition > msg.guild.me.highestRole.calculatedPosition) {
+		if(colorRole.position > msg.guild.me.highestRole.position) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_INVALIDROLEPOSITION")
 			});
