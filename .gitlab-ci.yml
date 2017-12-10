@@ -5,8 +5,8 @@ cache:
     - node_modules
 
 before_script:
-  - yarn global add grunt-cli
-  - yarn install
+  - npm install -g grunt-cli
+  - npm install
 
 stages:
   - build
