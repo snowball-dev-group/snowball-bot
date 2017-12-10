@@ -3,7 +3,7 @@ import { IHashMap } from "../../../types/Interfaces";
 import { ISimpleCmdParseResult, replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
-import { Message, Guild, SnowflakeUtil, MessageAttachment as Attachment, TextChannel, User } from "discord.js";
+import { Message, Guild, SnowflakeUtil, TextChannel, User } from "discord.js";
 import { EmbedType, getLogger, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
 import { getDB } from "../../utils/db";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
@@ -239,7 +239,6 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-
 		const target = parsed.subCommand;
 
 		if(!target) { return; } // ???
@@ -417,7 +416,13 @@ class ModToolsArchive extends Plugin implements IModule {
 
 		let result = await this.messagesToString(foundMessages.reverse(), caches.users);
 
-		return await msg.channel.send(await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }), new Attachment(Buffer.from(result), `archive_${Date.now()}.txt`));
+		return await msg.channel.send({
+			content: await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }),
+			files: [{
+				attachment: Buffer.from(result),
+				name: `archive_${Date.now()}.txt`
+			}]
+		});
 	}
 
 	async resolveUserTarget(resolvableUser: string, guild: Guild) {
