@@ -72,17 +72,21 @@ export interface IModule {
 
 export enum ModuleLoadState {
 	/**
-	 * Module initialized and will be loaded as soon as `load` function will be called
+	 * Module is ready to load and will be loaded as soon as `load` function will be called
 	 */
-	Initialized,
+	Ready,
 	/**
 	 * Module loads, calling `load` will throw an error
 	 */
-	Loading,
+	Initializing,
 	/**
-	 * Module is loaded and ready to use & work
+	 * Module is loaded, but not yet completely initialized
 	 */
 	Loaded,
+	/**
+	 * Module is loaded and initialized and ready to work
+	 */
+	Initialized,
 	/**
 	 * Module was unloaded using `unload` function call
 	 */
@@ -110,7 +114,7 @@ export class ModuleBase<T> extends EventEmitter {
 	/**
 	 * Module loading state
 	 */
-	state: ModuleLoadState = ModuleLoadState.Initialized;
+	state: ModuleLoadState = ModuleLoadState.Ready;
 
 	constructor(info: IModuleInfo) {
 		super();
@@ -122,21 +126,29 @@ export class ModuleBase<T> extends EventEmitter {
 	 * @returns {Promise<ModuleBase>} Promise which'll be resolved with this module's base once module is loaded
 	 */
 	async load() {
-		if(this.state !== ModuleLoadState.Initialized && this.state !== ModuleLoadState.Unloaded && this.state !== ModuleLoadState.Destroyed) {
+		if(this.state !== ModuleLoadState.Ready && this.state !== ModuleLoadState.Unloaded && this.state !== ModuleLoadState.Destroyed) {
 			throw new Error("Module is already loaded or loads. Unload it first!");
 		}
-		this.state = ModuleLoadState.Loading;
+		this.state = ModuleLoadState.Initializing;
 		try {
 			let mod = require(this.info.path);
 			this.base = new mod(this.info.options);
 
 			if(this.base) {
 				const base = this.base;
-				this.signature = base.signature;
-				if(base.init) { await base.init(); }
-			}
 
-			this.state = ModuleLoadState.Loaded;
+				this.state = ModuleLoadState.Loaded;
+
+				if(!base.init) {
+					this.state = ModuleLoadState.Initialized;
+					this.emit("initialized");
+				}
+
+				this.signature = base.signature;
+			} else {
+				throw new Error("Doesn't has any returning value");
+			}
+			
 			this.emit("loaded", this.signature, this.base);
 		} catch(err) {
 			this.emit("error", {
@@ -149,13 +161,23 @@ export class ModuleBase<T> extends EventEmitter {
 	}
 
 	/**
+	 * Initializes the module
+	 */
+	async init() {
+		if(this.state !== ModuleLoadState.Loaded) { return; }
+		if(this.base && this.base.init) { await this.base.init(); }
+		this.state = ModuleLoadState.Initialized;
+		this.emit("initialized");
+	}
+
+	/**
 	 * Function to unload or complete destroy module if it has no unload method
 	 * Very important to keep unload function in your module, else unloading can cause exceptions at running
 	 * @param reason Reason of unloading which'll be transmitted to module. By default "unload"
 	 * @returns {Promise<ModuleBase>} Promise which'll be resolved with this module's base once module is unloaded or destroyed
 	 */
 	async unload(reason: any = "unload") {
-		if(this.state !== ModuleLoadState.Loaded) { throw new Error("Module is not loaded"); }
+		if(this.state !== ModuleLoadState.Initialized) { throw new Error("Module is not loaded"); }
 
 		this.signature = null;
 
@@ -312,6 +334,8 @@ export class ModuleLoader {
 		}).on("destroyed", () => {
 			this.log("info", keeperLogPrefix, "DESTROYED");
 			this.log("warn", keeperLogPrefix, "WARNING: Destroying should be avoided, it's totally unsafe and can lead to memory leaks. Please contact module maintainer and ask to fix this problem.");
+		}).on("initialized", () => {
+			this.log("info", keeperLogPrefix, "INITIALIZED");
 		});
 
 		try {
@@ -411,11 +435,25 @@ export class ModuleLoader {
 		}
 
 		this.log("info", "Loading started");
-		this.log("info", !!this.config.queueModuleLoading ? "Queue mode enabled" : "Parallel mode enabled");
+
+		const toInit:Array<ModuleBase<any>> = [];
+
 		for(const modName of toLoad) {
-			const loadingPromise = this.load(modName, true);
-			if(!!this.config.queueModuleLoading) {
-				await loadingPromise;
+			await this.load(modName, true);
+			const keeper = this.loadedModulesRegistry[modName];
+			if(!keeper) { continue; }
+			if(keeper.state === ModuleLoadState.Loaded) {
+				toInit.push(keeper);
+			}
+		}
+
+		this.log("info", "Entering initialization state...");
+
+		for(const keeper of toInit) {
+			try {
+				await keeper.init();
+			} catch (err) {
+				this.log("warn", "Failed to initialize module", keeper.info.name);
 			}
 		}
 	}
