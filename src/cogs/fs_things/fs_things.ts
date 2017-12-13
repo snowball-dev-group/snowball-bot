@@ -1,9 +1,11 @@
 import { isPremium } from "../utils/premium";
 import { Plugin } from "../plugin";
 import { IModule } from "../../types/ModuleLoader";
-import { GuildMember, TextChannel } from "discord.js";
+import { GuildMember, Message, TextChannel } from "discord.js";
 import * as Random from "random-js";
-import { getLogger } from "../utils/utils";
+import { getLogger, EmbedType, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
+import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
+import { randomPick } from "../utils/random";
 
 interface ISubText {
 	roleId: string;
@@ -48,6 +50,8 @@ interface IOptions {
 	wrongNickFallback: string;
 }
 
+const acceptedCommands = ["choose", "pick"];
+
 /**
  * Fan Server of BlackSilverUFA & DariyaWillis
  * Partnered until 01.01.2019
@@ -64,7 +68,8 @@ class FanServerThings extends Plugin implements IModule {
 	constructor(options: IOptions) {
 		super({
 			"guildMemberUpdate": (oldMember: GuildMember, newMember: GuildMember) => this.onUpdate(oldMember, newMember),
-			"guildMemberAdd": (member: GuildMember) => this.newMember(member)
+			"guildMemberAdd": (member: GuildMember) => this.newMember(member),
+			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
 
 		this.options = options;
@@ -113,6 +118,72 @@ class FanServerThings extends Plugin implements IModule {
 		if(oldMember.guild.id === this.options.fsGuildId) {
 			await this.onFSUpdate(oldMember, newMember);
 		}
+	}
+
+	async onMessage(msg: Message) {
+		if(msg.guild.id !== this.options.fsGuildId && msg.author.id !== $botConfig.botOwner) { return; }
+		const cmd = acceptedCommands.find(c => msg.content.startsWith(`!${c}`));
+		if(!cmd) { return; }
+		switch(cmd) {
+			case "choose": case "pick": return await this.cmd_choose(msg, cmd);
+		}
+	}
+
+	async cmd_choose(msg: Message, cmd: string) {
+		// limited only to admins?
+		if(!msg.member.permissions.has("ADMINISTRATOR")) { return; }
+
+		let role = msg.mentions.roles.first();
+		const roleName = msg.content.slice(`!${cmd} `.length);
+		if(roleName.length === 0 && !role) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "FSTHINGS_CHOOSE_NOROLENAME")
+			});
+		} else if(!role) {
+			role = resolveGuildRole(roleName, msg.guild, false);
+		}
+
+		if(!role) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "FSTHINGS_CHOOSE_ROLENOTFOUND")
+			});
+		}
+
+		let members = role.members.array();
+		// filtering bots out
+		members = members.filter(m => !m.user.bot);
+		if(members.length === 0) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, "FSTHINGS_CHOOSE_EMPTYROLE")
+			});
+		}
+
+		const pickedMember = randomPick(members);
+		if(!pickedMember) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+					key: "FSTHINGS_CHOOSE_INTERNALERROR001",
+					formatOptions: {
+						found_members: members.length
+					}
+				})
+			});
+		}
+
+		return await msg.channel.send({
+			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "FSTHINGS_CHOOSE_FOUND", {
+				fields: [{
+					inline: false,
+					name: await localizeForUser(msg.member, "FSTHINGS_CHOOSE_EMBED_ROLE"),
+					value: `${role}\n**${escapeDiscordMarkdown(role.name, true)}** (ID: ${role.id})`
+				}, {
+					inline: false,
+					name: await localizeForUser(msg.member, "FSTHINGS_CHOOSE_EMBED_MEMBER"),
+					value: `${pickedMember}\n**${escapeDiscordMarkdown(pickedMember.displayName, true)}** (@${escapeDiscordMarkdown(pickedMember.user.tag, true)})\nID: ${pickedMember.id}`
+				}],
+				thumbUrl: pickedMember.user.displayAvatarURL(pickedMember.user.avatar.startsWith("a_") ? { format: "gif" } : { format: "png", size: 512 })
+			})
+		});
 	}
 
 	async newMember(member: GuildMember) {
