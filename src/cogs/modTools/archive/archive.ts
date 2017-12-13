@@ -5,7 +5,6 @@ import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
 import { Message, Guild, SnowflakeUtil, TextChannel, User } from "discord.js";
 import { EmbedType, getLogger, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
-import { getDB } from "../../utils/db";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
 import { getPreferenceValue } from "../../utils/guildPrefs";
@@ -45,51 +44,50 @@ class ModToolsArchive extends Plugin implements IModule {
 		return "snowball.modtools.archive";
 	}
 
-	log = getLogger("MessagesToDBTest");
-	db = getDB();
-	options: IMessagesToDBTestOptions;
-	controller: ArchiveDBController;
+	private _log = getLogger("MessagesToDBTest");
+	private _options: IMessagesToDBTestOptions;
+	private _controller: ArchiveDBController;
 
 	constructor(options: IMessagesToDBTestOptions) {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
-		this.options = options || {};
-		this.log("info", "The settings are:", options);
+		this._options = options || {};
+		this._log("info", "The settings are:", options);
 	}
 
 	async onMessage(msg: Message) {
-		if(this.options.bots !== undefined && !this.options.bots && msg.author.bot) { return; }
-		if(!!this.options.banned) {
-			if(!!this.options.banned.authors && this.options.banned.authors.includes(msg.author.id)) {
+		if(this._options.bots !== undefined && !this._options.bots && msg.author.bot) { return; }
+		if(!!this._options.banned) {
+			if(!!this._options.banned.authors && this._options.banned.authors.includes(msg.author.id)) {
 				return;
-			} else if(!!this.options.banned.channels && this.options.banned.channels.includes(msg.channel.id)) {
+			} else if(!!this._options.banned.channels && this._options.banned.channels.includes(msg.channel.id)) {
 				return;
-			} else if(!!this.options.banned.guilds && !!msg.guild && this.options.banned.guilds.includes(msg.guild.id)) {
+			} else if(!!this._options.banned.guilds && !!msg.guild && this._options.banned.guilds.includes(msg.guild.id)) {
 				return;
 			}
 		}
 		try {
-			await this.recordMessage(msg);
+			await this._recordMessage(msg);
 		} catch(err) {
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
-			this.log("err", "Failed to push message", err);
+			this._log("err", "Failed to push message", err);
 		}
 		try {
 			await this.handleCommand(msg);
 		} catch(err) {
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
-			this.log("err", "Handling commands failure", err);
+			this._log("err", "Handling commands failure", err);
 		}
 	}
 
-	async handleCommand(msg: Message) {
+	private async handleCommand(msg: Message) {
 		if(!msg.content.startsWith(PREFIX) && !msg.content.startsWith(MSG_PREFIX)) {
 			return;
 		}
 
 		if((await getPreferenceValue(msg.guild, "features:archive:enabled", true)) === false) {
-			this.log("info", `Access to the feature archive denied in guild ${msg.guild.id} (requested-in: ${msg.id})`);
+			this._log("info", `Access to the feature archive denied in guild ${msg.guild.id} (requested-in: ${msg.id})`);
 			return;
 		}
 
@@ -101,7 +99,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 	}
 
-	async subcmd_message(msg: Message, parsed: ISimpleCmdParseResult) {
+	private async subcmd_message(msg: Message, parsed: ISimpleCmdParseResult) {
 		const msgId = parsed.subCommand;
 		if(msg.content === PREFIX || !msgId) {
 			return await msg.channel.send({
@@ -120,7 +118,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		const message = await this.controller.getMessage(msgId);
+		const message = await this._controller.getMessage(msgId);
 
 		if(!message) {
 			return await msg.channel.send({
@@ -132,7 +130,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			return;
 		}
 
-		const channel = await this.resolveGuildChannel(message.channelId, msg.guild);
+		const channel = await this._resolveGuildChannel(message.channelId, msg.guild);
 
 		if(!channel) {
 			return await msg.channel.send({
@@ -156,7 +154,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		const author = (originalMessage && originalMessage.author) || await this.resolveUserTarget(message.authorId, msg.guild);
+		const author = (originalMessage && originalMessage.author) || await this._resolveUserTarget(message.authorId, msg.guild);
 		const member = (originalMessage && originalMessage.member) || msg.guild.member(author);
 		const other = message.other ? <IEmulatedContents>JSON.parse(message.other) : undefined;
 		const date = originalMessage ? originalMessage.createdAt.toISOString() : SnowflakeUtil.deconstruct(message.messageId).date.toISOString();
@@ -226,7 +224,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 	}
 
-	async subcmd_archive(msg: Message, parsed: ISimpleCmdParseResult) {
+	private async subcmd_archive(msg: Message, parsed: ISimpleCmdParseResult) {
 		if(msg.content === PREFIX) {
 			return await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
@@ -303,7 +301,7 @@ class ModToolsArchive extends Plugin implements IModule {
 					let resolved: string[] = [];
 					for(let target of toResolve) {
 						try {
-							const resolvedTarget = (await this.resolveUserTarget(target, msg.guild)).id;
+							const resolvedTarget = (await this._resolveUserTarget(target, msg.guild)).id;
 							resolved.push(resolvedTarget);
 						} catch(err) {
 							await msg.channel.send({
@@ -324,13 +322,13 @@ class ModToolsArchive extends Plugin implements IModule {
 					return;
 				}
 
-				foundMessages = await this.controller.search({
+				foundMessages = await this._controller.search({
 					guildId: msg.guild.id,
 					authorId: resolvedTargets.length === 1 ? resolvedTargets[0] : resolvedTargets
 				}, lines, offset);
 			} break;
 			case "guild": {
-				foundMessages = await this.controller.search({
+				foundMessages = await this._controller.search({
 					guildId: msg.guild.id
 				}, lines, offset);
 			} break;
@@ -342,7 +340,7 @@ class ModToolsArchive extends Plugin implements IModule {
 					for(const target of parsed.args) {
 						if(target.startsWith("u:")) {
 							try {
-								const user = await this.resolveUserTarget(target.slice("u:".length).trim(), msg.guild);
+								const user = await this._resolveUserTarget(target.slice("u:".length).trim(), msg.guild);
 								caches.users[user.id] = user;
 								users.push(user.id);
 							} catch(err) {
@@ -357,7 +355,7 @@ class ModToolsArchive extends Plugin implements IModule {
 							}
 						} else {
 							try {
-								const channel = await this.resolveGuildChannel(target, msg.guild);
+								const channel = await this._resolveGuildChannel(target, msg.guild);
 								if(!channel) {
 									throw new Error("No channel returned");
 								} else if(!(channel instanceof TextChannel)) {
@@ -386,14 +384,14 @@ class ModToolsArchive extends Plugin implements IModule {
 					}
 				}
 
-				foundMessages = await this.controller.search({
+				foundMessages = await this._controller.search({
 					guildId: msg.guild.id,
 					channelId: channels.length > 0 ? (channels.length === 1 ? channels[0] : channels) : msg.channel.id,
 					authorId: users.length > 0 ? users : undefined
 				}, lines, offset);
 			} break;
 			default: {
-				this.log("err", "Unknown target found", target);
+				this._log("err", "Unknown target found", target);
 				return;
 			}
 		}
@@ -414,7 +412,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		let result = await this.messagesToString(foundMessages.reverse(), caches.users);
+		let result = await this._messagesToString(foundMessages.reverse(), caches.users);
 
 		return await msg.channel.send({
 			content: await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }),
@@ -425,7 +423,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		});
 	}
 
-	async resolveUserTarget(resolvableUser: string, guild: Guild) {
+	private async _resolveUserTarget(resolvableUser: string, guild: Guild) {
 		{
 			const res = TARGETTING.RESOLVABLE_USER.MENTION.exec(resolvableUser);
 			if(res && res.length === 2) {
@@ -446,7 +444,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		return (await $discordBot.users.fetch(resolvableUser));
 	}
 
-	async resolveGuildChannel(resolvableChannel: string, guild: Guild) {
+	private async _resolveGuildChannel(resolvableChannel: string, guild: Guild) {
 		{
 			const res = TARGETTING.RESOLVABLE_CHANNEL.MENTION.exec(resolvableChannel);
 			if(res && res.length === 2) {
@@ -460,7 +458,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		throw new Error("Channel not found");
 	}
 
-	async messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = {}) {
+	private async _messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = {}) {
 		let str = "";
 		for(const messageEntry of messages) {
 			const parsedDate = (SnowflakeUtil.deconstruct(messageEntry.messageId)).date;
@@ -497,18 +495,18 @@ class ModToolsArchive extends Plugin implements IModule {
 		return str;
 	}
 
-	async recordMessage(msg: Message) {
+	private async _recordMessage(msg: Message) {
 		const payload = convertToDBMessage(msg);
-		return await this.controller.insertMessage(payload);
+		return await this._controller.insertMessage(payload);
 	}
 
-	async init() {
-		this.controller = new ArchiveDBController();
-		await this.controller.init();
+	public async init() {
+		this._controller = new ArchiveDBController();
+		await this._controller.init();
 		this.handleEvents();
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
 		return true;
 	}
