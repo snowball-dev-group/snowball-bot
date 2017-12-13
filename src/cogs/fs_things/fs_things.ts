@@ -121,6 +121,7 @@ class FanServerThings extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
+		if(!msg.member || msg.channel.type !== "text") { return; }
 		if(msg.guild.id !== this.options.fsGuildId && msg.author.id !== $botConfig.botOwner) { return; }
 		const cmd = acceptedCommands.find(c => msg.content.startsWith(`!${c}`));
 		if(!cmd) { return; }
