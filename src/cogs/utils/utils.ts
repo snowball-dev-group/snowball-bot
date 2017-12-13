@@ -370,34 +370,41 @@ export function getLogger(name: string): ILoggerFunction {
 	return createLogger(name);
 }
 
-export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true) {
+export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, caseStrict = false) {
 	if(/[0-9]+/.test(nameOrID)) {
 		// it's can be ID
 		const role = guild.roles.get(nameOrID);
 		if(role) { return role; }
 	}
+
+	if(!caseStrict) {
+		nameOrID = nameOrID.toLowerCase();
+	}
+
 	// going to search
 	return guild.roles.find((role) => {
-		if(strict) { return role.name === nameOrID; }
-		else { return role.name.includes(nameOrID); }
+		const roleName = (caseStrict ? role.name : role.name.toLowerCase());
+		if(strict) { return roleName === nameOrID; }
+		else { return roleName.includes(nameOrID); }
 	}); // it can return undefined, it's okay
 }
 
-export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true) {
+export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false) {
 	if(/[0-9]+/.test(nameOrID)) {
 		const ch = guild.channels.get(nameOrID);
 		if(ch) { return ch; }
 	}
 
+	if(!caseStrict) {
+		nameOrID = nameOrID.toLowerCase();
+	}
+
 	return guild.channels.find((vc) => {
-		if(strict) { return vc.name === nameOrID; }
-		else { return vc.name.includes(nameOrID); }
+		const vcName = caseStrict ? vc.name : vc.name.toLowerCase();
+		if(strict) { return vcName === nameOrID; }
+		else { return vcName.includes(nameOrID); }
 	});
 }
-
-const caseSwitch = (str: string, sw: boolean) => {
-	return sw ? str.toLowerCase() : str;
-};
 
 export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false) : Promise<GuildMember|undefined> {
 	if(/[0-9]+/.test(nameOrID)) {
@@ -411,9 +418,7 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 		if(member) { return member; }
 	}
 
-	// doing some quick conversations
-	caseStrict = !caseStrict;
-	nameOrID = caseSwitch(nameOrID, caseStrict);
+	nameOrID = caseStrict ? nameOrID : nameOrID.toLowerCase();
 
 	// tag parts
 	const tagParts = nameOrID.includes("#") ? (nameOrID.startsWith("@") ? nameOrID.slice(1) : nameOrID).split("#") : undefined;
@@ -430,7 +435,7 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 
 	for(const member of guild.members.values()) {
 		if(tagParts) { // tag strict equality check
-			const splitdtag = caseSwitch(member.user.tag, caseStrict).split("#");
+			const splitdtag = (caseStrict ? member.user.tag : member.user.tag.toLowerCase()).split("#");
 			if(splitdtag.length !== 2) { continue; } // invalid tag skip
 
 			if((splitdtag[1] === tagParts[1]) && (strict ? (splitdtag[0] === tagParts[0]) : (tagParts[0].length === 0 ? true : splitdtag[0].includes(tagParts[0])))) {
@@ -440,8 +445,8 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 			continue;
 		}
 
-		const nickname = member.nickname ? caseSwitch(member.nickname, caseStrict) : undefined;
-		const username = caseSwitch(member.user.username, caseStrict);
+		const nickname = member.nickname ? (caseStrict ? member.nickname : member.nickname.toLowerCase()) : undefined;
+		const username = caseStrict ? member.user.username : member.user.username.toLowerCase();
 
 		if(strict) {
 			if((nickname && nickname === nameOrID) || username === nameOrID) {
