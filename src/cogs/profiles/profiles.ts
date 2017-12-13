@@ -321,7 +321,7 @@ class Profiles extends Plugin implements IModule {
 				return;
 			}
 
-			if(mod.state !== ModuleLoadState.Loaded || !mod.base) {
+			if(mod.state !== ModuleLoadState.Initialized || !mod.base) {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_NOT_LOADED")
 				});
@@ -667,7 +667,7 @@ class Profiles extends Plugin implements IModule {
 						continue;
 					}
 
-					if(mod.state !== ModuleLoadState.Loaded || !mod.base) {
+					if(mod.state !== ModuleLoadState.Initialized || !mod.base) {
 						// not loaded, skipping
 						continue;
 					}

@@ -506,7 +506,7 @@ class StreamNotifications extends Plugin implements IModule {
 		const providerName = args[0].toLowerCase();
 		const providerModule = this.servicesLoader.loadedModulesRegistry[providerName];
 
-		if(!providerModule || providerModule.state !== ModuleLoadState.Loaded || !providerModule.base) {
+		if(!providerModule || providerModule.state !== ModuleLoadState.Initialized || !providerModule.base) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_PROVIDERNOTFOUND"))
 			});
@@ -1452,7 +1452,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 				let mod = this.servicesLoader.loadedModulesRegistry[payload.provider];
 				if(!mod) { this.log("warn", "Provider not found", payload.provider, "- message ignored"); return; }
-				if(mod.state !== ModuleLoadState.Loaded || !mod.base) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
+				if(mod.state !== ModuleLoadState.Initialized || !mod.base) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
 
 				let provider = mod.base as IStreamingService;
 
