@@ -44,8 +44,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 		let info = {
 			platform: (args[2] || "pc").toLowerCase(),
 			region: (args[1] || "eu").toLowerCase(),
-			battletag: args[0].replace(/\#/i, () => "-"),
-			verifed: false
+			battletag: args[0].replace(/\#/i, () => "-")
 		};
 
 		if(!ACCEPTED_REGIONS.includes(info.region)) {
@@ -99,8 +98,6 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 			});
 			throw new Error("Player not registered on this region.");
 		}
-
-		info.verifed = true;
 
 		let json = JSON.stringify(info);
 
