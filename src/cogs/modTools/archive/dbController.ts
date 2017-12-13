@@ -26,7 +26,7 @@ export class ArchiveDBController {
 	 * Checks if required table is created
 	 * If not, creates it using default schema
 	 */
-	async init() {
+	public async init() {
 		const tbStatus = await this._db.schema.hasTable(this._tableName);
 		if(!tbStatus) {
 			this._log("info", "[init] Table not found, creating started");
@@ -40,7 +40,7 @@ export class ArchiveDBController {
 				tb.string("other", 10000);  // lol
 			});
 
-			this._log("info", `[init] Table '${this._tableName.length}' successfully created.`);
+			this._log("info", `[init] Table '${this._tableName}' successfully created.`);
 		}
 
 		this._initComplete = true;
@@ -51,7 +51,7 @@ export class ArchiveDBController {
 	 * Inserts IDBMessage into the table
 	 * @param msg {IDBMessage} Message to insert into the database
 	 */
-	async insertMessage(msg: IDBMessage): Promise<IDBMessage> {
+	public async insertMessage(msg: IDBMessage): Promise<IDBMessage> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		return await this._db(this._tableName).insert(msg, "*");
 	}
@@ -64,7 +64,7 @@ export class ArchiveDBController {
 	 * @param filter.channelId {string|string[]} Selector by Channel ID(s)
 	 * @param filter.messageId {string|string[]} Selector by Message ID(s)
 	 */
-	async search(filter: IDBSearchFilter, limit = 50, offset = 0): Promise<IDBMessage[]> {
+	public async search(filter: IDBSearchFilter, limit = 50, offset = 0): Promise<IDBMessage[]> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		if(!FILTER_PROPERTIES.find(prop => !isNullOrEmptyArray(filter[prop]))) {
 			throw ERRORS.EMPTY_FILTER;
@@ -98,7 +98,7 @@ export class ArchiveDBController {
 	 * Gets first message selected by specified ID as is
 	 * @param messageId {string} Discord Message ID
 	 */
-	async getMessage(messageId: string): Promise<IDBMessage> {
+	public async getMessage(messageId: string): Promise<IDBMessage> {
 		return await this._db(this._tableName).first("*").where("messageId", messageId);
 	}
 }
