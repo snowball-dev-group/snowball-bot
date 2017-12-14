@@ -7,20 +7,7 @@ import PrefixAll from "./prefixAll";
 import { IModule, ModuleBase } from "../../../types/ModuleLoader";
 import { Guild, Message } from "discord.js";
 import { randomNumber, randomPick } from "../../utils/random";
-
-/*
-	private subcmd_add(msg: Message, parsed: ISimpleCmdParseResult) {
-		// 
-	}
-
-	private subcmd_remove(msg: Message, parsed: ISimpleCmdParseResult) {
-		//
-	}
-
-	private subcmd_list(msg: Message, parsed: ISimpleCmdParseResult) {
-		//
-	}
-*/
+import { createConfirmationMessage } from "../../utils/interactive";
 
 const DEFAULT_LIMITATIONS = <IPrefixAllPluginLimitations>{
 	non_partners: 1, // 1 additional prefix?
@@ -154,6 +141,19 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			});
 		}
 
+		const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+			key: "PREFIXALL_PREFIX_CONFIRMATION_ADD",
+			formatOptions: {
+				prefix: additionalPrefix
+			}
+		}), msg);
+
+		if(!confirmation) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREFIXALL_PREFIX_CANCELED")
+			});
+		}
+
 		guildPrefixes.push(additionalPrefix);
 
 		await prefixAllInstance.setPrefixes(msg.guild, guildPrefixes);
@@ -203,6 +203,19 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 				}, star ? {
 					imageUrl: randomPick(ATTEMPTS_STARS)
 				}: undefined)
+			});
+		}
+
+		const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+			key: "PREFIXALL_PREFIX_CONFIRMATION_REMOVE",
+			formatOptions: {
+				prefix: prefixToRemoval
+			}
+		}), msg);
+
+		if(!confirmation) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREFIXALL_PREFIX_CANCELED")
 			});
 		}
 
