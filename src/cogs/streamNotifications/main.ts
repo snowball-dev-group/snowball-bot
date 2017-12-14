@@ -490,7 +490,7 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		} else if((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds &&  settings.subscribedTo.length >= this.options.limits.users)) {
 			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
-			if(whitelistStatus.state !== 0 && whitelistStatus.state === 1) {
+			if(whitelistStatus.state === 1) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 						key: LOCALIZED("ADD_FAULT_NOPARTNER"),
