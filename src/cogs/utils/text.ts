@@ -41,6 +41,10 @@ export function canBeSnowflake(str: string) {
 	return /[0-9]{16,20}/.test(str);
 }
 
+export function stripSpaces(str: string) {
+	return str.trim().replace(/ {2,}/g, " ");
+}
+
 // from https://github.com/danakt/uuid-by-string/blob/master/uuid-by-string.js
 
 function _getHex(str: string, key: number, maxlen: number): string {
@@ -76,4 +80,10 @@ export function getUUIDByString(str: string) {
 		_getHex(str, 0x51c, 11),
 		_getHex(str, 0xd7a, 12)
 	]);
+}
+
+// from https://stackoverflow.com/questions/11305797/remove-zero-width-space-characters-from-a-javascript-string/11305926
+// may improve in time
+export function stripEmptyChars(str: string) {
+	return str.replace(/[\u200B-\u200D\uFEFF]/g, "");
 }
