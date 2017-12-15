@@ -278,9 +278,8 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 	 * With default prefix fallback
 	 */
 	private async _getGuildPrefixes(prefixAllInstance: PrefixAll, guild: Guild) {
-		const arr = [prefixAllInstance.defaultPrefix];
 		const guildPrefixes = await prefixAllInstance.getPrefixes(guild);
-		return guildPrefixes ? arr.concat(guildPrefixes) : arr; // no ["!", undefined] pls
+		return guildPrefixes ? guildPrefixes : [prefixAllInstance.defaultPrefix];
 	}
 
 	public async unload() {
