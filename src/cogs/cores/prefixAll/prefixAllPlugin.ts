@@ -10,8 +10,8 @@ import { randomNumber, randomPick } from "../../utils/random";
 import { createConfirmationMessage } from "../../utils/interactive";
 
 const DEFAULT_LIMITATIONS = <IPrefixAllPluginLimitations>{
-	non_partners: 1, // 1 additional prefix?
-	partners: 5
+	non_partners: 2, // 1 additional prefix?
+	partners: 6
 };
 
 export const ATTEMPTS_STARS = ["https://i.imgur.com/XgY13z9.png", "https://i.imgur.com/0NJqMTo.png", "https://i.imgur.com/oWjUCrH.png", "https://i.imgur.com/Zfpy5Sj.png"];
