@@ -1,8 +1,9 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule, ModuleBase } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 import { command } from "../utils/help";
 import { getLogger } from "../utils/utils";
+import MessagesFlows, { IPublicFlowUnit, IMessageFlowContext } from "../cores/messagesFlows";
 
 @command("UTILITES", "ping", "loc:PING_CMDMETA_DEFAULT_DESCRIPTION")
 @command("UTILITES", "ping_embed", "loc:PING_CMDMETA_EMBED_DESCRIPTION")
@@ -11,15 +12,37 @@ class Ping extends Plugin implements IModule {
 		return "snowball.core_features.ping";
 	}
 
-	log: Function = getLogger("PingJS");
+	private log: Function = getLogger("PingJS");
+	private flowHandler: IPublicFlowUnit;
 
 	constructor() {
-		super({
-			"message": (msg: Message) => this.onMessage(msg)
-		});
+		super({});
 	}
 
-	async onMessage(msg: Message) {
+	public async init() {
+		this.log("info", "Searching for `MessagesFlows` core keeper");
+
+		const messagesFlowsKeeper = $snowball.modLoader.loadedModulesRegistry["snowball.core_features.prefixall"];
+
+		if(!messagesFlowsKeeper) {
+			throw new Error("`MessageFlows` not found");
+		}
+
+		const initHandler = (flowsMan: MessagesFlows) => {
+			return flowsMan.watchForMessages((ctx) => this.onMessage(ctx), (ctx) => {
+				return ctx.parsed ? ctx.parsed.command === "ping" : false;
+			});
+		};
+
+		if(messagesFlowsKeeper.base) {
+			initHandler(messagesFlowsKeeper.base);
+		} else {
+			messagesFlowsKeeper.once("initialized", (base: MessagesFlows) => initHandler(base));
+		}
+	}
+
+	async onMessage(ctx: IMessageFlowContext) {
+		let msg = ctx.message;
 		if(msg.content === "!ping") {
 			await msg.react("🏃");
 			let startDate = Date.now();
@@ -42,11 +65,15 @@ class Ping extends Plugin implements IModule {
 					description: `:information_source: Pong - \`${diff}ms\`!`
 				}
 			});
+		} else {
+			this.log("warn", "Called with unknown command!");
 		}
-
 	}
 
 	async unload() {
+		if(this.flowHandler) {
+			this.flowHandler.unhandle();
+		}
 		this.unhandleEvents();
 		return true;
 	}
