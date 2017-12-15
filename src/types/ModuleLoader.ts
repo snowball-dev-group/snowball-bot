@@ -141,7 +141,7 @@ export class ModuleBase<T> extends EventEmitter {
 
 				if(!base.init) {
 					this.state = ModuleLoadState.Initialized;
-					this.emit("initialized");
+					this.emit("initialized", base);
 				}
 
 				this.signature = base.signature;
@@ -167,7 +167,7 @@ export class ModuleBase<T> extends EventEmitter {
 		if(this.state !== ModuleLoadState.Loaded) { return; }
 		if(this.base && this.base.init) { await this.base.init(); }
 		this.state = ModuleLoadState.Initialized;
-		this.emit("initialized");
+		this.emit("initialized", this.base);
 	}
 
 	/**
