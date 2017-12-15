@@ -49,7 +49,7 @@ export default class MessagesFlows implements IModule {
 
 	public async init() {
 		const prefixAllKeeper = $snowball.modLoader.signaturesRegistry["snowball.core_features.prefixall"];
-		
+
 		if(!prefixAllKeeper) {
 			this.log("warn", "[crit] We haven't found `PrefixAll` keeper, means we could not check prefix. Some checks may fail if they depend on this module. Checks that use their own prefix verifier should work fine.");
 		} else {
@@ -164,10 +164,13 @@ export default class MessagesFlows implements IModule {
 						});
 
 						const executionStart = Date.now();
-						return await Promise.race([
-							flowUnit.check(ctx),
+
+						const checkValue = flowUnit.check(ctx);
+
+						return checkValue instanceof Promise ? await Promise.race([
+							checkValue,
 							timeoutVoid
-						]);
+						]) : checkValue;
 					} catch(err) {
 						_checkErr = err;
 						return undefined;
