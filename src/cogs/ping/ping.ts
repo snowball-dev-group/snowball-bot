@@ -22,7 +22,7 @@ class Ping extends Plugin implements IModule {
 	public async init() {
 		this.log("info", "Searching for `MessagesFlows` core keeper");
 
-		const messagesFlowsKeeper = $snowball.modLoader.loadedModulesRegistry["snowball.core_features.messageflows"];
+		const messagesFlowsKeeper = $snowball.modLoader.signaturesRegistry["snowball.core_features.messageflows"];
 
 		if(!messagesFlowsKeeper) {
 			throw new Error("`MessageFlows` not found");
