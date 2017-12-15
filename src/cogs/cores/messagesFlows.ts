@@ -6,7 +6,7 @@ import { IModule, ModuleBase, ModuleLoadState } from "../../types/ModuleLoader";
 import { Message } from "discord.js";
 import { ISimpleCmdParseResult, simpleCmdParse } from "../utils/text";
 
-export const MESSAGEFLOWS_SIGNATURE = "snowball.core.cmd_handler";
+export const MESSAGEFLOWS_SIGNATURE = "snowball.core_features.messageflows";
 export const HANDLER_TIMEOUT = 5000;
 export const CHECK_TIMEOUT = 3000;
 export const HANDLER_MAXTIMEOUT = 120000; // 2 mins for handler? yay
