@@ -63,6 +63,8 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		}
 
 		instanceInitialized = true;
+
+		this.handleEvents();
 	}
 
 	private async onMessage(msg: Message) {
@@ -277,6 +279,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 	}
 
 	public async unload() {
+		this.unhandleEvents();
 		instanceInitialized = false;
 		return true;
 	}
