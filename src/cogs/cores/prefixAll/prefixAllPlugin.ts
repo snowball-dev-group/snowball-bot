@@ -84,7 +84,12 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 		if(!parsed.subCommand) { // if there's no subcommand then sending helpful message
 			return await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREFIXALL_INFO")
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					key: "PREFIXALL_INFO",
+					formatOptions: {
+						items: await localizeForUser(msg.member, "PREFIXALL_INFO_ITEMS")
+					}
+				})
 			});
 		}
 
@@ -111,7 +116,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			});
 		}
 
-		const additionalPrefix = stripSpaces(msg.content.slice(cmd.length));
+		const additionalPrefix = stripSpaces(msg.content.slice(cmd.length + 1 + parsed.subCommand!.length));
 
 		const guildPrefixes = await this._getGuildPrefixes(prefixAllInstance, msg.guild);
 
@@ -184,7 +189,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			});
 		}
 
-		const prefixToRemoval = stripSpaces(msg.content.slice(cmd.length));
+		const prefixToRemoval = stripSpaces(msg.content.slice(cmd.length + 1 + parsed.subCommand!.length));
 
 		const guildPrefixes = await this._getGuildPrefixes(prefixAllInstance, msg.guild);
 
