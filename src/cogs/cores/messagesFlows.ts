@@ -18,7 +18,7 @@ export default class MessagesFlows implements IModule {
 		return MESSAGEFLOWS_SIGNATURE;
 	}
 
-	private _flowUnits: IFlowUnit[];
+	private _flowUnits: IFlowUnit[] = [];
 
 	// kinda flow optimizations
 	private _anyWith = {
