@@ -1,4 +1,4 @@
-import { IModule, ModuleBase } from "../../types/ModuleLoader";
+import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 import { command } from "../utils/help";
