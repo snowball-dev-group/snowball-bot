@@ -46,7 +46,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 	public async init() {
 		this.log("info", "Searching for `PrefixAll` core keeper");
-		const prefixAllKeeper = $snowball.modLoader.loadedModulesRegistry["snowball.core_features.prefixall"];
+		const prefixAllKeeper = $snowball.modLoader.signaturesRegistry["snowball.core_features.prefixall"];
 		if(!prefixAllKeeper) {
 			this.log("err", "Keeper not found, could not load");
 			return; // should throw?
@@ -54,7 +54,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		this.prefixAllKeeper = prefixAllKeeper;
 
 		this.log("info", "Searching for `Whitelist` core keeper");
-		const whitelistKeeper = $snowball.modLoader.loadedModulesRegistry["snowball.core_features.whitelist"];
+		const whitelistKeeper = $snowball.modLoader.signaturesRegistry["snowball.core_features.whitelist"];
 
 		if(whitelistKeeper) {
 			this.whitelistKeeper = whitelistKeeper;
