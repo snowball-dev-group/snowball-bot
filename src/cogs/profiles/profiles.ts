@@ -262,9 +262,7 @@ class Profiles extends Plugin implements IModule {
 	async editProfile(msg: Message) {
 		if(msg.content === "!edit_profile") {
 			await msg.channel.send({
-				embed: {
-					description: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PROFILES_PROFILE_DESCRIPTION")
-				}
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PROFILES_PROFILE_DESCRIPTION")
 			});
 			return;
 		}
@@ -384,7 +382,10 @@ class Profiles extends Plugin implements IModule {
 				valueDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_VALUE_DEFINITION")
 			};
 			await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, `\`set [${strs.key}] [${strs.value}]\``, {
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					custom: true,
+					string: `\`set [${strs.key}] [${strs.value}]\``
+				}, {
 					fields: [{
 						name: `\`${strs.key}\``, inline: false, value: strs.keyDef
 					}, {
@@ -399,7 +400,10 @@ class Profiles extends Plugin implements IModule {
 				keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION")
 			};
 			await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, `\`remove [${strs.key}]\``, {
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					custom: true,
+					string: `\`remove [${strs.key}]\``
+				}, {
 					fields: [{
 						name: `\`${strs.key}\``, inline: false, value: strs.keyDef
 					}]
