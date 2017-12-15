@@ -42,6 +42,10 @@ export default class PrefixAll implements IModule {
 		coreInitialized = true;
 	}
 
+	public async init() {
+		await this._dbController.init();
+	}
+	
 	private _cacheCheck(ctx: Message, result: CheckResult): CheckResult {
 		// caches check and sets the destruction timer
 
