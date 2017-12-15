@@ -154,7 +154,7 @@ export default class MessagesFlows implements IModule {
 				});
 
 				let _checkErr: PossibleError;
-				const checkResult = (async () => {
+				const checkResult = await (async () => {
 					try {
 						const timeoutVoid = (async () => {
 							const normalizedTimeout = this._normalizeTimeout("check", flowUnit.timeoutCheck);
@@ -167,10 +167,10 @@ export default class MessagesFlows implements IModule {
 
 						const checkValue = flowUnit.check(ctx);
 
-						return checkValue instanceof Promise ? await Promise.race([
+						return checkValue instanceof Promise ? await (Promise.race([
 							checkValue,
 							timeoutVoid
-						]) : checkValue;
+						])) : checkValue;
 					} catch(err) {
 						_checkErr = err;
 						return undefined;
