@@ -100,9 +100,8 @@ export default class MessagesFlows implements IModule {
 	 * @param {IWatcherCreationOptions} options Options for watcher
 	 */
 	public watchForMessages(handler: Handler, check: CheckArgument, options: IWatcherCreationOptions = {
-		customParser: false,
 		followsTheFlow: true,
-		checkPrefix: false,
+		checkPrefix: true,
 		timeoutCheck: this._timings.timeoutCheck,
 		timeoutHandler: this._timings.timeoutHandler
 	}): Readonly<IPublicFlowUnit> {
@@ -131,13 +130,24 @@ export default class MessagesFlows implements IModule {
 		});
 	}
 
-	public async _startOnMessageFlow(msg: Message) {
+	private async _parseCommand(msg: Message, prefix: string|false) {
+		if(!prefix) {
+			prefix = await this._getPrefix(msg);
+		}
+		return simpleCmdParse(prefix ? msg.content.slice(prefix.length) : msg.content);
+	}
+
+	private async _getPrefix(msg: Message) {
+		return (this.prefixAllKeeper && this.prefixAllKeeper.state === ModuleLoadState.Initialized && this.prefixAllKeeper.base) ? this.prefixAllKeeper.base.checkPrefix(msg) : false;
+	}
+
+	private async _startOnMessageFlow(msg: Message) {
 		const flowUnits = this._flowUnits;
 		if(!flowUnits || flowUnits.length === 0) { return; }
 
 		// optimizing future results
-		const simpleParserResult = this._anyWith.defaultParsing ? simpleCmdParse(msg.content) : undefined;
-		const prefix = this._anyWith.prefixCheck && (this.prefixAllKeeper && this.prefixAllKeeper.state === ModuleLoadState.Initialized && this.prefixAllKeeper.base) ? this.prefixAllKeeper.base.checkPrefix(msg) : undefined;
+		const prefix = this._anyWith.prefixCheck ? await this._getPrefix(msg) : false;
+		const simpleParserResult = this._anyWith.defaultParsing ? this._parseCommand(msg, prefix) : undefined;
 
 		const execStart = Date.now();
 		for(const flowUnit of flowUnits) {
@@ -146,12 +156,12 @@ export default class MessagesFlows implements IModule {
 				// parser -> check -> handler
 				if(flowUnit.checkPrefix && !prefix) { return; }
 
-				const parserResult = typeof flowUnit.parser !== "undefined" && flowUnit.parser !== null ? (typeof flowUnit.parser === "function" ? await flowUnit.parser(msg) : (flowUnit.parser === true) ? simpleParserResult : undefined) : undefined;
+				const parserResult = typeof flowUnit.parser === "undefined" || flowUnit.parser === null ? simpleParserResult : (await flowUnit.parser(msg));
 
-				const ctx = Object.freeze({
+				const ctx = {
 					message: msg,
 					parsed: parserResult
-				});
+				};
 
 				let _checkErr: PossibleError;
 				const checkResult = await (async () => {
@@ -260,7 +270,7 @@ interface IFlowUnit {
 	handler: Handler;
 	followsTheFlow: boolean;
 	checkPrefix?: boolean;
-	parser?: ParseCommandArgument;
+	parser?: CustomParser;
 	timeoutCheck: number;
 	timeoutHandler: number;
 	_id: string;
@@ -273,10 +283,9 @@ export interface IPublicFlowUnit {
 
 export interface IWatcherCreationOptions {
 	/**
-	 * Should unit use default parser or it has its own.
-	 * Set to `true` to use default parser, pass parser function which returns {ISimpleCmdParseResult} to parse 
+	 * Custom parser
 	 */
-	customParser?: ParseCommandArgument;
+	customParser?: CustomParser;
 	/**
 	 * Does unit follows the flow.
 	 * This means, should flow stop while executing this unit's function or not.
@@ -310,11 +319,9 @@ export interface IMessageFlowContext {
 }
 
 /**
- * Argument of command parsing.
- * You can pass `false` if you want to skip any command parsing.
- * Pass custom command parsing function or, set to `true` to call `simpleCmdParse` from `utils:text`.
+ * The command parser. Should parse command and return `ISimpleCmdParseResult`
  */
-export type ParseCommandArgument = ((msg: Message) => Promise<ISimpleCmdParseResult>) | boolean;
+export type CustomParser = (msg: Message) => Promise<ISimpleCmdParseResult>;
 /**
  * Argument of command checking.
  * Calls the functions and awaits for it's result (`true`/`false`).
