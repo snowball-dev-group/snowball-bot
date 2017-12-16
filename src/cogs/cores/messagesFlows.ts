@@ -76,7 +76,7 @@ export default class MessagesFlows implements IModule {
 		};
 
 		for(const handler of this._flowUnits) {
-			if(typeof handler.parser === "boolean" && handler.parser) {
+			if(typeof handler.parser !== "function") {
 				this._anyWith.defaultParsing = true;
 			}
 			if(typeof handler.checkPrefix === "boolean" && handler.checkPrefix) {
@@ -113,7 +113,7 @@ export default class MessagesFlows implements IModule {
 			check,
 			parser: options.customParser,
 			followsTheFlow: typeof options.followsTheFlow !== "boolean" ? true : options.followsTheFlow,
-			checkPrefix: options.checkPrefix,
+			checkPrefix: !!options.checkPrefix,
 			timeoutCheck: typeof options.timeoutCheck === "boolean" ? (!options.timeoutCheck ? -1 : this._timings.timeoutCheck) : (typeof options.timeoutCheck === "number" ? options.timeoutCheck : this._timings.timeoutCheck),
 			timeoutHandler: typeof options.timeoutHandler === "boolean" ? (!options.timeoutHandler ? -1 : this._timings.timeoutHandler) : (typeof options.timeoutHandler === "number" ? options.timeoutHandler : this._timings.timeoutHandler)
 		});
@@ -156,8 +156,7 @@ export default class MessagesFlows implements IModule {
 				// parser -> check -> handler
 				if(flowUnit.checkPrefix && !prefix) { return; }
 
-				const parserResult = typeof flowUnit.parser === "undefined" || flowUnit.parser === null ? simpleParserResult : (await flowUnit.parser(msg));
-
+				const parserResult = typeof flowUnit.parser !== "function" ? simpleParserResult : await flowUnit.parser(msg);
 				const ctx = {
 					message: msg,
 					parsed: parserResult
@@ -166,20 +165,18 @@ export default class MessagesFlows implements IModule {
 				let _checkErr: PossibleError;
 				const checkResult = await (async () => {
 					try {
-						const timeoutVoid = (async () => {
-							const normalizedTimeout = this._normalizeTimeout("check", flowUnit.timeoutCheck);
-							if(normalizedTimeout === 1) { return; }
-							await sleep(normalizedTimeout);
+						const timeoutPromise = (async () => {
+							const normalizedTimeoutWait = this._normalizeTimeout("check", flowUnit.timeoutCheck);
+							if(normalizedTimeoutWait === 1) { return; }
+							await sleep(normalizedTimeoutWait);
 							throw new Error(`\`check\` execution of unit#${flowUnit._id} has timed out after ${(Date.now() - executionStart)}ms`);
 						});
-
 						const executionStart = Date.now();
-
 						const checkValue = flowUnit.check(ctx);
 
 						return checkValue instanceof Promise ? await (Promise.race([
 							checkValue,
-							timeoutVoid
+							timeoutPromise
 						])) : checkValue;
 					} catch(err) {
 						_checkErr = err;
@@ -198,7 +195,7 @@ export default class MessagesFlows implements IModule {
 				} else if(!checkResult) { return; }
 
 				let _handlerErr: PossibleError;
-				const handlerResult = await (async () => {
+				const handlerExecution = (async () => {
 					try {
 						_handlerErr = undefined;
 						const executionStart = Date.now();
@@ -214,6 +211,8 @@ export default class MessagesFlows implements IModule {
 						return undefined;
 					}
 				});
+
+				const handlerResult = await handlerExecution();
 
 				if(_handlerErr) {
 					this.log("warn", `The flow for message '${msg.id}' has found error while running handler of unit#${flowUnit._id}`, _handlerErr);
@@ -232,11 +231,11 @@ export default class MessagesFlows implements IModule {
 						case FlowControlArgument.RECALL_AFTER: {
 							if(flowUnit.followsTheFlow) {
 								await sleep(handlerResult[2]);
-								await handlerResult();
+								await handlerExecution();
 								break;
 							}
 							setTimeout(() => {
-								handlerResult();
+								handlerExecution();
 							}, handlerResult[2]);
 						} break;
 						case FlowControlArgument.WAIT: {
