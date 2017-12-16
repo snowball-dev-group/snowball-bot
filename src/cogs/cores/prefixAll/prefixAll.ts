@@ -46,8 +46,18 @@ export default class PrefixAll implements IModule {
 		await this._dbController.init();
 	}
 	
-	private _cacheCheck(ctx: Message, result: CheckResult): CheckResult {
-		// caches check and sets the destruction timer
+	private _cacheMessage(ctx: Message, result: CheckResult): CheckResult {
+		let cached = this._messagesCache[ctx.id]; // checking if there's cached version
+
+		if(cached) { // by some reason we got call, when it was already cached?
+			const cachedResult = cached.result;
+			if(!cached.destructTimer) {
+				// okay, it's borked, let's re-cache it
+				delete this._messagesCache[ctx.id];
+				return this._cacheMessage(ctx, cachedResult);
+			}
+			return cachedResult;
+		}
 
 		// function to execute once timer fires
 		const destructionFunction = (() => {
@@ -58,20 +68,11 @@ export default class PrefixAll implements IModule {
 			}
 		});
 
-		let cached = this._messagesCache[ctx.id]; // checking if there's cached version
-		if(!cached) { // if no, then creating one
-			cached = this._messagesCache[ctx.id] = {
-				cachedAt: Date.now(),
-				destructTimer: setTimeout(destructionFunction, this._messagesCacheDestructionTime),
-				result
-			};
-		} else if(cached && cached.destructTimer !== null && !cached.destructTimer) { // undefined?
-			// 'th situation', but let's just recreate timer
-			cached.destructTimer = setTimeout(destructionFunction, this._messagesCacheDestructionTime);
-		} else {
-			// who's attempted to do this?
-			throw new Error("Already in cache and sheduled for destruction");
-		}
+		cached = this._messagesCache[ctx.id] = {
+			cachedAt: Date.now(),
+			destructTimer: setTimeout(destructionFunction, this._messagesCacheDestructionTime),
+			result
+		};
 
 		// returning caching result
 		return cached.result;
@@ -91,24 +92,33 @@ export default class PrefixAll implements IModule {
 
 	/**
 	 * Checks if message starts with guild's prefixes
-	 * @param {Message} ctx Message to check
+	 * @param {Message} message Message to check
 	 */
-	public async checkPrefix(ctx: Message) {
-		// as it will be called multipletimes, checking cached version and returning it's result
-		const cachedCheckResult = this._messagesCache[ctx.id];
-		if(cachedCheckResult) {
-			return cachedCheckResult.result;
+	public async checkPrefix(message: Message) {
+		const cached = this._messagesCache[message.id];
+		if(cached) { // slight optimization
+			return cached.result;
+		}
+		
+		// no cached version
+		if(!message.content || message.content.length === 0) {
+			// that's absolutely no-no
+			return this._cacheMessage(message, false);
 		}
 
-		// instafails
-		if(!ctx.content || ctx.content.length === 0) { return this._cacheCheck(ctx, false); }
-		if(!ctx.guild && ctx.content.startsWith(this._defaultPrefix)) { return this._cacheCheck(ctx, false); }
+		const guildPrefix = await this._getGuildPrefixPrefix(message.guild);
 
-		let prefixes = await this._getGuildPrefixPrefix(ctx.guild, true);
+		if(!guildPrefix) {
+			return this._cacheMessage(message, false);
+		}
 
-		if(prefixes === null) { return this._cacheCheck(ctx, ctx.content.startsWith(this._defaultPrefix) ? this._defaultPrefix : false); }
+		const foundPrefix = guildPrefix.find(prefix => message.content.startsWith(prefix));
 
-		return this._cacheCheck(ctx, (prefixes.find((prefix) => ctx.content.startsWith(prefix)) || false));
+		if(!foundPrefix) {
+			return this._cacheMessage(message, false);
+		}
+
+		return this._cacheMessage(message, foundPrefix);
 	}
 
 	public async getPrefixes(guild: Guild) {
