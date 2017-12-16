@@ -147,7 +147,7 @@ export default class MessagesFlows implements IModule {
 
 		// optimizing future results
 		const prefix = this._anyWith.prefixCheck ? await this._getPrefix(msg) : false;
-		const simpleParserResult = this._anyWith.defaultParsing ? this._parseCommand(msg, prefix) : undefined;
+		const simpleParserResult = this._anyWith.defaultParsing ? await this._parseCommand(msg, prefix) : undefined;
 
 		const execStart = Date.now();
 		for(const flowUnit of flowUnits) {
