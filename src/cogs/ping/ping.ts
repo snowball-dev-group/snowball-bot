@@ -12,7 +12,7 @@ class Ping extends Plugin implements IModule {
 		return "snowball.core_features.ping";
 	}
 
-	private log: Function = getLogger("PingJS");
+	private log = getLogger("PingJS");
 	private flowHandler: IPublicFlowUnit;
 
 	constructor() {
@@ -43,15 +43,16 @@ class Ping extends Plugin implements IModule {
 	}
 
 	async onMessage(ctx: IMessageFlowContext) {
+		if(!ctx.parsed) { return; }
 		let msg = ctx.message;
-		if(msg.content === "!ping") {
+		if(ctx.parsed.command === "ping" && !ctx.parsed.args) {
 			await msg.react("🏃");
 			let startDate = Date.now();
 			msg = await msg.channel.send(":information_source: Pong!") as Message;
 			let diff = Date.now() - startDate;
 			this.log("info", `Ping for sendMessage to Channel#${msg.channel.id}: ${diff}ms`);
 			msg.edit(`:information_source: Pong - \`${diff}ms\`!`);
-		} else if(msg.content === "!ping_embed") {
+		} else if(ctx.parsed.command === "ping_embed" && !ctx.parsed.args) {
 			await msg.react("🏃");
 			let startDate = Date.now();
 			msg = await msg.channel.send("", {
@@ -67,7 +68,7 @@ class Ping extends Plugin implements IModule {
 				}
 			});
 		} else {
-			this.log("warn", "Called with unknown command!");
+			this.log("warn_trace", "Called with unknown command!?");
 		}
 	}
 
