@@ -30,7 +30,8 @@ class Ping extends Plugin implements IModule {
 
 		const initHandler = (flowsMan: MessagesFlows) => {
 			return flowsMan.watchForMessages((ctx) => this.onMessage(ctx), (ctx) => {
-				return ctx.parsed ? ctx.parsed.command === "ping" : false;
+				if(!ctx.parsed) { return false; }
+				return ctx.parsed.command ? ["ping", "ping_embed"].includes(ctx.parsed.command) : false;
 			});
 		};
 
