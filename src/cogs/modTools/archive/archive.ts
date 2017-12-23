@@ -498,7 +498,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	}
 
 	private async subcmd_archiveStatus(msg: Message, parsed: ISimpleCmdParseResult) {
-		const currentStatus = await this._isDisabledAt(msg.guild);
+		const currentStatus = !(await this._isDisabledAt(msg.guild));
 		let newStatus = false;
 		switch(parsed.subCommand) {
 			case "true": { newStatus = true; } break;
