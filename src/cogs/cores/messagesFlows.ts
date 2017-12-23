@@ -40,7 +40,7 @@ export default class MessagesFlows implements IModule {
 	// prefixal' instance
 	private prefixAllKeeper?: ModuleBase<PrefixAll>;
 
-	private log = getLogger("CommandsHandler");
+	private log = getLogger("MessagesFlows");
 
 	constructor() {
 		this._messageHandler = ((msg: Message) => this._startOnMessageFlow(msg));
@@ -130,7 +130,7 @@ export default class MessagesFlows implements IModule {
 		});
 	}
 
-	private async _parseCommand(msg: Message, prefix: string|false) {
+	private async _parseCommand(msg: Message, prefix: string | false) {
 		if(!prefix) {
 			prefix = await this._getPrefix(msg);
 		}
