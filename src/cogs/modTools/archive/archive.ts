@@ -5,7 +5,7 @@ import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
 import { Message, Guild, SnowflakeUtil, TextChannel, User } from "discord.js";
 import { EmbedType, getLogger, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
-import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
+import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "../../utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
 import { getPreferenceValue, setPreferenceValue } from "../../utils/guildPrefs";
 import { createConfirmationMessage } from "../../utils/interactive";
@@ -413,7 +413,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		let result = await this._messagesToString(foundMessages.reverse(), caches.users);
+		let result = await this._messagesToString(foundMessages.reverse(), caches.users, await getUserLanguage(msg.member));
 
 		return await msg.channel.send({
 			content: await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }),
@@ -459,11 +459,10 @@ class ModToolsArchive extends Plugin implements IModule {
 		throw new Error("Channel not found");
 	}
 
-	private async _messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = {}) {
+	private async _messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = {}, language: string) {
 		let str = "";
 		for(const messageEntry of messages) {
 			const parsedDate = (SnowflakeUtil.deconstruct(messageEntry.messageId)).date;
-			str += `${parsedDate.toISOString()} (${messageEntry.guildId} / ${messageEntry.channelId} / ${messageEntry.authorId} / ${messageEntry.messageId}) `;
 
 			let author = cache[messageEntry.authorId];
 			if(!author && author !== null) {
@@ -472,21 +471,45 @@ class ModToolsArchive extends Plugin implements IModule {
 				})();
 			}
 
-			str += `${!author ? messageEntry.authorId : author.tag}: ${messageEntry.content}`;
+			str += $localizer.getFormattedString(language, "ARCHIVE_ITEM", {
+				sentAt: parsedDate.toISOString(),
+				guildId: messageEntry.guildId || ($localizer.getString(language, "ARCHIVE_ITEM@UNKNOWN_GUILD")),
+				channelId: messageEntry.channelId,
+				authorId: messageEntry.authorId,
+				messageId: messageEntry.messageId,
+				author: author ? author.tag : messageEntry.authorId,
+				content: messageEntry.content
+			});
 
 			if(messageEntry.other) {
 				const parsedContent = <IEmulatedContents>JSON.parse(messageEntry.other);
+
 				if(parsedContent.attachments) {
 					str += "\n";
+					const entryTypeStr = `[${$localizer.getString(language, "ARCHIVE_ITEM_ENTRY_TYPE:ATTACHMENT")}]`;
 					for(const attachment of parsedContent.attachments) {
-						str += `  - [A][${attachment.file.name}][${attachment.id}]: ${attachment.file.url}\n`;
+						str += "  ";
+						str += await $localizer.getFormattedString(language, "ARCHIVE_ITEM_ENTRY:ATTACHMENT", {
+							"file.name": attachment.file.name,
+							"file.url": attachment.file.url,
+							"file.id": attachment.id,
+							type: entryTypeStr
+						});
+						str += "\n";
 					}
 					str += "\n";
 				}
+
 				if(parsedContent.embeds) {
 					str += "\n";
+					const entryTypeStr = `[${$localizer.getString(language, "ARCHIVE_ITEM_ENTRY_TYPE:EMBED")}]`;
 					for(const embed of parsedContent.embeds) {
-						str += `  - [E]: ${JSON.stringify(embed)}\n`;
+						str += "  ";
+						str += $localizer.getFormattedString(language, "ARCHIVE_ITEM_ENTRY:EMBED", {
+							type: entryTypeStr,
+							json: JSON.stringify(embed)
+						});
+						str += "\n";
 					}
 					str += "\n";
 				}
