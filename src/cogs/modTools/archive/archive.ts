@@ -13,6 +13,7 @@ import { createConfirmationMessage } from "../../utils/interactive";
 const PREFIX = "!archive";
 const MSG_PREFIX = "!message";
 const ARCHIVE_ENABLING_PREFIX = "!enable_archive";
+const PREFIXES = [PREFIX, MSG_PREFIX, ARCHIVE_ENABLING_PREFIX];
 const POSSIBLE_TARGETS = ["user", "channel", "guild"];
 const ENABLED_PROP = "features:archive:enabled";
 // targetting:
@@ -87,13 +88,12 @@ class ModToolsArchive extends Plugin implements IModule {
 	}
 
 	private async handleCommand(msg: Message) {
-		if(!msg.content.startsWith(PREFIX) && !msg.content.startsWith(MSG_PREFIX)) {
-			return;
-		}
+		const prefix = PREFIXES.find(prefix => msg.content.startsWith(prefix));
+		if(!prefix) { return; }
 
 		const parsed = simpleCmdParse(msg.content);
 
-		switch(parsed.command) {
+		switch(prefix) {
 			case PREFIX: return msg.member.permissions.has("MANAGE_MESSAGES") && await this.subcmd_archive(msg, parsed);
 			case MSG_PREFIX: return await this.subcmd_message(msg, parsed);
 			case ARCHIVE_ENABLING_PREFIX: return msg.member.permissions.has(["MANAGE_GUILD", "MANAGE_MESSAGES"]) && await this.subcmd_archiveStatus(msg, parsed);
