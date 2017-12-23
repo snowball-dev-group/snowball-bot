@@ -7,11 +7,14 @@ import { Message, Guild, SnowflakeUtil, TextChannel, User } from "discord.js";
 import { EmbedType, getLogger, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
-import { getPreferenceValue } from "../../utils/guildPrefs";
+import { getPreferenceValue, setPreferenceValue } from "../../utils/guildPrefs";
+import { createConfirmationMessage } from "../../utils/interactive";
 
 const PREFIX = "!archive";
 const MSG_PREFIX = "!message";
+const ARCHIVE_ENABLING_PREFIX = "!enable_archive";
 const POSSIBLE_TARGETS = ["user", "channel", "guild"];
+const ENABLED_PROP = "features:archive:enabled";
 // targetting:
 //  user & resolvableUser
 //  guild & resolvableUser
@@ -29,8 +32,9 @@ const TARGETTING = Object.freeze({
 
 const DEFAULT_LENGTH = 50; // lines per file
 const MESSAGES_LIMIT = 5000;
+const DEFAULT_ENABLED_STATE = false; // true = enabled
 
-interface IMessagesToDBTestOptions {
+interface IModToolsArchiveOptions {
 	banned?: {
 		authors?: string[];
 		channels?: string[];
@@ -44,11 +48,12 @@ class ModToolsArchive extends Plugin implements IModule {
 		return "snowball.modtools.archive";
 	}
 
-	private _log = getLogger("MessagesToDBTest");
-	private _options: IMessagesToDBTestOptions;
+	private _log = getLogger("ModTools:Archive");
+	private _options: IModToolsArchiveOptions;
 	private _controller: ArchiveDBController;
+	private _disabledAt: IHashMap<boolean> = {};
 
-	constructor(options: IMessagesToDBTestOptions) {
+	constructor(options: IModToolsArchiveOptions) {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
@@ -86,16 +91,12 @@ class ModToolsArchive extends Plugin implements IModule {
 			return;
 		}
 
-		if((await getPreferenceValue(msg.guild, "features:archive:enabled", true)) === false) {
-			this._log("info", `Access to the feature archive denied in guild ${msg.guild.id} (requested-in: ${msg.id})`);
-			return;
-		}
-
 		const parsed = simpleCmdParse(msg.content);
 
 		switch(parsed.command) {
 			case PREFIX: return msg.member.permissions.has("MANAGE_MESSAGES") && await this.subcmd_archive(msg, parsed);
 			case MSG_PREFIX: return await this.subcmd_message(msg, parsed);
+			case ARCHIVE_ENABLING_PREFIX: return msg.member.permissions.has(["MANAGE_GUILD", "MANAGE_MESSAGES"]) && await this.subcmd_archiveStatus(msg, parsed);
 		}
 	}
 
@@ -492,10 +493,66 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 			str += "\n";
 		}
+
 		return str;
 	}
 
+	private async subcmd_archiveStatus(msg: Message, parsed: ISimpleCmdParseResult) {
+		const currentStatus = await this._isDisabledAt(msg.guild);
+		let newStatus = false;
+		switch(parsed.subCommand) {
+			case "true": { newStatus = true; } break;
+			case "false": { newStatus = false; } break;
+			default: {
+				return await msg.channel.send({
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_STATUS_INVALIDARG")
+				});
+			}
+		}
+		
+		if(currentStatus === newStatus) {
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					key: "ARCHIVE_STATUS_ALREADY",
+					formatOptions: {
+						status: currentStatus
+					}
+				})
+			});
+		}
+
+		const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Warning, msg.member, `ARCHIVE_STATUS_CONFIRMATION_${newStatus ? "ENABLING" : "DISABLING"}`), msg);
+
+		if(!confirmation) {
+			return msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "ARCHIVE_STATUS_NOTCONFIRMED")
+			});
+		}
+
+		await setPreferenceValue(msg.guild, ENABLED_PROP, newStatus);
+		delete this._disabledAt[msg.guild.id]; // removing to re-fetch
+
+		return msg.channel.send({
+			embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, {
+				key: "ARCHIVE_STATUS_CHANGED",
+				formatOptions: {
+					status: !(await this._isDisabledAt(msg.guild)) // fetching and using
+				}
+			})
+		});
+	}
+
+	private async _isDisabledAt(guild: Guild) {
+		const status = this._disabledAt[guild.id];
+		if(typeof status !== "boolean") {
+			const featureStatus = await getPreferenceValue(guild, ENABLED_PROP, true);
+			return this._disabledAt[guild.id] = typeof featureStatus === "boolean" ? !featureStatus : DEFAULT_ENABLED_STATE;
+		}
+		return status;
+	}
+
 	private async _recordMessage(msg: Message) {
+		if(await this._isDisabledAt(msg.guild)) { return; }
 		const payload = convertToDBMessage(msg);
 		return await this._controller.insertMessage(payload);
 	}
