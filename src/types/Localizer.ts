@@ -30,7 +30,7 @@ export interface IStringsMap {
 }
 
 export interface IFormatMessageVariables {
-	[name: string]: string | number | boolean;
+	[name: string]: string | number | boolean | Date;
 }
 
 export interface ILanguageHashMap<T> {

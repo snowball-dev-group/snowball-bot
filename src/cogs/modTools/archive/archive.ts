@@ -472,7 +472,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 
 			str += $localizer.getFormattedString(language, "ARCHIVE_ITEM", {
-				sentAt: parsedDate.toISOString(),
+				sentAt: parsedDate,
 				guildId: messageEntry.guildId || ($localizer.getString(language, "ARCHIVE_ITEM@UNKNOWN_GUILD")),
 				channelId: messageEntry.channelId,
 				authorId: messageEntry.authorId,
