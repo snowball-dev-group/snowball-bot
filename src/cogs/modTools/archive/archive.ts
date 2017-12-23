@@ -538,7 +538,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		delete this._disabledAt[msg.guild.id]; // removing to re-fetch
 
 		return msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, {
+			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 				key: "ARCHIVE_STATUS_CHANGED",
 				formatOptions: {
 					status: !(await this._isDisabledAt(msg.guild)) // fetching and using
