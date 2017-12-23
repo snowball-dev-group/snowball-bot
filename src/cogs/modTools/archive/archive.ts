@@ -505,7 +505,12 @@ class ModToolsArchive extends Plugin implements IModule {
 			case "false": { newStatus = false; } break;
 			default: {
 				return await msg.channel.send({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_STATUS_INVALIDARG")
+					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+						key: "ARCHIVE_STATUS_INVALIDARG",
+						formatOptions: {
+							status: currentStatus
+						}
+					})
 				});
 			}
 		}
