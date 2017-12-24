@@ -453,7 +453,7 @@ export class ModuleLoader {
 			try {
 				await keeper.init();
 			} catch (err) {
-				this.log("warn", "Failed to initialize module", keeper.info.name);
+				this.log("warn", "Failed to initialize module", keeper.info.name, err);
 			}
 		}
 	}
