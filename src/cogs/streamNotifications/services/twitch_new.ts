@@ -421,14 +421,13 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 					const owMetadata = gameMetadata.overwatch;
 					if(!owMetadata || !owMetadata.broadcaster || !owMetadata.broadcaster.hero) { break; }
 
-					let str = $localizer.getFormattedString(lang, "STREAMING_GAME_VALUE_OVERWATCH", {
-						...owMetadata.broadcaster.hero
-					});
-
 					fields.push({
 						inline: false,
 						name: `${(gameEmoji ? `${gameEmoji} ` : "")}${gameName}`,
-						value: str
+						value: $localizer.getFormattedString(lang, "STREAMING_GAME_VALUE_OVERWATCH", {
+							name: this.getOverwatchHeroName(owMetadata.broadcaster.hero.name, lang),
+							role: this.getOverwatchRoleName(owMetadata.broadcaster.hero.role, lang)
+						})
 					});
 				} break;
 				case "138585": {
@@ -533,6 +532,18 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			apiUri += `${(i === 0 ? "?" : "&")}id=${ids[i]}`;
 		}
 		return apiUri;
+	}
+
+	private getOverwatchHeroName(name: string, lang: string) {
+		switch(name) {
+			case "Soldier: 76": { name = "SOLDIER76"; }
+			default: { name = name.toUpperCase(); }
+		}
+		return $localizer.getString(lang, `OVERWATCH_HERO_${name}`);
+	}
+
+	private getOverwatchRoleName(role: string, lang: string) {
+		return $localizer.getString(lang, `OVERWATCH_ROLE_${role.toUpperCase()}`);
 	}
 
 	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {

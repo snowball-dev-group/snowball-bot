@@ -11,7 +11,7 @@ const ACCEPTED_SORTS = ["playtime", "winrate"];
 const LOG = getLogger("OWRatingPlugin");
 const HEROES_TO_SHOW = 3;
 
-type Hero = "reinhardt" | "tracer" | "zenyatta" | "junkrat" | "mccree" | "winston" | "orisa" | "hanzo" | "pharah" | "roadhog" | "zarya" | "torbjorn" | "mercy" | "mei" | "ana" | "widowmaker" | "genji" | "reaper" | "soldier76" | "bastion" | "symmetra" | "dva" | "sombra" | "lucio" | "doomfist";
+type Hero = "reinhardt" | "tracer" | "zenyatta" | "junkrat" | "mccree" | "winston" | "orisa" | "hanzo" | "pharah" | "roadhog" | "zarya" | "torbjorn" | "mercy" | "mei" | "ana" | "widowmaker" | "genji" | "reaper" | "soldier76" | "bastion" | "symmetra" | "dva" | "sombra" | "lucio" | "doomfist" | "moira";
 type Sorts = "playtime" | "winrate";
 type HeroStats = Array<{
 	hero: Hero,
@@ -44,6 +44,7 @@ interface IOWHeroesPluginConfig {
 		mercy: string;
 		mei: string;
 		mccree: string;
+		moira: string;
 		lucio: string;
 		junkrat: string;
 		roadhog: string;
@@ -357,7 +358,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 	async getHeroString(hero: Hero, caller: GuildMember) {
 		try {
-			return await localizeForUser(caller, `OWPROFILEPLUGIN_HERO_${hero}`.toUpperCase());
+			return await localizeForUser(caller, `OVERWATCH_HERO_${hero}`.toUpperCase());
 		} catch(err) {
 			return this.getFallbackHeroString(hero);
 		}
