@@ -523,7 +523,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	private getAPIURL_Metadata(ids: string[]) {
 		let apiUri = "https://api.twitch.tv/helix/streams/metadata";
 		for(let i = 0; i < ids.length; i++) {
-			apiUri += `${(i === 0 ? "?" : "&")}id=${ids[i]}`;
+			apiUri += `${(i === 0 ? "?" : "&")}user_id=${ids[i]}`;
 		}
 		return apiUri;
 	}
