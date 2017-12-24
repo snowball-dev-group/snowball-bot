@@ -614,6 +614,27 @@ class StreamNotifications extends Plugin implements IModule {
 
 		await this.updateSubscription(subscription);
 
+		if(providerModule && provider) {
+			if($botConfig.mainShard) {
+				provider.addSubscription({
+					serviceName: subscription.provider,
+					uid: subscription.uid,
+					username: subscription.username
+				});
+			} else {
+				if(process.send) { // notifying then
+					process.send({
+						type: "streams:sub",
+						payload: {
+							provider: subscription.provider,
+							uid: subscription.uid,
+							username: subscription.username
+						}
+					});
+				}
+			}
+		}
+
 		await msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.OK, i18nSubject, {
 				key: LOCALIZED("ADD_DONE"),
@@ -728,7 +749,7 @@ class StreamNotifications extends Plugin implements IModule {
 		const parsedSettings = rawSettings ? await this.convertToNormalSettings(rawSettings) : undefined;
 
 		if(parsedSettings) {
-			let index = parsedSettings.subscribedTo.findIndex((streamer) => {
+			const index = parsedSettings.subscribedTo.findIndex((streamer) => {
 				return streamer.serviceName === providerName && streamer.uid === suid;
 			});
 			if(index !== -1) {
@@ -743,9 +764,9 @@ class StreamNotifications extends Plugin implements IModule {
 			await this.removeSubscription(rawSubscription);
 
 			// we'll gonna notify provider that it can free cache for this subscription
-			let providerModule = this.servicesLoader.loadedModulesRegistry[args[0].toLowerCase()];
+			const providerModule = this.servicesLoader.loadedModulesRegistry[args[0].toLowerCase()];
 			if(providerModule) {
-				let provider = providerModule.base as IStreamingService;
+				const provider = providerModule.base as IStreamingService;
 
 				if($botConfig.mainShard) {
 					provider.removeSubscribtion(subscription.uid);
@@ -917,6 +938,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	async handleNotifications() {
 		for(const providerName in this.servicesLoader.loadedModulesRegistry) {
+			this.log("info", `Trying to handle notifications of module '${providerName}'`);
 			const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService> | undefined;
 
 			if(!mod || !mod.base) {
@@ -965,6 +987,8 @@ class StreamNotifications extends Plugin implements IModule {
 			if(provider.start) {
 				await provider.start();
 			}
+
+			this.log("ok", `Handling notifications for provider '${providerName}' complete`);
 		}
 	}
 
@@ -1352,7 +1376,7 @@ class StreamNotifications extends Plugin implements IModule {
 	// =======================================
 
 	async init() {
-		let subscriptionsTableCreated = await this.db.schema.hasTable(TABLE.subscriptions);
+		const subscriptionsTableCreated = await this.db.schema.hasTable(TABLE.subscriptions);
 		if(!subscriptionsTableCreated) {
 			this.log("info", "Table of subscriptions not found, going to create it right now");
 			await createTableBySchema(TABLE.subscriptions, {
@@ -1365,8 +1389,8 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 		}
 
-		let settingsTable = await this.db.schema.hasTable(TABLE.settings);
-		if(!settingsTable) {
+		const settingsTableCreated = await this.db.schema.hasTable(TABLE.settings);
+		if(!settingsTableCreated) {
 			this.log("info", "Table of settings not found, going to create it right now");
 			await createTableBySchema(TABLE.settings, {
 				guild: {
@@ -1388,8 +1412,8 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 		}
 
-		let notificationsTable = await this.db.schema.hasTable(TABLE.notifications);
-		if(!notificationsTable) {
+		const notificationsTableCreated = await this.db.schema.hasTable(TABLE.notifications);
+		if(!notificationsTableCreated) {
 			this.log("info", "Table of notifications statuses not found, will be created in momento");
 			await createTableBySchema(TABLE.notifications, {
 				guild: {
@@ -1441,23 +1465,30 @@ class StreamNotifications extends Plugin implements IModule {
 			process.on("message", (msg) => {
 				if(typeof msg !== "object") { return; }
 				if(!msg.type || !msg.payload) { return; }
-				if(msg.type !== "streams:free") { return; }
+				if(!["streams:free", "streams:sub"].includes(msg.type)) { return; }
 
 				this.log("info", "Received message", msg);
 
-				let payload = msg.payload as {
+				const payload = msg.payload as {
 					provider: string;
 					uid: string;
+					username?: string;
 				};
 
-				let mod = this.servicesLoader.loadedModulesRegistry[payload.provider];
+				const mod = this.servicesLoader.loadedModulesRegistry[payload.provider];
 				if(!mod) { this.log("warn", "Provider not found", payload.provider, "- message ignored"); return; }
 				if(mod.state !== ModuleLoadState.Initialized || !mod.base) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
 
-				let provider = mod.base as IStreamingService;
+				const provider = mod.base as IStreamingService;
 
 				if(msg.type === "streams:free") {
 					provider.removeSubscribtion(payload.uid);
+				} else if(msg.type === "streams:sub") {
+					provider.addSubscription({
+						serviceName: payload.provider,
+						uid: payload.uid,
+						username: payload.username!
+					});
 				}
 			});
 
@@ -1475,7 +1506,7 @@ class StreamNotifications extends Plugin implements IModule {
 					let guild = $discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
 					if(guild) {
 						// process
-						let notifyAbout = msg.payload.notifyAbout as {
+						const notifyAbout = msg.payload.notifyAbout as {
 							subscription: ISubscriptionRow,
 							notification: INotification,
 							result: IStreamStatus
