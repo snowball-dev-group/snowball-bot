@@ -13,7 +13,7 @@ import { isPremium } from "../utils/premium";
 import { timeDiff } from "../utils/time";
 import { EmbedType, escapeDiscordMarkdown, getLogger, IEmbed, IEmbedOptionsField, resolveGuildMember } from "../utils/utils";
 import { AddedProfilePluginType, IAddedProfilePlugin, IProfilesPlugin } from "./plugins/plugin";
-import { messageToExtra } from "../utils/failToDetail";
+import { messageToExtra, memberToExtra, guildToExtra } from "../utils/failToDetail";
 
 export interface IProfilesModuleConfig {
 	emojis: {
@@ -110,6 +110,7 @@ class Profiles extends Plugin implements IModule {
 				try {
 					await this.onMessage(msg);
 				} catch (err) {
+					this.log("err", "Error handling message", err);
 					$snowball.captureException(err, { extra: messageToExtra(err) });
 				}
 			},
@@ -117,7 +118,12 @@ class Profiles extends Plugin implements IModule {
 				try {
 					await this.onPresenсeUpdate(oldMember, newMember);
 				} catch (err) {
-					$snowball.captureException(err, { extra: { oldMember, newMember } });
+					this.log("err", "Error handling user presence update", err);
+					$snowball.captureException(err, { extra: {
+						oldMember: memberToExtra(oldMember),
+						newMember: memberToExtra(newMember),
+						guild: guildToExtra(oldMember.guild)
+					} });
 				}
 			}
 		}, true);
@@ -762,6 +768,7 @@ class Profiles extends Plugin implements IModule {
 	// =====================================
 
 	async createProfile(member: GuildMember, guild: Guild) {
+		member = await member.guild.members.fetch(member.id);
 		return await this.db(TABLE_NAME).insert({
 			uid: member.id,
 			real_name: null,
@@ -769,7 +776,7 @@ class Profiles extends Plugin implements IModule {
 			bio: null,
 			activity: null,
 			customize: "{}",
-			joined: member.joinedAt ? member.joinedAt.toISOString() : undefined,
+			joined: member.joinedTimestamp ? new Date(member.joinedTimestamp) : undefined,
 			status_changed: (new Date()).toISOString()
 		});
 	}
