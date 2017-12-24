@@ -449,12 +449,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 						str += $localizer.getFormattedString(lang, "STREAMING_GAME_VALUE_HEARTHSTONE", {
 							target: "broadcaster",
 							...hsMetadata.broadcaster.hero
-						});
+						}) + "\n";
 					}
 
 					if(providedMetadata.opponent) {
 						str += $localizer.getFormattedString(lang, "STREAMING_GAME_VALUE_HEARTHSTONE", {
-							target: "broadcaster",
+							target: "opponent",
 							...hsMetadata.broadcaster.hero
 						});
 					}
