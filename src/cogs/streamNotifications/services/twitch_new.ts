@@ -268,8 +268,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			ready[uid] = {
 				game: game ? (emoji ? { emoji, ...game } : game) : undefined,
 				metadata: metadata && (game && game.id === metadata.game_id) ? {
-					...metadata,
-					gameName: game.name
+					...metadata
 				} : undefined,
 				id: stream.id,
 				title: stream.title,
@@ -394,14 +393,14 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
-		const stream = <ITwitchNewPluginPayload>streamStatus.payload;
-		if(!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
+		const payload = <ITwitchNewPluginPayload>streamStatus.payload;
+		if(!payload) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
 
-		const game = stream.game;
+		const game = payload.game;
 		const gameName = game ? game.name : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
 		const gameEmoji = game ? this.options.emoji[game.id] : undefined;
-		const streamUri = `https://twitch.tv/${stream.streamer.login}`;
-		const isMature = stream.title.includes("[18+]");
+		const streamUri = `https://twitch.tv/${payload.streamer.login}`;
+		const isMature = payload.title.includes("[18+]");
 
 		const fields: IEmbedOptionsField[] = [{
 			inline: gameName.length < 25,
@@ -415,10 +414,10 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			})
 		}];
 
-		const gameMetadata = stream.game ? stream.metadata : undefined; // in case if metadata provided but game not
+		const gameMetadata = payload.game ? payload.metadata : undefined; // in case if metadata provided but game not
 		if(gameMetadata) {                                              // yep such thing could happen
-			switch(gameMetadata.gameName) {
-				case "overwatch": {
+			switch(gameMetadata.game_id) {
+				case "488552": {
 					const owMetadata = gameMetadata.overwatch;
 					if(!owMetadata || !owMetadata.broadcaster || !owMetadata.broadcaster.hero) { break; }
 
@@ -432,7 +431,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 						value: str
 					});
 				} break;
-				case "hearthstone": {
+				case "138585": {
 					const hsMetadata = gameMetadata.hearthstone;
 					if(!hsMetadata) { break; }
 
@@ -476,26 +475,26 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				text: "Twitch (beta)"
 			},
 			description: $localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
-				username: escapeDiscordMarkdown(stream.streamer.displayName, true),
-				type: stream.type
+				username: escapeDiscordMarkdown(payload.streamer.displayName, true),
+				type: payload.type
 			}),
-			timestamp: stream.startedAt,
+			timestamp: payload.startedAt,
 			thumbnail: {
-				url: stream.streamer.avatar,
+				url: payload.streamer.avatar,
 				width: 128,
 				height: 128
 			},
 			author: {
-				icon_url: stream.streamer.avatar,
-				name: stream.streamer.displayName,
+				icon_url: payload.streamer.avatar,
+				name: payload.streamer.displayName,
 				url: streamUri
 			},
-			title: stream.title,
+			title: payload.title,
 			url: streamUri,
 			color: TWITCH_COLOR,
 			image: {
-				url: streamStatus.status === "online" ? stream.previewUri.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}` : (
-					stream.streamer.offlineBanner || TWITCH_OFFLINE_BANNER
+				url: streamStatus.status === "online" ? payload.previewUri.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}` : (
+					payload.streamer.offlineBanner || TWITCH_OFFLINE_BANNER
 				)
 			},
 			fields
@@ -635,12 +634,8 @@ interface ITwitchNewPluginPayload {
 		avatar: string;
 		offlineBanner: string;
 	};
-	metadata?: ITwitchNamedMetadata;
+	metadata?: ITwitchMetadata;
 	type: PossibleTwitchStreamTypes;
-}
-
-interface ITwitchNamedMetadata extends ITwitchMetadata {
-	gameName: string;
 }
 
 interface ISharedMetadata {
