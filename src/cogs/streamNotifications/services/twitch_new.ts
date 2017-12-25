@@ -309,14 +309,13 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			const createdPayload = createdPayloads[uid];
 
 			if(createdPayload) {
-				if(createdPayload && !activePayload) {
-					this.emit("online", {
-						id: createdPayload.id,
-						streamer,
-						status: "online",
-						payload: createdPayload
-					});
-				} else if(createdPayload && activePayload) {
+				this.emit("online", { // main module will skip this
+					id: createdPayload.id,
+					streamer,
+					status: "online",
+					payload: createdPayload
+				});
+				if(createdPayload && activePayload) {
 					// check if stream is updated
 					
 					let _updated: string|undefined = undefined;
@@ -536,7 +535,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	private getOverwatchHeroName(name: string, lang: string) {
 		switch(name) {
-			case "Soldier: 76": { name = "SOLDIER76"; }
+			case "Soldier: 76": { name = "SOLDIER76"; } break;
+			case "D. VA": { name = "DVA"; } break;
 			default: { name = name.toUpperCase(); }
 		}
 		return $localizer.getString(lang, `OVERWATCH_HERO_${name}`);
