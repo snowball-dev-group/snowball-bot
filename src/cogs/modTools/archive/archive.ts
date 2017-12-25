@@ -52,7 +52,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	private _log = getLogger("ModTools:Archive");
 	private _options: IModToolsArchiveOptions;
 	private _controller: ArchiveDBController;
-	private _disabledAt: IHashMap<boolean> = {};
+	private _enabledAt: IHashMap<boolean> = {};
 
 	constructor(options: IModToolsArchiveOptions) {
 		super({
@@ -521,7 +521,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	}
 
 	private async subcmd_archiveStatus(msg: Message, parsed: ISimpleCmdParseResult) {
-		const currentStatus = !(await this._isDisabledAt(msg.guild));
+		const isEnabledAlready = await this._isEnabledAt(msg.guild);
 		let newStatus = false;
 		switch(parsed.subCommand) {
 			case "true": { newStatus = true; } break;
@@ -531,19 +531,19 @@ class ModToolsArchive extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 						key: "ARCHIVE_STATUS_INVALIDARG",
 						formatOptions: {
-							status: currentStatus
+							status: isEnabledAlready
 						}
 					})
 				});
 			}
 		}
 		
-		if(currentStatus === newStatus) {
+		if(isEnabledAlready === newStatus) {
 			return await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "ARCHIVE_STATUS_ALREADY",
 					formatOptions: {
-						status: currentStatus
+						status: isEnabledAlready
 					}
 				})
 			});
@@ -558,29 +558,30 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 
 		await setPreferenceValue(msg.guild, ENABLED_PROP, newStatus);
-		delete this._disabledAt[msg.guild.id]; // removing to re-fetch
+		this._enabledAt[msg.guild.id] = newStatus;
 
 		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 				key: "ARCHIVE_STATUS_CHANGED",
 				formatOptions: {
-					status: !(await this._isDisabledAt(msg.guild)) // fetching and using
+					status: await this._isEnabledAt(msg.guild) // fetching and using
 				}
 			})
 		});
 	}
 
-	private async _isDisabledAt(guild: Guild) {
-		const status = this._disabledAt[guild.id];
-		if(typeof status !== "boolean") {
-			const featureStatus = await getPreferenceValue(guild, ENABLED_PROP, true);
-			return this._disabledAt[guild.id] = typeof featureStatus === "boolean" ? !featureStatus : DEFAULT_ENABLED_STATE;
-		}
-		return status;
+	private async _isEnabledAt(guild: Guild) : Promise<boolean> {
+		const cachedStatus = this._enabledAt[guild.id];
+		if(typeof cachedStatus === "boolean") { return cachedStatus; }
+
+		const dbStatus = <boolean|undefined>await getPreferenceValue(guild, ENABLED_PROP, true);
+		if(typeof dbStatus === "boolean") { return this._enabledAt[guild.id] = dbStatus; }
+
+		return this._enabledAt[guild.id] = DEFAULT_ENABLED_STATE;
 	}
 
 	private async _recordMessage(msg: Message) {
-		if(await this._isDisabledAt(msg.guild)) { return; }
+		if(!(await this._isEnabledAt(msg.guild))) { return; }
 		const payload = convertToDBMessage(msg);
 		return await this._controller.insertMessage(payload);
 	}
