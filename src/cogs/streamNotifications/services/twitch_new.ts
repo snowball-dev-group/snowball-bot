@@ -94,6 +94,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			throw new Error(`Already subscribed to ${streamer.uid}`);
 		}
 		this.subscriptions.push(streamer);
+		if(this.interval && ((this.lastFetchedAt + this.options.updatingInterval) - Date.now()) > 10000) { // i'm bad at math
+			setTimeout(() => this.fetch([streamer]), 1);
+		}
 	}
 
 	public removeSubscribtion(uid: string) {
@@ -144,6 +147,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	private metadataStore: IHashMap<ICacheItem<ITwitchMetadata>|undefined> = {};
 	private usersStore: IHashMap<ICacheItem<ITwitchUser>|undefined> = {};
 	private currentPayloadsStore: IHashMap<ICacheItem<ITwitchNewPluginPayload|null>|undefined> = {};
+	private lastFetchedAt: number = Date.now();
 
 	public async createPayloads(uids: string[]) : Promise<IHashMap<ITwitchNewPluginPayload|null|undefined>> {
 		// to fetch:
@@ -385,6 +389,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				delete this.currentPayloadsStore[uid];
 			}
 		}
+
+		this.lastFetchedAt = createdAt;
 	}
 
 	// ========================================
