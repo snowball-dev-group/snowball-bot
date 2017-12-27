@@ -156,48 +156,84 @@
         "name": "setLanguage",
         "path": "setLanguage/setLanguage",
         "options": {
-            "crowdinLink": "https://crowdin.com/project/snowball-bot"
+            "crowdinLink": "https://crowdin.com/project/snowball-bot",
+            "flags": {
+                "ru-RU": "https://i.imgur.com/pLmnkxH.png",
+                "en-US": "https://i.imgur.com/MeuMSut.png",
+                "be-BY": "https://i.imgur.com/RdNyJ4t.png",
+                "uk-UA": "https://i.imgur.com/oGKueos.png",
+                "fr-FR": "https://i.imgur.com/1WDusxs.png",
+                "it-IT": "https://i.imgur.com/OQUrjCG.png"
+            }
         }
     }, {
         "name": "whitelist",
         "path": "whitelist/whitelist",
         "options": {
             "always_whitelisted": ["307494339662184449", "331101356205015041", "209767264210255883", "260005365289058304", "322790052008689665"],
-            "signup_url": "FORM_URL"
+            "signup_url": "YOUR WHITELEST SIGNUP URLE"
         }
     }, {
         "name": "streamNotifications",
         "path": "streamNotifications/main",
-        "options": [{
+        "options": {
+            "services": [{
             "name": "twitch",
             "path": "twitch",
-            "options": "CLIENT_ID_HERE"
+                "options": {
+                    "clientId": "TWETCH CLIENT-ID",
+                    "updatingInterval": 120000
+                }
+            }, {
+                "name": "twitch_new",
+                "path": "twitch_new",
+                "options": {
+                    "clientId": "TWETCH CLIENT-ID",
+                    "updatingInterval": 120000,
+                    "emoji": {
+                        "138585": "394484435552174080",
+                        "488552": "394483997079765002",
+                        "493057": "394483648839155712"
+                    }
+                }
         }, {
             "name": "youtube",
             "path": "youtube",
-            "options": "API_KEY"
+                "options": {
+                    "apiKey": "YO TUB APE KEY",
+                    "updatingInterval": 300000
+                }
         }, {
             "name": "mixer",
             "path": "mixer"
         }]
+        }
     }, {
         "name": "fl",
         "path": "fl/fl"
+    }, {
+        "name": "modTools_archive",
+        "path": "modTools/archive/archive",
+        "options": {
+            "banned": { }
+        }
     }, {
         "name": "prefixAllPlugin",
         "path": "cores/prefixAll/prefixAllPlugin",
         "options": { }
     }],
-    "autoLoad": ["PrefixAll", "MessagesFlows", "prefixAllPlugin", "ping", "eval", "setLanguage", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "premiumControl", "guilds", "verificationhandler"],
+    "autoLoad": ["PrefixAll", "MessagesFlows", "prefixAllPlugin", "ping", "eval", "whitelist", "setLanguage", "modTools_archive", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "guilds", "verificationhandler", "fsthings", "streamNotifications", "fl", "premiumControl"],
     "botOwner": "80351110224678912",
     "localizerOptions": {
-        "languages": ["ru-RU", "en-US", "uk-UA", "be-BY", "fr-FR", "it-IT", "ru-UFL"],
+        "languages": ["ru-RU", "en-US", "ru-UFL", "uk-UA", "be-BY", "fr-FR", "it-IT"],
         "source_language": "ru-RU",
         "default_language": "en-US",
-        "directory": "./languages/"
+        "directory": "./languages/",
+        "disable_coverage_log": true
     },
     "shardingOptions": {
         "enabled": false,
         "shards": 1337
-    }
+    },
+    "queueModuleLoading": true
 }
