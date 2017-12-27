@@ -2,11 +2,12 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "grunt",
-            "task": "default",
+            "type": "npm",
+            "script": "build",
             "identifier": "runGruntBuild",
             "problemMatcher": [
-                "$tsc"
+                "$tslint5",
+                "$tsc",
             ],
             "group": {
                 "kind": "build",
