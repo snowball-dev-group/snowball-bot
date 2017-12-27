@@ -29,13 +29,16 @@
 		"interface-name": [
 			true
 		],
-		"variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case"]
+		"variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case"],
+		"no-unnecessary-callback-wrapper": true,
+		"switch-final-break": false,
+		"arrow-return-shorthand": true,
+		"prefer-object-spread": true,
+		"prefer-const": true
 	},
 	"jsRules": {
 		"no-unused-new": true,
 		"no-unused-expression": true,
-		"semicolon": [
-			"always"
-		]
+		"semicolon": true
 	}
 }
