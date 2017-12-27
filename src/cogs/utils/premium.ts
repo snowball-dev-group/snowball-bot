@@ -7,9 +7,9 @@ const PREMIUM_TABLE = "premiums";
 const LOG = getLogger("Premium");
 const INTERNALCALLSIGN = (Math.floor(Math.random() * 50000000000)).toString(16) + (Math.floor(Math.random() * 50000000000)).toString(16) + (Math.floor(Math.random() * 50000000000)).toString(16) + (Math.floor(Math.random() * 50000000000)).toString(16);
 
-let db = getDB(),
-	complete = false,
-	retry = true;
+const db = getDB();
+let complete = false;
+let retry = true;
 
 const cache:IHashMap<IPremiumRow|null> = {};
 
