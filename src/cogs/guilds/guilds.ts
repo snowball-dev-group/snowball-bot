@@ -1670,7 +1670,12 @@ class Guilds extends Plugin implements IModule {
 		const args = msg.content.split(",").map(arg => arg.trim());
 		if(args.length === 1) {
 			msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_INVITE_USAGE")
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+					key: "GUILDS_INVITE_USAGE",
+					formatOptions: {
+						prefix: CMD_GUILDS_INVITE
+					}
+				})
 			});
 			return;
 		}
