@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import logger = require("loggy");
 import { IHashMap } from "./Interfaces";
 import { ISchemaObject } from "./Typer";
+import { isAbsolute } from "path";
 
 export interface IModuleInfo {
 	/**
@@ -272,6 +273,8 @@ export class ModuleLoader {
 			const moduleInfo = config.registry[registryName];
 			this.register(moduleInfo);
 		}
+
+		this.config.basePath = isAbsolute(this.config.basePath) ? this.config.basePath : `${__dirname}/../${this.config.basePath}`;
 	}
 
 	/**
@@ -311,7 +314,7 @@ export class ModuleLoader {
 			throw new Error("No module info");
 		}
 
-		moduleInfo.path = __dirname + "/../" + this.config.basePath + moduleInfo.path;
+		moduleInfo.path = isAbsolute(moduleInfo.path) ? moduleInfo.path : `${this.config.basePath}/${moduleInfo.path}`;
 
 		try {
 			moduleInfo.path = require.resolve(moduleInfo.path);
