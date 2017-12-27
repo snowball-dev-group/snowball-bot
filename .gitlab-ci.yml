@@ -14,7 +14,7 @@ stages:
 compiling:
   stage: build
   script:
-    - grunt
+    - npm run -s build
   artifacts:
     untracked: true
     paths:
