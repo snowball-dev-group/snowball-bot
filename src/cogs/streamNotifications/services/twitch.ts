@@ -53,7 +53,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public removeSubscribtion(uid: string) {
-		let index = this.findSubscriptionIndex(uid);
+		const index = this.findSubscriptionIndex(uid);
 		if(index === -1) {
 			throw new Error(`Not subscribed to ${uid}`);
 		}
@@ -112,7 +112,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
 		if(streamers.length > 0) {
-			let processChunk = async (chunk: IStreamingServiceStreamer[]) => {
+			const processChunk = async (chunk: IStreamingServiceStreamer[]) => {
 				let streamsResp: {
 					streams?: ITwitchStream[]
 				} = {};
@@ -263,7 +263,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private getAPIURL_User(username: string | string[]) {
-		let uidsStr = username instanceof Array ? username.join(",") : username;
+		const uidsStr = username instanceof Array ? username.join(",") : username;
 		return `https://api.twitch.tv/kraken/users?login=${uidsStr}&client_id=${this.options.clientId}&api_version=5`;
 	}
 
@@ -272,7 +272,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
 		}
 
-		let foundUsers = (await this.makeRequest(this.getAPIURL_User(username)) as {
+		const foundUsers = (await this.makeRequest(this.getAPIURL_User(username)) as {
 			users: ITwitchUser[]
 		}).users;
 
@@ -283,7 +283,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 
 		// this one is amazing <3
-		let user = foundUsers[0];
+		const user = foundUsers[0];
 
 		return {
 			serviceName: this.name,
@@ -293,13 +293,13 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private async makeRequest(uri: string): Promise<any> {
-		let loop = async (attempt: number = 0) => {
+		const loop = async (attempt: number = 0) => {
 			if(attempt > 3) {
 				throw new StreamingServiceError("TWITCH_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
 			}
-			let resp = await fetch(uri);
+			const resp = await fetch(uri);
 			if(resp.status === 429) {
-				let delay = parseInt(resp.headers.get("retry-after") || "5000", 10);
+				const delay = parseInt(resp.headers.get("retry-after") || "5000", 10);
 				this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 				await sleep(delay);
 				return await loop(attempt + 1);
@@ -323,7 +323,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	async unload() {
-		for(let key in this.streamsMap) {
+		for(const key in this.streamsMap) {
 			delete this.streamsMap[key];
 		}
 		return true;

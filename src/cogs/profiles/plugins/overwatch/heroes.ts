@@ -96,14 +96,14 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			embed: generateEmbed(EmbedType.Progress, status)
 		}) as Message;
 
-		let postStatus = async () => {
+		const postStatus = async () => {
 			statusMsg = await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Progress, prevStatus + "\n" + status)
 			});
 			prevStatus = statusMsg.content;
 		};
 
-		let args = str.split(";").map(arg => arg.trim());
+		const args = str.split(";").map(arg => arg.trim());
 
 		if(args.length === 0) {
 			await statusMsg.edit("", {
@@ -112,7 +112,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentation");
 		}
 
-		let info = {
+		const info = {
 			sortBy: (args[3] || "playtime").toLowerCase(),
 			platform: (args[2] || "pc").toLowerCase(),
 			region: (args[1] || "eu").toLowerCase(),
@@ -187,7 +187,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		info.verifed = true;
 
-		let json = JSON.stringify(info);
+		const json = JSON.stringify(info);
 
 		await statusMsg.delete();
 
@@ -348,7 +348,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	}
 
 	getPlaytimeStr(playtime: number, language: string) {
-		let ms = ((playtime * 60) * 60) * 1000;
+		const ms = ((playtime * 60) * 60) * 1000;
 		return $localizer.humanizeDuration(language, ms, undefined, {
 			largest: 2,
 			units: ["h", "m", "s"],

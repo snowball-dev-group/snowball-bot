@@ -78,16 +78,16 @@ export async function deletePremium(person: GuildMember | User): Promise<boolean
 		person_id: person.id
 	});
 
-	let logPrefix = `deletePremium(${person.id})`;
+	const logPrefix = `deletePremium(${person.id})`;
 
 	LOG("info", logPrefix, "Checking current premium");
 
-	let currentPremium = (await checkPremium(person, INTERNALCALLSIGN));
+	const currentPremium = (await checkPremium(person, INTERNALCALLSIGN));
 
 	if(!currentPremium) {
-		let str = "Nothing to delete";
+		const str = "Nothing to delete";
 		LOG("info", logPrefix, str);
-		let err = new Error(str);
+		const err = new Error(str);
 		err.name = "PREMIUM_ALRDYNTSUB";
 		throw err;
 	}
@@ -186,9 +186,9 @@ export async function givePremium(person: GuildMember | User, dueTo: Date, overr
 		person_id: person.id, dueTo, override
 	});
 
-	let currentPremium = await checkPremium(person);
+	const currentPremium = await checkPremium(person);
 
-	let logPrefix = `#givePremium(${person.id}): `;
+	const logPrefix = `#givePremium(${person.id}): `;
 
 	if(currentPremium && override) {
 		LOG("info", logPrefix, "Premium exists, override present, row deleting...");
@@ -200,7 +200,7 @@ export async function givePremium(person: GuildMember | User, dueTo: Date, overr
 		}
 	} else if(currentPremium) {
 		LOG("info", logPrefix, "Premium exists, override doesn't present");
-		let diff = dueTo.getTime() - currentPremium.due_to.getTime();
+		const diff = dueTo.getTime() - currentPremium.due_to.getTime();
 		LOG("info", logPrefix, "Calculation of difference done");
 		if(diff < 0) {
 			LOG("err", logPrefix, "Seems override isn't present, but dueTo date is lower than current, error found");
@@ -208,7 +208,7 @@ export async function givePremium(person: GuildMember | User, dueTo: Date, overr
 			err.name = "ERR_PREMIUM_DIFFLOW";
 			throw err;
 		}
-		let nDate = currentPremium.due_to.getTime() + diff;
+		const nDate = currentPremium.due_to.getTime() + diff;
 		LOG("info", logPrefix, "Adding new premium subscription");
 		try {
 			const raw: IPremiumRawRow = {

@@ -41,11 +41,11 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 	}
 
 	async setup(str: string) {
-		let js: ILastFMInfo = {
+		const js: ILastFMInfo = {
 			username: str
 		};
 
-		let logPrefix = `${js.username} (setup)|`;
+		const logPrefix = `${js.username} (setup)|`;
 
 		try {
 			LOG("info", logPrefix, "Getting recent tracks...");
@@ -66,7 +66,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 			info = JSON.parse(info) as ILastFMInfo;
 		}
 
-		let logPrefix = `${info.username} (getEmbed)|`;
+		const logPrefix = `${info.username} (getEmbed)|`;
 		let profile: IRecentTracksResponse | undefined = undefined;
 		try {
 			LOG("info", logPrefix, "Getting recent tracks...");

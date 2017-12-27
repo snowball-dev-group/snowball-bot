@@ -25,10 +25,10 @@ class ReverseLayout extends Plugin implements IModule {
 	reverse(content: string, firstLine: string, secondLine: string): string {
 		if(!content) { return ""; }
 		let result = "";
-		let lineFrom = firstLine + secondLine;
-		let lineTo = secondLine + firstLine;
+		const lineFrom = firstLine + secondLine;
+		const lineTo = secondLine + firstLine;
 		for(let i = 0; i < content.length; i++) {
-			let pos = lineFrom.indexOf(content[i]);
+			const pos = lineFrom.indexOf(content[i]);
 			result = result + ((pos < 0) ? content[i] : lineTo[pos]);
 		}
 		return result;
@@ -37,7 +37,7 @@ class ReverseLayout extends Plugin implements IModule {
 	async onMessage(msg: Message) {
 		if(!msg.content) { return; }
 		if(msg.content !== "!fl") { return; }
-		let user = msg.member || msg.author;
+		const user = msg.member || msg.author;
 
 		// delete msg with command
 		if(!(msg.channel instanceof TextChannel)) { return; }
@@ -83,7 +83,7 @@ class ReverseLayout extends Plugin implements IModule {
 		let lineLanguage = await localizeForUser(user, "+FL_REPLACELINE_LOCALIZED");
 		let lineEnglish = await localizeForUser(user, "+FL_REPLACELINE_ENGLISH");
 		if(lineLanguage.length !== lineEnglish.length) {
-			let newLength = Math.min(lineLanguage.length, lineEnglish.length);
+			const newLength = Math.min(lineLanguage.length, lineEnglish.length);
 			lineLanguage = lineLanguage.substring(0, newLength);
 			lineEnglish = lineEnglish.substring(0, newLength);
 		}

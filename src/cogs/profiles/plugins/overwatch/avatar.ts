@@ -25,14 +25,14 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 			embed: generateEmbed(EmbedType.Progress, status)
 		}) as Message;
 
-		let postStatus = async () => {
+		const postStatus = async () => {
 			statusMsg = await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Progress, prevStatus + "\n" + status)
 			});
 			prevStatus = statusMsg.content;
 		};
 
-		let args = str.split(";").map(arg => arg.trim());
+		const args = str.split(";").map(arg => arg.trim());
 
 		if(args.length === 0) {
 			await statusMsg.edit("", {
@@ -41,7 +41,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentation");
 		}
 
-		let info = {
+		const info = {
 			platform: (args[2] || "pc").toLowerCase(),
 			region: (args[1] || "eu").toLowerCase(),
 			battletag: args[0].replace(/\#/i, () => "-")
@@ -99,7 +99,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 			throw new Error("Player not registered on this region.");
 		}
 
-		let json = JSON.stringify(info);
+		const json = JSON.stringify(info);
 
 		await statusMsg.delete();
 

@@ -40,7 +40,7 @@ class Ping extends Plugin implements IModule {
 		if(messagesFlowsKeeper.base) {
 			initHandler(messagesFlowsKeeper.base);
 		} else {
-			messagesFlowsKeeper.once("initialized", (base: MessagesFlows) => initHandler(base));
+			messagesFlowsKeeper.once("initialized", initHandler);
 		}
 	}
 

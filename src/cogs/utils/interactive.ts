@@ -59,7 +59,7 @@ interface ICustomConfirmationRules {
 }
 
 export async function createCustomizeConfirmationMessage(embed, channel: TextChannel, rules: ICustomConfirmationRules) {
-	let _confirmationMessage: Message = await channel.send("", {
+	const _confirmationMessage: Message = await channel.send("", {
 		embed
 	}) as Message;
 

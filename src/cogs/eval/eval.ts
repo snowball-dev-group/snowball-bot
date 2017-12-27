@@ -25,8 +25,8 @@ class EvalJS extends Plugin implements IModule {
 	}
 
 	safeEval(script: string, context: Context) {
-		let s = new VM.Script(script);
-		let c = VM.createContext(context);
+		const s = new VM.Script(script);
+		const c = VM.createContext(context);
 		return s.runInContext(c, {
 			timeout: 5000,
 			displayErrors: true
@@ -52,14 +52,14 @@ class EvalJS extends Plugin implements IModule {
 		if(message.author.id !== $botConfig.botOwner) { return; }
 		if(!message.content) { return; }
 
-		let usedPrefix = ["!eval", "!e", "!ev"].find(prefix => message.content.startsWith(prefix));
+		const usedPrefix = ["!eval", "!e", "!ev"].find(prefix => message.content.startsWith(prefix));
 		if(!usedPrefix) { return; }
 
-		let afterCmd = message.content.slice(`${usedPrefix} `.length).trim();
+		const afterCmd = message.content.slice(`${usedPrefix} `.length).trim();
 		if(!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
 
 		// Parsing our script
-		let script = afterCmd.substring(PREFIX_LENGTH, afterCmd.length - PREFIX_LENGTH);
+		const script = afterCmd.substring(PREFIX_LENGTH, afterCmd.length - PREFIX_LENGTH);
 
 		const user = message.member || message.author;
 
@@ -78,13 +78,13 @@ class EvalJS extends Plugin implements IModule {
 			return;
 		}
 
-		let startTime = Date.now();
+		const startTime = Date.now();
 		try {
 			// Trying to run it
 			// Actually, it named `safeEval` but it's absolutely not safe
 			// For example, if you set timer and throw error there
 
-			let output = this.safeEval(script, {
+			const output = this.safeEval(script, {
 				...global,
 				this: this,
 				$bot: $discordBot,
@@ -102,7 +102,7 @@ class EvalJS extends Plugin implements IModule {
 				try {
 					// nothing bad happens if someone hacky created element using specially named class "Promise"
 					// it's just waste of time lul
-					let r = await output;
+					const r = await output;
 					this._outputEdit(resultMsg, user, startTime, r, "Executed", EmbedType.OK);
 				} catch(err) {
 					this._outputEdit(resultMsg, user, startTime, err, "Executed with error", EmbedType.Warning);

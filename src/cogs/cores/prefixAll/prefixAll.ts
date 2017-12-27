@@ -31,10 +31,11 @@ export default class PrefixAll implements IModule {
 			throw new Error("You couldn't initialize this module second time. Please unload currently loaded module and try again");
 		}
 
-		options = Object.assign(<IPrefixAllOptions>{
+		options = <IPrefixAllOptions>{
 			defaultPrefix: DEFAULT_PREFIX,
-			messagesCacheDestructionTime: DEFAULT_MSGCACHE_DESTRUCTTIME
-		}, options);
+			messagesCacheDestructionTime: DEFAULT_MSGCACHE_DESTRUCTTIME,
+			...options
+		};
 
 		this._defaultPrefix = options.defaultPrefix;
 		this._messagesCacheDestructionTime = Math.max(Math.min(options.messagesCacheDestructionTime, 600000), 5000);

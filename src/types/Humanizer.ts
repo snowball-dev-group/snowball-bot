@@ -231,7 +231,7 @@ export class Humanizer {
 
 		const dictionary = this.locale;
 
-		const options = optionsOverrides ? Object.assign<IHumanizerDefaultOptions, IHumanizerOptionsOverrides>(this.defaultOptions, optionsOverrides) : this.defaultOptions;
+		const options = optionsOverrides ? <IHumanizerDefaultOptions & IHumanizerOptionsOverrides> { ...this.defaultOptions, ...optionsOverrides } : this.defaultOptions;
 
 		const pieces: Array<{
 			unitCount: number;

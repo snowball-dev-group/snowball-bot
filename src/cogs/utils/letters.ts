@@ -17,12 +17,12 @@ export function toRegionalIndicators(str: string, stances?: Stances, unknownChar
 		numbersConversion = ((stances & Stances.ConvertNumbers) === Stances.ConvertNumbers);
 	}
 	arr = arr.map((s) => {
-		let oS = s;
+		const oS = s;
 		if(allowCaseSwitching) {
 			s = s.toLowerCase();
 		}
 		if(/^[a-z]{1}$/.test(s)) {
-			let letPos = s.charCodeAt(0) - 97;
+			const letPos = s.charCodeAt(0) - 97;
 			return `${REGIONAL_CHAR}${String.fromCharCode(REGIONAL_SUBCHAR_START + letPos)}`;
 		} else if(numbersConversion && /^[0-9]{1}$/.test(s)) {
 			return convertNumbers(s);

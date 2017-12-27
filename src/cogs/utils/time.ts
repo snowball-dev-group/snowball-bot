@@ -1,5 +1,5 @@
 export function currentTimestamp(returning: "ms" | "s" = "ms") {
-	let ts = Date.now();
+	const ts = Date.now();
 	switch(returning) {
 		default: return ts;
 		case "s": return ts / 1000;
@@ -9,12 +9,12 @@ export function currentTimestamp(returning: "ms" | "s" = "ms") {
 export function parseDate(t1: string): number | undefined {
 	if(/$[0-9]+^/.test(t1)) {
 		// trying to parse
-		let t = parseInt(t1, 10);
+		const t = parseInt(t1, 10);
 		if(!isNaN(t)) {
 			return t;
 		}
 	}
-	let t = (new Date(t1)).getTime();
+	const t = (new Date(t1)).getTime();
 	if(!isNaN(t)) {
 		return t;
 	} else {
@@ -26,7 +26,7 @@ export function timeDiff(t1: Date | number | string, t2: Date | number | string 
 	if(t1 instanceof Date) {
 		t1 = t1.getTime();
 	} else if(typeof t1 === "string") {
-		let parsed = parseDate(t1);
+		const parsed = parseDate(t1);
 		if(typeof parsed !== "number") {
 			throw new Error("Invalid `t1` argument");
 		}
@@ -38,7 +38,7 @@ export function timeDiff(t1: Date | number | string, t2: Date | number | string 
 	if(t2 instanceof Date) {
 		t2 = t2.getTime();
 	} else if(typeof t2 === "string") {
-		let parsed = parseDate(t2);
+		const parsed = parseDate(t2);
 		if(typeof parsed !== "string") {
 			throw new Error("Invalid `t2` argument");
 		}
@@ -47,10 +47,10 @@ export function timeDiff(t1: Date | number | string, t2: Date | number | string 
 		throw new Error("Invalid `t2` argument");
 	}
 
-	let min = Math.min(t1, t2);
-	let max = Math.max(t1, t2);
+	const min = Math.min(t1, t2);
+	const max = Math.max(t1, t2);
 
-	let diff = max - min;
+	const diff = max - min;
 
 	switch(returning) {
 		default: return diff;

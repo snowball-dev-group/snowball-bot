@@ -299,8 +299,8 @@ class ModToolsArchive extends Plugin implements IModule {
 				}
 
 				const resolvedTargets = await (async (toResolve: string[]) => {
-					let resolved: string[] = [];
-					for(let target of toResolve) {
+					const resolved: string[] = [];
+					for(const target of toResolve) {
 						try {
 							const resolvedTarget = (await this._resolveUserTarget(target, msg.guild)).id;
 							resolved.push(resolvedTarget);
@@ -334,8 +334,8 @@ class ModToolsArchive extends Plugin implements IModule {
 				}, lines, offset);
 			} break;
 			case "channel": {
-				let channels: string[] = [];
-				let users: string[] = [];
+				const channels: string[] = [];
+				const users: string[] = [];
 
 				if(parsed.args && parsed.args.length > 0) {
 					for(const target of parsed.args) {
@@ -413,7 +413,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		let result = await this._messagesToString(foundMessages.reverse(), caches.users, await getUserLanguage(msg.member));
+		const result = await this._messagesToString(foundMessages.reverse(), caches.users, await getUserLanguage(msg.member));
 
 		return await msg.channel.send({
 			content: await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }),

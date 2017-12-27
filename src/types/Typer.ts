@@ -140,7 +140,7 @@ export class Typer {
                 }
             }
 
-            let valType = typeof val;
+            const valType = typeof val;
 
             if(valType !== schema.type) {
                 throw new TyperError("Invalid type of object", path, {
@@ -219,7 +219,7 @@ export class Typer {
 
             // => => Checking if `isArray && schemaInfo.elementSchema` but `obj[*]` is not matches `schemaInfo.elementSchema`
             if(schema.isArray && schema.elementSchema) {
-                for(let o in val) {
+                for(const o in val) {
                     Typer.checkValueBySchema(schema.elementSchema, val[o], `${path}[${o}]`);
                 }
             } else if(schema.isObject && schema.schema) {
@@ -229,8 +229,8 @@ export class Typer {
     }
 
     static checkObjectBySchema(schema: ISchema, obj: object, deepPath: string = "obj") {
-        for(let property in schema) {
-            let propSchema = schema[property];
+        for(const property in schema) {
+            const propSchema = schema[property];
             Typer.checkValueBySchema(propSchema, obj[property], `${deepPath}.${property}`);
         }
     }

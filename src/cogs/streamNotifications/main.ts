@@ -280,11 +280,11 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
-		let settings = await this.createOrGetSettings(msg.guild);
+		const settings = await this.createOrGetSettings(msg.guild);
 
 		if(args[0] !== "NONE") {
-			let matches = args[0].match(/[0-9]+/);
-			let channelId = matches ? matches[0] : undefined;
+			const matches = args[0].match(/[0-9]+/);
+			const channelId = matches ? matches[0] : undefined;
 			if(!channelId) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_WRONGIDFORMAT"))
@@ -294,7 +294,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 			// trying to find this channel?
 
-			let channel = msg.guild.channels.get(channelId);
+			const channel = msg.guild.channels.get(channelId);
 			if(!channel) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_CHANNELNOTFOUND"))
@@ -365,7 +365,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		// find this subscription to ensure that is exists
 
-		let subscription = await this.getSubscription({
+		const subscription = await this.getSubscription({
 			provider: args[0].toLowerCase(),
 			uid: args[1]
 		});
@@ -383,7 +383,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		// parse settings
 
-		let settings = this.convertToNormalSettings(rawSettings);
+		const settings = this.convertToNormalSettings(rawSettings);
 
 		// caching for our dear interval
 
@@ -393,7 +393,7 @@ class StreamNotifications extends Plugin implements IModule {
 			if(args[3] === "true") {
 				// find current one?
 
-				let current = settings.mentionsEveryone.find((s) => {
+				const current = settings.mentionsEveryone.find((s) => {
 					return !!subscription && s.serviceName === subscription.provider && s.uid === subscription.uid && s.username === subscription.username;
 				});
 
@@ -410,7 +410,7 @@ class StreamNotifications extends Plugin implements IModule {
 					username: subscription.username
 				});
 			} else {
-				let index = settings.mentionsEveryone.findIndex((s) => {
+				const index = settings.mentionsEveryone.findIndex((s) => {
 					return !!subscription && s.serviceName === subscription.provider && s.uid === subscription.uid && s.username === subscription.username;
 				});
 
@@ -1447,7 +1447,7 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 		}
 
-		for(let serviceName in this.servicesList) {
+		for(const serviceName in this.servicesList) {
 			await this.servicesLoader.load(serviceName);
 		}
 
@@ -1503,7 +1503,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 				this.log("info", "Received message", msg);
 				if(msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
-					let guild = $discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
+					const guild = $discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
 					if(guild) {
 						// process
 						const notifyAbout = msg.payload.notifyAbout as {

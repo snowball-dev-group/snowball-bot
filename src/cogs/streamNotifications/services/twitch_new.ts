@@ -100,7 +100,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public removeSubscribtion(uid: string) {
-		let index = this.findSubscriptionIndex(uid);
+		const index = this.findSubscriptionIndex(uid);
 		if(index === -1) {
 			throw new Error(`Not subscribed to ${uid}`);
 		}
@@ -576,17 +576,17 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private async makeRequest<T>(uri: string): Promise<T> {
-		let loop = async (attempt: number = 0) => {
+		const loop = async (attempt: number = 0) => {
 			if(attempt > 3) {
 				throw new StreamingServiceError("TWITCH_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
 			}
-			let resp = await fetch(uri, {
+			const resp = await fetch(uri, {
 				headers: {
 					"Client-ID": this.options.clientId
 				}
 			});
 			if(resp.status === 429) {
-				let delay = parseInt(resp.headers.get("retry-after") || "5000", 10);
+				const delay = parseInt(resp.headers.get("retry-after") || "5000", 10);
 				this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 				await sleep(delay);
 				return await loop(attempt + 1);
@@ -610,7 +610,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	async unload() {
-		for(let key in this.streamsStore) {
+		for(const key in this.streamsStore) {
 			delete this.streamsStore[key];
 		}
 		return true;

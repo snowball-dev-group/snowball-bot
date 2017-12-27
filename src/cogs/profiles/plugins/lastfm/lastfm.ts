@@ -9,9 +9,9 @@ const LOG = getLogger("LastFMPlugin");
 
 export async function getRecents(username: string, apiKey: string): Promise<IRecentTracksResponse> {
 	let resp: Response | undefined = undefined;
-	let logPrefix = `${username} (getRecents)|`;
+	const logPrefix = `${username} (getRecents)|`;
 	try {
-		let uri = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${apiKey}&format=json`;
+		const uri = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${apiKey}&format=json`;
 		LOG("info", logPrefix, "Fetching", uri.replace(apiKey, "{{API_KEY}}"));
 		resp = await fetch(uri);
 	} catch(err) {
@@ -53,7 +53,7 @@ export async function getRecents(username: string, apiKey: string): Promise<IRec
 
 export async function getOrFetchRecents(uid: string, apiKey: string): Promise<IRecentTracksResponse> {
 	let cached: ICachedRow | undefined = undefined;
-	let logPrefix = `${uid} (getOrFetchRecents)|`;
+	const logPrefix = `${uid} (getOrFetchRecents)|`;
 
 	try {
 		cached = await getFromCache(CACHE_OWNER, uid);

@@ -437,7 +437,7 @@ class Colors extends Plugin implements IModule {
 					return;
 				}
 			} else {
-				let requiredRolesNames = namedArgs.required_role.split("|").map(arg => arg.trim());
+				const requiredRolesNames = namedArgs.required_role.split("|").map(arg => arg.trim());
 				requiredRoles = [];
 				for(const nameToResolve of requiredRolesNames) {
 					const resolvedRole = resolveGuildRole(nameToResolve, msg.guild);
@@ -1165,7 +1165,7 @@ class Colors extends Plugin implements IModule {
 	 * @param info Colorful information
 	 */
 	async updateInfo(info: IColorfulGuildInfo) {
-		let inf = info as any;
+		const inf = info as any;
 		inf.rolePrefixes = JSON.stringify(info.rolePrefixes);
 		await this.db(TABLE_NAME).where({
 			guildId: info.guildId
@@ -1180,7 +1180,7 @@ class Colors extends Plugin implements IModule {
 		if(typeof guildId !== "string") {
 			guildId = guildId.id;
 		}
-		let prefixes = await this.db(TABLE_NAME).where({
+		const prefixes = await this.db(TABLE_NAME).where({
 			guildId
 		}).first();
 		if(!prefixes) {

@@ -79,7 +79,7 @@ export async function getFromCache(cacheOwner: string, key: string): Promise<ICa
 			throw new Error("Initialization not completed");
 		}
 	}
-	let logPrefix = `${cacheOwner}:${key} (getFromCache)|`;
+	const logPrefix = `${cacheOwner}:${key} (getFromCache)|`;
 	let elem: ICachedRow | undefined = undefined;
 	try {
 		elem = await db(CACHE_TABLE_NAME).where({
@@ -107,7 +107,7 @@ export async function cache(cacheOwner: string, key: string, value: string, noWa
 		}
 	}
 	let current: ICachedRow | undefined = undefined;
-	let logPrefix = `${cacheOwner}:${key} (cache)|`;
+	const logPrefix = `${cacheOwner}:${key} (cache)|`;
 	try {
 		current = await getFromCache(cacheOwner, key);
 	} catch(err) {
@@ -164,7 +164,7 @@ export async function clearCache(cacheOwner: string, key: string, noWait: boolea
 			throw new Error("Initialization not completed");
 		}
 	}
-	let logPrefix = `${cacheOwner}:${key} (clearCache)|`;
+	const logPrefix = `${cacheOwner}:${key} (clearCache)|`;
 
 	let current: ICachedRow | undefined = undefined;
 	try {

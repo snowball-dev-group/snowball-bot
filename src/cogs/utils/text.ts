@@ -21,8 +21,8 @@ export function replaceAll(str: string, search: string, replacement: string) {
 
 export function simpleCmdParse(str: string) : ISimpleCmdParseResult {
 	let args = str.split(" ");
-	let cmd = args.shift(); // !cmd
-	let subCmd = args.shift(); // subcmd / undefined
+	const cmd = args.shift(); // !cmd
+	const subCmd = args.shift(); // subcmd / undefined
 	args = args.join(" ").split(",").map(arg => arg.trim()).filter(arg => arg.trim() !== "");
 	return {
 		command: cmd,
@@ -65,7 +65,7 @@ function _getHex(str: string, key: number, maxlen: number): string {
 }
 
 function _makeUUID(p: string[]) {
-	let s = [
+	const s = [
 		p[0],
 		p[1].substr(0, 4),
 		4 + p[1].substr(4, 3), (Number("0x" + p[1][7]) & 0x3 | 0x8).toString(16) + p[1].substr(8, 3),

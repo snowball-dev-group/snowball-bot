@@ -103,15 +103,15 @@ export async function removePreference(u: userIndx, preference: string) {
 
 export async function getPreferenceValue(u: userIndx, preference: string, json = false) {
 	if(!initDone) { await init(); }
-	let r = (await getPreferenceRow(u, preference));
-	let v = r ? r.value : undefined;
+	const r = (await getPreferenceRow(u, preference));
+	const v = r ? r.value : undefined;
 	return json && v ? JSON.parse(v) : v;
 }
 
 export async function setPreferenceValue(u: userIndx, preference: string, value: any) {
 	if(!initDone) { await init(); }
-	let cr = await getPreferenceRow(u, preference);
-	let twv = typeof value === "string" ? value : JSON.stringify(value);
+	const cr = await getPreferenceRow(u, preference);
+	const twv = typeof value === "string" ? value : JSON.stringify(value);
 	if(!cr) {
 		await createPreference(u, preference, twv);
 	} else {

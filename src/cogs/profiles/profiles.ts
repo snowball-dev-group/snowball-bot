@@ -356,7 +356,7 @@ class Profiles extends Plugin implements IModule {
 			}
 
 			if(completeInfo.type === AddedProfilePluginType.Embed) {
-				let embedsCount = Object.keys(customize.plugins).map(e => customize.plugins[e]).filter(e => e.type === AddedProfilePluginType.Embed).length;
+				const embedsCount = Object.keys(customize.plugins).map(e => customize.plugins[e]).filter(e => e.type === AddedProfilePluginType.Embed).length;
 				if(embedsCount > 4 && !(await isPremium(msg.member))) {
 					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PREMIUMERR")
@@ -502,7 +502,7 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async getUserStatusString(user: User | GuildMember | string, localizingFor: GuildMember | User) {
-		const localizeStatus = async (str: string) => { return await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`); };
+		const localizeStatus = async (str: string) => await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`);
 		switch(typeof user !== "string" ? user.presence.status : user) {
 			case "online": { return await localizeStatus("online"); }
 			case "idle": { return await localizeStatus("idle"); }
@@ -716,7 +716,7 @@ class Profiles extends Plugin implements IModule {
 							if(t) { clearTimeout(t); }
 							fields[fNum] = field;
 							if(pushedMessage && ((Date.now() - pushedMessage.createdAt.getTime()) / 1000) < 3) {
-								setTimeout(() => pushUpdate(), 1000);
+								setTimeout(pushUpdate, 1000);
 							} else {
 								pushUpdate();
 							}

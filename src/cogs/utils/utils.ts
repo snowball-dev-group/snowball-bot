@@ -232,7 +232,7 @@ export const COLORS = {
 };
 
 export function generateEmbed(type: EmbedType, description: string, options?: IEmbedOptions) {
-	let embed: any = {};
+	const embed: any = {};
 	// embed pre-fill 
 	embed.author = {};
 	embed.description = description;

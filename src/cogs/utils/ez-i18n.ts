@@ -12,11 +12,11 @@ const guildEnforcePref = ":enforce_lang";
 const defLanguage = $localizer.defaultLanguage;
 
 // <uid, language>
-let uCache = new Map<string, string>();
+const uCache = new Map<string, string>();
 // <gid, enforcing>
-let gECache = new Map<string, boolean>();
+const gECache = new Map<string, boolean>();
 // <gid, language>
-let gCache = new Map<string, string>();
+const gCache = new Map<string, string>();
 
 export function getPrefsNames() {
 	return {
@@ -27,14 +27,14 @@ export function getPrefsNames() {
 }
 
 export async function getGuildLanguage(guild: Guild) {
-	let cached = gCache.get(guild.id);
-	let gLang = cached !== undefined ? cached : await forceGuildLanguageUpdate(guild);
+	const cached = gCache.get(guild.id);
+	const gLang = cached !== undefined ? cached : await forceGuildLanguageUpdate(guild);
 	return gLang;
 }
 
 export async function isGuildEnforceEnabled(guild: Guild) {
-	let cached = gECache.get(guild.id);
-	let guildEnforcing = cached !== undefined ? cached : await forceGuildEnforceUpdate(guild);
+	const cached = gECache.get(guild.id);
+	const guildEnforcing = cached !== undefined ? cached : await forceGuildEnforceUpdate(guild);
 	return guildEnforcing;
 }
 
@@ -42,7 +42,7 @@ export async function getUserLanguage(u: identify) {
 	let lang: string | undefined = undefined;
 	if(u instanceof GuildMember) {
 		// let's check if guild enforces language
-		let guildEnforcing = await isGuildEnforceEnabled(u.guild);
+		const guildEnforcing = await isGuildEnforceEnabled(u.guild);
 		if(guildEnforcing) {
 			// yh, guild enforces language
 			// getting guild lang
@@ -57,17 +57,17 @@ export async function getUserLanguage(u: identify) {
 }
 
 export async function localizeForUser(u: identify, str: string, formatOpts?: any) {
-	let lang = await getUserLanguage(u);
+	const lang = await getUserLanguage(u);
 	return formatOpts ? $localizer.getFormattedString(lang, str, formatOpts) : $localizer.getString(lang, str);
 }
 
 export async function humanizeDurationForUser(u: identify, duration: number, unit: HumanizerUnitToConvert = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
-	let lang = await getUserLanguage(u);
+	const lang = await getUserLanguage(u);
 	return $localizer.humanizeDuration(lang, duration, unit, humanizerOptions);
 }
 
 export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
-	let enforcingSt = await getGuildPreferenceValue(guild, guildEnforcePref, true);
+	const enforcingSt = await getGuildPreferenceValue(guild, guildEnforcePref, true);
 	if(enforcingSt === undefined) {
 		// no enforcing status, fixing it...
 		await setGuildPreferenceValue(guild, guildEnforcePref, false);
@@ -80,7 +80,7 @@ export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
 }
 
 export async function forceUserLanguageUpdate(u: identify): Promise<string> {
-	let preferableLang: string | undefined = await getUserPreferenceValue(u, languagePref);
+	const preferableLang: string | undefined = await getUserPreferenceValue(u, languagePref);
 	if(preferableLang === undefined) {
 		if(u instanceof GuildMember) {
 			let gLang = gCache.get(u.guild.id);
@@ -99,7 +99,7 @@ export async function forceUserLanguageUpdate(u: identify): Promise<string> {
 }
 
 export async function forceGuildLanguageUpdate(guild: Guild): Promise<string> {
-	let gLang = await getGuildPreferenceValue(guild, guildLangPref);
+	const gLang = await getGuildPreferenceValue(guild, guildLangPref);
 	if(gLang === undefined) {
 		await setGuildPreferenceValue(guild, guildLangPref, defLanguage);
 		gCache.set(guild.id, defLanguage);

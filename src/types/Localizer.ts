@@ -262,7 +262,6 @@ export class Localizer {
 		m?: IHumanizerPluralOverride;
 		s?: IHumanizerPluralOverride;
 		ms?: IHumanizerPluralOverride;
-		decimal?: string;
 	}, defaultOptions?: IHumanizerDefaultOptions) {
 		let defaultDefinition: IHumanizerLanguage = {
 			y: (years: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:YEARS", { years }),
@@ -274,9 +273,7 @@ export class Localizer {
 			s: (seconds: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:SECONDS", { seconds }),
 			ms: (milliseconds: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:MILLISECONDS", { milliseconds })
 		};
-		if(languageOverride) {
-			defaultDefinition = Object.freeze(Object.assign({}, defaultDefinition, languageOverride));
-		}
+		if(languageOverride) { defaultDefinition = { ...defaultDefinition, ...languageOverride }; }
 		return new Humanizer(defaultDefinition, defaultOptions);
 	}
 }

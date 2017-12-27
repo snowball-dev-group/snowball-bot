@@ -50,8 +50,8 @@ const SHARD_TIMEOUT = 30000; // ms
 				return;
 			}
 
-			let shardId = parseInt(process.env.SHARD_ID as string, 10);
-			let shardsCount = parseInt(process.env.SHARDS_COUNT as string, 10);
+			const shardId = parseInt(process.env.SHARD_ID as string, 10);
+			const shardsCount = parseInt(process.env.SHARDS_COUNT as string, 10);
 
 			log("info", "Started as shard", shardId + 1, "/", process.env.SHARDS_COUNT);
 
@@ -71,7 +71,7 @@ const SHARD_TIMEOUT = 30000; // ms
 				});
 			}
 		} else if(cluster.isMaster) {
-			let shards = config.shardingOptions.shards;
+			const shards = config.shardingOptions.shards;
 			if(shards < 0) {
 				log("err", "Invalid number of shards");
 				process.exit(0);
@@ -103,10 +103,10 @@ async function spawnShards(log:any, shardsCount:number) {
 		throw new Error("Could not spawn shards inside the worker!");
 	}
 
-	let clusterRegistry: { [id: string]: cluster.Worker } = {};
+	const clusterRegistry: { [id: string]: cluster.Worker } = {};
 
-	let forwardMessage = (c, msg) => {
-		for(let id in clusterRegistry) {
+	const forwardMessage = (c, msg) => {
+		for(const id in clusterRegistry) {
 			// no self msg
 			if(id === c.id) { continue; }
 			clusterRegistry[id].send(msg);
@@ -116,7 +116,7 @@ async function spawnShards(log:any, shardsCount:number) {
 	for(let shardId = 0; shardId < shardsCount; shardId++) {
 		log("info", "Spawning shard", shardId + 1);
 		// returns shard
-		let c = await spawnShard(log, shardId, shardsCount, forwardMessage);
+		const c = await spawnShard(log, shardId, shardsCount, forwardMessage);
 		clusterRegistry[c.id] = c;
 	}
 }
@@ -128,14 +128,14 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 
 	let shardConnected = false;
 	let clusterDied = false;
-	let forkedAt = Date.now();
+	const forkedAt = Date.now();
 
-	let env = {
+	const env = {
 		...process.env,
 		"SHARD_ID": shardId + "", "SHARDS_COUNT": shardsCount + ""
 	};
 
-	let c = cluster.fork(env).on("online", () => {
+	const c = cluster.fork(env).on("online", () => {
 		log("info", "Cluster", c.id, "is online");
 	}).on("message", (message) => {
 		if(typeof message === "object") {
@@ -162,7 +162,7 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 	log("info", "Waiting for response from shard", shardId);
 
 	await (new Promise((res, rej) => {
-		let id = setInterval(() => {
+		const id = setInterval(() => {
 			if(shardConnected) { res(); clearInterval(id); }
 			clusterDied = clusterDied || c.isDead();
 			if(clusterDied) {

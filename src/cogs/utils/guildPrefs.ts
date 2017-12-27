@@ -92,15 +92,15 @@ export async function removePreference(guild: Guild | string, preference: string
 
 export async function getPreferenceValue(guild: Guild | string, preference: string, json = false) {
 	if(!initDone) { await init(); }
-	let r = (await getPreferenceRow(guild, preference));
-	let v = r ? r.value : undefined;
+	const r = (await getPreferenceRow(guild, preference));
+	const v = r ? r.value : undefined;
 	return json && v ? JSON.parse(v) : v;
 }
 
 export async function setPreferenceValue(guild: Guild | string, preference: string, value: any) {
 	if(!initDone) { await init(); }
-	let cr = await getPreferenceRow(guild, preference);
-	let twv = typeof value === "string" ? value : JSON.stringify(value);
+	const cr = await getPreferenceRow(guild, preference);
+	const twv = typeof value === "string" ? value : JSON.stringify(value);
 	if(!cr) {
 		await createPreference(guild, preference, twv);
 	} else {

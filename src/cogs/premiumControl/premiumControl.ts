@@ -444,7 +444,7 @@ class PremiumControl extends Plugin implements IModule {
 			return;
 		}
 
-		let cDate = new Date(currentPremium.due_to.getTime() + (timestring(args[1]) * 1000));
+		const cDate = new Date(currentPremium.due_to.getTime() + (timestring(args[1]) * 1000));
 		let dtString = moment(cDate, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			key: "PREMIUMCTL_RENEW_CONFIRMATION",
@@ -750,7 +750,7 @@ class PremiumControl extends Plugin implements IModule {
 			}
 		}
 
-		let donePerc = (done / guild.members.size) * 100;
+		const donePerc = (done / guild.members.size) * 100;
 		if(donePerc < 50) {
 			if(!noLog) { this.log("warn", logPrefix, "Errors due syncing for more than 50% members of guild"); }
 			return {

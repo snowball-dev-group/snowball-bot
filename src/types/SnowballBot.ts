@@ -222,7 +222,7 @@ export class SnowballBot extends EventEmitter {
 	public prepareDiscordClient() {
 		if(this._discordClient) { throw new Error("Discord client is already prepared"); }
 
-		let publicBotConfig: IPublicBotConfig = {
+		const publicBotConfig: IPublicBotConfig = {
 			name: this._config.name,
 			botOwner: this._config.botOwner,
 			mainShard: true,
@@ -232,10 +232,10 @@ export class SnowballBot extends EventEmitter {
 		};
 
 		// checking options
-		let djsOptions = this._config.djs_config || {};
+		const djsOptions = this._config.djs_config || {};
 
 		{ // checking shards count
-			let shardCount = this._internalConfiguration.shardsCount;
+			const shardCount = this._internalConfiguration.shardsCount;
 			if(this._config.shardingOptions.enabled) {
 				this._log("warn", "WARNING! Running in sharding mode is still expiremental, please use it with risk!");
 				if(shardCount < 0) {
@@ -247,7 +247,7 @@ export class SnowballBot extends EventEmitter {
 		}
 
 		{ // checking shard id
-			let shardId = this._internalConfiguration.shardId;
+			const shardId = this._internalConfiguration.shardId;
 			if(shardId >= 0) {
 				this._log("info", "Running as shard with ID", shardId);
 				if(shardId === 0) {
@@ -341,7 +341,7 @@ export class SnowballBot extends EventEmitter {
 			throw new Error("Localizer is already prepared");
 		}
 
-		let localizer = new Localizer(`${this._config.name}:Localizer`, this._config.localizerOptions);
+		const localizer = new Localizer(`${this._config.name}:Localizer`, this._config.localizerOptions);
 
 		await localizer.init();
 

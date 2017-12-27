@@ -131,7 +131,7 @@ export class ModuleBase<T> extends EventEmitter {
 		}
 		this.state = ModuleLoadState.Initializing;
 		try {
-			let mod = require(this.info.path);
+			const mod = require(this.info.path);
 			this.base = new mod(this.info.options);
 
 			if(this.base) {
@@ -206,7 +206,7 @@ export class ModuleBase<T> extends EventEmitter {
 			this.state = ModuleLoadState.Destroyed;
 		} else {
 			try {
-				let unloaded = await this.base.unload(reason);
+				const unloaded = await this.base.unload(reason);
 				if(unloaded) {
 					this.emit("unloaded");
 					this.base = undefined;
@@ -387,7 +387,7 @@ export class ModuleLoader {
 		}
 
 		if(!this.loadedModulesRegistry[name]) {
-			let reason = "Module not found or not loaded yet";
+			const reason = "Module not found or not loaded yet";
 			this.log("err", "#unload: check failed: ", reason);
 			throw new Error(reason);
 		}

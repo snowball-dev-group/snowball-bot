@@ -51,7 +51,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	}
 
 	public removeSubscribtion(uid: string) {
-		let index = this.findSubscriptionIndex(uid);
+		const index = this.findSubscriptionIndex(uid);
 		if(index === -1) {
 			throw new Error(`Not subscribed to ${uid}`);
 		}
@@ -249,23 +249,23 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	}
 
 	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
-		let isId = username.startsWith("channel/");
+		const isId = username.startsWith("channel/");
 		if(isId) {
 			username = username.slice("channel/".length);
 		}
 
-		let resp = await fetch(this.getAPIURL_Channels(username, !isId));
+		const resp = await fetch(this.getAPIURL_Channels(username, !isId));
 
 		if(resp.status !== 200) {
 			throw new StreamingServiceError("YOUTUBE_UNSUCCESSFUL_RESP", "YouTube respond with wrong code, means");
 		}
 
-		let channels = ((await resp.json()) as IYouTubeListResponse<IYouTubeChannel>).items;
+		const channels = ((await resp.json()) as IYouTubeListResponse<IYouTubeChannel>).items;
 		if(channels.length !== 1) {
 			throw new StreamingServiceError("YOUTUBE_USERNOTFOUND", "User not found.");
 		}
 
-		let channel = channels[0];
+		const channel = channels[0];
 		this.channelCache[channel.id] = {
 			cachedAt: Date.now(),
 			value: channel
@@ -283,10 +283,10 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	// ========================================
 
 	async unload() {
-		for(let key in this.streamsCache) {
+		for(const key in this.streamsCache) {
 			delete this.streamsCache[key];
 		}
-		for(let key in this.channelCache) {
+		for(const key in this.channelCache) {
 			delete this.channelCache[key];
 		}
 		return true;

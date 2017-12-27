@@ -58,14 +58,14 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			embed: generateEmbed(EmbedType.Progress, status)
 		}) as Message;
 
-		let postStatus = async () => {
+		const postStatus = async () => {
 			statusMsg = await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Progress, prevStatus + "\n" + status)
 			});
 			prevStatus = statusMsg.content;
 		};
 
-		let args = str.split(";").map(arg => arg.trim());
+		const args = str.split(";").map(arg => arg.trim());
 
 		if(args.length === 0) {
 			await statusMsg.edit("", {
@@ -74,7 +74,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentation");
 		}
 
-		let info = {
+		const info = {
 			platform: (args[2] || "pc").toLowerCase(),
 			region: (args[1] || "eu").toLowerCase(),
 			battletag: args[0].replace(/\#/i, () => "-"),
@@ -132,7 +132,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		info.verifed = true;
 
-		let json = JSON.stringify(info);
+		const json = JSON.stringify(info);
 
 		await statusMsg.delete();
 
@@ -162,14 +162,14 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		let str = "";
 
-		let tStrs = {
+		const tStrs = {
 			competitive: await localizeForUser(caller, "OWPROFILEPLUGIN_COMPETITIVE"),
 			quickplay: await localizeForUser(caller, "OWPROFILEPLUGIN_QUICKPLAY"),
 		};
 
 		str += `**${(100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.quickplay.overall_stats.level}LVL**\n`;
 
-		let atStrs = {
+		const atStrs = {
 			win: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_WIN"),
 			loss: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_LOSS"),
 			tie: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_TIE")
@@ -181,7 +181,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			str += this.getTierEmoji(null);
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
 		} else {
-			let compOveral = profile.stats.competitive.overall_stats;
+			const compOveral = profile.stats.competitive.overall_stats;
 			str += `${this.getTierEmoji(compOveral.tier)} ${compOveral.comprank} SR\n`;
 			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
 				games: compOveral.games
@@ -199,7 +199,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 		if(!profile.stats.quickplay) {
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
 		} else {
-			let qpOveral = profile.stats.quickplay.overall_stats;
+			const qpOveral = profile.stats.quickplay.overall_stats;
 
 			// str += (await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
 			// 	games: qpOveral.games

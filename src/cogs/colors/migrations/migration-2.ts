@@ -17,7 +17,7 @@ class NoES6Maps implements IColorfulMigration {
         await db.raw(`CREATE TABLE ${tableName} LIKE ${oldName};`);
 
         this.log("info", "Converting old values to new table performing convertation");
-        let elements = await db(oldName).select() as Array<{ guildId: string; rolePrefixes: string; }>;
+        const elements = await db(oldName).select() as Array<{ guildId: string; rolePrefixes: string; }>;
         for(const element of elements) {
             const parsedElem = {
                 guildId: element.guildId,

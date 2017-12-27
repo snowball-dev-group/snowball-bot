@@ -63,9 +63,9 @@ const LOG = getLogger("TatsuPlugin");
 
 export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUserInfo> {
 	let resp:Response|undefined = undefined;
-	let logPrefix = `${uid} (fetchTatsuProfile)|`;
+	const logPrefix = `${uid} (fetchTatsuProfile)|`;
 	try {
-		let uri = `https://api.tatsumaki.xyz/users/${uid}`;
+		const uri = `https://api.tatsumaki.xyz/users/${uid}`;
 		LOG("info", logPrefix, "Fetching URL", uri);
 		resp = await fetch(uri, {
 			headers: {
@@ -111,7 +111,7 @@ export async function fetchTatsuProfile(uid:string, apiKey:string) : Promise<IUs
 
 export async function getTatsuProfile(uid:string, apiKey:string) : Promise<IUserInfo> {
 	let cached:ICachedRow|undefined = undefined;
-	let logPrefix = `${uid} (getTatsuProfile)|`;
+	const logPrefix = `${uid} (getTatsuProfile)|`;
 
 	try {
 		cached = await getFromCache(CACHE_OWNER, uid);

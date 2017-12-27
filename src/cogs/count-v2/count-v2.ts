@@ -153,7 +153,7 @@ class CountV2 extends Plugin implements IModule {
 	}
 
 	async firstTime() {
-		let elem = {
+		const elem = {
 			date: Date.now(),
 			count: 1322,
 			number: 1337,
@@ -183,12 +183,12 @@ class CountV2 extends Plugin implements IModule {
 		if(!msg.content) { msg.delete(); return; }
 		if(msg.author.id === $discordBot.user.id) { return; }
 
-		let override = msg.content.startsWith("!");
+		const override = msg.content.startsWith("!");
 		if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
 
 		if(override && msg.author.id === $botConfig.botOwner) {
 			msg.react("⏳");
-			let nNumber = parseInt(msg.content.slice("!".length), 10);
+			const nNumber = parseInt(msg.content.slice("!".length), 10);
 			try {
 				await this.dbClient(TABLENAME_MAIN).insert({
 					date: Date.now(),
@@ -212,7 +212,7 @@ class CountV2 extends Plugin implements IModule {
 			return;
 		}
 
-		let nNumber = parseInt(msg.content, 10);
+		const nNumber = parseInt(msg.content, 10);
 
 		let latestRow: ICountOperationRow | undefined = undefined;
 		try {
@@ -224,8 +224,8 @@ class CountV2 extends Plugin implements IModule {
 
 		if(!latestRow) { return; }
 
-		let rRowNumber = parseInt(latestRow.number, 10);
-		let rRowQueueTime = parseInt(latestRow.in_queue, 10);
+		const rRowNumber = parseInt(latestRow.number, 10);
+		const rRowQueueTime = parseInt(latestRow.in_queue, 10);
 
 		let rRowAnsweredBy: string[] | undefined;
 
@@ -247,11 +247,11 @@ class CountV2 extends Plugin implements IModule {
 
 		let messageDeleted = false;
 
-		let secondsSinceTimerAdded = (Date.now() - rRowQueueTime) / 1000;
+		const secondsSinceTimerAdded = (Date.now() - rRowQueueTime) / 1000;
 
-		let answerTimeOK = rRowQueueTime === -1 ? true : secondsSinceTimerAdded < 10;
+		const answerTimeOK = rRowQueueTime === -1 ? true : secondsSinceTimerAdded < 10;
 
-		let alreadyAnswered = rRowAnsweredBy.indexOf(msg.author.id) !== -1;
+		const alreadyAnswered = rRowAnsweredBy.indexOf(msg.author.id) !== -1;
 
 		if(alreadyAnswered && answerTimeOK) {
 			msg.delete();
@@ -265,17 +265,17 @@ class CountV2 extends Plugin implements IModule {
 			await msg.delete();
 			messageDeleted = true;
 		} else {
-			let qTime = answerTimeOK && rRowQueueTime !== -1 ? 10000 - (Date.now() - rRowQueueTime) : 10000;
+			const qTime = answerTimeOK && rRowQueueTime !== -1 ? 10000 - (Date.now() - rRowQueueTime) : 10000;
 
 			if(nNumber !== rRowNumber) {
 				setTimeout(async () => {
-					let r = await this.giveXP(msg.member, XPOperation.Lower);
+					const r = await this.giveXP(msg.member, XPOperation.Lower);
 					await msg.react("❌");
 					if(r) { this.updateScoreboardMessages(r); }
 				}, qTime);
 			} else {
 				setTimeout(async () => {
-					let r = await this.giveXP(msg.member, XPOperation.Raise);
+					const r = await this.giveXP(msg.member, XPOperation.Raise);
 					await msg.react("✅");
 					if(r) { this.updateScoreboardMessages(r); }
 				}, qTime);
@@ -284,14 +284,14 @@ class CountV2 extends Plugin implements IModule {
 
 		let t: NodeJS.Timer | undefined = undefined;
 		if(rRowQueueTime === -1 || (secondsSinceTimerAdded > 15)) { // more than 15 seconds, timer died?
-			let deadTimer = (rRowQueueTime !== -1 && (secondsSinceTimerAdded > 15));
+			const deadTimer = (rRowQueueTime !== -1 && (secondsSinceTimerAdded > 15));
 			t = setTimeout(async () => {
-				let random = new Random(Random.engines.mt19937().autoSeed());
+				const random = new Random(Random.engines.mt19937().autoSeed());
 
-				let operation = random.pick(["+", "-", "+", "+", "+", "-", "+", "-", "-", "+"]);
+				const operation = random.pick(["+", "-", "+", "+", "+", "-", "+", "-", "-", "+"]);
 
 				let nextNumber = rRowNumber;
-				let diffNumber = random.integer(1, 50);
+				const diffNumber = random.integer(1, 50);
 
 				nextNumber += operation === "+" ? diffNumber : -Math.abs(diffNumber);
 

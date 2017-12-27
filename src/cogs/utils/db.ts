@@ -22,7 +22,7 @@ export function getDB() {
 }
 
 function getTypeInfo(type: string) {
-	let t: ITypeInfo = {
+	const t: ITypeInfo = {
 		unique: false,
 		nullable: false,
 		notNullable: false,
@@ -96,7 +96,7 @@ export async function createTableBySchema(tableName: string, schema:ITableSchema
 		throw new Error("No connection to database!");
 	}
 
-	let creationStatus = await connection.schema.hasTable(tableName);
+	const creationStatus = await connection.schema.hasTable(tableName);
 	if(creationStatus && !dropExist) {
 		throw new Error("Table is already created!");
 	} else if(creationStatus && dropExist) {

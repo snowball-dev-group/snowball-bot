@@ -142,10 +142,10 @@ function isServerAdmin(member: GuildMember) {
 }
 
 function rightsCheck(member: GuildMember, row?: IGuildRow, noAdmins = false) {
-	let checkA = isServerAdmin(member);
+	const checkA = isServerAdmin(member);
 	let checkB = false;
 	if(row) {
-		let cz = JSON.parse(row.customize) as IGuildCustomize;
+		const cz = JSON.parse(row.customize) as IGuildCustomize;
 		checkB = row.ownerId === member.id || member.id === $botConfig.botOwner;
 		if(!noAdmins) {
 			checkB = checkB || (cz.admins && cz.admins.includes(member.id));
@@ -327,7 +327,7 @@ class Guilds extends Plugin implements IModule {
 		if(msg.channel.type !== "dm") { return; } // non-dm msg
 		if(!process.send) { return; } // non-sharded run
 
-		let pendingInvite = this.pendingInvites[msg.author.id];
+		const pendingInvite = this.pendingInvites[msg.author.id];
 		if(!pendingInvite) { return; } // no pending invites
 		if(pendingInvite.code.toLowerCase() === msg.content.toLowerCase()) {
 			process.send({
@@ -402,10 +402,10 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let args = msg.content.slice(CMD_GUILDS_CREATE.length).split(",").map(arg => arg.trim());
+		const args = msg.content.slice(CMD_GUILDS_CREATE.length).split(",").map(arg => arg.trim());
 		if(args.length > 2) {
 			// Overwatch, Overwatch, friends!
-			let fields: IEmbedOptionsField[] = [];
+			const fields: IEmbedOptionsField[] = [];
 			if((msg.content.match(/\,/g) || []).length > 1) {
 				fields.push({
 					name: await localizeForUser(msg.member, "GUILDS_CREATE_FIELD_TIP"),
@@ -451,17 +451,17 @@ class Guilds extends Plugin implements IModule {
 		let role: Role | undefined = undefined;
 
 		if(args.length === 1) {
-			let roleName = `${DEFAULT_ROLE_PREFIX}${args[0]}`;
+			const roleName = `${DEFAULT_ROLE_PREFIX}${args[0]}`;
 
 			// creating role
-			let _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
+			const _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
 				key: "GUILDS_CREATE_ROLECREATING_CONFIRMATION",
 				formatOptions: {
 					roleName
 				}
 			});
 
-			let confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
+			const confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
 
 			if(!confirmation) {
 				await msg.channel.send("", {
@@ -526,7 +526,7 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let args = msg.content.slice(CMD_GUILDS_EDIT.length).split(",");
+		const args = msg.content.slice(CMD_GUILDS_EDIT.length).split(",");
 
 		let guildName = "", editableParam = "", content = "";
 		// due to issues w/ typescript I made them ""
@@ -579,9 +579,9 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let customize = JSON.parse(dbRow.customize) as IGuildCustomize;
+		const customize = JSON.parse(dbRow.customize) as IGuildCustomize;
 
-		let isCalledByAdmin = !rightsCheck(msg.member, dbRow, true);
+		const isCalledByAdmin = !rightsCheck(msg.member, dbRow, true);
 
 		let doneString = "";
 
@@ -594,7 +594,7 @@ class Guilds extends Plugin implements IModule {
 					});
 					return;
 				}
-				let resolved = parseURI(content);
+				const resolved = parseURI(content);
 				if(resolved.hostname && isHostBanned(resolved.hostname)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDLINK")
@@ -624,7 +624,7 @@ class Guilds extends Plugin implements IModule {
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_RULESSET");
 			} break;
 			case "welcome_msg_channel": {
-				let channel = $discordBot.channels.get(content);
+				const channel = $discordBot.channels.get(content);
 				if(!channel) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_CHANNELNOTFOUND")
@@ -678,14 +678,14 @@ class Guilds extends Plugin implements IModule {
 					});
 					return;
 				}
-				let serverAdmin = isServerAdmin(msg.member);
+				const serverAdmin = isServerAdmin(msg.member);
 				if(content.startsWith("<@") && content.endsWith(">")) {
 					content = content.slice(2).slice(0, -1);
 					if(content.startsWith("!")) {
 						content = content.slice(1);
 					}
 				}
-				let member = msg.guild.members.get(content);
+				const member = msg.guild.members.get(content);
 				if(!member) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_MEMBERNOTFOUND")
@@ -703,7 +703,7 @@ class Guilds extends Plugin implements IModule {
 					});
 					return;
 				}
-				let confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+				const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 					key: "GUILDS_EDIT_TRANSFERCONFIRMATION",
 					formatOptions: {
 						username: escapeDiscordMarkdown(member.displayName, true)
@@ -804,7 +804,7 @@ class Guilds extends Plugin implements IModule {
 				if(!customize.admins) {
 					customize.admins = [] as string[];
 				}
-				let mention = msg.mentions.members.first().id;
+				const mention = msg.mentions.members.first().id;
 				if(customize.admins.includes(mention)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_ADDADMNOTGUILDMEMBER")
@@ -838,7 +838,7 @@ class Guilds extends Plugin implements IModule {
 					});
 					return;
 				}
-				let mention = msg.mentions.members.first().id;
+				const mention = msg.mentions.members.first().id;
 				customize.admins.splice(customize.admins.indexOf(mention), 1);
 			} break;
 		}
@@ -856,7 +856,7 @@ class Guilds extends Plugin implements IModule {
 	}
 
 	async deleteGuild(msg: Message) {
-		let guildName = msg.content.slice(CMD_GUILDS_DELETE.length).trim();
+		const guildName = msg.content.slice(CMD_GUILDS_DELETE.length).trim();
 		if(guildName === "") {
 			this.sendHelp(msg.channel as TextChannel, CMD_GUILDS_DELETE, msg.member);
 			return;
@@ -883,8 +883,8 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "GUILDS_DELETE_CONFIRMATION");
-		let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "GUILDS_DELETE_CONFIRMATION");
+		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 
 		if(!confirmation) {
 			msg.channel.send("", {
@@ -902,7 +902,7 @@ class Guilds extends Plugin implements IModule {
 
 	async joinLeaveGuild(msg: Message) {
 		// !guilds Overwatch
-		let guildName = msg.content.slice(BASE_PREFIX.length).trim();
+		const guildName = msg.content.slice(BASE_PREFIX.length).trim();
 		if(guildName.length === 0) {
 			this.sendHelp(msg.channel as TextChannel, undefined, msg.member);
 			return;
@@ -923,7 +923,7 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let role = msg.guild.roles.get(dbRow.roleId);
+		const role = msg.guild.roles.get(dbRow.roleId);
 
 		if(!role) {
 			msg.channel.send("", {
@@ -942,7 +942,7 @@ class Guilds extends Plugin implements IModule {
 	async leaveGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
 		if(!dbRow || !role) { return; }
 
-		let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
+		const cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 
 		if(dbRow.ownerId === msg.member.id || (cz.admins && cz.admins.includes(msg.member.id))) {
 			msg.channel.send("", {
@@ -969,12 +969,12 @@ class Guilds extends Plugin implements IModule {
 			str += await localizeForUser(msg.member, "GUILDS_LEAVE_INVITEWARNING");
 		}
 
-		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			custom: true,
 			string: str
 		});
 
-		let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 		if(!confirmation) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CANCELED")
@@ -1033,7 +1033,7 @@ class Guilds extends Plugin implements IModule {
 	async joinGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
 		if(!dbRow || !role) { return; }
 
-		let getEmbed = async (str: string) => {
+		const getEmbed = async (str: string) => {
 			return await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
 				custom: true,
 				string: str
@@ -1076,7 +1076,7 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let _msg = (await msg.channel.send("", {
+		const _msg = (await msg.channel.send("", {
 			embed: await getEmbed(await localizeForUser(msg.member, "GUILDS_JOIN_PROGRESS", {
 				guildName: escapeDiscordMarkdown(dbRow.name, true)
 			}))
@@ -1085,7 +1085,7 @@ class Guilds extends Plugin implements IModule {
 		let _dmRulesMsg: Message | undefined = undefined;
 
 		if(cz.rules) {
-			let code = (randomString(6)).toUpperCase();
+			const code = (randomString(6)).toUpperCase();
 
 			let __msg: Message | undefined = undefined;
 
@@ -1126,7 +1126,7 @@ class Guilds extends Plugin implements IModule {
 			let confirmed = false;
 			if(!$botConfig.sharded) {
 				try {
-					let msgs = await waitForMessages(__msg.channel as DMChannel, {
+					const msgs = await waitForMessages(__msg.channel as DMChannel, {
 						time: 60 * 1000,
 						variants: [code, code.toLowerCase(), "-"],
 						maxMatches: 1,
@@ -1150,7 +1150,7 @@ class Guilds extends Plugin implements IModule {
 					let t: NodeJS.Timer; // predefines
 					let resolve: (v: boolean) => void;
 
-					let listener = (ipcMsg: IPCMessage<{
+					const listener = (ipcMsg: IPCMessage<{
 						uid: string
 					}>) => {
 						if(typeof ipcMsg !== "object") { return; }
@@ -1251,7 +1251,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		if(cz.welcome_msg && cz.welcome_msg_channel) {
-			let channel = msg.guild.channels.get(cz.welcome_msg_channel);
+			const channel = msg.guild.channels.get(cz.welcome_msg_channel);
 			if(!channel || channel.type !== "text") {
 				return;
 			}
@@ -1259,7 +1259,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		if(cz.invite_only) {
-			let invites = (cz.invites as string[]);
+			const invites = (cz.invites as string[]);
 			invites.splice(invites.indexOf(msg.member.id), 1);
 			cz.invites = invites;
 			dbRow.customize = JSON.stringify(cz);
@@ -1294,7 +1294,7 @@ class Guilds extends Plugin implements IModule {
 	}
 
 	async getGuildInfo(msg: Message) {
-		let guildName = msg.content.slice(CMD_GUILDS_INFO.length).trim();
+		const guildName = msg.content.slice(CMD_GUILDS_INFO.length).trim();
 		if(guildName.length === 0) {
 			this.sendHelp(msg.channel as TextChannel, CMD_GUILDS_INFO, msg.member);
 			return;
@@ -1316,7 +1316,7 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let role = msg.guild.roles.get(dbRow.roleId);
+		const role = msg.guild.roles.get(dbRow.roleId);
 		if(!role) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_INFO_FAILED_ROLEFAILURE")
@@ -1324,11 +1324,11 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let guildAuthor = msg.guild.members.get(dbRow.ownerId);
+		const guildAuthor = msg.guild.members.get(dbRow.ownerId);
 
-		let fields: IEmbedOptionsField[] = [];
+		const fields: IEmbedOptionsField[] = [];
 
-		let guildMembers = msg.guild.members.filter(member => dbRow ? member.roles.has(dbRow.roleId) : false);
+		const guildMembers = msg.guild.members.filter(member => dbRow ? member.roles.has(dbRow.roleId) : false);
 
 		fields.push({
 			name: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBERS"),
@@ -1338,7 +1338,7 @@ class Guilds extends Plugin implements IModule {
 			inline: true
 		});
 
-		let isMember = msg.member.roles.has(dbRow.roleId);
+		const isMember = msg.member.roles.has(dbRow.roleId);
 
 		fields.push({
 			name: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBER"),
@@ -1350,7 +1350,7 @@ class Guilds extends Plugin implements IModule {
 			inline: true
 		});
 
-		let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
+		const cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 
 		if(cz.invite_only) {
 			let str = "";
@@ -1469,9 +1469,9 @@ class Guilds extends Plugin implements IModule {
 			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_MEMBERSCONTROL_LOADING")
 		})) as Message;
 
-		let members = msg.guild.members.filter(m => m.roles.has(dbRow.roleId));
+		const members = msg.guild.members.filter(m => m.roles.has(dbRow.roleId));
 
-		let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
+		const cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 
 		let visitor: ua.Visitor | undefined = undefined;
 		if(cz.ua) {
@@ -1573,8 +1573,8 @@ class Guilds extends Plugin implements IModule {
 					if(rightsCheck(msg.member, dbRow, true)) {
 						// command called by admin or guild owner
 						if(rightsCheck(member, dbRow, false)) {
-							let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
-							let index = (cz.admins || []).indexOf(member.id);
+							const cz = JSON.parse(dbRow.customize) as IGuildCustomize;
+							const index = (cz.admins || []).indexOf(member.id);
 							if(index < 0) {
 								str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_SERVERADM", {
 									username: escapeDiscordMarkdown(mention.username, true)
@@ -1624,7 +1624,7 @@ class Guilds extends Plugin implements IModule {
 						}
 					} else if(action === "unban") {
 						if(!cz.banned) { break; }
-						let index = cz.banned.indexOf(member.id);
+						const index = cz.banned.indexOf(member.id);
 						if(index === -1) {
 							str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTBANNED", {
 								username: escapeDiscordMarkdown(member.displayName, true)
@@ -1667,7 +1667,7 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let args = msg.content.split(",").map(arg => arg.trim());
+		const args = msg.content.split(",").map(arg => arg.trim());
 		if(args.length === 1) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_INVITE_USAGE")
@@ -1694,9 +1694,9 @@ class Guilds extends Plugin implements IModule {
 			return;
 		}
 
-		let isRevoke = args[1] === "revoke";
+		const isRevoke = args[1] === "revoke";
 
-		let cz = JSON.parse(dbRow.customize) as IGuildCustomize;
+		const cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 
 		if(!rightsCheck(msg.member, dbRow)) {
 			msg.channel.send("", {
@@ -1726,7 +1726,7 @@ class Guilds extends Plugin implements IModule {
 		if(isRevoke && cz.invites) {
 			const a = cz.invites.length;
 			for(const [uid, mention] of msg.mentions.users) {
-				let index = cz.invites.indexOf(uid);
+				const index = cz.invites.indexOf(uid);
 				if(index === -1) {
 					str += (await localizeForUser(msg.member, "GUILDS_INVITE_NOTINVITED", {
 						username: escapeDiscordMarkdown(mention.username, true)
@@ -1739,8 +1739,8 @@ class Guilds extends Plugin implements IModule {
 				})) + "\n";
 			}
 			for(const uid of cz.invites) {
-				let index = cz.invites.indexOf(uid);
-				let member = msg.guild.members.get(uid);
+				const index = cz.invites.indexOf(uid);
+				const member = msg.guild.members.get(uid);
 				if(member) {
 					if(!member.roles.has(dbRow.roleId)) {
 						continue;

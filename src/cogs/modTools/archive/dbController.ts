@@ -170,8 +170,8 @@ export function convertToDBMessage(msg: Message): IDBMessage {
 		authorId: msg.author ? msg.author.id : msg.system ? "system" : msg.member ? msg.member.id : "unknown",
 		content: msg.content,
 		other: (msg.attachments.size > 0 || msg.embeds.length > 0) ? JSON.stringify(<IEmulatedContents>{
-			attachments: msg.attachments.size > 0 ? msg.attachments.map((a) => convertAttachment(a)) : undefined,
-			embeds: msg.embeds.length > 0 ? msg.embeds.filter(e => e.type === "rich").map((e) => convertEmbed(e)) : undefined
+			attachments: msg.attachments.size > 0 ? msg.attachments.map(convertAttachment) : undefined,
+			embeds: msg.embeds.length > 0 ? msg.embeds.filter(e => e.type === "rich").map(convertEmbed) : undefined
 		}) : null
 	};
 }

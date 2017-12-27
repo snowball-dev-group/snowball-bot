@@ -54,7 +54,7 @@ export async function guildMemberAddEvent(member: GuildMember) {
 }
 
 export async function guildMemberRemoveEvent(member: GuildMember) {
-	let dbRow = await getVerificationRow(member);
+	const dbRow = await getVerificationRow(member);
 	if(dbRow) { await deleteRow(dbRow); }
 }
 
@@ -141,7 +141,7 @@ export async function isVerified(member: GuildMember) {
 		// of course member is verified
 		return true;
 	}
-	let dbElem = await getVerificationRow(member);
+	const dbElem = await getVerificationRow(member);
 	if(!dbElem) { return false; }
 	return dbElem.level >= member.guild.verificationLevel;
 }

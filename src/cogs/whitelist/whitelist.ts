@@ -137,7 +137,7 @@ export class Whitelist extends Plugin implements IModule {
 				}
 			}
 			{
-				let botsThreshold = options["bots_threshold"];
+				const botsThreshold = options["bots_threshold"];
 				if(botsThreshold !== undefined && typeof botsThreshold === "number") {
 					this.botsThreshold = Math.max(0, Math.min(100, botsThreshold));
 				}
@@ -149,13 +149,13 @@ export class Whitelist extends Plugin implements IModule {
 				}
 			}
 			{
-				let url = options["signup_url"];
+				const url = options["signup_url"];
 				if(url !== undefined && typeof url === "string") {
 					this.signupUrl = url;
 				} else { throw new Error("No sign up link provided"); }
 			}
 			{
-				let trialTime = options["trial_time"];
+				const trialTime = options["trial_time"];
 				if(trialTime !== undefined && typeof trialTime === "number") {
 					this.trialTime = options["trial_time"];
 				}
@@ -180,7 +180,7 @@ export class Whitelist extends Plugin implements IModule {
 
 	async joinedGuild(guild: Guild) {
 		this.log("info", `Joined guild "${guild.name}" (${guild.members.size} members)`);
-		let whitelistStatus = await this.isWhitelisted(guild);
+		const whitelistStatus = await this.isWhitelisted(guild);
 		if(whitelistStatus.state === GUILD_STATE.UNKNOWN || whitelistStatus.state === GUILD_STATE.BYPASS) {
 			// how about to give guild limited time?
 			// or check if it full of boooooooootz
@@ -208,8 +208,8 @@ export class Whitelist extends Plugin implements IModule {
 				until: null
 			};
 		}
-		let whitelistStatus = await getGuildPref(guild, "whitelist:status", true) as GUILD_STATE;
-		let whitelistedUntil = await getGuildPref(guild, "whitelist:until", true) as number | null;
+		const whitelistStatus = await getGuildPref(guild, "whitelist:status", true) as GUILD_STATE;
+		const whitelistedUntil = await getGuildPref(guild, "whitelist:until", true) as number | null;
 		if(!whitelistStatus) {
 			return {
 				ok: false,
@@ -298,7 +298,7 @@ export class Whitelist extends Plugin implements IModule {
 		}
 		if(mode.whitelist) {
 			await setGuildPref(guild, "whitelist:status", GUILD_STATE.TRIAL);
-			let endDate = Date.now() + this.trialTime;
+			const endDate = Date.now() + this.trialTime;
 			await setGuildPref(guild, "whitelist:until", endDate);
 			this.log("info", `Activated trial on guild "${guild.name}"`);
 		}
@@ -348,7 +348,7 @@ export class Whitelist extends Plugin implements IModule {
 
 	async onMessage(msg: Message) {
 		if(msg.content === "!sb_pstatus" && this.isAdmin(msg.member)) {
-			let whitelistInfo = await this.isWhitelisted(msg.guild);
+			const whitelistInfo = await this.isWhitelisted(msg.guild);
 			let str = "#" + (await localizeForUser(msg.member, "WHITELIST_INFO_HEADER", {
 				guildName: escapeDiscordMarkdown(msg.guild.name, true)
 			})) + "\n";
@@ -375,7 +375,7 @@ export class Whitelist extends Plugin implements IModule {
 			}
 			if(whitelistInfo.state === GUILD_STATE.LIMITED || whitelistInfo.state === GUILD_STATE.TRIAL) {
 				str += "\n";
-				let endString = moment(whitelistInfo.state, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+				const endString = moment(whitelistInfo.state, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 				str += await localizeForUser(msg.member, "WHITELIST_INFO_UNTIL", {
 					endDate: endString
 				});
@@ -388,11 +388,11 @@ export class Whitelist extends Plugin implements IModule {
 
 		if(msg.author.id !== $botConfig.botOwner) { return; }
 
-		let cmd = simpleCmdParse(msg.content);
+		const cmd = simpleCmdParse(msg.content);
 
 		if(cmd.command !== "!whitelist") { return; }
 
-		let u = msg.member || msg.author;
+		const u = msg.member || msg.author;
 
 		if(cmd.subCommand === "activate") {
 			if(cmd.args && cmd.args.length === 2) {
@@ -403,7 +403,7 @@ export class Whitelist extends Plugin implements IModule {
 					return;
 				}
 				if(cmd.args[1] === "forever") {
-					let confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
+					const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 						key: "WHITELIST_ACTIVATE_CONFIRM_FOREVER",
 						formatOptions: {
 							serverId: cmd.args[0]
@@ -417,12 +417,12 @@ export class Whitelist extends Plugin implements IModule {
 					}
 					await setGuildPref(cmd.args[0], "whitelist:status", GUILD_STATE.UNLIMITED);
 				} else {
-					let time = parseTime(cmd.args[1], "ms");
-					let endTime = new Date(Date.now() + time);
+					const time = parseTime(cmd.args[1], "ms");
+					const endTime = new Date(Date.now() + time);
 
-					let endString = moment(endTime, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+					const endString = moment(endTime, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 
-					let confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
+					const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 						key: "WHITELIST_ACTIVATE_CONFIRM_LIMITED",
 						formatOptions: {
 							timeString: endString,
@@ -463,7 +463,7 @@ export class Whitelist extends Plugin implements IModule {
 					return;
 				}
 
-				let confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
+				const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 					key: "WHITELIST_DEACTIVATE_CONFIRM",
 					formatOptions: {
 						serverId: cmd.args[0]
@@ -502,7 +502,7 @@ export class Whitelist extends Plugin implements IModule {
 					return;
 				}
 
-				let confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
+				const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 					key: "WHITELIST_BAN_CONFIRM",
 					formatOptions: {
 						serverId: cmd.args[0]
@@ -519,7 +519,7 @@ export class Whitelist extends Plugin implements IModule {
 				await delGuildPref(cmd.args[0], "whitelist:until");
 				await setGuildPref(cmd.args[0], "whitelist:status", GUILD_STATE.BANNED);
 
-				let currentGuild = $discordBot.guilds.get(cmd.args[0]);
+				const currentGuild = $discordBot.guilds.get(cmd.args[0]);
 				if(currentGuild) {
 					await currentGuild.leave();
 				}
@@ -538,7 +538,7 @@ export class Whitelist extends Plugin implements IModule {
 				});
 			}
 		} else if(cmd.subCommand === "mode") {
-			let modes = await this.fetchCurrentMode();
+			const modes = await this.fetchCurrentMode();
 			if(cmd.args && cmd.args.length === 2) {
 				if(!["on", "off"].includes(cmd.args[0]) || !allowedModes.includes(cmd.args[1])) {
 					msg.channel.send("", {
@@ -552,8 +552,8 @@ export class Whitelist extends Plugin implements IModule {
 					return;
 				}
 
-				let modeVal = cmd.args[0] === "on";
-				let selectedMode = ((arg) => {
+				const modeVal = cmd.args[0] === "on";
+				const selectedMode = ((arg) => {
 					switch(arg) {
 						case "nobotfarms": return "noBotFarms";
 						case "trial": return "trialAllowed";

@@ -76,11 +76,11 @@ export function command(category: string, command: string, description: string, 
 
 export async function generateHelpContent(msg: Message) {
 	let rStr = "";
-	let user = msg.channel.type === "text" ? msg.member : msg.author;
+	const user = msg.channel.type === "text" ? msg.member : msg.author;
 	const categories = init();
 
-	for(let category in categories) {
-		let commands = categories[category];
+	for(const category in categories) {
+		const commands = categories[category];
 		if(!commands) { continue; }
 
 		let str = "";
@@ -127,7 +127,7 @@ export async function generateHelpContent(msg: Message) {
 			str += `: ${desc}\n`;
 			if(target.arguments) {
 				for(let argName in target.arguments) {
-					let argInfo = target.arguments[argName];
+					const argInfo = target.arguments[argName];
 					if(argName.startsWith("loc:")) {
 						argName = await localizeForUser(user, argName.slice("loc:".length));
 					}
@@ -159,7 +159,7 @@ export async function generateHelpContent(msg: Message) {
 		}
 
 		if(str.trim().length > 0) {
-			let catName = await localizeForUser(user, categoryLocalizedName(category));
+			const catName = await localizeForUser(user, categoryLocalizedName(category));
 			rStr += `\n# ${catName}\n${str}`;
 		}
 	}

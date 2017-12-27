@@ -7,47 +7,47 @@ import { timeDiff } from "../../../utils/time";
 const CACHE_OWNER = "profileplug:ow";
 const LOG = getLogger("OWApi");
 
-let alreadyFetching = new Map<string, Promise<IBlobResponse>>();
+const alreadyFetching = new Map<string, Promise<IBlobResponse>>();
 
 export async function fetchBlobProfile(battletag: string, platform?: string): Promise<IBlobResponse> {
-	let context = `${battletag}//${platform}`;
+	const context = `${battletag}//${platform}`;
 	if(alreadyFetching.has(context)) {
-		let previousContextPromise = alreadyFetching.get(context);
+		const previousContextPromise = alreadyFetching.get(context);
 		if(previousContextPromise) {
 			return await previousContextPromise;
 		}
 	}
-	let contextFunction: {
+	const contextFunction: {
 		resolve?: (obj: IBlobResponse) => void;
 		reject?: (obj: any) => void
 	} = {};
-	let contextPromise = new Promise<IBlobResponse>((res, rej) => {
+	const contextPromise = new Promise<IBlobResponse>((res, rej) => {
 		contextFunction.resolve = res;
 		contextFunction.reject = rej;
 	});
 	alreadyFetching.set(context, contextPromise);
 
 	let resp: Response | undefined = undefined;
-	let logPrefix = `fetching (${battletag}, ${platform})`;
-	let uri = `https://owapi.net/api/v3/u/${battletag}/blob${platform ? `?platform=${platform}` : ""}`;
+	const logPrefix = `fetching (${battletag}, ${platform})`;
+	const uri = `https://owapi.net/api/v3/u/${battletag}/blob${platform ? `?platform=${platform}` : ""}`;
 	try {
 		LOG("info", logPrefix, "Fetching URL", uri);
 		resp = await fetch(uri);
 	} catch(err) {
 		LOG("err", logPrefix, "Errored response", err);
 		if(err.status === 404) {
-			let _err = new Error("Profile not found.");
+			const _err = new Error("Profile not found.");
 			if(contextFunction.reject) { contextFunction.reject(_err); }
 			throw _err;
 		}
-		let _err = new Error("API error");
+		const _err = new Error("API error");
 		if(contextFunction.reject) { contextFunction.reject(_err); }
 		throw _err;
 	}
 
 	if(!resp) {
 		LOG("err", logPrefix, "Got response, but no `resp` variable, wth...");
-		let _err = new Error("No API response");
+		const _err = new Error("No API response");
 		if(contextFunction.reject) { contextFunction.reject(_err); }
 		throw _err;
 	}
@@ -58,21 +58,21 @@ export async function fetchBlobProfile(battletag: string, platform?: string): Pr
 		parsed = await resp.json();
 	} catch(err) {
 		LOG("info", logPrefix, "Parsing failed", err, await resp.text());
-		let _err = new Error("Can't parse API response");
+		const _err = new Error("Can't parse API response");
 		if(contextFunction.reject) { contextFunction.reject(_err); }
 		throw _err;
 	}
 
 	if(!parsed) {
 		LOG("err", logPrefix, "Parsed response, but no `parsed` variable, wth...");
-		let _err = new Error("Something went wrong (parsing)");
+		const _err = new Error("Something went wrong (parsing)");
 		if(contextFunction.reject) { contextFunction.reject(_err); }
 		alreadyFetching.delete(context);
 		throw _err;
 	}
 
 	if(parsed.retry) {
-		let _delayedResp = (await new Promise((res, rej) => {
+		const _delayedResp = (await new Promise((res, rej) => {
 			setTimeout(() => {
 				fetchBlobProfile(battletag, platform).then(res, rej);
 			}, parsed ? parsed.retry * 1000 : 5000);
@@ -91,7 +91,7 @@ export async function fetchBlobProfile(battletag: string, platform?: string): Pr
 }
 
 export async function getProfile(battletag: string, region: string = "eu", platform: string = "pc"): Promise<IRegionalProfile> {
-	let logPrefix = `${battletag}(${region}, ${platform}): `;
+	const logPrefix = `${battletag}(${region}, ${platform}): `;
 	let cached: ICachedRow | undefined = undefined;
 	try {
 		cached = await getFromCache(CACHE_OWNER, battletag);

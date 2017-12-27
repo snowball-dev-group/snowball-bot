@@ -35,7 +35,7 @@ class HelpfulCommand extends Plugin implements IModule {
 		}
 
 		try {
-			let hStr = await generateHelpContent(msg);
+			const hStr = await generateHelpContent(msg);
 			await msg.author.send(hStr, {
 				split: true,
 				code: "md"

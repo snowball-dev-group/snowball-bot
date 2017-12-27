@@ -56,20 +56,20 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public async subscribeTo(streamer: IStreamingServiceStreamer) {
-		let listener = async (data: IMixerChannel) => {
+		const listener = async (data: IMixerChannel) => {
 			/**
 			* Cached data to check updates
 			*/
 			let currentData = this.currentData[streamer.uid];
 			if(data.online === true) {
 				// stream goes online
-				let channel = await this.fetchChannel(streamer.uid);
+				const channel = await this.fetchChannel(streamer.uid);
 				if(!channel.online) {
 					this.log("warn", "We were notified about starting stream of", streamer.uid, "but channel is offline");
 					return;
 				}
 				// start time
-				let startedAt = await this.getStreamStartTime(streamer.uid);
+				const startedAt = await this.getStreamStartTime(streamer.uid);
 				if(!startedAt) {
 					this.log("err", "Unknown error with streamer", streamer.uid);
 					return;
@@ -96,18 +96,18 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 
 					delete this.currentData[streamer.uid];
 				} else {
-					let updated = !!data.name || !!data.audience || data.type !== undefined || (data.user && data.user.avatarUrl);
+					const updated = !!data.name || !!data.audience || data.type !== undefined || (data.user && data.user.avatarUrl);
 					if(updated) {
 						// getting old id
-						let oldId = this.generateID(currentData);
+						const oldId = this.generateID(currentData);
 
 						// updating props
-						for(let updated in data) {
+						for(const updated in data) {
 							this.currentData[streamer.uid][updated] = data[updated];
 						}
 
 						// updating started at time
-						let startedAt = await this.getStreamStartTime(streamer.uid);
+						const startedAt = await this.getStreamStartTime(streamer.uid);
 
 						// updating cached
 						this.currentData[streamer.uid].startedAt = startedAt;
@@ -145,7 +145,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public removeSubscribtion(uid: string) {
-		let listener = this._carinaListeners.get(uid);
+		const listener = this._carinaListeners.get(uid);
 		if(listener) {
 			this.ca.unsubscribe(`channel:${uid}:update`);
 			delete this._carinaListeners[uid];
@@ -176,7 +176,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
-		let json = (await this.makeRequest(this.getAPIURL_Channel(username))) as IMixerChannel;
+		const json = (await this.makeRequest(this.getAPIURL_Channel(username))) as IMixerChannel;
 		return {
 			serviceName: this.name,
 			uid: json.id + "",
@@ -185,9 +185,9 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private async makeRequest(uri: string, attempt: number = 0): Promise<any> {
-		let resp = await fetch(uri);
+		const resp = await fetch(uri);
 		if(resp.status === 429) {
-			let delay = parseInt(resp.headers.get("retry-after"), 10);
+			const delay = parseInt(resp.headers.get("retry-after"), 10);
 			this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 			await sleep(delay);
 			return await this.makeRequest(uri, attempt + 1);
@@ -261,7 +261,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	async unload() {
-		for(let uid in this._carinaListeners) {
+		for(const uid in this._carinaListeners) {
 			this.removeSubscribtion(uid);
 		}
 		return true;
