@@ -36,12 +36,31 @@ const MESSAGES_LIMIT = 5000;
 const DEFAULT_ENABLED_STATE = false; // true = enabled
 
 interface IModToolsArchiveOptions {
+	/**
+	 * Lists of globally banned keycases
+	 */
 	banned?: {
+		/**
+		 * Array of Discord IDs with banned authors
+		 */
 		authors?: string[];
+		/**
+		 * Array of Discord IDs with banned channels
+		 */
 		channels?: string[];
+		/**
+		 * Array of Discord IDs with banned guilds
+		 */
 		guilds?: string[];
 	};
+	/**
+	 * Use true if you want to log bot's messages
+	 */
 	bots: boolean;
+	/**
+	 * Use true if you want to log any messages in DM
+	 */
+	dms: boolean;
 }
 
 class ModToolsArchive extends Plugin implements IModule {
@@ -58,12 +77,17 @@ class ModToolsArchive extends Plugin implements IModule {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
-		this._options = options || {};
+		this._options = {
+			bots: false,
+			dms: true,
+			...options
+		};
 		this._log("info", "The settings are:", options);
 	}
 
 	async onMessage(msg: Message) {
 		if(this._options.bots !== undefined && !this._options.bots && msg.author.bot) { return; }
+
 		if(!!this._options.banned) {
 			if(!!this._options.banned.authors && this._options.banned.authors.includes(msg.author.id)) {
 				return;
@@ -73,6 +97,7 @@ class ModToolsArchive extends Plugin implements IModule {
 				return;
 			}
 		}
+
 		try {
 			await this._recordMessage(msg);
 		} catch(err) {
@@ -570,7 +595,10 @@ class ModToolsArchive extends Plugin implements IModule {
 		});
 	}
 
-	private async _isEnabledAt(guild: Guild) : Promise<boolean> {
+	private async _isEnabledAt(guild: Guild|"dm") : Promise<boolean> {
+		if(!guild) { return false; }
+		if(guild === "dm") { return this._options.dms; }
+
 		const cachedStatus = this._enabledAt[guild.id];
 		if(typeof cachedStatus === "boolean") { return cachedStatus; }
 
@@ -581,7 +609,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	}
 
 	private async _recordMessage(msg: Message) {
-		if(!(await this._isEnabledAt(msg.guild))) { return; }
+		if(!(await this._isEnabledAt(msg.channel.type === "dm" ? "dm" : msg.guild))) { return; }
 		const payload = convertToDBMessage(msg);
 		return await this._controller.insertMessage(payload);
 	}
