@@ -17,15 +17,17 @@ npm install
 
 **Yarn**:
 
+> :warning: **YARN IS NOT SUPPORTED AT THE MOMENT.** We love yarn, but there's a big problem comes with it: no git subpackages updates. As we started to use alpha releases of `discord.js`, typings of `discord.js` don't get downloaded by yarn. It causes errors on build and kills code editor's linting + suggestions.
+
 ```bash
 yarn global add typescript
 yarn install
 ```
 
-Then try to run grunt build using this command:
+Then try to run `build` npm script by using this command:
 
 ```bash
-grunt
+npm build
 ```
 
 All compiled files will stay in directory named `out`.
