@@ -206,7 +206,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		this.servicesLoader = new ModuleLoader({
 			name: "StreamNotifications:Services",
-			basePath: "./cogs/streamNotifications/services/",
+			basePath: `${__dirname}/services/`,
 			registry: this.servicesList,
 			defaultSet: []
 		});
