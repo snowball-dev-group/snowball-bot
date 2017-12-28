@@ -127,9 +127,10 @@ export default class PrefixAll implements IModule {
 	}
 
 	public async setPrefixes(guild: Guild, prefixes: string[] | null) {
-		const rawRow = await this._dbController.setPrefixes(guild, prefixes);
-		if(!rawRow.prefix) { return this._prefixesCache[guild.id] = null; }
-		return this._prefixesCache[guild.id] = JSON.parse(rawRow.prefix);
+		await this._dbController.setPrefixes(guild, prefixes);
+		const newPrefixes = await this._dbController.getPrefixes(guild);
+		if(!newPrefixes) { return this._prefixesCache[guild.id] = null; }
+		return this._prefixesCache[guild.id] = newPrefixes;
 	}
 
 	public async unload() {

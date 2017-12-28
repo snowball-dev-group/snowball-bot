@@ -55,21 +55,21 @@ export class PrefixAllDBController {
 	 * @param {Guild|string} guild Selected guild. ID or the discord.js' Guild object
 	 * @param {string[]} prefixes Prefixes for the selected guild.
 	 */
-	public async setPrefixes(guild: Guild | string, prefixes: string[] | null) {
+	public async setPrefixes(guild: Guild | string, prefixes: string[] | null) : Promise<void> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		const isDelete = prefixes === null;
 		if(!Array.isArray(prefixes) && !isDelete) { throw new Error("The `prefixes` argument should be array of strings or `null`"); }
 		const currentRow = await this._getGuildRow(this._normalizeGuildId(guild));
 		if(!currentRow) {
-			return <IGuildPrefixRawRow>await this._db(this._tableName).insert(<IGuildPrefixRawRow>{
+			await this._db(this._tableName).insert(<IGuildPrefixRawRow>{
 				guildId: this._normalizeGuildId(guild),
 				prefix: isDelete ? null : JSON.stringify(prefixes)
-			}, "*");
+			});
 		} else {
-			return <IGuildPrefixRawRow>await this._db(this._tableName).update({
-				prefix: isDelete ? null : JSON.stringify(prefixes)
-			}).where({
+			await this._db(this._tableName).where({
 				guildId: currentRow.guildId
+			}).update({
+				prefix: isDelete ? null : JSON.stringify(prefixes)
 			});
 		}
 	}
