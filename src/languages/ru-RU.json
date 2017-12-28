@@ -488,6 +488,8 @@
     "PREFIXALL_INFO_LIST": "**Эта команда показывает список префиксов и не требует аргументов**.",
     "PREFIXALL_PREFIX_LISTITEM": "• {prefix}",
     "PREFIXALL_PREFIX_LIST": "**Список префиксов этого сервера**:\n\n{items}",
+    "PREFIXALL_PREFIX_NOPREFIXES": "Сервер не имеет префиксов. Удаление невозможно.",
+    "PREFIXALL_PREFIX_LIST_NONE": "Список префиксов этого сервера пуст.",
     "PREMIUMCTL_CHECKOUT_ERR_MENTIONS": "Вы должны упомянуть одного пользователя, чью подписку Вы хотите проверить, либо не упомянать никого, если хотите проверить статус своей подписки.",
     "PREMIUMCTL_CHECKOUT_ERR_NOTADM": "У Вас нет права проверять чужие подписки",
     "PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER": "Данный пользователь не является премиальным подписчиком",

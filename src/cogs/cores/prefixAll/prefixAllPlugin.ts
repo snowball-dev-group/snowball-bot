@@ -5,7 +5,7 @@ import { ISimpleCmdParseResult, simpleCmdParse, stripSpaces } from "../../utils/
 import { Plugin } from "../../plugin";
 import PrefixAll from "./prefixAll";
 import { IModule, ModuleBase } from "../../../types/ModuleLoader";
-import { Guild, Message } from "discord.js";
+import { Message } from "discord.js";
 import { randomNumber, randomPick } from "../../utils/random";
 import { createConfirmationMessage } from "../../utils/interactive";
 
@@ -118,7 +118,12 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 		const additionalPrefix = stripSpaces(msg.content.slice(cmd.length + 1 + parsed.subCommand!.length));
 
-		const guildPrefixes = await this._getGuildPrefixes(prefixAllInstance, msg.guild);
+		let guildPrefixes = await prefixAllInstance.getPrefixes(msg.guild);
+
+		if(!guildPrefixes) {
+			this.log("info", `#add: prefixAllInstance.getPrefixes(${msg.guild.id}): Returned none prefixes! Fallback to [] used`);
+			guildPrefixes = [];
+		}
 
 		if(guildPrefixes.includes(additionalPrefix)) {
 			return msg.channel.send({
@@ -135,7 +140,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			});
 		}
 
-		const limitation = whitelistInstance && (await whitelistInstance.isWhitelisted(msg.guild)).state === -1 ? this.limitations.partners : this.limitations.non_partners;
+		const limitation = whitelistInstance && (await whitelistInstance.isWhitelisted(msg.guild)).state === 1 ? this.limitations.partners : this.limitations.non_partners;
 
 		if(guildPrefixes.length >= limitation) { // inclusive
 			return msg.channel.send({
@@ -191,14 +196,21 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 		const prefixToRemoval = stripSpaces(msg.content.slice(cmd.length + 1 + parsed.subCommand!.length));
 
-		const guildPrefixes = await this._getGuildPrefixes(prefixAllInstance, msg.guild);
+		const guildPrefixes = await prefixAllInstance.getPrefixes(msg.guild);
+
+		if(!guildPrefixes) {
+			this.log("info", `#remove: prefixAllInstance.getPrefixes(${msg.guild.id}): Returned none prefixes!`);
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREFIXALL_PREFIX_NOPREFIXES")
+			});
+		}
 
 		if(guildPrefixes.length === 1) {
 			return await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREFIXALL_PREFIX_CANTREMOVELATEST")
 			});
 		}
-		
+
 		const index = guildPrefixes.indexOf(prefixToRemoval);
 
 		if(index === -1) {
@@ -254,10 +266,17 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			});
 		}
 
-		const guildPrefixes = await this._getGuildPrefixes(prefixAllInstance, msg.guild);
+		const guildPrefixes = await prefixAllInstance.getPrefixes(msg.guild);
+
+		if(!guildPrefixes) {
+			this.log("info", `#list: prefixAllInstance.getPrefixes(${msg.guild.id}): Returned none prefixes!`);
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREFIXALL_PREFIX_LIST_NONE")
+			});
+		}
 
 		const items:string[] = [];
-		
+
 		for(const prefix of guildPrefixes) {
 			items.push(await localizeForUser(msg.member, "PREFIXALL_PREFIX_LISTITEM", {
 				prefix
@@ -272,14 +291,6 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 				}
 			})
 		});
-	}
-
-	/**
-	 * With default prefix fallback
-	 */
-	private async _getGuildPrefixes(prefixAllInstance: PrefixAll, guild: Guild) {
-		const guildPrefixes = await prefixAllInstance.getPrefixes(guild);
-		return guildPrefixes ? guildPrefixes : [prefixAllInstance.defaultPrefix];
 	}
 
 	public async unload() {
