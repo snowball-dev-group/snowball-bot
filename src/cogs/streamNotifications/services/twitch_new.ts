@@ -21,9 +21,9 @@ const POSSIBLE_METADATA_GAMEIDS = [{ // hardcoded stuff isn't okay ikr
 const EMOJI_ID_REGEX = /[0-9]{17,19}/;
 const EXLUDED_USER_PROPS_OFUPD = ["offline_banner"];
 
-const CACHEDIFF_METADATA = 148888; // almost 2.5 minutes (fetching reason in not exactly count)
-const CACHEDIFF_GAME = 7200000; // 2 hours
+const CACHEDIFF_GAME = 18000000; // 5 hours
 const CACHEDIFF_USER = 1200000; // 20 minutes
+const OFF_METADATA = 5000; // 5 seconds from updating interval
 
 interface IServiceOptions {
 	clientId: string;
@@ -209,7 +209,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 			if(POSSIBLE_METADATA_GAMEIDS.find(g => g.id === stream.game_id)) {
 				const metadata =  this.metadataStore[uid];
-				if(!metadata || (Date.now() - metadata.fetchedAt) > CACHEDIFF_METADATA) {
+				if(!metadata || (Date.now() - metadata.fetchedAt) > (this.options.updatingInterval - OFF_METADATA)) {
 					fetchMetadata.push(uid);
 				}
 			}
@@ -313,13 +313,14 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			const createdPayload = createdPayloads[uid];
 
 			if(createdPayload) {
-				this.emit("online", { // main module will skip this
-					id: createdPayload.id,
-					streamer,
-					status: "online",
-					payload: createdPayload
-				});
-				if(createdPayload && activePayload) {
+				if(!activePayload) {
+					this.emit("online", {
+						id: createdPayload.id,
+						streamer,
+						status: "online",
+						payload: createdPayload
+					});
+				} else if(activePayload) {
 					// check if stream is updated
 					
 					let _updated: string|undefined = undefined;
@@ -373,6 +374,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 					}
 				}
 
+				// updating active payload
 				this.currentPayloadsStore[uid] = {
 					fetchedAt: createdAt,
 					value: createdPayload
