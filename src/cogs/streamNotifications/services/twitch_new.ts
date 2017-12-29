@@ -20,13 +20,15 @@ const POSSIBLE_METADATA_GAMEIDS = [{ // hardcoded stuff isn't okay ikr
 }];
 const EMOJI_ID_REGEX = /[0-9]{17,19}/;
 const EXLUDED_USER_PROPS_OFUPD = ["offline_banner"];
-
+const UNKNOWN_GAME_EMOJI = "unknown_game";
 const CACHEDIFF_GAME = 18000000; // 5 hours
 const CACHEDIFF_USER = 1200000; // 20 minutes
 const OFF_METADATA = 5000; // 5 seconds from updating interval
+const STREAM_DEATHTIME = 120000; // time after which stream cache expires
 
 interface IServiceOptions {
 	clientId: string;
+	streamDeathTime: number;
 	updatingInterval: number;
 	emoji: IHashMap<string|undefined>;
 }
@@ -63,6 +65,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			options.updatingInterval = Math.max(options.updatingInterval, DEFAULT_UPDATE_INTERVAL);
 		}
 
+		if(!options.streamDeathTime) {
+			options.streamDeathTime = STREAM_DEATHTIME;
+		} else {
+			options.streamDeathTime = Math.max(options.streamDeathTime, STREAM_DEATHTIME);
+		}
+
 		for(const gameId in options.emoji) {
 			const id = options.emoji[gameId];
 			if(!id) { continue; } // typescript magic!
@@ -77,6 +85,18 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			}
 
 			options.emoji[gameId] = emoji.toString();
+		}
+
+		const unknownGameEmojiID = options.emoji[UNKNOWN_GAME_EMOJI];
+		if(!unknownGameEmojiID) {
+			throw new Error("Emoji for unknown game not found");
+		} else {
+			const emoji = $discordBot.emojis.get(unknownGameEmojiID);
+			if(!emoji) {
+				throw new Error(`Emoji for unknown game with ID "${unknownGameEmojiID}"`);
+			}
+
+			options.emoji[UNKNOWN_GAME_EMOJI] = emoji.toString();
 		}
 
 		this.options = options;
@@ -160,7 +180,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 		for(const uid of uids) {
 			const streamCache = this.streamsStore[uid];
-			if(!streamCache || (Date.now() - streamCache.fetchedAt) > this.options.updatingInterval) {
+			if(!streamCache || (Date.now() - streamCache.fetchedAt) > this.options.streamDeathTime) {
 				fetchStreams.push(uid);
 			}
 		}
@@ -267,7 +287,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			const game = gameCache ? gameCache.value : undefined;
 			const metadataCache = game ? this.metadataStore[stream.user_id] : undefined;
 			const metadata = metadataCache ? metadataCache.value : undefined;
-			const emoji = game ? this.options.emoji[game.id] : undefined;
+			const emoji = game ? this.options.emoji[game.id] || this.options.emoji[UNKNOWN_GAME_EMOJI] : null;
 
 			ready[uid] = {
 				game: game ? (emoji ? { emoji, ...game } : game) : undefined,
@@ -353,7 +373,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 						if(createdPayload.metadata && !activePayload.metadata) {
 							return "metadata#created";
-						} else if(createdPayload.metadata && activePayload.metadata && createdPayload.metadata !== activePayload.metadata) {
+						} else if(!this._isMetadataEqual(createdPayload.metadata, activePayload.metadata)) {
 							return "metadata#updated";
 						} else if(!createdPayload.metadata && activePayload.metadata) {
 							return "metadata#removed";
@@ -394,6 +414,67 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 
 		this.lastFetchedAt = createdAt;
+	}
+
+	private _isMetadataEqual(a?: ITwitchMetadata, b?: ITwitchMetadata) {
+		if((!a && !b) || (!a && b) || (a && !b)) { return true; }
+		if(!a || !b) { return false; } // fucking ts
+		if(a === b) { return true; } // woah?
+
+		if(a.game_id !== b.game_id) { return false; }
+		if(a.user_id !== b.user_id) { return false; }
+
+		if(this._oneOfThemNull(a.hearthstone, b.hearthstone)) { return false; }
+		else if(a.hearthstone && b.hearthstone) {
+			// comprasion
+			if(this._oneOfThemNull(a.hearthstone.broadcaster, b.hearthstone.broadcaster)) {
+				return false;
+			} else if(a.hearthstone.broadcaster && b.hearthstone.broadcaster) {
+				if(!this._areTheseObjectsEqual(a.hearthstone.broadcaster, b.hearthstone.broadcaster)) {
+					return false;
+				}
+			}
+
+			if(this._oneOfThemNull(a.hearthstone.opponent, b.hearthstone.opponent)) {
+				return false;
+			} else {
+				if(!this._areTheseObjectsEqual(a.hearthstone.opponent, b.hearthstone.opponent)) {
+					return false;
+				}
+			}
+		}
+
+		if(this._oneOfThemNull(a.overwatch, b.overwatch)) { return false; }
+		else if(a.overwatch && b.overwatch) {
+			if(this._oneOfThemNull(a.overwatch.broadcaster, b.overwatch.broadcaster)) {
+				return false;
+			} else if(a.overwatch.broadcaster && b.overwatch.broadcaster) {
+				if(!this._areTheseObjectsEqual(a.overwatch.broadcaster.hero, b.overwatch.broadcaster.hero)) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	private _oneOfThemNull(a?: any, b?: any) : boolean {
+		return (!a && b) || (a && !b);
+	}
+
+	private _areTheseObjectsEqual(a: object, b: object) {
+		const aKeys = Object.keys(a);
+		const bKeys = Object.keys(b);
+
+		if(aKeys.length !== bKeys.length) { return false; }
+
+		if(aKeys.find(key => !bKeys.includes(key))) { return false; }
+
+		for(const key of aKeys) {
+			if(a[key] !== b[key]) { return false; }
+		}
+
+		return true;
 	}
 
 	// ========================================
