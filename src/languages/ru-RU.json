@@ -706,6 +706,8 @@
     "STREAMING_YOUTUBE_USERNOTFOUND": "Такой канал YouTube не найден",
     "STREAMING_GAME_VALUE_OVERWATCH": "Герой: **{name}** ({role})",
     "STREAMING_GAME_VALUE_HEARTHSTONE": "**{target, select, broadcaster {Стример} other {Противник}}**: {name} ({class} / {type})",
+    "STREAMING_SERVICE@TWITCH_NEW": "Twitch (бета)",
+    "STREAMING_DESCRIPTION@TWITCH_NEW": "{emoji} {username} {type, select, live {стримит} other {производит VODCAST}}",
     "TATSUMAKIPROFILEPLUGIN_CREDITS": "{credits, number} кредиты",
     "TATSUMAKIPROFILEPLUGIN_LVL": "{lvl, number} уровень",
     "TATSUMAKIPROFILEPLUGIN_RANK": "#{rank, number} глоб. ранг",

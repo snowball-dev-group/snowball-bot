@@ -20,7 +20,9 @@ const POSSIBLE_METADATA_GAMEIDS = [{ // hardcoded stuff isn't okay ikr
 }];
 const EMOJI_ID_REGEX = /[0-9]{17,19}/;
 const EXLUDED_USER_PROPS_OFUPD = ["offline_banner"];
-const UNKNOWN_GAME_EMOJI = "unknown_game";
+const EMOJINAME_UNKNOWN_GAME = "unknown_game";
+const EMOJINAME_STREAMING = "streaming";
+const EMOJINAME_VODCAST = "vodcast";
 const CACHEDIFF_GAME = 18000000; // 5 hours
 const CACHEDIFF_USER = 1200000; // 20 minutes
 const OFF_METADATA = 5000; // 5 seconds from updating interval
@@ -87,9 +89,16 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			options.emoji[gameId] = emoji.toString();
 		}
 
-		const unknownGameEmojiID = options.emoji[UNKNOWN_GAME_EMOJI];
-		if(!unknownGameEmojiID) {
-			throw new Error("Emoji for unknown game not found");
+		if(!options.emoji[EMOJINAME_UNKNOWN_GAME]) {
+			options.emoji[EMOJINAME_UNKNOWN_GAME] = "❔";
+		}
+
+		if(!options.emoji[EMOJINAME_STREAMING]) {
+			options.emoji[EMOJINAME_STREAMING] = "🔴";
+		}
+
+		if(!options.emoji[EMOJINAME_VODCAST]) {
+			options.emoji[EMOJINAME_VODCAST] = "🔵";
 		}
 
 		this.options = options;
@@ -280,7 +289,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			const game = gameCache ? gameCache.value : undefined;
 			const metadataCache = game ? this.metadataStore[stream.user_id] : undefined;
 			const metadata = metadataCache ? metadataCache.value : undefined;
-			const emoji = game ? this.options.emoji[game.id] || this.options.emoji[UNKNOWN_GAME_EMOJI] : null;
+			const emoji = game ? this.options.emoji[game.id] || this.options.emoji[EMOJINAME_UNKNOWN_GAME] : null;
 
 			ready[uid] = {
 				game: game ? (emoji ? { emoji, ...game } : game) : undefined,
@@ -496,8 +505,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			})
 		}];
 
-		const gameMetadata = payload.game ? payload.metadata : undefined; // in case if metadata provided but game not
-		if(gameMetadata) {                                              // yep such thing could happen
+		const gameMetadata = payload.game ? payload.metadata : undefined;
+		if(gameMetadata) { // not showing metadata if don't have game
 			switch(gameMetadata.game_id) {
 				case "488552": {
 					const owMetadata = gameMetadata.overwatch;
@@ -553,11 +562,14 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		return {
 			footer: {
 				icon_url: TWITCH_ICON,
-				text: "Twitch (beta)"
+				text: $localizer.getString(lang, "STREAMING_SERVICE@TWITCH_NEW")
 			},
-			description: $localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
+			description: streamStatus.status === "online" ? $localizer.getFormattedString(lang, "STREAMING_DESCRIPTION@TWITCH_NEW", {
 				username: escapeDiscordMarkdown(payload.streamer.displayName, true),
-				type: payload.type
+				type: payload.type,
+				emoji: this.options.emoji[payload.type === "vodcast" ? EMOJINAME_VODCAST : EMOJINAME_STREAMING]!
+			}) : $localizer.getFormattedString(lang, "STREAMING_DESCRIPTION_OFFLINE", {
+				username: escapeDiscordMarkdown(payload.streamer.displayName, true)
 			}),
 			timestamp: payload.startedAt,
 			thumbnail: {
