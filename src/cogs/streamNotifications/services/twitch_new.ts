@@ -375,10 +375,10 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 						if(createdPayload.metadata && !activePayload.metadata) {
 							return "metadata#created";
-						} else if(!this._isMetadataEqual(createdPayload.metadata, activePayload.metadata)) {
-							return "metadata#updated";
-						} else if(!createdPayload.metadata && activePayload.metadata) {
+						} if(!createdPayload.metadata && activePayload.metadata) {
 							return "metadata#removed";
+						} else if((createdPayload.metadata && activePayload.metadata) && !this._isMetadataEqual(createdPayload.metadata, activePayload.metadata)) {
+							return "metadata#updated";
 						}
 
 						return undefined;
