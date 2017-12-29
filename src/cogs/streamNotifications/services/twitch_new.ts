@@ -90,13 +90,6 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		const unknownGameEmojiID = options.emoji[UNKNOWN_GAME_EMOJI];
 		if(!unknownGameEmojiID) {
 			throw new Error("Emoji for unknown game not found");
-		} else {
-			const emoji = $discordBot.emojis.get(unknownGameEmojiID);
-			if(!emoji) {
-				throw new Error(`Emoji for unknown game with ID "${unknownGameEmojiID}"`);
-			}
-
-			options.emoji[UNKNOWN_GAME_EMOJI] = emoji.toString();
 		}
 
 		this.options = options;
