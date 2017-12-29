@@ -465,6 +465,10 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private _areTheseObjectsEqual(a: object, b: object) {
+		if(!a || !b) {
+			return (!a && !b) ? true : false; // if they both are undefined = they're the same
+		}
+
 		const aKeys = Object.keys(a);
 		const bKeys = Object.keys(b);
 
