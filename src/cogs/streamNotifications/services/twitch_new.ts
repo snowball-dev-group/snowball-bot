@@ -5,7 +5,7 @@ import { chunk } from "lodash";
 import { EventEmitter } from "events";
 import { IHashMap } from "../../../types/Interfaces";
 
-const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
+const TWITCH_ICON = "https://p.dafri.top/snowball/res/twitch_glitch.png";
 const TWITCH_COLOR = 0x6441A4;
 const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
 const TWITCH_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_twitch.png";
@@ -298,6 +298,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			this.log("warn", "Passed zero subscriptions!");
 			return;
 		}
+
 		const createPayloads: string[] = [];
 		for(const streamer of streamers) {
 			createPayloads.push(streamer.uid);
