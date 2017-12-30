@@ -579,7 +579,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(colorfulInfo.rolePrefixes.has[args[1]]) {
+		if(colorfulInfo.rolePrefixes[args[1]]) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					key: "COLORS_RENAME_ALREADYEXISTS",
