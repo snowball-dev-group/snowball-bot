@@ -341,7 +341,7 @@ class Profiles extends Plugin implements IModule {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_SETUP_FAILED", {
 						fields: [{
-							name: "Подробности",
+							name: await localizeForUser(msg.member, "PROFILES_PROFILE_SETUP_FAILED:DETAILS"),
 							value: "\`\`\`js\n" + util.inspect(err) + "\`\`\`"
 						}]
 					})
