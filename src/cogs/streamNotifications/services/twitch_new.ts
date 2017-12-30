@@ -81,6 +81,11 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				throw new Error(`Invalid emoji ID provided for "${gameId}"`);
 			}
 
+			if(id.startsWith("raw:")) {
+				this.options.emoji[gameId] = id.slice("raw:".length);
+				continue;
+			}
+
 			const emoji = $discordBot.emojis.get(id);
 			if(!emoji) {
 				throw new Error(`Emoji for "${gameId}" with ID "${id}" not found`);
