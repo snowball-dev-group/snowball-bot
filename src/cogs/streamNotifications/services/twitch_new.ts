@@ -82,7 +82,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			}
 
 			if(id.startsWith("raw:")) {
-				this.options.emoji[gameId] = id.slice("raw:".length);
+				options.emoji[gameId] = id.slice("raw:".length);
 				continue;
 			}
 
