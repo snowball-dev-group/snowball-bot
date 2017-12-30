@@ -601,6 +601,7 @@
     "PROFILES_PROFILE_SAVED": "The profile has been updated!",
     "PROFILES_PROFILE_SETUP_COMPLETE": "Setting up complete. Use `!profile` to look at you profile.",
     "PROFILES_PROFILE_SETUP_FAILED": "An error occurred while setting up this plugin",
+    "PROFILES_PROFILE_SETUP_FAILED:DETAILS": "Details",
     "PROFILES_PROFILE_TIMEDOUT": "Timed out",
     "PROFILES_PROFILE_UPDATED": "The profile has been successfully updated.",
     "PROFILES_PROFILEPLUGINS_ARGUMENTS": "Arguments of the installation: {arguments}",

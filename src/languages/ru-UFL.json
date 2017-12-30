@@ -601,6 +601,7 @@
     "PROFILES_PROFILE_SAVED": "Профиль обновлён!",
     "PROFILES_PROFILE_SETUP_COMPLETE": "Настройка закончена. Отправь `!profile`, чтобы посмотреть на свой профиль.",
     "PROFILES_PROFILE_SETUP_FAILED": "Произошла ошибка при настройке плагина",
+    "PROFILES_PROFILE_SETUP_FAILED:DETAILS": "",
     "PROFILES_PROFILE_TIMEDOUT": "Истекло время ожидания",
     "PROFILES_PROFILE_UPDATED": "Профиль обновлён.",
     "PROFILES_PROFILEPLUGINS_ARGUMENTS": "Аргументы установки: {arguments}",

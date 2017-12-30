@@ -601,6 +601,7 @@
     "PROFILES_PROFILE_SAVED": "Профіль успішно оновлено!",
     "PROFILES_PROFILE_SETUP_COMPLETE": "Налаштування завершено. Використовуйте `!profile`, щоб подивитися на свій профіль.",
     "PROFILES_PROFILE_SETUP_FAILED": "Виникла помилка при виконанні налаштування плагіна",
+    "PROFILES_PROFILE_SETUP_FAILED:DETAILS": "",
     "PROFILES_PROFILE_TIMEDOUT": "Минув час очікування",
     "PROFILES_PROFILE_UPDATED": "Профіль успішно оновлено.",
     "PROFILES_PROFILEPLUGINS_ARGUMENTS": "Аргументи встановлення: {arguments}",
