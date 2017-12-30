@@ -52,7 +52,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGREGION"), {
 					fields: [{
 						inline: false,
-						name: await localizeForUser(member, await localizeForUser(member, "OWPROFILEPLUGIN_AVAILABLE_REGIONS")),
+						name: await localizeForUser(member, "OWPROFILEPLUGIN_AVAILABLE_REGIONS"),
 						value: ACCEPTED_REGIONS.join("\n")
 					}]
 				})
