@@ -34,7 +34,8 @@
 		"switch-final-break": false,
 		"arrow-return-shorthand": true,
 		"prefer-object-spread": true,
-		"prefer-const": true
+		"prefer-const": true,
+		"await-promise": [true, "Promise", "Bluebird"]
 	},
 	"jsRules": {
 		"no-unused-new": true,
