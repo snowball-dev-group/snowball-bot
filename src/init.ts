@@ -192,7 +192,7 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotCo
 	} else {
 		log("info", "Preparing Raven... Catch 'em all!");
 	}
-	await snowball.prepareRaven();
+	snowball.prepareRaven();
 
 	log("info", "Preparing our Discord client");
 	snowball.prepareDiscordClient();
