@@ -535,14 +535,12 @@ class Profiles extends Plugin implements IModule {
 		if(target.presence.activity && !dbProfile.activity) {
 			if(target.presence.activity.type === "STREAMING") {
 				statusString += this.getUserStatusEmoji("streaming") + " ";
-				statusString += `${await this.getUserStatusString("streaming", msg.member)} `;
 				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_STREAMING", {
 					streamName: escapeDiscordMarkdown(target.presence.activity.name),
 					url: target.presence.activity.url
 				});
 			} else if(target.presence.activity.type === "PLAYING") {
 				statusString += this.getUserStatusEmoji(target) + " ";
-				statusString += await this.getUserStatusString(target.presence.status, msg.member) + " ";
 				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_PLAYING", {
 					gameName: escapeDiscordMarkdown(target.presence.activity.name)
 				});
