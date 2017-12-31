@@ -472,7 +472,7 @@ class StreamNotifications extends Plugin implements IModule {
 		const subject = scope === "guild" ? msg.guild : msg.author;
 
 		const rawSettings = await this.createOrGetSettings(subject);
-		const settings = rawSettings ? await this.convertToNormalSettings(rawSettings) : undefined;
+		const settings = rawSettings ? this.convertToNormalSettings(rawSettings) : undefined;
 
 		if(!settings) {
 			throw new Error("Unexpected behavior. No `settings` passed");
@@ -746,7 +746,7 @@ class StreamNotifications extends Plugin implements IModule {
 		subscription.subscribers.splice(subscriptionIndex, 1);
 
 		let rawSettings = await this.createOrGetSettings(subscriber);
-		const parsedSettings = rawSettings ? await this.convertToNormalSettings(rawSettings) : undefined;
+		const parsedSettings = rawSettings ? this.convertToNormalSettings(rawSettings) : undefined;
 
 		if(parsedSettings) {
 			const index = parsedSettings.subscribedTo.findIndex((streamer) => {
@@ -854,7 +854,7 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
-		const normalSettings = await this.convertToNormalSettings(rawSettings);
+		const normalSettings = this.convertToNormalSettings(rawSettings);
 
 		let subscriptions = normalSettings.subscribedTo;
 
