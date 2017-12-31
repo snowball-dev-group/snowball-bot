@@ -478,7 +478,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 		}
 
-		const resolvedChannel = await resolveGuildChannel(resolvableChannel, guild, false);
+		const resolvedChannel = resolveGuildChannel(resolvableChannel, guild, false);
 		if(resolvableChannel) { return resolvedChannel; }
 
 		throw new Error("Channel not found");
