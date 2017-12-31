@@ -1061,7 +1061,7 @@ class Colors extends Plugin implements IModule {
 
 			const colorfulInfo = await this.getInfo(msg.guild);
 
-			const color = await colorfulInfo.rolePrefixes[args[1]];
+			const color = colorfulInfo.rolePrefixes[args[1]];
 			if(!color) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_NOTFOUND")
