@@ -501,14 +501,12 @@ class Profiles extends Plugin implements IModule {
 		}
 	}
 
-	async getUserStatusString(user: User | GuildMember | string, localizingFor: GuildMember | User) {
+	async getUserStatusString(activity: string, localizingFor: GuildMember | User) {
 		const localizeStatus = async (str: string) => await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`);
-		switch(typeof user !== "string" ? user.presence.status : user) {
+		switch(activity) {
 			case "online": { return await localizeStatus("online"); }
 			case "idle": { return await localizeStatus("idle"); }
 			case "dnd": { return await localizeStatus("dnd"); }
-			case "streaming": { return localizeStatus("streaming"); }
-			case "playing": { return localizeStatus("playing"); }
 			default: { return localizeStatus("offline"); }
 		}
 	}
@@ -533,29 +531,31 @@ class Profiles extends Plugin implements IModule {
 		const isBot = target.user.bot;
 
 		let statusString = "";
-		statusString += await this.getUserStatusEmoji(target) + " ";
-		statusString += await this.getUserStatusString(target, msg.member);
 
 		if(target.presence.activity && !dbProfile.activity) {
-			statusString = "";
-
 			if(target.presence.activity.type === "STREAMING") {
-				statusString += await this.getUserStatusEmoji("streaming") + " ";
-				statusString += await this.getUserStatusString("streaming", msg.member) + " ";
-				statusString += `[${escapeDiscordMarkdown(target.presence.activity.name)}](${target.presence.activity.url})`;
+				statusString += this.getUserStatusEmoji("streaming") + " ";
+				statusString += `${await this.getUserStatusString("streaming", msg.member)} `;
+				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_STREAMING", {
+					streamName: escapeDiscordMarkdown(target.presence.activity.name),
+					url: target.presence.activity.url
+				});
 			} else if(target.presence.activity.type === "PLAYING") {
-				statusString += await this.getUserStatusEmoji(target) + " ";
-				statusString += await this.getUserStatusString("playing", msg.member) + " ";
-				statusString += `в **${escapeDiscordMarkdown(target.presence.activity.name)}**`;
+				statusString += this.getUserStatusEmoji(target) + " ";
+				statusString += await this.getUserStatusString(target.presence.status, msg.member) + " ";
+				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_PLAYING", {
+					gameName: escapeDiscordMarkdown(target.presence.activity.name)
+				});
 			}
 		} else if(dbProfile.activity) {
 			const jsonActivity = JSON.parse(dbProfile.activity) as IUserActivity;
 
-			statusString = "";
-
 			statusString += jsonActivity.emoji;
 
 			statusString += " **" + ((text) => (jsonActivity.link ? `[${text}](${jsonActivity.link})` : text))(escapeDiscordMarkdown(jsonActivity.text)) + "**";
+		} else {
+			statusString += this.getUserStatusEmoji(target);
+			statusString += await this.getUserStatusString(target.presence.status, msg.member);
 		}
 
 		if(target.id === $botConfig.botOwner) {
@@ -573,7 +573,7 @@ class Profiles extends Plugin implements IModule {
 		if(!isBot && dbProfile.status_changed) {
 			const changedAt = new Date(dbProfile.status_changed).getTime();
 			const diff = Date.now() - changedAt;
-			const sDiff = await this.serverTimeHumanize(diff, 2, true, await getUserLanguage(msg.member));
+			const sDiff = this.serverTimeHumanize(diff, 2, true, await getUserLanguage(msg.member));
 			statusString += ` (${sDiff})`;
 		} else {
 			statusString += ` (${(await localizeForUser(msg.member, "PROFILES_PROFILE_BOT")).toUpperCase()})`;
