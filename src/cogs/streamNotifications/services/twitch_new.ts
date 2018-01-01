@@ -297,7 +297,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			const emoji = game ? this.options.emoji[game.id] || this.options.emoji[EMOJINAME_UNKNOWN_GAME] : null;
 
 			ready[uid] = {
-				game: game ? (emoji ? { emoji, ...game } : game) : undefined,
+				game: game ? (emoji ? { ...game, emoji } : game) : undefined,
 				metadata: metadata && (game && game.id === metadata.game_id) ? {
 					...metadata
 				} : undefined,
@@ -498,7 +498,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 		const game = payload.game;
 		const gameName = game ? game.name : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
-		const gameEmoji = game ? this.options.emoji[game.id] : undefined;
+		const gameEmoji = game ? game.emoji : undefined;
 		const streamUri = `https://twitch.tv/${payload.streamer.login}`;
 		const isMature = payload.title.includes("[18+]");
 
