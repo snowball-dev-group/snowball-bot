@@ -488,7 +488,7 @@ class StreamNotifications extends Plugin implements IModule {
 				})
 			});
 			return;
-		} else if((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds &&  settings.subscribedTo.length >= this.options.limits.users)) {
+		} else if((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds && settings.subscribedTo.length >= this.options.limits.users)) {
 			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
 			if(whitelistStatus.state === 1) {
 				msg.channel.send("", {
@@ -583,7 +583,7 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 			return;
 		}
-		
+
 		const subscriberId = scope === "guild" ? msg.guild.id : `u${msg.author.id}`;
 
 		const subscribers = JSON.parse(subscription.subscribers) as string[];
@@ -616,11 +616,13 @@ class StreamNotifications extends Plugin implements IModule {
 
 		if(providerModule && provider) {
 			if($botConfig.mainShard) {
-				provider.addSubscription({
-					serviceName: subscription.provider,
-					uid: subscription.uid,
-					username: subscription.username
-				});
+				if(!provider.isSubscribed(subscription.uid)) {
+					provider.addSubscription({
+						serviceName: subscription.provider,
+						uid: subscription.uid,
+						username: subscription.username
+					});
+				}
 			} else {
 				if(process.send) { // notifying then
 					process.send({
@@ -693,7 +695,7 @@ class StreamNotifications extends Plugin implements IModule {
 		let subscription = this.convertToNormalSubscription(rawSubscription);
 
 		const subscriber = scope === "guild" ? msg.guild : msg.author;
-		
+
 		const subscriberId = scope === "guild" ? subscriber.id : `u${subscriber.id}`;
 
 		if(!subscription.subscribers.includes(subscriberId)) {
@@ -931,10 +933,10 @@ class StreamNotifications extends Plugin implements IModule {
 		updated: IHashMap<StreamStatusChangedHandler[]>,
 		offline: IHashMap<StreamStatusChangedHandler[]>
 	} = {
-		online: {},
-		updated: {},
-		offline: {}
-	};
+			online: {},
+			updated: {},
+			offline: {}
+		};
 
 	async handleNotifications() {
 		for(const providerName in this.servicesLoader.loadedModulesRegistry) {
@@ -1145,7 +1147,7 @@ class StreamNotifications extends Plugin implements IModule {
 			try {
 				const escapedUsername = escapeDiscordMarkdown(subscription.username, true);
 				await msg.edit(shouldMentionEveryone ?
-					(result.status === "offline" ? "~~@everyone~~ "  : "@everyone ") + $localizer.getFormattedString(embedLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
+					(result.status === "offline" ? "~~@everyone~~ " : "@everyone ") + $localizer.getFormattedString(embedLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
 						username: escapedUsername
 					})
 					: (
@@ -1467,7 +1469,7 @@ class StreamNotifications extends Plugin implements IModule {
 				if(!msg.type || !msg.payload) { return; }
 				if(!["streams:free", "streams:sub"].includes(msg.type)) { return; }
 
-				this.log("info", "Received message", msg);
+				this.log("info", "[ShardedMessageHandler] Received message", msg);
 
 				const payload = msg.payload as {
 					provider: string;
@@ -1476,14 +1478,22 @@ class StreamNotifications extends Plugin implements IModule {
 				};
 
 				const mod = this.servicesLoader.loadedModulesRegistry[payload.provider];
-				if(!mod) { this.log("warn", "Provider not found", payload.provider, "- message ignored"); return; }
-				if(mod.state !== ModuleLoadState.Initialized || !mod.base) { this.log("warn", "Provider isn't loaded", payload.provider, "- message ignored"); return; }
+				if(!mod) { this.log("warn", "[ShardedMessageHandler] Provider not found", payload.provider, "- message ignored"); return; }
+				if(mod.state !== ModuleLoadState.Initialized || !mod.base) { this.log("warn", "[ShardedMessageHandler] Provider isn't loaded", payload.provider, "- message ignored"); return; }
 
 				const provider = mod.base as IStreamingService;
 
 				if(msg.type === "streams:free") {
+					if(!provider.isSubscribed(payload.uid)) {
+						this.log("warn", `[ShardedMessageHandler] Already unsubscribed from "${payload.uid}"`);
+						return;
+					}
 					provider.removeSubscribtion(payload.uid);
 				} else if(msg.type === "streams:sub") {
+					if(provider.isSubscribed(payload.uid)) {
+						this.log("warn", `[ShardedMessageHandler] Already subscribed to ${payload.uid}`);
+						return;
+					}
 					provider.addSubscription({
 						serviceName: payload.provider,
 						uid: payload.uid,
