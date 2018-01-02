@@ -4,7 +4,7 @@ import { join as pathJoin } from "path";
 import * as cluster from "cluster";
 
 const coreInfo = {
-	"version": "0.9.998-prerelease"
+	"version": "0.9.9986"
 };
 
 const SHARD_TIMEOUT = 30000; // ms
@@ -14,35 +14,35 @@ const SHARD_TIMEOUT = 30000; // ms
 
 	let config: IBotConfig;
 	try {
-		log("info", "Loading config...");
+		log("info", "[Config] Loading config...");
 
 		const env = (process.env["NODE_ENV"] || "development");
 
 		try {
 			config = require(`./config/configuration.${env}.json`);
 		} catch(err) {
-			log("err", "Loading config for", env, "failed, attempt to load standard config");
+			log("err", "[Config] Loading config for", env, "failed, attempt to load standard config");
 			config = require("./config/configuration.json");
 		}
 	} catch(err) {
 		log("err", err);
-		log("err", "Exiting due we can't start bot without proper config");
+		log("err", "[Config] Exiting due we can't start bot without proper config");
 		return process.exit(-1);
 	}
 
 	log = logger(config.name + ":init");
 
-	log("ok", `Node ${process.version}`);
-	log("ok", `${config.name} v${coreInfo.version}`);
+	log("ok", `[Version] Node ${process.version}`);
+	log("ok", `[Version] ${config.name} v${coreInfo.version}`);
 
-	log("info", "Fixing config...");
+	log("info", "[FixConfig] Fixing config...");
 	config.localizerOptions.directory = pathJoin(__dirname, config.localizerOptions.directory);
 
 	if(config.shardingOptions && config.shardingOptions.enabled) {
-		log("warn", "WARNING: Entering sharding mode!");
+		log("warn", "[Sharding] WARNING: Entering sharding mode!");
 		if(cluster.isWorker || (process.env["NODE_ENV"] === "development" && process.env["DEBUG_SHARDS"] === "yes")) {
 			if(typeof process.env.SHARD_ID !== "string" || typeof process.env.SHARDS_COUNT !== "string") {
-				log("err", "Invalid environment variables", {
+				log("err", "[Sharding] Invalid environment variables!", {
 					id: process.env.SHARD_ID || "not set",
 					count: process.env.SHARDS_COUNT || "not set"
 				});
@@ -53,7 +53,7 @@ const SHARD_TIMEOUT = 30000; // ms
 			const shardId = parseInt(process.env.SHARD_ID as string, 10);
 			const shardsCount = parseInt(process.env.SHARDS_COUNT as string, 10);
 
-			log("info", "Started as shard", shardId + 1, "/", process.env.SHARDS_COUNT);
+			log("info", `[Sharding:Shard~${shardId}] Started as shard ${shardId + 1} / ${process.env.SHARDS_COUNT}`);
 
 			try {
 				await initBot(log, config, {
@@ -61,7 +61,7 @@ const SHARD_TIMEOUT = 30000; // ms
 					shardsCount
 				});
 			} catch(err) {
-				log("err", "Failed to initializate bot", err);
+				log("err", `[Sharding:Shard~${shardId}] Failed to initializate bot`, err);
 				return process.exit(1);
 			}
 
@@ -73,14 +73,14 @@ const SHARD_TIMEOUT = 30000; // ms
 		} else if(cluster.isMaster) {
 			const shards = config.shardingOptions.shards;
 			if(shards < 0) {
-				log("err", "Invalid number of shards");
+				log("err", "[Sharding:Master] Invalid number of shards");
 				process.exit(0);
 				return;
 			}
 			try {
 				spawnShards(log, shards);
 			} catch(err) {
-				log("err", "Could not start some shards", err);
+				log("err", "[Sharding:Master] Could not start some shards", err);
 				process.exit(1);
 			}
 		}
@@ -92,7 +92,7 @@ const SHARD_TIMEOUT = 30000; // ms
 				shardsCount: 1
 			});
 		} catch(err) {
-			log("err", "Failed to initalizate bot", err);
+			log("err", "[Run] Failed to initalizate bot", err);
 			return process.exit(1);
 		}
 	}
@@ -114,7 +114,7 @@ async function spawnShards(log:any, shardsCount:number) {
 	};
 
 	for(let shardId = 0; shardId < shardsCount; shardId++) {
-		log("info", "Spawning shard", shardId + 1);
+		log("info", "[Sharding] Spawning shard", shardId + 1);
 		// returns shard
 		const c = await spawnShard(log, shardId, shardsCount, forwardMessage);
 		clusterRegistry[c.id] = c;
@@ -136,7 +136,7 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 	};
 
 	const c = cluster.fork(env).on("online", () => {
-		log("info", "Cluster", c.id, "is online");
+		log("info", "[Sharding] Cluster", c.id, "is online");
 	}).on("message", (message) => {
 		if(typeof message === "object") {
 			if(typeof message.type === "string") {
@@ -152,14 +152,14 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 			}
 		}
 	}).on("error", (code, signal) => {
-		log("err", "Cluster", c.id, "error received", code, signal);
+		log("err", "[Sharding] Cluster", c.id, "error received", code, signal);
 		clusterDied = true;
 	}).on("exit", (code, signal) => {
-		log("err", "Cluster", c.id, "died", code, signal);
+		log("err", "[Sharding] Cluster", c.id, "died", code, signal);
 		clusterDied = true;
 	});
 
-	log("info", "Waiting for response from shard", shardId);
+	log("info", "[Sharding] Waiting for response from shard", shardId);
 
 	await (new Promise((res, rej) => {
 		const id = setInterval(() => {
@@ -172,50 +172,71 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 			if(((Date.now() - forkedAt) > SHARD_TIMEOUT)) {
 				clearInterval(id);
 				rej("Timed out");
+				c.kill("SIGTERM");
 			}
 		}, 1);
 	}));
 
-	log("ok", "Shard repond, continuing spawning");
+	log("ok", "[Sharding] Shard repond, continuing spawning...");
 
 	return c;
 }
 
+let loadComplete = false;
+
 async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotConfig) {
-	log("info", "Initializing bot...");
+	log("info", "[Run] Initializing bot...");
 	const snowball = new SnowballBot(config, internalConfig);
 
 	if(!config.ravenUrl) {
-		log("info", "Want beautiful reports for bot errors?");
-		log("info", "Get your Raven API key at https://sentry.io/");
-		log("info", "Put it to `ravenUrl` in your config file");
+		log("info", "[Sentry] Want beautiful reports for bot errors?");
+		log("info", "[Sentry] Get your Raven API key at https://sentry.io/");
+		log("info", "[Sentry] Put it to `ravenUrl` in your config file");
 	} else {
-		log("info", "Preparing Raven... Catch 'em all!");
+		log("info", "[Sentry] Preparing Raven... Catch 'em all!");
 	}
 	snowball.prepareRaven();
 
-	log("info", "Preparing our Discord client");
+	log("info", "[Shutdown] Blocking SIGINT");
+	process.on("SIGINT", async () => {
+		if(!loadComplete) { return false; }
+		log("info", "[Shutdown] We're stopping Snowball, please wait a bit...");
+		try {
+			await snowball.shutdown("interrupted");
+			process.exit(0);
+		} catch (err) {
+			log("err", "[Shutdown] Shutdown complete with an error", err);
+			process.exit(-1);
+		}
+	});
+
+	process.on("exit", () => {
+		log("info", "[Shutdown] Bye! <3");
+	});
+
+	log("info", "[Run] Preparing our Discord client");
 	snowball.prepareDiscordClient();
 
 	process.on("uncaughtException", (err) => {
-		log("err", "Error", err);
+		log("err", "[Run] Error", err);
 		process.exit(1);
 	});
 
 	try {
-		log("info", "Connecting...");
+		log("info", "[Run] Connecting...");
 		await snowball.login();
 
-		log("ok", "Successfully connected, preparing our localizer...");
+		log("ok", "[Run] Successfully connected, preparing our localizer...");
 		await snowball.prepareLocalizator();
 
-		log("ok", "Localizer prepared, preparing module loader...");
+		log("ok", "[Run] Localizer prepared, preparing module loader...");
 		await snowball.prepareModLoader();
 
-		log("ok", "====== DONE ======");
+		log("ok", "[Run] ====== DONE ======");
+		loadComplete = true;
 	} catch(err) {
-		log("err", "Can't start bot", err);
-		log("err", "Exiting due we can't work without bot connected to Discord");
+		log("err", "[Run] Can't start bot", err);
+		log("err", "[Run] Exiting due we can't work without bot connected to Discord");
 		process.exit(1);
 	}
 }
