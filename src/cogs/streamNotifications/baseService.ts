@@ -32,7 +32,7 @@ export interface IStreamingService extends IModule, EventEmitter {
 	/**
 	* Removes subscription from check rotation
 	*/
-	removeSubscribtion(uid: string): void;
+	removeSubscription(uid: string): void;
 
 	/**
 	* Checks if subscribed to streamer

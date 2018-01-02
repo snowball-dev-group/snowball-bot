@@ -50,7 +50,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 		return this.subscriptions.push(streamer);
 	}
 
-	public removeSubscribtion(uid: string) {
+	public removeSubscription(uid: string) {
 		const index = this.findSubscriptionIndex(uid);
 		if(index === -1) {
 			throw new Error(`Not subscribed to ${uid}`);

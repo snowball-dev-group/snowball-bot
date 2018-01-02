@@ -771,7 +771,7 @@ class StreamNotifications extends Plugin implements IModule {
 				const provider = providerModule.base as IStreamingService;
 
 				if($botConfig.mainShard) {
-					provider.removeSubscribtion(subscription.uid);
+					provider.removeSubscription(subscription.uid);
 				} else {
 					if(process.send) { // notifying then
 						process.send({
@@ -1488,7 +1488,7 @@ class StreamNotifications extends Plugin implements IModule {
 						this.log("warn", `[ShardedMessageHandler] Already unsubscribed from "${payload.uid}"`);
 						return;
 					}
-					provider.removeSubscribtion(payload.uid);
+					provider.removeSubscription(payload.uid);
 				} else if(msg.type === "streams:sub") {
 					if(provider.isSubscribed(payload.uid)) {
 						this.log("warn", `[ShardedMessageHandler] Already subscribed to ${payload.uid}`);
