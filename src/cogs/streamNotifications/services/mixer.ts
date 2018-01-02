@@ -145,7 +145,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public removeSubscription(uid: string) {
-		const listener = this._carinaListeners.get(uid);
+		const listener = this._carinaListeners[uid];
 		if(listener) {
 			this.ca.unsubscribe(`channel:${uid}:update`);
 			delete this._carinaListeners[uid];
