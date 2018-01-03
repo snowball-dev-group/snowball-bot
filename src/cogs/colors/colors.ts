@@ -13,7 +13,7 @@ import { messageToExtra } from "../utils/failToDetail";
 import { Whitelist } from "../whitelist/whitelist";
 import * as knex from "knex";
 import { join as pathJoin } from "path";
-import { IHashMap } from "../../types/Types";
+import { IHashMap, createHashMap } from "../../types/Types";
 
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";
@@ -1191,7 +1191,7 @@ class Colors extends Plugin implements IModule {
 			});
 			return await this.getInfo(guildId, true) as IColorfulGuildInfo;
 		}
-		prefixes.rolePrefixes = JSON.parse(prefixes.rolePrefixes);
+		prefixes.rolePrefixes = createHashMap<IColorfulGuildColorInfo>(JSON.parse(prefixes.rolePrefixes));
 		return prefixes as IColorfulGuildInfo;
 	}
 
