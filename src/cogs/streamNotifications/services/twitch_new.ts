@@ -5,6 +5,7 @@ import { chunk } from "lodash";
 import { EventEmitter } from "events";
 import { IHashMap, INullableHashMap } from "../../../types/Types";
 import * as http from "http";
+import * as getURL from "full-url";
 import { parse as parseUrl, Url, URL } from "url";
 import { randomString } from "../../utils/random";
 import { createHmac } from "mz/crypto";
@@ -817,7 +818,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	createServer() {
-		return this.app = http.createServer(this._serverHandler);
+		return this.app = http.createServer((req, resp) => this._serverHandler(req, resp));
 	}
 
 	private async _serverHandler(req: http.IncomingMessage, resp: http.ServerResponse) {
@@ -826,12 +827,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			return;
 		}
 
-		const parsed = parseUrl(req.url, true);
+		const parsed = parseUrl(getURL(req), true);
 		const whSettings = this.options.webhooksSettings!;
 		const isLocalURL = [`${whSettings.host}`, `${whSettings.host}:${whSettings.port}`].includes(parsed.hostname || "");
 
 		if(whSettings.domain && (parsed.hostname !== whSettings.domain && !isLocalURL)) {
-			this.log("warn", `[Webhooks] Attempt to access host directly from ${req.connection.remoteAddress}`);
+			this.log("warn", `[Webhooks] Attempt to access host "${parsed.hostname}" (${req.url}) directly from ${req.connection.remoteAddress}`);
 			return this._respondTo(resp, "Unpredicted magic happened. Probably server misconfiguration or you're calling server directly?", 400);
 		} else if(!whSettings.domain && isLocalURL) {
 			this.log("warn", `[Webhooks] Attempt to access from localhost ${req.connection.remoteAddress}`);
@@ -954,8 +955,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private async _respondTo(resp: http.ServerResponse, withContent?: string, statusCode: number = 200, headers?: IHashMap<string | number>) {
-		resp.writeHead(statusCode, withContent, headers ? { ...TXT_HEADER, ...headers } : TXT_HEADER);
-		return resp.end();
+		resp.writeHead(statusCode, undefined, headers ? { ...TXT_HEADER, ...headers } : TXT_HEADER);
+		return resp.end(withContent);
 	}
 
 	private _scheduledRenews: IHashMap<NodeJS.Timer | undefined> = Object.create(null);
