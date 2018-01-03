@@ -20,7 +20,7 @@ export async function fetchBlobProfile(battletag: string, platform?: string): Pr
 	const contextFunction: {
 		resolve?: (obj: IBlobResponse) => void;
 		reject?: (obj: any) => void
-	} = {};
+	} = Object.create(null);
 	const contextPromise = new Promise<IBlobResponse>((res, rej) => {
 		contextFunction.resolve = res;
 		contextFunction.reject = rej;

@@ -1,7 +1,7 @@
 import { getDB, createTableBySchema } from "./db";
 import { User, GuildMember } from "discord.js";
 import { getLogger } from "./utils";
-import { IHashMap } from "../../types/Interfaces";
+import { IHashMap } from "../../types/Types";
 
 const PREMIUM_TABLE = "premiums";
 const LOG = getLogger("Premium");
@@ -11,7 +11,7 @@ const db = getDB();
 let complete = false;
 let retry = true;
 
-const cache:IHashMap<IPremiumRow|null> = {};
+const cache: IHashMap<IPremiumRow | null> = Object.create(null);
 
 export interface IPremiumRow {
 	id: string;
@@ -103,12 +103,12 @@ export async function deletePremium(person: GuildMember | User): Promise<boolean
 	return true;
 }
 
-export async function getPremium(person: GuildMember | User, internalCallSign?: string): Promise<{ result: IPremiumRow|undefined, source: "db" | "cache" }> {
+export async function getPremium(person: GuildMember | User, internalCallSign?: string): Promise<{ result: IPremiumRow | undefined, source: "db" | "cache" }> {
 	if(!(await init())) { throw new Error("Initialization failed"); }
 
 	const cached = cache[person.id];
 	let premiumRow: IPremiumRawRow | undefined = undefined;
-	let source:"db"|"cache" = "cache";
+	let source: "db" | "cache" = "cache";
 
 	if(cached !== null && cached !== undefined) {
 		// was cached

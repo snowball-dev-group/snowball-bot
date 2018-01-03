@@ -10,7 +10,7 @@ import { EmbedType, sleep, IEmbedOptionsField, IEmbed } from "../utils/utils";
 import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IStreamStatus, StreamStatusChangedHandler, StreamStatusChangedAction } from "./baseService";
 import { createConfirmationMessage } from "../utils/interactive";
 import { command } from "../utils/help";
-import { IHashMap } from "../../types/Interfaces";
+import { IHashMap } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
 import { isPremium } from "../utils/premium";
 
@@ -924,7 +924,7 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 	}
 
-	guildSettingsCache: IHashMap<ISettingsParsedRow> = {};
+	guildSettingsCache: IHashMap<ISettingsParsedRow> = Object.create(null);
 
 	checknNotifyInterval: NodeJS.Timer;
 
@@ -933,10 +933,8 @@ class StreamNotifications extends Plugin implements IModule {
 		updated: IHashMap<StreamStatusChangedHandler[]>,
 		offline: IHashMap<StreamStatusChangedHandler[]>
 	} = {
-			online: {},
-			updated: {},
-			offline: {}
-		};
+		online: Object.create(null), updated: Object.create(null), offline: Object.create(null)
+	};
 
 	async handleNotifications() {
 		for(const providerName in this.servicesLoader.loadedModulesRegistry) {

@@ -3,7 +3,7 @@ import { Guild, GuildMember, Message, User } from "discord.js";
 import fetch from "node-fetch";
 import * as util from "util";
 import { Humanizer } from "../../types/Humanizer";
-import { INullableHashMap } from "../../types/Interfaces";
+import { INullableHashMap } from "../../types/Types";
 import { convertToModulesMap, IModule, IModuleInfo, ModuleBase, ModuleLoader, ModuleLoadState } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { createTableBySchema, getDB } from "../utils/db";
@@ -102,7 +102,7 @@ class Profiles extends Plugin implements IModule {
 	log = getLogger("ProfilesJS");
 	db = getDB();
 	config: IProfilesModuleConfig;
-	customHumanizers: INullableHashMap<Humanizer> = {};
+	customHumanizers: INullableHashMap<Humanizer> = Object.create(null);
 
 	constructor(config: IProfilesModuleConfig) {
 		super({

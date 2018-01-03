@@ -1,5 +1,5 @@
 import { messageToExtra } from "../../utils/failToDetail";
-import { IHashMap } from "../../../types/Interfaces";
+import { IHashMap } from "../../../types/Types";
 import { ISimpleCmdParseResult, replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
@@ -71,7 +71,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	private _log = getLogger("ModTools:Archive");
 	private _options: IModToolsArchiveOptions;
 	private _controller: ArchiveDBController;
-	private _enabledAt: IHashMap<boolean> = {};
+	private _enabledAt: IHashMap<boolean> = Object.create(null);
 
 	constructor(options: IModToolsArchiveOptions) {
 		super({
@@ -306,9 +306,8 @@ class ModToolsArchive extends Plugin implements IModule {
 			users: IHashMap<User>,
 			channels: IHashMap<TextChannel>
 		} = {
-				users: {},
-				channels: {}
-			};
+			users: Object.create(null), channels: Object.create(null)
+		};
 
 		switch(target) {
 			case "user": {
@@ -484,7 +483,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		throw new Error("Channel not found");
 	}
 
-	private async _messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = {}, language: string) {
+	private async _messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = Object.create(null), language: string) {
 		let str = "";
 		for(const messageEntry of messages) {
 			const parsedDate = (SnowflakeUtil.deconstruct(messageEntry.messageId)).date;

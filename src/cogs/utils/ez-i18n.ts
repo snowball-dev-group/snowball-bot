@@ -4,7 +4,7 @@ import { getPreferenceValue as getGuildPreferenceValue, setPreferenceValue as se
 import { EmbedType, IEmbedOptions, generateEmbed } from "./utils";
 import { IFormatMessageVariables, HumanizerUnitToConvert } from "../../types/Localizer";
 import { IHumanizerOptionsOverrides } from "../../types/Humanizer";
-import { IHashMap } from "../../types/Interfaces";
+import { INullableHashMap } from "../../types/Types";
 
 export type identify = User | GuildMember;
 const PREFERENCE_USER_LANGUAGE = ":language";
@@ -14,11 +14,11 @@ const DEFAULT_LANGUAGE = $localizer.defaultLanguage;
 const DEFAULT_ENFORCE_STATUS = false;
 
 // <userId, languageCode>
-const usersCache: IHashMap<string | undefined> = {};
+const usersCache: INullableHashMap<string> = Object.create(null);
 // <guildId, enforcingMode>
-const guildEnforceCache: IHashMap<boolean | undefined> = {};
+const guildEnforceCache: INullableHashMap<boolean> = Object.create(null);
 // <guildId, languageCode>
-const guildsCache: IHashMap<string | undefined> = {};
+const guildsCache: INullableHashMap<string> = Object.create(null);
 
 export function getPrefsNames() {
 	return {

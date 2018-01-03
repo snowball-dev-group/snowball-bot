@@ -44,13 +44,13 @@ const IGNORED_KEYS = ["+COVERAGE", "$schema"];
 
 export class Localizer {
 	private _opts: ILocalizerOptions;
-	private _langMaps: ILanguageHashMap<IStringsMap | undefined> = {};
+	private _langMaps: ILanguageHashMap<IStringsMap> = Object.create(null);
 	private _initDone: boolean = false;
 	private _log: ILoggerFunction;
 	private _sourceLang: string;
 	private _loadedLanguages: string[] = [];
 	private _fallbackQueue: string[] = [];
-	private _humanizersMap: ILanguageHashMap<Humanizer> = {};
+	private _humanizersMap: ILanguageHashMap<Humanizer> = Object.create(null);
 
 	/**
 	 * Returns default language
@@ -84,14 +84,14 @@ export class Localizer {
 	public async init() {
 		if(this._initDone) { return; }
 		try {
-			this._langMaps = {};
+			this._langMaps = Object.create(null);
 			this._log("info", "Started loading of language files");
 			for(const lang of this._opts.languages) {
 				if(!!this._langMaps[lang]) {
 					throw new Error(`Language "${lang}" is already registered`);
 				}
 
-				let langStrings: IStringsMap = {};
+				let langStrings: IStringsMap = Object.create(null);
 				try {
 					const content = await fs.readFile(pathJoin(this._opts.directory, `${lang}.json`), { "encoding": "utf8" });
 					langStrings = JSON.parse(content);

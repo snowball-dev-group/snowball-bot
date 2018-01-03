@@ -7,7 +7,7 @@ import { startsOrEqual, slice } from "../utils/text";
 import { EmbedType, getLogger } from "../utils/utils";
 import { setPreferenceValue as setUserPref } from "../utils/userPrefs";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref } from "../utils/guildPrefs";
-import { IHashMap } from "../../types/Interfaces";
+import { IHashMap } from "../../types/Types";
 
 const BASE_PREFIX = "!sb_lang";
 const CMD = {
@@ -53,7 +53,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 	prefs = getPrefsNames();
 	log = getLogger("SetLanguage");
 	noLazy = false;
-	flags:IHashMap<string> = {};
+	flags: IHashMap<string> = Object.create(null);
 	crowdinLink: string;
 
 	constructor(options: ISetLanguageCommandOptions) {
@@ -63,7 +63,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		if(options) {
 			this.noLazy = !!options["no_lazy"];
 			this.crowdinLink = options.crowdinLink;
-			this.flags = options.flags || {};
+			this.flags = options.flags || Object.create(null);
 		} else { throw new Error("No options found"); }
 	}
 
@@ -137,8 +137,8 @@ class SetLanguageCommand extends Plugin implements IModule {
 				custom: true,
 				string: str
 			}, {
-				thumbUrl: this.flags[langCode] || undefined
-			})
+					thumbUrl: this.flags[langCode] || undefined
+				})
 		});
 	}
 

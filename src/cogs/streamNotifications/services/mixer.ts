@@ -5,7 +5,7 @@ import { default as fetch } from "node-fetch";
 import { Carina } from "carina";
 import * as ws from "ws";
 import { EventEmitter } from "events";
-import { IHashMap } from "../../../types/Interfaces";
+import { IHashMap } from "../../../types/Types";
 
 Carina.WebSocket = ws;
 
@@ -48,8 +48,8 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	//           Updates handlers
 	// ========================================
 
-	private _carinaListeners: IHashMap<((data) => void)> = {};
-	private currentData: IHashMap<ICacheItem> = {};
+	private _carinaListeners: IHashMap<((data) => void)> = Object.create(null);
+	private currentData: IHashMap<ICacheItem> = Object.create(null);
 
 	private generateID(cacheItem: ICacheItem) {
 		return getUUIDByString(`${this.name.toUpperCase()}::{${cacheItem.startedAt}-${cacheItem.channel.id}}`);

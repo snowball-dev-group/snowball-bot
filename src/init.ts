@@ -103,7 +103,7 @@ async function spawnShards(log:any, shardsCount:number) {
 		throw new Error("Could not spawn shards inside the worker!");
 	}
 
-	const clusterRegistry: { [id: string]: cluster.Worker } = {};
+	const clusterRegistry: { [id: string]: cluster.Worker } = Object.create(null);
 
 	const forwardMessage = (c, msg) => {
 		for(const id in clusterRegistry) {

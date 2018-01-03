@@ -1,6 +1,6 @@
 import { IColorfulMigration, IColorfulGuildColorInfo } from "../colors";
 import * as knex from "knex";
-import { IHashMap } from "../../../types/Interfaces";
+import { IHashMap } from "../../../types/Types";
 import { getLogger } from "../../utils/utils";
 
 class NoES6Maps implements IColorfulMigration {
@@ -24,7 +24,7 @@ class NoES6Maps implements IColorfulMigration {
                 rolePrefixes: new Map<string, IColorfulGuildColorInfo>(JSON.parse(element.rolePrefixes))
             };
 
-            const hashMap: IHashMap<IColorfulGuildColorInfo> = {};
+            const hashMap: IHashMap<IColorfulGuildColorInfo> = Object.create(null);
             for(const [colorName, colorfulInfo] of parsedElem.rolePrefixes) {
                 hashMap[colorName] = colorfulInfo;
             }

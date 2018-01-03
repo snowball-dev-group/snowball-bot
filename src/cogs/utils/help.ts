@@ -32,10 +32,8 @@ interface ICategories {
 let dict: ICategories | undefined = undefined;
 
 function init(): ICategories {
-	if(!dict) {
-		dict = {};
-	}
-	return dict;
+	if(!dict) { dict = Object.create(null); }
+	return dict!;
 }
 
 interface IArgumentsMap {
@@ -51,12 +49,12 @@ export function addCommand(category: string, command: string, description: strin
 
 	let categoryMap = categoriesMap[category];
 	if(!categoryMap) {
-		categoryMap = categoriesMap[category] = {};
+		categoryMap = categoriesMap[category] = <{}>Object.create(null);
 	}
 
 	try {
 		$localizer.getString($localizer.sourceLanguage, categoryLocalizedName(category));
-	} catch (err) {
+	} catch(err) {
 		throw new Error(`Could not find localized name for the category "${category}"`);
 	}
 

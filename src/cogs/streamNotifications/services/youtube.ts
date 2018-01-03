@@ -2,7 +2,7 @@ import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingS
 import { IEmbed, escapeDiscordMarkdown } from "../../utils/utils";
 import { default as fetch } from "node-fetch";
 import { EventEmitter } from "events";
-import { IHashMap } from "../../../types/Interfaces";
+import { IHashMap } from "../../../types/Types";
 
 const MAX_CHANNEL_CACHE_LIFE = 600000;  // ms
 const YOUTUBE_ICON = "https://i.imgur.com/ZvRybuh.png";

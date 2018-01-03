@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import logger = require("loggy");
-import { IHashMap } from "./Interfaces";
+import { IHashMap } from "./Types";
 import { ISchemaObject } from "./Typer";
 import { isAbsolute } from "path";
 
@@ -251,16 +251,16 @@ export class ModuleLoader {
 	/**
 	 * Registry with modules
 	 */
-	public registry: IHashMap<IModuleInfo> = {};
+	public registry: IHashMap<IModuleInfo> = Object.create(null);
 	/**
 	 * Registry with currently loaded modules
 	 */
-	public loadedModulesRegistry: IHashMap<ModuleBase<any>> = {};
+	public loadedModulesRegistry: IHashMap<ModuleBase<any>> = Object.create(null);
 
 	/**
 	 * Registry with currently loaded modules by signature
 	 */
-	public signaturesRegistry: IHashMap<ModuleBase<any>> = {};
+	public signaturesRegistry: IHashMap<ModuleBase<any>> = Object.create(null);
 
 	private log: Function;
 
@@ -475,7 +475,7 @@ export class ModuleLoader {
 * @param obj {Array} Array of module info entries
 */
 export function convertToModulesMap(obj: IModuleInfo[]) {
-	const modulesMap: IHashMap<IModuleInfo> = {};
+	const modulesMap: IHashMap<IModuleInfo> = Object.create(null);
 	for(const moduleInfo of obj) {
 		modulesMap[moduleInfo.name] = moduleInfo;
 	}

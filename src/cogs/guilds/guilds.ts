@@ -11,7 +11,7 @@ import { replaceAll } from "../utils/text";
 import { command } from "../utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
 import { randomString } from "../utils/random";
-import { IPCMessage } from "../../types/Types";
+import { IPCMessage, INullableHashMap } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
 
 const TABLE_NAME = "guilds";
@@ -234,7 +234,7 @@ class Guilds extends Plugin implements IModule {
 
 	config: IGuildsModuleConfig;
 
-	pendingInvites: { [uid: string]: { code: string; } } = {};
+	pendingInvites: INullableHashMap<{ code: string; }> = Object.create(null);
 	processMessageListener?: ((msg: any) => void);
 
 	constructor(config: IGuildsModuleConfig) {

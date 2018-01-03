@@ -3,7 +3,7 @@ import { IEmbed, sleep, getLogger, escapeDiscordMarkdown } from "../../utils/uti
 import { default as fetch } from "node-fetch";
 import { chunk } from "lodash";
 import { EventEmitter } from "events";
-import { IHashMap } from "../../../types/Interfaces";
+import { IHashMap } from "../../../types/Types";
 
 const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
 const TWITCH_COLOR = 0x6441A4;
@@ -108,7 +108,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	//                Fetching
 	// ========================================
 
-	private streamsMap: IHashMap<ICacheItem> = {};
+	private streamsMap: IHashMap<ICacheItem> = Object.create(null);
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
 		if(streamers.length > 0) {

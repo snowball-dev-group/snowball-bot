@@ -13,7 +13,7 @@ import { messageToExtra } from "../utils/failToDetail";
 import { Whitelist } from "../whitelist/whitelist";
 import * as knex from "knex";
 import { join as pathJoin } from "path";
-import { IHashMap } from "../../types/Interfaces";
+import { IHashMap } from "../../types/Types";
 
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";
@@ -1187,7 +1187,7 @@ class Colors extends Plugin implements IModule {
 			if(deep) { throw new Error("Cannot get colorful info!"); }
 			await this.db(TABLE_NAME).insert({
 				guildId: guildId,
-				rolePrefixes: JSON.stringify({})
+				rolePrefixes: "{}"
 			});
 			return await this.getInfo(guildId, true) as IColorfulGuildInfo;
 		}

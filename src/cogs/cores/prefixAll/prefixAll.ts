@@ -1,6 +1,6 @@
 import { IModule } from "../../../types/ModuleLoader";
 import { Message, Guild } from "discord.js";
-import { IHashMap } from "../../../types/Interfaces";
+import { INullableHashMap } from "../../../types/Types";
 import { PrefixAllDBController } from "./dbController";
 
 export const PREFIXALL_SIGNATURE = "snowball.core_features.prefixall";
@@ -20,8 +20,8 @@ export default class PrefixAll implements IModule {
 		return this._defaultPrefix;
 	}
 
-	private _prefixesCache: IHashMap<string[] | undefined | null> = {};
-	private _messagesCache: IHashMap<ICachedCheck | undefined> = {};
+	private _prefixesCache: INullableHashMap<string[]> = Object.create(null);
+	private _messagesCache: INullableHashMap<ICachedCheck> = Object.create(null);
 	private _dbController: PrefixAllDBController = new PrefixAllDBController();
 	private _defaultPrefix: string;
 	private _messagesCacheDestructionTime: number;
