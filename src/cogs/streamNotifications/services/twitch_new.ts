@@ -3,7 +3,11 @@ import { IEmbed, sleep, getLogger, escapeDiscordMarkdown, IEmbedOptionsField } f
 import { default as fetch } from "node-fetch";
 import { chunk } from "lodash";
 import { EventEmitter } from "events";
-import { IHashMap } from "../../../types/Interfaces";
+import { IHashMap, INullableHashMap } from "../../../types/Types";
+import * as http from "http";
+import { parse as parseUrl, Url, URL } from "url";
+import { randomString } from "../../utils/random";
+import { createHmac } from "mz/crypto";
 
 const TWITCH_ICON = "https://p.dafri.top/snowball/res/twitch_glitch.png";
 const TWITCH_COLOR = 0x6441A4;
@@ -11,13 +15,7 @@ const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
 const TWITCH_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_twitch.png";
 
 const DEFAULT_UPDATE_INTERVAL = 150000;
-const POSSIBLE_METADATA_GAMEIDS = [{ // hardcoded stuff isn't okay ikr
-	name: "Hearthstone",
-	id: "138585"
-}, {
-	name: "Overwatch",
-	id: "488552"
-}];
+const POSSIBLE_METADATA_GAMEIDS = [{ name: "Hearthstone", id: "138585" }, { name: "Overwatch", id: "488552" }];
 const EMOJI_ID_REGEX = /[0-9]{17,19}/;
 const EXLUDED_USER_PROPS_OFUPD = ["offline_banner"];
 const EMOJINAME_UNKNOWN_GAME = "unknown_game";
@@ -27,12 +25,73 @@ const CACHEDIFF_GAME = 18000000; // 5 hours
 const CACHEDIFF_USER = 1200000; // 20 minutes
 const OFF_METADATA = 5000; // 5 seconds from updating interval
 const STREAM_DEATHTIME = 120000; // time after which stream cache expires
+const BASE_API_URI = "https://api.twitch.tv/helix";
+const TXT_HEADER = { "Content-Type": "text/plain" };
+const DEFAULT_PORT = 5612; // 7
+
+interface IWebhookSettings {
+	/**
+	 * How many time is hook alive
+	 * After hook dies, this script renews it
+	 * Recommended to leave to the default value
+	 */
+	aliveTime: number;
+	/**
+	 * Host of where this hosts in
+	 */
+	host: string;
+	/**
+	 * If you pass the domain here make sure your server has a local proxy to redirect request to this HTTP server.
+	 * The flow will be looking like: Twitch (12.23.34.45) → Proxy server (snowball-twitch.example.com) → Webhook server ({host}:1337)
+	 */
+	domain?: string;
+	/**
+	 * Specify port
+	 */
+	port: number;
+	/**
+	 * Want to have a beautiful path in callback url? OK
+	 */
+	path: string;
+}
 
 interface IServiceOptions {
+	/**
+	 * Twitch Client ID
+	 */
 	clientId: string;
+	/**
+	 * How many time passes after which stream cache dies.
+	 * Recommended to leave as default minimum (120000).
+	 * This option literally sets how many time required to check if stream is updated
+	 */
 	streamDeathTime: number;
+	/**
+	 * Long polling setting of what interval to use to pull updates.
+	 * This option also sets metadata death time, calculated by (updatingInverval - 5000).
+	 */
 	updatingInterval: number;
-	emoji: IHashMap<string|undefined>;
+	/**
+	 * Sets the emoji used for game icons.
+	 * Literally hash map <Twitch-GameID, Discord-EmojiID>
+	 */
+	emoji: IHashMap<string | undefined>;
+	/**
+	 * 
+	 */
+	useWebhooks: boolean;
+	webhooksSettings?: IWebhookSettings;
+	/**
+	 * Do not set unless you know what it means.
+	 * This sets API endpoint
+	 */
+	baseAPIEndpoint: string;
+}
+
+interface IRegisteredWebhook {
+	registeredAt: number;
+	key: string;
+	uid: string;
 }
 
 interface ICacheItem<T> {
@@ -50,6 +109,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	private log = getLogger("TwitchNewStreamingService");
 
 	private options: IServiceOptions;
+
+	private app: http.Server;
 
 	constructor(options: IServiceOptions) {
 		super();
@@ -106,6 +167,25 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			options.emoji[EMOJINAME_VODCAST] = "🔵";
 		}
 
+		if(options.useWebhooks) {
+			if(!options.webhooksSettings) {
+				throw new Error(`You want to use webhooks but didn't provide the settings. You must provide at least domain in the settings. If your server doesn't has the domain, then use IP and port (you can specify yours by setting \`port\`, but don't forget to write it in the \`domain\` too).`);
+			}
+			if(!options.webhooksSettings.host) {
+				throw new Error("You didn't provide your domain in the webhooks settings.");
+			}
+			options.webhooksSettings.path = options.webhooksSettings.path ? options.webhooksSettings.path : "/";
+			if(!options.webhooksSettings.path.startsWith("/")) {
+				options.webhooksSettings.path = `/${options.webhooksSettings.path}`;
+			}
+			if(!options.webhooksSettings.path.endsWith("/")) {
+				options.webhooksSettings.path = `${options.webhooksSettings.path}/`;
+			}
+			this.createServer();
+		}
+
+		options.baseAPIEndpoint = options.baseAPIEndpoint ? options.baseAPIEndpoint : BASE_API_URI;
+
 		this.options = options;
 		this.subscriptions = [];
 	}
@@ -124,9 +204,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		if(this.interval && ((this.lastFetchedAt + this.options.updatingInterval) - Date.now()) > 10000) { // i'm bad at math
 			setTimeout(() => this.fetch([streamer]), 1);
 		}
+		if(this._allowWebhooks) {
+			this.registerHook(streamer.uid);
+		}
 	}
 
-	public removeSubscribtion(uid: string) {
+	public removeSubscription(uid: string) {
 		const index = this.findSubscriptionIndex(uid);
 		if(index === -1) {
 			throw new Error(`Not subscribed to ${uid}`);
@@ -134,8 +217,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		this.subscriptions.splice(index, 1);
 	}
 
+	private getSubscription(uid: string) {
+		return this.subscriptions.find(s => s.uid === uid);
+	}
+
 	private findSubscriptionIndex(uid: string) {
-		return this.subscriptions.findIndex((s) => s.uid === uid);
+		return this.subscriptions.findIndex(s => s.uid === uid);
 	}
 
 	public isSubscribed(uid: string) {
@@ -147,20 +234,17 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	private interval?: NodeJS.Timer;
-	private pendingStart?: NodeJS.Timer;
 
 	public async start() {
-		this.log("info", "Starting up with subsbriptions:", this.subscriptions);
 		this.interval = setInterval(() => this.fetch(this.subscriptions), this.options.updatingInterval);
+		if(this.options.useWebhooks) {
+			this.initServer();
+		}
 		await this.fetch(this.subscriptions);
 	}
 
 	public async stop() {
-		if(!this.interval && !this.pendingStart) {
-			throw new Error("There's nor interval nor delayed start");
-		} else if(this.pendingStart) {
-			clearTimeout(this.pendingStart);
-		} else if(this.interval) {
+		if(this.interval) {
 			clearInterval(this.interval);
 		}
 	}
@@ -169,21 +253,21 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	//                Fetching
 	// ========================================
 
-	private streamsStore: IHashMap<ICacheItem<ITwitchStream|null>|undefined> = {};
-	private gamesStore: IHashMap<ICacheItem<ITwitchGame>|undefined> = {};
-	private metadataStore: IHashMap<ICacheItem<ITwitchMetadata>|undefined> = {};
-	private usersStore: IHashMap<ICacheItem<ITwitchUser>|undefined> = {};
-	private currentPayloadsStore: IHashMap<ICacheItem<ITwitchNewPluginPayload|null>|undefined> = {};
+	private streamsStore: INullableHashMap<ICacheItem<ITwitchStream | null>> = Object.create(null);
+	private gamesStore: INullableHashMap<ICacheItem<ITwitchGame>> = Object.create(null);
+	private metadataStore: INullableHashMap<ICacheItem<ITwitchMetadata>> = Object.create(null);
+	private usersStore: INullableHashMap<ICacheItem<ITwitchUser>> = Object.create(null);
+	private currentPayloadsStore: INullableHashMap<ICacheItem<ITwitchNewPluginPayload>> = Object.create(null);
 	private lastFetchedAt: number = Date.now();
 
-	public async createPayloads(uids: string[]) : Promise<IHashMap<ITwitchNewPluginPayload|null|undefined>> {
+	public async createPayloads(uids: string[]): Promise<INullableHashMap<ITwitchNewPluginPayload>> {
 		// to fetch:
 		const fetchStreams: string[] = [];
 		const fetchGames: string[] = [];
 		const fetchMetadata: string[] = [];
 		const fetchUsers: string[] = [];
 
-		const ready: IHashMap<ITwitchNewPluginPayload|null|undefined> = {};
+		const ready: INullableHashMap<ITwitchNewPluginPayload> = Object.create(null);
 
 		for(const uid of uids) {
 			const streamCache = this.streamsStore[uid];
@@ -198,7 +282,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 			// let's start the assignation process
 
-			const streams: IHashMap<ITwitchStream|null|undefined> = {};
+			const streams: INullableHashMap<ITwitchStream> = Object.create(null);
 			for(const fetchedStream of fetchedStreams.data) {
 				streams[fetchedStream.user_id] = fetchedStream;
 			}
@@ -226,7 +310,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			const stream = streamCache ? streamCache.value : undefined;
 			if(stream === null) { ready[uid] = null; continue; }
 			else if(!stream) { continue; }
-			
+
 			if(stream.game_id) {
 				const game = this.gamesStore[stream.game_id];
 				if(!game || ((Date.now() - game.fetchedAt) > CACHEDIFF_GAME)) {
@@ -235,7 +319,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			}
 
 			if(POSSIBLE_METADATA_GAMEIDS.find(g => g.id === stream.game_id)) {
-				const metadata =  this.metadataStore[uid];
+				const metadata = this.metadataStore[uid];
 				if(!metadata || (Date.now() - metadata.fetchedAt) > (this.options.updatingInterval - OFF_METADATA)) {
 					fetchMetadata.push(uid);
 				}
@@ -268,7 +352,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 
 		for(const uids of chunk(fetchUsers)) {
-			const fetchedUsers = await this.makeRequest<ITwitchPagenatedResponse<ITwitchUser>> (this.getAPIURL_User(uids, true));
+			const fetchedUsers = await this.makeRequest<ITwitchPagenatedResponse<ITwitchUser>>(this.getAPIURL_User(uids, true));
 			const fetchedAt = Date.now();
 			for(const user of fetchedUsers.data) {
 				this.usersStore[user.id] = {
@@ -330,7 +414,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		for(const streamer of streamers) {
 			createPayloads.push(streamer.uid);
 		}
-		
+
 		const createdPayloads = await this.createPayloads(createPayloads);
 		const createdAt = Date.now();
 
@@ -350,8 +434,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 					});
 				} else if(activePayload) {
 					// check if stream is updated
-					
-					let _updated: string|undefined = undefined;
+
+					let _updated: string | undefined = undefined;
 					const isUpdated = !!(_updated = (() => {
 						if(createdPayload.title !== activePayload.title) {
 							return "title";
@@ -465,7 +549,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		return true;
 	}
 
-	private _oneOfThemNull(a?: any, b?: any) : boolean {
+	private _oneOfThemNull(a?: any, b?: any): boolean {
 		return (!a && b) || (a && !b);
 	}
 
@@ -608,13 +692,13 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	private getAPIURL_Streams(ids: string[]) {
-		let apiUri = `https://api.twitch.tv/helix/streams?type=all`;
+		let apiUri = `${this.options.baseAPIEndpoint}/streams?type=all`;
 		for(const id of ids) { apiUri += `&user_id=${id}`; }
 		return apiUri;
 	}
 
 	private getAPIURL_User(username: string[], ids = false) {
-		let apiUri = `https://api.twitch.tv/helix/users`;
+		let apiUri = `${this.options.baseAPIEndpoint}/users`;
 		for(let i = 0; i < username.length; i++) {
 			apiUri += `${(i === 0 ? "?" : "&")}${ids ? "id" : "login"}=${username[i]}`;
 		}
@@ -622,7 +706,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private getAPIURL_Metadata(ids: string[]) {
-		let apiUri = "https://api.twitch.tv/helix/streams/metadata";
+		let apiUri = "${this.options.baseAPIEndpoint}/streams/metadata";
 		for(let i = 0; i < ids.length; i++) {
 			apiUri += `${(i === 0 ? "?" : "&")}user_id=${ids[i]}`;
 		}
@@ -630,7 +714,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private getAPIURL_Games(ids: string[]) {
-		let apiUri = "https://api.twitch.tv/helix/games";
+		let apiUri = "${this.options.baseAPIEndpoint}/games";
 		for(let i = 0; i < ids.length; i++) {
 			apiUri += `${(i === 0 ? "?" : "&")}id=${ids[i]}`;
 		}
@@ -700,6 +784,254 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	// ========================================
+	//             Webhooks Stuff
+	// ========================================
+
+	private _registeredHooks: IHashMap<IRegisteredWebhook | undefined> = Object.create(null);
+	private _allowWebhooks = false;
+
+	private initServer() {
+		let settings: IWebhookSettings | undefined;
+		if(!this.options.useWebhooks) {
+			this.log("info", "[init] Initialization of the application is not required. Using longpolling only.");
+			return;
+		} else if(!(settings = this.options.webhooksSettings)) {
+			this.log("err", "[init] `useWebhooks` set to `true`, but no settings provided. Wondering why it's happened... Did you changed the code?");
+			return;
+		}
+		this.log("info", "[init] Please wait while we're initializing the application...");
+		let app = this.app;
+		if(!app) {
+			this.log("info", "[init] No application found, didn't constructor worked properly? Anyway...");
+			app = this.createServer();
+		}
+		app.listen({
+			host: settings.host,
+			port: settings.port || DEFAULT_PORT
+		}, (err) => {
+			if(err) {
+				return this.log("err", "Error initialization webhook server. Webhooks will not be accepted");
+			}
+			this._allowWebhooks = true;
+		});
+	}
+
+	createServer() {
+		return this.app = http.createServer(this._serverHandler);
+	}
+
+	private async _serverHandler(req: http.IncomingMessage, resp: http.ServerResponse) {
+		if(!req.url || !req.method) {
+			// checking for "heckin' magic"
+			return;
+		}
+
+		const parsed = parseUrl(req.url, true);
+		const whSettings = this.options.webhooksSettings!;
+		const isLocalURL = [`${whSettings.host}`, `${whSettings.host}:${whSettings.port}`].includes(parsed.hostname || "");
+
+		if(whSettings.domain && (parsed.hostname !== whSettings.domain && !isLocalURL)) {
+			this.log("warn", `[Webhooks] Attempt to access host directly from ${req.connection.remoteAddress}`);
+			return this._respondTo(resp, "Unpredicted magic happened. Probably server misconfiguration or you're calling server directly?", 400);
+		} else if(!whSettings.domain && isLocalURL) {
+			this.log("warn", `[Webhooks] Attempt to access from localhost ${req.connection.remoteAddress}`);
+			return this._respondTo(resp, "But why?", 400);
+		}
+
+		// if(parsed.hostname !== whSettings.domain) {
+		// 	resp.statusCode = 400;
+		// 	return resp.end("Unknown hostname you trying to access. This is Twitchy Webhooky Grandma house!");
+		// }
+
+		if(!parsed.pathname) {
+			return this._respondTo(resp, "Unknown location", 400);
+		} else if(!parsed.pathname.startsWith(whSettings.path)) {
+			return this._respondTo(resp, "Invalid path", 400);
+		}
+
+		parsed.pathname = parsed.pathname.slice(whSettings.path.length);
+
+		switch(req.method.toLowerCase()) {
+			case "post": return await this._twitchProcess(req, resp, parsed);
+			case "get": return await this._ackTwitch(req, resp, parsed);
+			default: {
+				resp.statusCode = 400;
+				return resp.end("Invalid method specified");
+			}
+		}
+	}
+
+	private async _twitchProcess(req: http.IncomingMessage, resp: http.ServerResponse, parsedURL: Url) {
+		const id = (parsedURL.pathname || "");
+		const hook = this._registeredHooks[id];
+		const signature = req.headers["x-hub-signature"];
+		if(!hook) {
+			this.log("warn", `[Webhooks] Request about unknown hook, rejected "${req.url}" from "${req.connection.remoteAddress}"`);
+			return this._respondTo(resp, "Unknown hook", 400);
+		}
+		if(!signature || typeof signature !== "string") {
+			this.log("warn", `[Webhooks] Request with no signature, rejected "${req.url}" from "${req.connection.remoteAddress}"`);
+			return this._respondTo(resp, "Signature is not provided or invalid");
+		}
+
+		const content = await (() => {
+			return new Promise<string>(res => {
+				let data = "";
+				req.on("data", (b) => {
+					data += b.toString();
+				}).on("end", () => {
+					res(data);
+				});
+			});
+		})();
+
+		const destructedSig = signature.split("=");
+		// validation
+		const hash = createHmac(destructedSig[0], hook.key).update(content).digest("hex");
+		if(hash !== destructedSig[1]) {
+			this.log("warn", `[Webhooks] Invalid hash provided, verification failed. "${req.url}" from "${req.connection.remoteAddress}"`);
+			return this._respondTo(resp, "Verification failed");
+		}
+
+		let json: { data: ITwitchStream[] };
+		try {
+			json = JSON.parse(content);
+		} catch(err) {
+			return this._respondTo(resp, "Failed to parse JSON", 400);
+		}
+
+		const fetchSubscriptions: IStreamingServiceStreamer[] = [];
+		for(const stream of json.data) {
+			const uid = stream.user_id;
+			const subscription = this.getSubscription(uid);
+			if(!subscription) {
+				this.log("warn", `[Webhook] Received update event for "${uid}", but no subscription for this user!`);
+				continue;
+			}
+			this.streamsStore[uid] = {
+				fetchedAt: Date.now(),
+				value: stream
+			};
+			fetchSubscriptions.push(subscription);
+		}
+
+		await this.fetch(fetchSubscriptions);
+	}
+
+	private async _ackTwitch(req: http.IncomingMessage, resp: http.ServerResponse, parsedURL: Url) {
+		const id = (parsedURL.pathname || "");
+		const hook = this._registeredHooks[id];
+		if(!hook) {
+			this.log("info", `[Webhooks] Request about unknown hook, rejected "${req.url}"`);
+			return this._respondTo(resp, "Unknown hook", 400);
+		}
+		if(!parsedURL.query) {
+			this.log("info", `[Webhooks] Unknown request with no query passed, rejected "${req.url}"`);
+			return this._respondTo(resp, "No query passed", 400);
+		}
+		switch(parsedURL.query["hub.mode"]) {
+			case "subscribe": {
+				this.log("ok", `[Webhooks] Created webhook for "${parsedURL.query["hub.topic"]}"`);
+				hook.registeredAt = Date.now();
+				this.scheduleRenew(hook, parseInt(parsedURL.query["hub.lease_seconds"], 10));
+				return this._respondTo(resp, parsedURL.query["hub.challenge"]);
+			}
+			case "denied": {
+				this.log("info", `[Webhooks] Failed to create webhook for "${parsedURL.query["hub.topic"]}"`);
+				delete this._registeredHooks[id];
+				return this._respondTo(resp);
+			}
+			case "unsubscribe": {
+				this.log("info", `[Webhooks] Unsubscribed from "${parsedURL.query["hub.topic"]}"`);
+				delete this._registeredHooks[id];
+				return this._respondTo(resp);
+			}
+			default: {
+				this.log("warn", `[Webhooks] Unknown hub mode - ${parsedURL.query["hub.mode"]}`);
+				return this._respondTo(resp); // 👀
+			}
+		}
+	}
+
+	private async _respondTo(resp: http.ServerResponse, withContent?: string, statusCode: number = 200, headers?: IHashMap<string | number>) {
+		resp.writeHead(statusCode, withContent, headers ? { ...TXT_HEADER, ...headers } : TXT_HEADER);
+		return resp.end();
+	}
+
+	private _scheduledRenews: IHashMap<NodeJS.Timer | undefined> = Object.create(null);
+
+	private scheduleRenew(hook: IRegisteredWebhook, leaseSeconds: number) {
+		const time = (leaseSeconds * 1000);
+		this._scheduledRenews[hook.uid] = setTimeout(() => this.registerHook(hook.uid), time);
+		this.log("info", `[Webhooks] Scheduled renew for ${hook.uid} in ${time}ms`);
+	}
+
+	private async registerHook(uid: string) {
+		if(!this.options.webhooksSettings) { throw new Error("No webhook settings found."); }
+		const randID = Date.now().toString(16).split("").reverse().join("") + randomString(10, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+		const key = randomString(20, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя!;()$%^&");
+
+		this.log("info", `Started webhook registration for ${uid}\n\tID: ${randID}\n\tKey: ${key}`);
+		this._registeredHooks[randID] = {
+			registeredAt: -1,
+			uid, key
+		};
+
+		const url = new URL(`${this.options.baseAPIEndpoint}/webhooks/hub`);
+		url.searchParams.append("hub.callback", `${this.options.webhooksSettings.domain}${this.options.webhooksSettings.path}/${randID}`);
+		url.searchParams.append("hub.mode", "subscribe");
+		url.searchParams.append("hub.topic", this.getAPIURL_Streams([uid]));
+		url.searchParams.append("hub.lease_seconds", `${this.options.webhooksSettings.aliveTime}`);
+		url.searchParams.append("hub.secret", key);
+
+		try {
+			await this.makeRequest(url.toString());
+		} catch(err) {
+			this.log("warn", `[Webhooks] Registration failed for ${uid}`, err);
+			delete this._registeredHooks[randID];
+		}
+
+		this.log("info", "[Webhooks] Registration seems to progress, if everything is OK, Twitch will ask for confirmation");
+	}
+
+	private async _unregisterHook(hookId: string, uid?: string) {
+		if(!this.options.webhooksSettings) { throw new Error("No webhook settings found."); }
+
+		const hook = this._registeredHooks[hookId];
+		if(!hook && !uid) {
+			throw new Error("Hook not found, UID not provided");
+		}
+
+		const duid = hook ? hook.uid : uid;
+		if(!duid) {
+			throw new Error("Could not determinate UID");
+		}
+
+		const scheduledRenew = this._scheduledRenews[duid];
+		if(scheduledRenew) {
+			this.log("info", "[Webhooks] Scheduled renew found, clearing...");
+			clearTimeout(scheduledRenew);
+		}
+
+		const url = new URL(`${this.options.baseAPIEndpoint}/webhooks/hub`);
+		url.searchParams.append("hub.callback", `${this.options.webhooksSettings.domain}${this.options.webhooksSettings.path}/${hookId}`);
+		url.searchParams.append("hub.mode", "unsubscribe");
+		url.searchParams.append("hub.topic", this.getAPIURL_Streams([hook ? hook.uid : uid!]));
+
+		if(hook) {
+			url.searchParams.append("hub.secret", hook.key);
+		}
+
+		try {
+			await this.makeRequest(url.toString());
+		} catch(err) {
+			this.log("err", `[Webhooks] Failed to unsubscribe from "${uid || hook!.uid}" on Twitch`);
+		}
+
+		delete this._registeredHooks[hookId];
+	}
+
+	// ========================================
 	//              Module Stuff
 	// ========================================
 
@@ -708,14 +1040,37 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	async unload() {
+		this.log("info", "[unload] Unloading...");
+		try {
+			await (() => new Promise((res, rej) => {
+				if(this.app) {
+					this.app.close((err) => {
+						if(err) { return rej(err); }
+						return res();
+					});
+				} else { return res(); }
+			}))();
+		} catch(err) {
+			this.log("err", "[unload] Could not stop the webhooks server", err);
+		}
+		for(const hookId in this._registeredHooks) {
+			this.log("info", `[unload] Unregistering ${hookId}`);
+			await this._unregisterHook(hookId);
+		}
+		this.log("info", "[unload] Clearing cache...");
 		for(const key in this.streamsStore) {
 			delete this.streamsStore[key];
+		}
+		for(const uid in this.currentPayloadsStore) {
+			delete this.currentPayloadsStore[uid];
 		}
 		return true;
 	}
 }
 
 type PossibleTwitchStreamTypes = "live" | "vodcast" | "offline";
+type PossibleTwitchUserTypes = "staff" | "admin" | "global_mod" | "";
+type PossibleTwitchUserPartnershipStatus = "partner" | "affiliate" | "";
 
 interface ITwitchOverwatchMetadata {
 	hero: {
@@ -785,8 +1140,8 @@ interface ITwitchUser {
 	id: string;
 	login: string;
 	display_name: string;
-	type: "staff" | "admin" | "global_mod" | "";
-	broadcaster_type: "partner" | "affiliate" | "";
+	type: PossibleTwitchUserTypes;
+	broadcaster_type: PossibleTwitchUserPartnershipStatus;
 	description: string;
 	profile_image_url: string;
 	offline_image_url: string;
