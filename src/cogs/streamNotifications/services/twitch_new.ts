@@ -706,7 +706,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private getAPIURL_Metadata(ids: string[]) {
-		let apiUri = "${this.options.baseAPIEndpoint}/streams/metadata";
+		let apiUri = `${this.options.baseAPIEndpoint}/streams/metadata`;
 		for(let i = 0; i < ids.length; i++) {
 			apiUri += `${(i === 0 ? "?" : "&")}user_id=${ids[i]}`;
 		}
@@ -714,7 +714,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private getAPIURL_Games(ids: string[]) {
-		let apiUri = "${this.options.baseAPIEndpoint}/games";
+		let apiUri = `${this.options.baseAPIEndpoint}/games`;
 		for(let i = 0; i < ids.length; i++) {
 			apiUri += `${(i === 0 ? "?" : "&")}id=${ids[i]}`;
 		}
