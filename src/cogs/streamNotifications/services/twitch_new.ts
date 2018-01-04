@@ -45,43 +45,6 @@ const EMOJINAME_VODCAST = "vodcast";
 const HOOK_LIVETIME = 864000;
 const TWITCH_DEATH = 300000;
 
-interface IWebhookSettings {
-	/**
-	 * How many time is hook alive
-	 * After hook dies, this script renews it
-	 * Recommended to leave to the default value
-	 */
-	aliveTime: number;
-	/**
-	 * Host of where this hosts in
-	 */
-	host: string;
-	/**
-	 * If you pass the domain here make sure your server has a local proxy to redirect request to this HTTP server.
-	 * The flow will be looking like: Twitch (12.23.34.45) → Proxy server (snowball-twitch.example.com) → Webhook server ({host}:1337)
-	 */
-	domain?: string;
-	/**
-	 * Specify port
-	 */
-	port: number;
-	/**
-	 * Want to have a beautiful path in callback url? OK
-	 */
-	path: string;
-	/**
-	 * Is callback URL should be passed in HTTPS?
-	 */
-	secure: boolean;
-	/**
-	 * Database settings
-	 */
-	database: {
-		use: boolean;
-		tableName: string;
-	};
-}
-
 interface IServiceOptions {
 	/**
 	 * Twitch Client ID
@@ -121,26 +84,41 @@ interface IServiceOptions {
 	baseAPIEndpoint: string;
 }
 
-interface IRegisteredWebhook {
-	registeredAt: number;
-	key: string;
-	uid: string;
-	leaseSeconds: number;
-}
-
-// UID, WEBHOOK_ID, KEY, CREATED_AT, LEASE_TIME, SAVED_AT
-interface IDBWebhook {
-	uid: string;
-	id: string;
-	key: string;
-	registeredAt: number;
-	leaseTime: number;
-	savedAt: number;
-}
-
-interface ICacheItem<T> {
-	fetchedAt: number;
-	value: T;
+interface IWebhookSettings {
+	/**
+	 * How many time is hook alive
+	 * After hook dies, this script renews it
+	 * Recommended to leave to the default value
+	 */
+	aliveTime: number;
+	/**
+	 * Host of where this hosts in
+	 */
+	host: string;
+	/**
+	 * If you pass the domain here make sure your server has a local proxy to redirect request to this HTTP server.
+	 * The flow will be looking like: Twitch (12.23.34.45) → Proxy server (snowball-twitch.example.com) → Webhook server ({host}:1337)
+	 */
+	domain?: string;
+	/**
+	 * Specify port
+	 */
+	port: number;
+	/**
+	 * Want to have a beautiful path in callback url? OK
+	 */
+	path: string;
+	/**
+	 * Is callback URL should be passed in HTTPS?
+	 */
+	secure: boolean;
+	/**
+	 * Database settings
+	 */
+	database: {
+		use: boolean;
+		tableName: string;
+	};
 }
 
 class TwitchStreamingService extends EventEmitter implements IStreamingService {
@@ -154,9 +132,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	private options: IServiceOptions;
 
-	private app: http.Server;
+	private webhooksServer: http.Server;
 
-	private db: Knex;
+	private _db: Knex;
 
 	constructor(options: IServiceOptions) {
 		super();
@@ -243,11 +221,11 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			const dbSettings = options.webhooksSettings.database;
 			if(dbSettings && dbSettings.use) {
 				if(!dbSettings.tableName) { dbSettings.tableName = DEFAULT_TABLENAME; }
-				this.db = getDB();
+				this._db = getDB();
 			}
 
 			// WST: Creating the server
-			this.createServer();
+			this._createWebhooksServer();
 		}
 
 		options.baseAPIEndpoint = options.baseAPIEndpoint ? options.baseAPIEndpoint : BASE_API_URI;
@@ -274,16 +252,23 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 
 		if(this._allowWebhooks) {
-			this.registerHook(streamer.uid);
+			this.registerWebhook(streamer.uid);
 		}
 	}
 
 	public removeSubscription(uid: string) {
 		const index = this.findSubscriptionIndex(uid);
+
 		if(index === -1) {
 			throw new Error(`Not subscribed to ${uid}`);
 		}
+
 		this.subscriptions.splice(index, 1);
+
+		const hookID = this._hooksIDs[uid];
+		if(this._allowWebhooks && hookID) {
+			this.unregisterWebhook(hookID);
+		}
 	}
 
 	private getSubscription(uid: string) {
@@ -306,79 +291,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public async start() {
 		this.interval = setInterval(() => this.fetch(this.subscriptions), this.options.updatingInterval);
-		if(this.options.useWebhooks) {
-			const whs = this.options.webhooksSettings;
-			const registeredHooksFor: string[] = [];
-			await (async () => {
-				if(this.db && whs) {
-					const dbSettings = whs.database;
-					if(!dbSettings || !dbSettings.use) { return delete this.db; }
-
-					const tableStatus = await this.db.schema.hasTable(dbSettings.tableName);
-					if(!tableStatus) {
-						await this.db.schema.createTable(dbSettings.tableName, (c) => {
-							// UID, WEBHOOK_ID, KEY, CREATED_AT, LEASE_TIME, SAVED_AT
-							c.string("uid").notNullable();
-							c.string("id").notNullable();
-							c.string("key").notNullable();
-							c.bigInteger("registeredAt").notNullable();
-							c.bigInteger("leaseTime").notNullable();
-							c.bigInteger("savedAt").notNullable();
-						});
-					}
-
-					const hooks = <IDBWebhook[]> await this.db(dbSettings.tableName).select("*");
-					this.log("info", `Found ${(hooks || []).length} in database table!`);
-
-					const invalidateHook = async (hook: IDBWebhook) => {
-						await this.db(dbSettings.tableName).where(hook).delete();
-						await this._unregisterHook(hook.id, hook.uid);
-					};
-
-					for(const hook of hooks) {
-						if((Date.now() - hook.savedAt) > TWITCH_DEATH) {
-							this.log("info", `Hook ${hook.id} (${hook.uid}) is already dead for Twitch and will not be recreated`);
-							await invalidateHook(hook);
-							continue;
-						}
-
-						if((hook.registeredAt + (hook.leaseTime * 1000)) < Date.now()) {
-							this.log("info", `Hook ${hook.id} (${hook.uid}) is already expired and will not be recreated`);
-							await invalidateHook(hook);
-							continue;
-						}
-
-						this.log("ok", `Recreated hook ${hook.id} (${hook.uid})`);
-						const registered = this._registeredHooks[hook.id] = {
-							key: hook.key,
-							registeredAt: hook.registeredAt,
-							uid: hook.uid,
-							leaseSeconds: hook.leaseTime
-						};
-						this.scheduleRenew(registered, (hook.registeredAt + (hook.leaseTime * 1000)) - Date.now());
-						registeredHooksFor.push(hook.uid);
-					}
-				}
-			})();
-
-			try {
-				await this.initServer();
-				for(const subscription of this.subscriptions) {
-					if(registeredHooksFor.includes(subscription.uid)) {
-						this.log("ok", `We already have hook for ${subscription.uid}. Wow that's cool!`);
-						continue;
-					}
-					try {
-						await this.registerHook(subscription.uid);
-						await sleep(1000);
-					} catch (err) {
-						this.log("err", `Failed to connect the webhook for ${subscription.uid} (${subscription.username})`, err);
-					}
-				}
-			} catch (err) {
-				this.log("err", "Failed to initialize the server", err);
-			}
-		}
+		await this._webhooksLoadHandler();
 		await this.fetch(this.subscriptions);
 	}
 
@@ -646,6 +559,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		this.lastFetchedAt = createdAt;
 	}
 
+	// #region Metadata comprasion
+
 	private _isMetadataEqual(a?: ITwitchMetadata, b?: ITwitchMetadata) {
 		if((!a && !b) || (!a && b) || (a && !b)) { return true; }
 		if(!a || !b) { return false; } // fucking ts
@@ -711,9 +626,13 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		return true;
 	}
 
+	// #endregion
+
 	// ========================================
 	//                 Discord
 	// ========================================
+
+	// #region Discord
 
 	public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
 		const payload = <ITwitchNewPluginPayload>streamStatus.payload;
@@ -748,8 +667,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 						inline: false,
 						name: `${(gameEmoji ? `${gameEmoji} ` : "")}${gameName}`,
 						value: $localizer.getFormattedString(lang, "STREAMING_GAME_VALUE_OVERWATCH", {
-							name: this.getOverwatchHeroName(owMetadata.broadcaster.hero.name, lang),
-							role: this.getOverwatchRoleName(owMetadata.broadcaster.hero.role, lang)
+							name: this._getOverwatchHeroName(owMetadata.broadcaster.hero.name, lang),
+							role: this._getOverwatchRoleName(owMetadata.broadcaster.hero.role, lang)
 						})
 					});
 				} break;
@@ -826,11 +745,53 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		};
 	}
 
+	private _getOverwatchHeroName(name: string, lang: string) {
+		switch(name) {
+			case "Soldier: 76": { name = "SOLDIER76"; } break;
+			case "D. VA": { name = "DVA"; } break;
+			default: { name = name.toUpperCase(); }
+		}
+		return $localizer.getString(lang, `OVERWATCH_HERO_${name}`);
+	}
+
+	private _getOverwatchRoleName(role: string, lang: string) {
+		return $localizer.getString(lang, `OVERWATCH_ROLE_${role.toUpperCase()}`);
+	}
+
+	// #endregion
+
 	// ========================================
 	//                   API
 	// ========================================
 
-	private getAPIURL_Streams(ids: string[], type?: PossibleTwitchStreamTypes|"all") {
+	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
+		if(!TWITCH_USERNAME_REGEXP.test(username)) {
+			throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
+		}
+
+		const foundUsers = await this.makeRequest<ITwitchPagenatedResponse<ITwitchUser>>(this.getAPIURL_User([username]));
+
+		if(foundUsers.data.length === 0) {
+			throw new StreamingServiceError("TWITCH_USERNOTFOUND", "User not found.");
+		} else if(foundUsers.data.length > 1) {
+			throw new StreamingServiceError("TWITCH_INVALIDRESPONSE", "Invalid response received.");
+		}
+
+		// this one is amazing <3
+		const user = foundUsers.data[0];
+
+		return {
+			serviceName: this.name,
+			uid: user.id,
+			username: user.display_name || user.login
+		};
+	}
+
+	// #region API
+
+	// #region URL Builders
+
+	private getAPIURL_Streams(ids: string[], type?: PossibleTwitchStreamTypes | "all") {
 		let apiUri = `${this.options.baseAPIEndpoint}/streams`;
 		let i = 0;
 		for(; i < ids.length; i++) {
@@ -866,41 +827,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		return apiUri;
 	}
 
-	private getOverwatchHeroName(name: string, lang: string) {
-		switch(name) {
-			case "Soldier: 76": { name = "SOLDIER76"; } break;
-			case "D. VA": { name = "DVA"; } break;
-			default: { name = name.toUpperCase(); }
-		}
-		return $localizer.getString(lang, `OVERWATCH_HERO_${name}`);
-	}
-
-	private getOverwatchRoleName(role: string, lang: string) {
-		return $localizer.getString(lang, `OVERWATCH_ROLE_${role.toUpperCase()}`);
-	}
-
-	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
-		if(!TWITCH_USERNAME_REGEXP.test(username)) {
-			throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
-		}
-
-		const foundUsers = await this.makeRequest<ITwitchPagenatedResponse<ITwitchUser>>(this.getAPIURL_User([username]));
-
-		if(foundUsers.data.length === 0) {
-			throw new StreamingServiceError("TWITCH_USERNOTFOUND", "User not found.");
-		} else if(foundUsers.data.length > 1) {
-			throw new StreamingServiceError("TWITCH_INVALIDRESPONSE", "Invalid response received.");
-		}
-
-		// this one is amazing <3
-		const user = foundUsers.data[0];
-
-		return {
-			serviceName: this.name,
-			uid: user.id,
-			username: user.display_name || user.login
-		};
-	}
+	// #endregion
 
 	private async makeRequest<T>(uri: string, method = "GET", isJson = true): Promise<T> {
 		const loop = async (attempt: number = 0) => {
@@ -911,7 +838,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			if(this.options.token) { headers["Authorization"] = `Bearer ${this.options.token}`; }
 			const resp = await fetch(uri, { headers, method: method.toUpperCase() });
 			if(resp.status === 429) {
-				const resetAt = parseInt(resp.headers.get("RateLimit-Reset".toLowerCase()), 10);
+				const resetAt = parseInt(resp.headers.get("ratelimit-reset"), 10);
 				const sleepTime = ((resetAt * 1000) - Date.now()) + 5; // time problems
 				this.log("info", `Request to "${uri}" was ratelimited. Sleeping for ${sleepTime}...`);
 				await sleep(sleepTime);
@@ -927,14 +854,19 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		return <T>(await loop());
 	}
 
+	// #endregion
+
 	// ========================================
 	//             Webhooks Stuff
 	// ========================================
 
+	// #region Webhooks Stuff
+
 	private _registeredHooks: INullableHashMap<IRegisteredWebhook> = Object.create(null);
+	private _hooksIDs: INullableHashMap<string> = Object.create(null);
 	private _allowWebhooks = false;
 
-	private initServer() {
+	private initWebhooksServer() {
 		return new Promise((res, rej) => {
 			let settings: IWebhookSettings | undefined;
 			if(!this.options.useWebhooks) {
@@ -945,12 +877,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				return;
 			}
 			this.log("info", "[init] Please wait while we're initializing the application...");
-			let app = this.app;
-			if(!app) {
+			let whsrv = this.webhooksServer;
+			if(!whsrv) {
 				this.log("info", "[init] No application found, didn't constructor worked properly? Anyway...");
-				app = this.createServer();
+				whsrv = this._createWebhooksServer();
 			}
-			app.listen({
+			whsrv.listen({
 				host: settings.host,
 				port: settings.port || DEFAULT_PORT
 			}, (err) => {
@@ -965,15 +897,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		});
 	}
 
-	createServer() {
-		return this.app = http.createServer((req, resp) => this._serverHandler(req, resp));
+	private _createWebhooksServer() {
+		return this.webhooksServer = http.createServer((req, resp) => this._serverHandler(req, resp));
 	}
 
 	private async _serverHandler(req: http.IncomingMessage, resp: http.ServerResponse) {
-		if(!req.url || !req.method) {
-			// checking for "heckin' magic"
-			return;
-		}
+		if(!req.url || !req.method) { return; }
 
 		const parsed = parseUrl(getURL(req), true);
 		const whSettings = this.options.webhooksSettings!;
@@ -981,28 +910,23 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 		if(whSettings.domain && (parsed.hostname !== whSettings.domain && !isLocalURL)) {
 			this.log("warn", `[Webhooks] Attempt to access host "${parsed.hostname}" (${req.url}) directly from ${req.connection.remoteAddress}`);
-			return this._respondTo(resp, "Unpredicted magic happened. Probably server misconfiguration or you're calling server directly?", 400);
+			return this._endResponse(resp, "Unpredicted magic happened. Probably server misconfiguration or you're calling server directly?", 400);
 		} else if(!whSettings.domain && isLocalURL) {
 			this.log("warn", `[Webhooks] Attempt to access from localhost ${req.connection.remoteAddress}`);
-			return this._respondTo(resp, "But why?", 400);
+			return this._endResponse(resp, "But why?", 400);
 		}
 
-		// if(parsed.hostname !== whSettings.domain) {
-		// 	resp.statusCode = 400;
-		// 	return resp.end("Unknown hostname you trying to access. This is Twitchy Webhooky Grandma house!");
-		// }
-
 		if(!parsed.pathname) {
-			return this._respondTo(resp, "Unknown location", 400);
+			return this._endResponse(resp, "Unknown location", 400);
 		} else if(!parsed.pathname.startsWith(whSettings.path)) {
-			return this._respondTo(resp, "Invalid path", 400);
+			return this._endResponse(resp, "Invalid path", 400);
 		}
 
 		parsed.pathname = parsed.pathname.slice(whSettings.path.length);
 
 		switch(req.method.toLowerCase()) {
-			case "post": return await this._twitchProcess(req, resp, parsed);
-			case "get": return await this._ackTwitch(req, resp, parsed);
+			case "post": return await this._processTwitchUpdate(req, resp, parsed);
+			case "get": return await this._processTwitchConfirmation(req, resp, parsed);
 			default: {
 				resp.statusCode = 400;
 				return resp.end("Invalid method specified");
@@ -1010,20 +934,23 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 	}
 
-	private async _twitchProcess(req: http.IncomingMessage, resp: http.ServerResponse, parsedURL: Url) {
+	private async _processTwitchUpdate(req: http.IncomingMessage, resp: http.ServerResponse, parsedURL: Url) {
 		const id = (parsedURL.pathname || "");
 		const hook = this._registeredHooks[id];
 		const signature = req.headers["x-hub-signature"];
+
 		if(!hook) {
 			this.log("warn", `[Webhooks] Request about unknown hook "${id}", rejected "${req.url}" from "${req.connection.remoteAddress}"`);
-			return this._respondTo(resp, "Unknown hook", 400);
+			return this._endResponse(resp, "Unknown hook", 400);
 		}
+
 		if(!signature || typeof signature !== "string") {
 			this.log("warn", `[Webhooks] Request with no signature, rejected "${req.url}" from "${req.connection.remoteAddress}"`);
-			return this._respondTo(resp, "Signature is not provided or invalid");
+			return this._endResponse(resp, "Signature is not provided or invalid");
 		}
 
 		const content = await (() => {
+			// bad resolving
 			return new Promise<string>(res => {
 				let data = "";
 				req.on("data", (b) => {
@@ -1039,93 +966,88 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		const hash = createHmac(destructedSig[0], hook.key).update(content).digest("hex");
 		if(hash !== destructedSig[1]) {
 			this.log("warn", `[Webhooks] Invalid hash provided, verification failed. "${req.url}" from "${req.connection.remoteAddress}"`);
-			return this._respondTo(resp, "Verification failed");
+			return this._endResponse(resp, "Verification failed");
 		}
 
 		let json: { data: ITwitchStream[] };
 		try {
 			json = JSON.parse(content);
 		} catch(err) {
-			return this._respondTo(resp, "Failed to parse JSON", 400);
+			return this._endResponse(resp, "Failed to parse JSON", 400);
 		}
 
-		const fetchSubscriptions: IStreamingServiceStreamer[] = [];
-		for(const stream of json.data) {
-			const uid = stream.user_id;
-			const subscription = this.getSubscription(uid);
-			if(!subscription) {
-				this.log("warn", `[Webhook] Received update event for "${uid}", but no subscription for this user!`);
-				continue;
+		const streamer = this.getSubscription(hook.uid);
+		if(!streamer) {
+			this.log("warn", `[Webhook] Not found subscription for "${id}" (${hook.uid})`);
+			return;
+		}
+
+		if(json.data && json.data.length > 0) {
+			for(const stream of json.data) {
+				this.streamsStore[stream.user_id] = {
+					fetchedAt: Date.now(),
+					value: stream
+				};
 			}
-			this.streamsStore[uid] = {
-				fetchedAt: Date.now(),
-				value: stream
-			};
-			fetchSubscriptions.push(subscription);
 		}
 
-		await this.fetch(fetchSubscriptions);
+		this._endResponse(resp, "Thanks cutie!", 200);
+		await this.fetch([streamer]);
 	}
 
-	private async _ackTwitch(req: http.IncomingMessage, resp: http.ServerResponse, parsedURL: Url) {
+	private async _processTwitchConfirmation(req: http.IncomingMessage, resp: http.ServerResponse, parsedURL: Url) {
 		const id = (parsedURL.pathname || "");
 		const hook = this._registeredHooks[id];
 		if(!hook) {
 			this.log("info", `[Webhooks] Request about unknown hook "${id}", rejected "${req.url}"`);
-			return this._respondTo(resp, "Unknown hook", 400);
+			return this._endResponse(resp, "Unknown hook", 400);
 		}
 		if(!parsedURL.query) {
 			this.log("info", `[Webhooks] Unknown request with no query passed, rejected "${req.url}"`);
-			return this._respondTo(resp, "No query passed", 400);
+			return this._endResponse(resp, "No query passed", 400);
 		}
 		switch(parsedURL.query["hub.mode"]) {
 			case "subscribe": {
 				this.log("ok", `[Webhooks] Created webhook for "${parsedURL.query["hub.topic"]}"`);
 				hook.registeredAt = Date.now();
 				hook.leaseSeconds = parseInt(parsedURL.query["hub.lease_seconds"], 10);
-				this.scheduleRenew(hook, hook.leaseSeconds * 1000);
-				return this._respondTo(resp, parsedURL.query["hub.challenge"]);
+				this._scheduleWebhookRenew(hook, hook.leaseSeconds * 1000);
+				return this._endResponse(resp, parsedURL.query["hub.challenge"], 202);
 			}
 			case "denied": {
 				this.log("info", `[Webhooks] Failed to create webhook for "${parsedURL.query["hub.topic"]}"`);
 				delete this._registeredHooks[id];
-				return this._respondTo(resp);
+				return this._endResponse(resp);
 			}
 			case "unsubscribe": {
 				this.log("info", `[Webhooks] Unsubscribed from "${parsedURL.query["hub.topic"]}"`);
 				delete this._registeredHooks[id];
-				return this._respondTo(resp);
+				return this._endResponse(resp);
 			}
 			default: {
 				this.log("warn", `[Webhooks] Unknown hub mode - ${parsedURL.query["hub.mode"]}`);
-				return this._respondTo(resp); // 👀
+				return this._endResponse(resp); // 👀
 			}
 		}
 	}
 
-	private async _respondTo(resp: http.ServerResponse, withContent?: string, statusCode: number = 200, headers?: IHashMap<string | number>) {
+	private async _endResponse(resp: http.ServerResponse, withContent?: string, statusCode: number = 200, headers?: IHashMap<string | number>) {
 		resp.writeHead(statusCode, undefined, headers ? { ...TXT_HEADER, ...headers } : TXT_HEADER);
 		return resp.end(withContent);
 	}
 
-	private _scheduledRenews: IHashMap<NodeJS.Timer | undefined> = Object.create(null);
-
-	private scheduleRenew(hook: IRegisteredWebhook, leaseMs: number) {
-		this._scheduledRenews[hook.uid] = setTimeout(() => this.registerHook(hook.uid), leaseMs);
-		this.log("info", `[Webhooks] Scheduled renew for ${hook.uid} in ${leaseMs}ms`);
-	}
-
-	private async registerHook(uid: string) {
+	private async registerWebhook(uid: string) {
 		if(!this.options.webhooksSettings) { throw new Error("No webhook settings found."); }
 		const randID = Date.now().toString(16).split("").reverse().join("") + randomString(10, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 		const key = randomString(20, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя!;()$%^&");
 
-		this.log("info", `Started webhook registration for ${uid}\n\tID: ${randID}\n\tKey: ${key}`);
+		this.log("info", `[Webhooks] Started webhook registration for ${uid}\n\tID: ${randID}\n\tKey: ${key}`);
 		this._registeredHooks[randID] = {
 			registeredAt: -1,
 			leaseSeconds: -1,
 			uid, key,
 		};
+		this._hooksIDs[uid] = randID;
 
 		const wst = this.options.webhooksSettings;
 		const url = new URL(`${this.options.baseAPIEndpoint}/webhooks/hub`);
@@ -1137,17 +1059,19 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 		try {
 			const reqUri = url.toString();
-			this.log("info", `Sending request to ${reqUri}`);
+			this.log("info", `[Webhooks] Sending request to ${reqUri}`);
 			await this.makeRequest(reqUri, "post", false);
 		} catch(err) {
 			this.log("warn", `[Webhooks] Registration failed for ${uid}`, err);
-			return delete this._registeredHooks[randID];
+			delete this._registeredHooks[randID];
+			delete this._hooksIDs[uid];
+			return;
 		}
 
 		this.log("info", "[Webhooks] Registration seems to progress, if everything is OK, Twitch will ask for confirmation");
 	}
 
-	private async _unregisterHook(hookId: string, uid?: string, secret?: string) {
+	private async unregisterWebhook(hookId: string, uid?: string, secret?: string) {
 		if(!this.options.webhooksSettings) { throw new Error("No webhook settings found."); }
 
 		const hook = this._registeredHooks[hookId];
@@ -1155,12 +1079,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			throw new Error("Hook not found, UID not provided");
 		}
 
-		const duid = hook ? hook.uid : uid;
-		if(!duid) {
+		const resolvedUID = hook ? hook.uid : uid;
+		if(!resolvedUID) {
 			throw new Error("Could not determinate UID");
 		}
 
-		const scheduledRenew = this._scheduledRenews[duid];
+		const scheduledRenew = this._scheduledRenews[resolvedUID];
 		if(scheduledRenew) {
 			this.log("info", "[Webhooks] Scheduled renew found, clearing...");
 			clearTimeout(scheduledRenew);
@@ -1168,7 +1092,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 		const wst = this.options.webhooksSettings;
 		const url = new URL(`${this.options.baseAPIEndpoint}/webhooks/hub`);
-		url.searchParams.append("hub.callback", `${wst.secure ? "https": "http"}://${wst.domain}${wst.path}/${hookId}`);
+		url.searchParams.append("hub.callback", `${wst.secure ? "https" : "http"}://${wst.domain}${wst.path}/${hookId}`);
 		url.searchParams.append("hub.mode", "unsubscribe");
 		url.searchParams.append("hub.topic", this.getAPIURL_Streams([hook ? hook.uid : uid!]));
 
@@ -1187,23 +1111,92 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 
 		delete this._registeredHooks[hookId];
+		delete this._hooksIDs[resolvedUID];
 	}
 
-	// ========================================
-	//              Module Stuff
-	// ========================================
+	private async _webhooksLoadHandler() {
+		if(!this.options.useWebhooks) { return; }
+		const whs = this.options.webhooksSettings;
+		const registeredHooksFor: string[] = [];
+		await (async () => {
+			if(this._db && whs) {
+				const dbSettings = whs.database;
+				if(!dbSettings || !dbSettings.use) { return delete this._db; }
 
-	public emit(type: StreamStatusChangedAction, update: IStreamStatus) {
-		return super.emit(type, update);
+				const tableStatus = await this._db.schema.hasTable(dbSettings.tableName);
+				if(!tableStatus) {
+					await this._db.schema.createTable(dbSettings.tableName, (c) => {
+						// UID, WEBHOOK_ID, KEY, CREATED_AT, LEASE_TIME, SAVED_AT
+						c.string("uid").notNullable();
+						c.string("id").notNullable();
+						c.string("key").notNullable();
+						c.bigInteger("registeredAt").notNullable();
+						c.bigInteger("leaseTime").notNullable();
+						c.bigInteger("savedAt").notNullable();
+					});
+				}
+
+				const hooks = <IDBWebhook[]>await this._db(dbSettings.tableName).select("*");
+				this.log("info", `Found ${(hooks || []).length} in database table!`);
+
+				const invalidateHook = async (hook: IDBWebhook) => {
+					await this._db(dbSettings.tableName).where(hook).delete();
+					await this.unregisterWebhook(hook.id, hook.uid);
+				};
+
+				for(const hook of hooks) {
+					if((Date.now() - hook.savedAt) > TWITCH_DEATH) {
+						this.log("info", `Hook ${hook.id} (${hook.uid}) is already dead for Twitch and will not be recreated`);
+						await invalidateHook(hook);
+						continue;
+					}
+
+					if((hook.registeredAt + (hook.leaseTime * 1000)) < Date.now()) {
+						this.log("info", `Hook ${hook.id} (${hook.uid}) is already expired and will not be recreated`);
+						await invalidateHook(hook);
+						continue;
+					}
+
+					this.log("ok", `Recreated hook ${hook.id} (${hook.uid})`);
+					const registered = this._registeredHooks[hook.id] = {
+						key: hook.key,
+						registeredAt: hook.registeredAt,
+						uid: hook.uid,
+						leaseSeconds: hook.leaseTime
+					};
+					this._hooksIDs[hook.uid] = hook.id;
+					this._scheduleWebhookRenew(registered, (hook.registeredAt + (hook.leaseTime * 1000)) - Date.now());
+					registeredHooksFor.push(hook.uid);
+				}
+			}
+		})();
+
+		try {
+			await this.initWebhooksServer();
+			for(const subscription of this.subscriptions) {
+				if(registeredHooksFor.includes(subscription.uid)) {
+					this.log("ok", `We already have hook for ${subscription.uid}. Wow that's cool!`);
+					continue;
+				}
+				try {
+					await this.registerWebhook(subscription.uid);
+					await sleep(1000);
+				} catch(err) {
+					this.log("err", `Failed to connect the webhook for ${subscription.uid} (${subscription.username})`, err);
+				}
+			}
+		} catch(err) {
+			this.log("err", "Failed to initialize the server", err);
+		}
 	}
 
-	async unload() {
-		this.log("info", "[unload] Unloading...");
+	private async _webhooksUnloadHandler() {
+		if(!this.options.useWebhooks) { return; }
 
 		try {
 			await (() => new Promise((res, rej) => {
-				if(this.app) {
-					this.app.close((err) => {
+				if(this.webhooksServer) {
+					this.webhooksServer.close((err) => {
 						if(err) { return rej(err); }
 						return res();
 					});
@@ -1214,7 +1207,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 
 		const whs = this.options.webhooksSettings;
-		if(whs && whs.database && whs.database.use && this.db) {
+		if(whs && whs.database && whs.database.use && this._db) {
 			this.log("info", "[unload] Using database, saving data...");
 
 			for(const hookId in this._registeredHooks) {
@@ -1232,7 +1225,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 					this.log("warn", `[unload] This hook seems to be expired! (HE: ${hookEndsAt} => ${hook.registeredAt} + ${hook.leaseSeconds * 1000}`);
 				}
 
-				const current = <IDBWebhook>await this.db(whs.database.tableName).where({ uid: hook.uid }).first();
+				const current = <IDBWebhook>await this._db(whs.database.tableName).where({ uid: hook.uid }).first();
 				const newDBHook = <IDBWebhook>{
 					id: hookId,
 					uid: hook.uid,
@@ -1244,14 +1237,14 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 				if(current) {
 					if(isExpired) {
-						await this.db.where(current).delete();
+						await this._db.where(current).delete();
 						this.log("ok", `[unload] [@${hookId}] Entry removed as expired`);
 						continue;
 					}
-					await this.db(whs.database.tableName).where(current).update(newDBHook);
+					await this._db(whs.database.tableName).where(current).update(newDBHook);
 					this.log("ok", `[unload] [@${hookId}] Updated old entry`);
 				} else if(!isExpired) {
-					await this.db(whs.database.tableName).insert(newDBHook);
+					await this._db(whs.database.tableName).insert(newDBHook);
 					this.log("ok", `[unload] [@${hookId}] Saved new entry`);
 				} else {
 					this.log("warn", `[unload] [@${hookId}] ${isExpired ? "Entry expired" : "Unknown state!"}`);
@@ -1262,9 +1255,32 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			this.log("info", "[unload] Actually, we're unregistering these for you, so Twitch won't call us while we offline!");
 			for(const hookId in this._registeredHooks) {
 				this.log("info", `[unload] Unregistering ${hookId}`);
-				await this._unregisterHook(hookId);
+				await this.unregisterWebhook(hookId);
 			}
 		}
+	}
+
+	private _scheduledRenews: IHashMap<NodeJS.Timer | undefined> = Object.create(null);
+
+	private _scheduleWebhookRenew(hook: IRegisteredWebhook, leaseMs: number) {
+		this._scheduledRenews[hook.uid] = setTimeout(() => this.registerWebhook(hook.uid), leaseMs);
+		this.log("info", `[Webhooks] Scheduled renew for ${hook.uid} in ${leaseMs}ms`);
+	}
+
+	//#endregion
+
+	// ========================================
+	//              Module Stuff
+	// ========================================
+
+	public emit(type: StreamStatusChangedAction, update: IStreamStatus) {
+		return super.emit(type, update);
+	}
+
+	async unload() {
+		this.log("info", "[unload] Unloading...");
+
+		await this._webhooksUnloadHandler();
 
 		this.log("info", "[unload] Clearing cache...");
 		for(const key in this.streamsStore) {
@@ -1366,6 +1382,28 @@ interface ITwitchGame {
 	id: string;
 	name: string;
 	box_art_url: string;
+}
+
+interface IRegisteredWebhook {
+	registeredAt: number;
+	key: string;
+	uid: string;
+	leaseSeconds: number;
+}
+
+// UID, WEBHOOK_ID, KEY, CREATED_AT, LEASE_TIME, SAVED_AT
+interface IDBWebhook {
+	uid: string;
+	id: string;
+	key: string;
+	registeredAt: number;
+	leaseTime: number;
+	savedAt: number;
+}
+
+interface ICacheItem<T> {
+	fetchedAt: number;
+	value: T;
 }
 
 module.exports = TwitchStreamingService;
