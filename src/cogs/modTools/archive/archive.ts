@@ -306,8 +306,8 @@ class ModToolsArchive extends Plugin implements IModule {
 			users: IHashMap<User>,
 			channels: IHashMap<TextChannel>
 		} = {
-			users: Object.create(null), channels: Object.create(null)
-		};
+				users: Object.create(null), channels: Object.create(null)
+			};
 
 		switch(target) {
 			case "user": {
@@ -509,7 +509,7 @@ class ModToolsArchive extends Plugin implements IModule {
 				const parsedContent = <IEmulatedContents>JSON.parse(messageEntry.other);
 
 				if(parsedContent.attachments) {
-					str += "\n";
+					str += "\r\n";
 					const entryTypeStr = `[${$localizer.getString(language, "ARCHIVE_ITEM_ENTRY_TYPE:ATTACHMENT")}]`;
 					for(const attachment of parsedContent.attachments) {
 						str += "  ";
@@ -519,13 +519,12 @@ class ModToolsArchive extends Plugin implements IModule {
 							"file.id": attachment.id,
 							type: entryTypeStr
 						});
-						str += "\n";
+						str += "\r\n";
 					}
-					str += "\n";
 				}
 
 				if(parsedContent.embeds) {
-					str += "\n";
+					str += "\r\n";
 					const entryTypeStr = `[${$localizer.getString(language, "ARCHIVE_ITEM_ENTRY_TYPE:EMBED")}]`;
 					for(const embed of parsedContent.embeds) {
 						str += "  ";
@@ -533,12 +532,11 @@ class ModToolsArchive extends Plugin implements IModule {
 							type: entryTypeStr,
 							json: JSON.stringify(embed)
 						});
-						str += "\n";
+						str += "\r\n";
 					}
-					str += "\n";
 				}
 			}
-			str += "\n";
+			str += "\r\n";
 		}
 
 		return str;
@@ -561,7 +559,7 @@ class ModToolsArchive extends Plugin implements IModule {
 				});
 			}
 		}
-		
+
 		if(isEnabledAlready === newStatus) {
 			return await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
@@ -594,14 +592,14 @@ class ModToolsArchive extends Plugin implements IModule {
 		});
 	}
 
-	private async _isEnabledAt(guild: Guild|"dm") : Promise<boolean> {
+	private async _isEnabledAt(guild: Guild | "dm"): Promise<boolean> {
 		if(!guild) { return false; }
 		if(guild === "dm") { return this._options.dms; }
 
 		const cachedStatus = this._enabledAt[guild.id];
 		if(typeof cachedStatus === "boolean") { return cachedStatus; }
 
-		const dbStatus = <boolean|undefined>await getPreferenceValue(guild, ENABLED_PROP, true);
+		const dbStatus = <boolean | undefined>await getPreferenceValue(guild, ENABLED_PROP, true);
 		if(typeof dbStatus === "boolean") { return this._enabledAt[guild.id] = dbStatus; }
 
 		return this._enabledAt[guild.id] = DEFAULT_ENABLED_STATE;
