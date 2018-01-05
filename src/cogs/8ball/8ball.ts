@@ -1,3 +1,4 @@
+import { IPublicFlowUnit, IMessageFlowContext, default as MessagesFlows } from "../cores/messagesFlows";
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User } from "discord.js";
@@ -55,22 +56,24 @@ class Ball8 extends Plugin implements IModule {
 		}
 	};
 	categories = Object.keys(this.responses);
+	flowHandler: IPublicFlowUnit;
 
 	constructor() {
-		super({
-			"message": (msg: Message) => this.onMessage(msg)
-		});
+		super({}, true);
 		this.log("ok", "8Ball is loaded");
 	}
 
-	async onMessage(msg: Message) {
-		if(!msg.content) { return; }
-		if(!msg.content.startsWith("!8ball")) { return; }
+	async init() {
+		const messagesFlowsKeeper = $snowball.modLoader.findKeeper<MessagesFlows>("snowball.core_features.messageflows");
+		if(!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
 
-		if(msg.content === "!8ball") {
-			return;
-		}
+		messagesFlowsKeeper.onInit((flowsMan: MessagesFlows) => {
+			return this.flowHandler = flowsMan.watchForMessages((ctx) => this.onMessage(ctx), "8ball");
+		});
+	}
 
+	private async onMessage(ctx: IMessageFlowContext) {
+		const msg = ctx.message;
 		const u = msg.member || msg.author;
 
 		const random = new Random(Random.engines.mt19937().autoSeed());
