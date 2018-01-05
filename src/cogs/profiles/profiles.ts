@@ -109,7 +109,7 @@ class Profiles extends Plugin implements IModule {
 			"message": async (msg: Message) => {
 				try {
 					await this.onMessage(msg);
-				} catch (err) {
+				} catch(err) {
 					this.log("err", "Error handling message", err);
 					$snowball.captureException(err, { extra: messageToExtra(err) });
 				}
@@ -117,13 +117,15 @@ class Profiles extends Plugin implements IModule {
 			"presenceUpdate": async (oldMember: GuildMember, newMember: GuildMember) => {
 				try {
 					await this.onPresenсeUpdate(oldMember, newMember);
-				} catch (err) {
+				} catch(err) {
 					this.log("err", "Error handling user presence update", err);
-					$snowball.captureException(err, { extra: {
-						oldMember: memberToExtra(oldMember),
-						newMember: memberToExtra(newMember),
-						guild: guildToExtra(oldMember.guild)
-					} });
+					$snowball.captureException(err, {
+						extra: {
+							oldMember: memberToExtra(oldMember),
+							newMember: memberToExtra(newMember),
+							guild: guildToExtra(oldMember.guild)
+						}
+					});
 				}
 			}
 		}, true);
@@ -160,7 +162,7 @@ class Profiles extends Plugin implements IModule {
 
 	async onPresenсeUpdate(old: GuildMember, member: GuildMember) {
 		const profile = await this.getOrCreateProfile(member, member.guild);
-		
+
 		if(old.presence.status !== member.presence.status) {
 			if(old.presence.activity && member.presence.activity) {
 				if(old.presence.activity.equals(member.presence.activity)) {
@@ -392,12 +394,12 @@ class Profiles extends Plugin implements IModule {
 					custom: true,
 					string: `\`set [${strs.key}] [${strs.value}]\``
 				}, {
-					fields: [{
-						name: `\`${strs.key}\``, inline: false, value: strs.keyDef
-					}, {
-						name: `\`${strs.value}\``, inline: false, value: strs.valueDef
-					}]
-				})
+						fields: [{
+							name: `\`${strs.key}\``, inline: false, value: strs.keyDef
+						}, {
+							name: `\`${strs.value}\``, inline: false, value: strs.valueDef
+						}]
+					})
 			});
 			return;
 		} else if(param === "remove") {
@@ -410,10 +412,10 @@ class Profiles extends Plugin implements IModule {
 					custom: true,
 					string: `\`remove [${strs.key}]\``
 				}, {
-					fields: [{
-						name: `\`${strs.key}\``, inline: false, value: strs.keyDef
-					}]
-				})
+						fields: [{
+							name: `\`${strs.key}\``, inline: false, value: strs.keyDef
+						}]
+					})
 			});
 		} else if(param.startsWith("remove ")) {
 			param = param.slice("remove ".length);
@@ -629,9 +631,7 @@ class Profiles extends Plugin implements IModule {
 
 			pushing = true;
 			if(!pushedMessage) {
-				pushedMessage = await msg.channel.send({
-					embed: embed as any
-				}) as Message;
+				pushedMessage = await msg.channel.send({ embed: <any>embed }) as Message;
 				pushing = false;
 				if(repushAfterPush) {
 					repushAfterPush = true;
@@ -640,9 +640,7 @@ class Profiles extends Plugin implements IModule {
 				return pushedMessage;
 			}
 			try {
-				pushedMessage = (await pushedMessage.edit("", {
-					embed: embed as any
-				}) as Message);
+				pushedMessage = (await pushedMessage.edit({ embed: <any>embed }));
 				pushing = false;
 			} catch(err) {
 				repushAfterPush = true;
@@ -669,91 +667,84 @@ class Profiles extends Plugin implements IModule {
 
 			if(customize.plugins) {
 				for(const pluginName of Object.keys(customize.plugins)) {
-					const mod: ModuleBase<IProfilesPlugin> | undefined = this.pluginsLoader.loadedModulesRegistry[pluginName];
-					if(!mod) {
-						// not found, skipping
-						continue;
-					}
-
-					if(mod.state !== ModuleLoadState.Initialized || !mod.base) {
-						// not loaded, skipping
-						continue;
-					}
-
-					const plugin = mod.base;
+					const plugin = this.pluginsLoader.findBase<IProfilesPlugin>(pluginName, "name");
+					if(!plugin) { continue; }
 
 					const addedPlugin = customize.plugins[pluginName] as IAddedProfilePlugin;
 
-					if(addedPlugin.type === AddedProfilePluginType.Embed) {
-						if(!plugin.getEmbed) { continue; }
+					switch(addedPlugin.type) {
+						case AddedProfilePluginType.Embed: {
+							if(!plugin.getEmbed) { continue; }
 
-						const fNum = fields.length;
+							const fNum = fields.length;
 
-						fields.push({
-							name: pluginName,
-							value: await localizeForUser(msg.member, "PROFILES_PROFILE_LOADING"),
-							inline: true
-						});
-
-						const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
-
-						let canEdit = true;
-						const t: NodeJS.Timer = setTimeout(async () => {
-							this.log("err", pluginLogPrefix, "timed out.");
-							canEdit = false;
-							fields[fNum] = {
+							fields.push({
 								name: pluginName,
-								value: await localizeForUser(msg.member, "PROFILES_PROFILE_TIMEDOUT"),
+								value: await localizeForUser(msg.member, "PROFILES_PROFILE_LOADING"),
 								inline: true
-							};
-							pushUpdate();
-						}, 20000);
+							});
 
-						plugin.getEmbed(addedPlugin.json, msg.member).then(field => {
-							if(!canEdit) { return; }
-							if(t) { clearTimeout(t); }
-							fields[fNum] = field;
-							if(pushedMessage && ((Date.now() - pushedMessage.createdAt.getTime()) / 1000) < 3) {
-								setTimeout(pushUpdate, 1000);
-							} else {
+							const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+
+							let canEdit = true;
+							const t: NodeJS.Timer = setTimeout(async () => {
+								this.log("err", pluginLogPrefix, "timed out.");
+								canEdit = false;
+								fields[fNum] = {
+									name: pluginName,
+									value: await localizeForUser(msg.member, "PROFILES_PROFILE_TIMEDOUT"),
+									inline: true
+								};
 								pushUpdate();
-							}
-						}).catch(async (err) => {
-							this.log("err", pluginLogPrefix, "Error at plugin", err);
-							if(t) { clearTimeout(t); }
-							fields[fNum] = {
-								name: pluginName,
-								value: await localizeForUser(msg.member, "PROFILES_PROFILE_FAILED", {
-									msg: err.message
-								})
-							};
-							pushUpdate();
-						});
-					} else if(addedPlugin.type === AddedProfilePluginType.Customs) {
-						if(!plugin.getCustoms) { continue; }
+							}, 20000);
 
-						const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+							plugin.getEmbed(addedPlugin.json, msg.member).then(field => {
+								if(!canEdit) { return; }
+								if(t) { clearTimeout(t); }
+								fields[fNum] = field;
+								if(pushedMessage && ((Date.now() - pushedMessage.createdAt.getTime()) / 1000) < 3) {
+									setTimeout(pushUpdate, 1000);
+								} else {
+									pushUpdate();
+								}
+							}).catch(async (err) => {
+								this.log("err", pluginLogPrefix, "Error at plugin", err);
+								if(t) { clearTimeout(t); }
+								fields[fNum] = {
+									name: pluginName,
+									value: await localizeForUser(msg.member, "PROFILES_PROFILE_FAILED", {
+										msg: err.message
+									})
+								};
+								pushUpdate();
+							});
+						} break;
+						case AddedProfilePluginType.Customs: {
+							if(!plugin.getCustoms) { continue; }
 
-						let canEdit = true;
-						const t: NodeJS.Timer = setTimeout(() => {
-							this.log("err", pluginLogPrefix, "timed out.");
-							canEdit = false;
-						}, 20000);
+							const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
 
-						plugin.getCustoms(addedPlugin.json, msg.member).then(customs => {
-							if(!canEdit) { return; }
-							if(t) { clearTimeout(t); }
-							if(customs.image_url) {
-								embed.image = { url: customs.image_url };
-							}
-							if(customs.thumbnail_url) {
-								embed.thumbnail = { url: customs.thumbnail_url };
-							}
-							pushUpdate();
-						}).catch(err => {
-							this.log("err", pluginLogPrefix, "Error at plugin", err);
-							if(t) { clearTimeout(t); }
-						});
+							let canEdit = true;
+							const t: NodeJS.Timer = setTimeout(() => {
+								this.log("err", pluginLogPrefix, "timed out.");
+								canEdit = false;
+							}, 20000);
+
+							plugin.getCustoms(addedPlugin.json, msg.member).then(customs => {
+								if(!canEdit) { return; }
+								if(t) { clearTimeout(t); }
+								if(customs.image_url) {
+									embed.image = { url: customs.image_url };
+								}
+								if(customs.thumbnail_url) {
+									embed.thumbnail = { url: customs.thumbnail_url };
+								}
+								pushUpdate();
+							}).catch(err => {
+								this.log("err", pluginLogPrefix, "Error at plugin", err);
+								if(t) { clearTimeout(t); }
+							});
+						} break;
 					}
 				}
 				await pushUpdate();
@@ -850,7 +841,7 @@ class Profiles extends Plugin implements IModule {
 			name: "Profiles:Plugins",
 			basePath: "./cogs/profiles/plugins/",
 			registry: plugins,
-			defaultSet: Object.keys(plugins)
+			defaultSet: Object.getOwnPropertyNames(plugins)
 		});
 
 		await this.pluginsLoader.loadModules();
@@ -859,7 +850,7 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async unload() {
-		this.pluginsLoader.unloadAll();
+		await this.pluginsLoader.unload(Object.getOwnPropertyNames(this.pluginsLoader.loadedModulesRegistry));
 		this.unhandleEvents();
 		return true;
 	}
