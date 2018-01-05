@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import logger = require("loggy");
-import { IHashMap } from "./Types";
+import { INullableHashMap } from "./Types";
 import { ISchemaObject } from "./Typer";
 import { isAbsolute } from "path";
 
@@ -46,7 +46,7 @@ export interface IModuleLoaderConfig {
 	/**
 	 * Pre-filled registry with info about modules
 	 */
-	registry: IHashMap<IModuleInfo>;
+	registry: INullableHashMap<IModuleInfo>;
 	/**
 	 * Name of module loaded
 	 * Will be used in log
@@ -126,7 +126,7 @@ export class ModuleBase<T> extends EventEmitter {
 	 * Function to load module
 	 * @returns {Promise<ModuleBase>} Promise which'll be resolved with this module's base once module is loaded
 	 */
-	async load() {
+	public async load() {
 		if(this.state !== ModuleLoadState.Ready && this.state !== ModuleLoadState.Unloaded && this.state !== ModuleLoadState.Destroyed) {
 			throw new Error("Module is already loaded or loads. Unload it first!");
 		}
@@ -177,7 +177,7 @@ export class ModuleBase<T> extends EventEmitter {
 	 * @param reason Reason of unloading which'll be transmitted to module. By default "unload"
 	 * @returns {Promise<ModuleBase>} Promise which'll be resolved with this module's base once module is unloaded or destroyed
 	 */
-	async unload(reason: any = "unload") {
+	public async unload(reason: any = "unload") {
 		if(this.state !== ModuleLoadState.Initialized) { throw new Error("Module is not loaded"); }
 
 		this.signature = null;
@@ -226,12 +226,26 @@ export class ModuleBase<T> extends EventEmitter {
 	}
 
 	/**
-	 * Clears require cache for this module
+	 * Shortcut for checking if module already initialized or you need to wait for it.
+	 * If module already initialized, then immediately calls the callback.
+	 * Otherwise subscribes you to the `initialized` event
+	 * @param callback 
+	 */
+	public onInit(callback: (base: T) => void) {
+		if(this.state === ModuleLoadState.Initialized && this.base) {
+			callback(this.base);
+			return this;
+		}
+		return this.on("initialized", callback);
+	}
+
+	/**
+	 * Clears require cache for this module.
 	 * Useful while reloading module:
 	 *   In this case module file will be read from disk
 	 * @returns {ModuleBase} This module's base
 	 */
-	clearRequireCache() {
+	public clearRequireCache() {
 		if(require.cache[this.info.path]) {
 			delete require.cache[this.info.path];
 		}
@@ -240,7 +254,7 @@ export class ModuleBase<T> extends EventEmitter {
 }
 
 /**
- * Snowball's core module loader
+ * Snowball's core module loader.
  * Loads all modules
  */
 export class ModuleLoader {
@@ -251,16 +265,16 @@ export class ModuleLoader {
 	/**
 	 * Registry with modules
 	 */
-	public registry: IHashMap<IModuleInfo> = Object.create(null);
+	public registry: INullableHashMap<IModuleInfo> = Object.create(null);
 	/**
 	 * Registry with currently loaded modules
 	 */
-	public loadedModulesRegistry: IHashMap<ModuleBase<any>> = Object.create(null);
+	public loadedModulesRegistry: INullableHashMap<ModuleBase<any>> = Object.create(null);
 
 	/**
 	 * Registry with currently loaded modules by signature
 	 */
-	public signaturesRegistry: IHashMap<ModuleBase<any>> = Object.create(null);
+	public signaturesRegistry: INullableHashMap<ModuleBase<any>> = Object.create(null);
 
 	private log: Function;
 
@@ -270,7 +284,7 @@ export class ModuleLoader {
 
 		this.log("info", "Registering modules");
 		for(const registryName in config.registry) {
-			const moduleInfo = config.registry[registryName];
+			const moduleInfo = config.registry[registryName]!;
 			this.register(moduleInfo);
 		}
 
@@ -281,7 +295,7 @@ export class ModuleLoader {
 	 * Add new module to registry
 	 * @param {IModuleInfo} info Information about module
 	 */
-	register(info: IModuleInfo) {
+	public register(info: IModuleInfo) {
 		this.registry[info.name] = info;
 		this.log("info", "Registered new module", process.env["NODE_ENV"] === "development" ? info : `"${info.name}" - "${info.path}"`);
 	}
@@ -292,7 +306,7 @@ export class ModuleLoader {
 	 * @param {boolean} clearRequireCache Require cache cleaning. `true` if `require` cache needed to be cleared before load
 	 * @returns {Promise} Promise which'll be resolved once module is loaded
 	 */
-	async load(name: string | string[], clearRequireCache = false) {
+	public async load(name: string | string[], clearRequireCache = false) {
 		if(Array.isArray(name)) {
 			for(const n of name) { await this.load(n, clearRequireCache); }
 			return;
@@ -383,7 +397,7 @@ export class ModuleLoader {
 	 * @param {boolean} clearRequireCache `true` if `require` cache of this module file needed to cleared after unload. This works only if `skipCallingUnload` is `false`!
 	 * @returns {Promise} Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
 	 */
-	async unload(name: string | string[], reason: string = "manual", skipCallingUnload: boolean = false, clearRequireCache = false) {
+	public async unload(name: string | string[], reason: string = "manual", skipCallingUnload: boolean = false, clearRequireCache = false) {
 		if(Array.isArray(name)) {
 			for(const n of name) { await this.unload(n, reason); }
 			return;
@@ -429,7 +443,7 @@ export class ModuleLoader {
 	 * By default loads only set passed as `defaultSet`
 	 * @param {boolean} forceAll Use `true` to force load ALL modules in registry
 	 */
-	async loadModules(forceAll = false) {
+	public async loadModules(forceAll = false) {
 		let toLoad: string[] = [];
 		if(forceAll) {
 			toLoad = Object.keys(this.config.registry);
@@ -462,11 +476,28 @@ export class ModuleLoader {
 	}
 
 	/**
-	 * Unloads ALL modules
-	 * @deprecated Use `unload` function instead
+	 * Returns module's base by selected signature with prefered type
+	 * @param searchArg The searchable argument
+	 * @param argType Type of the argument (`signature` by default)
+	 * @returns `undefined` if module not found or base not loaded, otherwise `T`
 	 */
-	async unloadAll() {
-		return await this.unload(Object.keys(this.loadedModulesRegistry));
+	public findBase<T>(searchArg: string, argType: "signature"|"name" = "signature") {
+		const keeper = this.findKeeper<T>(searchArg, argType);
+		if(!keeper) { return undefined; }
+		return keeper.base;
+	}
+
+	/**
+	 * Returns module's keeper by selected signature or name.
+	 * @param searchArg The searchable argument
+	 * @param argType Type of the argument (`signature by default`)
+	 */
+	public findKeeper<T>(searchArg: string, argType: "signature"|"name" = "signature") {
+		switch(argType) {
+			case "name": { return <ModuleBase<T>|undefined>this.loadedModulesRegistry[searchArg]; }
+			case "signature": { return <ModuleBase<T>|undefined>this.signaturesRegistry[searchArg]; }
+			default: { throw new Error("Invalid search argument type"); }
+		}
 	}
 }
 
@@ -475,7 +506,7 @@ export class ModuleLoader {
 * @param obj {Array} Array of module info entries
 */
 export function convertToModulesMap(obj: IModuleInfo[]) {
-	const modulesMap: IHashMap<IModuleInfo> = Object.create(null);
+	const modulesMap: INullableHashMap<IModuleInfo> = Object.create(null);
 	for(const moduleInfo of obj) {
 		modulesMap[moduleInfo.name] = moduleInfo;
 	}
