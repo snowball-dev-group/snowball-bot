@@ -1535,7 +1535,7 @@ class StreamNotifications extends Plugin implements IModule {
 		if(this.checknNotifyInterval) {
 			clearInterval(this.checknNotifyInterval);
 		}
-		await this.servicesLoader.unloadAll();
+		await this.servicesLoader.unload(Object.getOwnPropertyNames(this.servicesLoader.loadedModulesRegistry));
 		this.unhandleEvents();
 		return true;
 	}
