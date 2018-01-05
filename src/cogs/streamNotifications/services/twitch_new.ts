@@ -76,6 +76,10 @@ interface IServiceOptions {
 	 * 
 	 */
 	useWebhooks: boolean;
+	/**
+	 * Settings for webhooks.
+	 * This is required if `useWebhooks` set to `true`
+	 */
 	webhooksSettings?: IWebhookSettings;
 	/**
 	 * Do not set unless you know what it means.
