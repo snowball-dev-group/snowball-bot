@@ -18,30 +18,19 @@ class Ping extends Plugin implements IModule {
 	private flowHandler: IPublicFlowUnit;
 
 	constructor() {
-		super({});
+		super({}, true);
 	}
 
 	public async init() {
-		this.log("info", "Searching for `MessagesFlows` core keeper");
+		const messagesFlowsKeeper = $snowball.modLoader.findKeeper<MessagesFlows>("snowball.core_features.messageflows");
+		if(!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
 
-		const messagesFlowsKeeper = $snowball.modLoader.signaturesRegistry["snowball.core_features.messageflows"];
-
-		if(!messagesFlowsKeeper) {
-			throw new Error("`MessageFlows` not found");
-		}
-
-		const initHandler = (flowsMan: MessagesFlows) => {
-			return this.flowHandler = flowsMan.watchForMessages((ctx) => this.onMessage(ctx), (ctx) => {
+		messagesFlowsKeeper.onInit((flowsMan: MessagesFlows) => {
+			return this.flowHandler = flowsMan.watchForMessages((ctx) => <any>this.onMessage(ctx), (ctx) => {
 				if(!ctx.parsed) { return false; }
 				return ctx.parsed.command ? ALLOWED_CMDS.includes(ctx.parsed.command) : false;
 			});
-		};
-
-		if(messagesFlowsKeeper.base) {
-			initHandler(messagesFlowsKeeper.base);
-		} else {
-			messagesFlowsKeeper.once("initialized", initHandler);
-		}
+		});
 	}
 
 	async onMessage(ctx: IMessageFlowContext) {
