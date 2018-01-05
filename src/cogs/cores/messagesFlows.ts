@@ -43,7 +43,7 @@ export default class MessagesFlows implements IModule {
 	private log = getLogger("MessagesFlows");
 
 	constructor() {
-		this._messageHandler = ((msg: Message) => this._startOnMessageFlow(msg));
+		this._messageHandler = ((msg: Message) => this._executeMessageFlow(msg));
 		$discordBot.on("message", this._messageHandler);
 	}
 
@@ -65,8 +65,8 @@ export default class MessagesFlows implements IModule {
 	}
 
 	/**
-	 * Goes trought the units and provides overall statistic if there's any units with default parsing and prefix check
-	 * These values will be used in a flow to perform pre-parsing and pre-check and return to required units without any wait
+	 * Goes trough the units and provides overall statistic of if there's any units with default parsing and prefix check.
+	 * These values will be used in a flow to perform pre-parsing and pre-check and return to required units without any wait.
 	 * This can optimize flow execution time as because we're not going to parse once again and check the same value
 	 */
 	private _optimizeCheck() {
@@ -88,18 +88,23 @@ export default class MessagesFlows implements IModule {
 		}
 	}
 
+	/**
+	 * Normalizes the timeout value and gets it into the borders
+	 * @param type Type of the timeout value
+	 * @param value Current value
+	 */
 	private _normalizeTimeout(type: "check" | "handler", value: number) {
 		const val = Math.max(Math.min(value, type === "check" ? CHECK_MAXTIMEOUT : HANDLER_MAXTIMEOUT), -1);
 		return val === 0 ? -1 : val; // kinda hacky
 	}
 
 	/**
-	 * Watches for any new messages and once some message arrieves follows (or not if desired) the flow of checks and calls
+	 * Watches for any new messages and once some message arrives follows (or not if desired) the flow of checks and calls
 	 * @param {Handler} handler Command handler
 	 * @param {CheckArgument} check Command checking function
 	 * @param {IWatcherCreationOptions} options Options for watcher
 	 */
-	public watchForMessages(handler: Handler, check: CheckArgument, options: IWatcherCreationOptions = {
+	public watchForMessages(handler: Handler, check: CheckArgument|string, options: IWatcherCreationOptions = {
 		followsTheFlow: true,
 		checkPrefix: true,
 		timeoutCheck: this._timings.timeoutCheck,
@@ -110,7 +115,7 @@ export default class MessagesFlows implements IModule {
 		this._flowUnits.push({
 			_id: id,
 			handler,
-			check,
+			check: typeof check !== "string" ? check : (ctx) => !!(ctx.parsed && ctx.parsed.command === check),
 			parser: options.customParser,
 			followsTheFlow: typeof options.followsTheFlow !== "boolean" ? true : options.followsTheFlow,
 			checkPrefix: !!options.checkPrefix,
@@ -130,10 +135,8 @@ export default class MessagesFlows implements IModule {
 		});
 	}
 
-	private async _parseCommand(msg: Message, prefix: string | false) {
-		if(!prefix) {
-			prefix = await this._getPrefix(msg);
-		}
+	private async _parseCommand(msg: Message, prefix?: string | false) {
+		if(typeof prefix !== "boolean") { prefix = await this._getPrefix(msg); }
 		return simpleCmdParse(prefix ? msg.content.slice(prefix.length) : msg.content);
 	}
 
@@ -141,15 +144,14 @@ export default class MessagesFlows implements IModule {
 		return (this.prefixAllKeeper && this.prefixAllKeeper.state === ModuleLoadState.Initialized && this.prefixAllKeeper.base) ? this.prefixAllKeeper.base.checkPrefix(msg) : false;
 	}
 
-	private async _startOnMessageFlow(msg: Message) {
+	private async _executeMessageFlow(msg: Message) {
 		const flowUnits = this._flowUnits;
 		if(!flowUnits || flowUnits.length === 0) { return; }
 
 		// optimizing future results
-		const prefix = this._anyWith.prefixCheck ? await this._getPrefix(msg) : false;
+		const prefix = this._anyWith.prefixCheck ? await this._getPrefix(msg) : undefined;
 		const simpleParserResult = this._anyWith.defaultParsing ? await this._parseCommand(msg, prefix) : undefined;
 
-		const execStart = Date.now();
 		for(const flowUnit of flowUnits) {
 			let _shouldBreak = false;
 			const unitExecution = (async () => {
@@ -157,27 +159,29 @@ export default class MessagesFlows implements IModule {
 				if(flowUnit.checkPrefix && !prefix) { return; }
 
 				const parserResult = typeof flowUnit.parser !== "function" ? simpleParserResult : await flowUnit.parser(msg);
-				const ctx = {
-					message: msg,
-					parsed: parserResult
-				};
+				const ctx = { message: msg, parsed: parserResult };
 
 				let _checkErr: PossibleError;
 				const checkResult = await (async () => {
 					try {
-						const timeoutPromise = (async () => {
-							const normalizedTimeoutWait = this._normalizeTimeout("check", flowUnit.timeoutCheck);
-							if(normalizedTimeoutWait === 1) { return; }
-							await sleep(normalizedTimeoutWait);
-							throw new Error(`\`check\` execution of unit#${flowUnit._id} has timed out after ${(Date.now() - executionStart)}ms`);
-						});
 						const executionStart = Date.now();
 						const checkValue = flowUnit.check(ctx);
 
-						return checkValue instanceof Promise ? await (Promise.race([
-							checkValue,
-							timeoutPromise
-						])) : checkValue;
+						if(checkValue instanceof Promise) {
+							const normalizedTimeoutWait = this._normalizeTimeout("check", flowUnit.timeoutCheck);
+							const chain: Array<Promise<boolean|any>> = [ checkValue ];
+
+							if(normalizedTimeoutWait !== -1) {
+								chain.push((async () => {
+									await sleep(normalizedTimeoutWait);
+									throw new Error(`\`check\` execution of unit#${flowUnit._id} has timed out after ${(Date.now() - executionStart)}ms`);
+								})());
+							}
+
+							return chain.length === 1 ? await chain[0] : await Promise.race(chain);
+						}
+
+						return checkValue;
 					} catch(err) {
 						_checkErr = err;
 						return undefined;
@@ -199,13 +203,21 @@ export default class MessagesFlows implements IModule {
 					try {
 						_handlerErr = undefined;
 						const executionStart = Date.now();
-						return await Promise.race([
-							flowUnit.handler(ctx),
-							(async () => {
-								await sleep(this._timings.timeoutHandler);
-								throw new Error(`\`handler\` execution of unit#${flowUnit._id} has timed out after ${(Date.now() - executionStart)}ms`);
-							})
-						]);
+						const handlerExecution = flowUnit.handler(ctx);
+						
+						if(handlerExecution instanceof Promise) {
+							const normalizedTimeoutWait = this._normalizeTimeout("handler", flowUnit.timeoutHandler);
+							const chain : Array<Promise<void|FlowControl>> = [ handlerExecution ];
+
+							if(normalizedTimeoutWait !== -1) {
+								chain.push((async () => {
+									await sleep(normalizedTimeoutWait);
+									throw new Error(`\`handler\` execution of unit#${flowUnit._id} has timed out after ${(Date.now() - executionStart)}ms`);
+								})());
+							}
+
+							return chain.length === 1 ? await chain[0] : await Promise.race(chain);
+						}
 					} catch(err) {
 						_handlerErr = err;
 						return undefined;
@@ -223,7 +235,7 @@ export default class MessagesFlows implements IModule {
 					switch(<FlowControlArgument>handlerResult[1]) {
 						case FlowControlArgument.BREAK: {
 							if(!flowUnit.followsTheFlow) {
-								this.log("warn", `Unit#${flowUnit._id}'s handler requested to break the flow, but unit doesn't follow the flow. This argument has no sense to return. Consider removing this argument or make unit to follow the flow by passing special argument once creation. Skipped.`);
+								this.log("warn", `Unit#${flowUnit._id}'s handler requested to break the flow, but the unit doesn't follow the flow. This argument has no sense to return. Consider removing this argument or make a unit to follow the flow by passing special argument once creation. Skipped.`);
 								break;
 							}
 							_shouldBreak = true;
@@ -240,7 +252,7 @@ export default class MessagesFlows implements IModule {
 						} break;
 						case FlowControlArgument.WAIT: {
 							if(!flowUnit.followsTheFlow) {
-								this.log("warn", `Unit#${flowUnit._id}'s handler requested to wait before continue the flow execution, but unit doesn't follow the flow. This argument has no sense to return. Consider removing this argument or make unit to follow the flow by passing special argument once creation. Skipped.`);
+								this.log("warn", `Unit#${flowUnit._id}'s handler requested to wait before continuing the flow execution, but the unit doesn't follow the flow. This argument has no sense to return. Consider removing this argument or make a unit to follow the flow by passing special argument once creation. Skipped.`);
 								break;
 							}
 							await sleep(handlerResult[2]);
@@ -254,8 +266,6 @@ export default class MessagesFlows implements IModule {
 				if(_shouldBreak) { break; }
 			}
 		}
-
-		this.log("info", `Flow exection complete, took ${(Date.now() - execStart)}ms`);
 	}
 
 	async unload() {
@@ -292,7 +302,7 @@ export interface IWatcherCreationOptions {
 	 */
 	followsTheFlow?: boolean;
 	/**
-	 * Should do 
+	 * Should do the flow check prefix (PrefixAl')
 	 */
 	checkPrefix?: boolean;
 	timeoutCheck?: boolean | number;
@@ -331,7 +341,7 @@ export type CheckArgument = ((ctx: IMessageFlowContext) => Promise<boolean> | bo
  * Be aware! Promise should resolve in set timeout, this can be configured by option `flowTimings.handlerTimeout`, by default this value is set to constant `HANDLER_TIMEOUT` which you can get by improrting from this file. If promise will not resolve in set timeout, the flow continues.
  * Be also aware that you can break flow if you need to: if promise resolves with {FlowControl}, then checks the argument and does required stuff with Flow.
  */
-export type Handler = ((ctx: IMessageFlowContext) => Promise<any>);
+export type Handler = ((ctx: IMessageFlowContext) => Promise<void>|void);
 /**
  * Possible Promise resolved result of the {Handler}.
  */
