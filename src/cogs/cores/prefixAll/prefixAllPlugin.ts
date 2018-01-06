@@ -180,7 +180,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		await prefixAllInstance.setPrefixes(msg.guild, guildPrefixes);
 
 		return await msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 				key: "PREFIXALL_PREFIX_ADDED",
 				formatOptions: {
 					prefix: additionalPrefix
@@ -292,6 +292,16 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			items.push(await localizeForUser(msgAuthor, "PREFIXALL_PREFIX_LISTITEM", {
 				prefix
 			}));
+		}
+
+		if(msg.channel.type !== "text") {
+			// PREFIXALL_PREFIX_LIST_DM
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
+					key: "PREFIXALL_PREFIX_LIST_DM",
+					formatOptions: { prefix: items[0] }
+				})
+			});
 		}
 
 		return await msg.channel.send({
