@@ -102,7 +102,16 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		}
 	}
 
+	private async _isNotServer(msg: Message) {
+		if(msg.channel.type !== "text") {
+			await msg.channel.send({ embed: await generateLocalizedEmbed(EmbedType.Error, msg.author, "PREFIXALL_WRONGCHANNELTYPE") });
+			return true;
+		}
+		return false;
+	}
+
 	private async subcmd_add(msg: Message, parsed: ISimpleCmdParseResult, prefix: string, prefixAllInstance: PrefixAll) {
+		if(await this._isNotServer(msg)) { return; }
 		const cmd = `${prefix}${parsed.command}`;
 
 		if(!parsed.args) {
@@ -181,6 +190,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 	}
 
 	private async subcmd_remove(msg: Message, parsed: ISimpleCmdParseResult, prefix: string, prefixAllInstance: PrefixAll) {
+		if(await this._isNotServer(msg)) { return; }
 		const cmd = `${prefix}${parsed.command}`;
 
 		if(!parsed.args) {
