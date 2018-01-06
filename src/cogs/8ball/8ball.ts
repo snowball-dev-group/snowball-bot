@@ -12,7 +12,6 @@ const ICONS = {
 	RESPONSE: "https://twemoji.maxcdn.com/72x72/1f3b1.png"
 };
 
-
 @command("FUN", "8ball", "loc:8BALL_META_DEFAULT", {
 	"loc:8BALL_META_DEFAULT_ARG0": {
 		optional: false,
@@ -88,9 +87,6 @@ class Ball8 extends Plugin implements IModule {
 						name: localName,
 						icon_url: ICONS.THINKING
 					},
-					thumbUrl: ICONS.THINKING,
-					thumbWidth: 64,
-					thumbHeight: 64,
 					clearFooter: true
 				})
 			})) as Message;
@@ -118,10 +114,7 @@ class Ball8 extends Plugin implements IModule {
 					color: this.responses[category].color,
 					footerText: await localizeForUser(u, "8BALL_INREPLY", {
 						username: u instanceof GuildMember ? u.displayName : (u as User).username
-					}),
-					thumbUrl: ICONS.RESPONSE,
-					thumbWidth: 64,
-					thumbHeight: 64
+					})
 				})
 			});
 		} catch(err) {
