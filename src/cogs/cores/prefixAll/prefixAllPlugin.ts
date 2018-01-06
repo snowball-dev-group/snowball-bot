@@ -286,22 +286,22 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			});
 		}
 
+		if(msg.channel.type !== "text") {
+			// PREFIXALL_PREFIX_LIST_DM
+			return await msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
+					key: "PREFIXALL_PREFIX_LIST_DM",
+					formatOptions: { prefix: guildPrefixes[0] }
+				})
+			});
+		}
+
 		const items:string[] = [];
 
 		for(const prefix of guildPrefixes) {
 			items.push(await localizeForUser(msgAuthor, "PREFIXALL_PREFIX_LISTITEM", {
 				prefix
 			}));
-		}
-
-		if(msg.channel.type !== "text") {
-			// PREFIXALL_PREFIX_LIST_DM
-			return await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
-					key: "PREFIXALL_PREFIX_LIST_DM",
-					formatOptions: { prefix: items[0] }
-				})
-			});
 		}
 
 		return await msg.channel.send({
