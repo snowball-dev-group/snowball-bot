@@ -79,7 +79,7 @@ export default class PrefixAll implements IModule {
 		return cached.result;
 	}
 
-	private async _getGuildPrefixPrefix(guild: Guild, defaultReplacement = true) {
+	private async _getGuildPrefix(guild: Guild, defaultReplacement = true) {
 		let cachedPrefixes = this._prefixesCache[guild.id];
 
 		if(typeof cachedPrefixes === "undefined") {
@@ -107,9 +107,15 @@ export default class PrefixAll implements IModule {
 			return this._cacheMessage(message, false);
 		}
 
-		const guildPrefix = await this._getGuildPrefixPrefix(message.guild);
+		if(!message.guild) {
+			// only default prefix
+			return this._cacheMessage(message, message.content.startsWith(this._defaultPrefix) && this.defaultPrefix);
+		}
+
+		const guildPrefix = await this._getGuildPrefix(message.guild);
 
 		if(!guildPrefix) {
+			// rare case, when absolutely no prefixes, even no default one
 			return this._cacheMessage(message, false);
 		}
 
@@ -123,7 +129,7 @@ export default class PrefixAll implements IModule {
 	}
 
 	public async getPrefixes(guild: Guild) {
-		return await this._getGuildPrefixPrefix(guild);
+		return await this._getGuildPrefix(guild);
 	}
 
 	public async setPrefixes(guild: Guild, prefixes: string[] | null) {
