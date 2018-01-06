@@ -264,10 +264,11 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 	private async subcmd_list(msg: Message, parsed: ISimpleCmdParseResult, prefix: string, prefixAllInstance: PrefixAll) {
 		const cmd = `${prefix}${parsed.command}`;
+		const msgAuthor = msg.member || msg.author;
 
 		if(parsed.args) {
 			return await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 					key: "PREFIXALL_INFO_LIST",
 					formatOptions: {
 						prefix: `${cmd} ${parsed.subCommand}`
@@ -281,20 +282,20 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		if(!guildPrefixes) {
 			this.log("info", `#list: prefixAllInstance.getPrefixes(${msg.guild.id}): Returned none prefixes!`);
 			return await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREFIXALL_PREFIX_LIST_NONE")
+				embed: await generateLocalizedEmbed(EmbedType.Error, msgAuthor, "PREFIXALL_PREFIX_LIST_NONE")
 			});
 		}
 
 		const items:string[] = [];
 
 		for(const prefix of guildPrefixes) {
-			items.push(await localizeForUser(msg.member, "PREFIXALL_PREFIX_LISTITEM", {
+			items.push(await localizeForUser(msgAuthor, "PREFIXALL_PREFIX_LISTITEM", {
 				prefix
 			}));
 		}
 
 		return await msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+			embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 				key: "PREFIXALL_PREFIX_LIST",
 				formatOptions: {
 					items: items.join("\n")
