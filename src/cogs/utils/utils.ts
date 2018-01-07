@@ -382,11 +382,17 @@ export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, 
 	}
 
 	// going to search
-	return guild.roles.find((role) => {
+	for(const role of guild.roles.values()) {
 		const roleName = (caseStrict ? role.name : role.name.toLowerCase());
-		if(strict) { return roleName === nameOrID; }
-		else { return roleName.includes(nameOrID); }
-	}); // it can return undefined, it's okay
+		switch(strict) {
+			case true: {
+				if(roleName === nameOrID) { return role; }
+			} break;
+			case false: {
+				if(roleName.includes(nameOrID)) { return role; }
+			} break;
+		}
+	}
 }
 
 export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false) {
@@ -399,63 +405,80 @@ export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = tru
 		nameOrID = nameOrID.toLowerCase();
 	}
 
-	return guild.channels.find((vc) => {
-		const vcName = caseStrict ? vc.name : vc.name.toLowerCase();
-		if(strict) { return vcName === nameOrID; }
-		else { return vcName.includes(nameOrID); }
-	});
+	for(const channel of guild.channels.values()) {
+		const vcName = caseStrict ? channel.name : channel.name.toLowerCase();
+		switch(strict) {
+			case true: {
+				if(vcName === nameOrID) { return channel; }
+			} break;
+			case false: {
+				if(vcName.includes(nameOrID)) { return channel; }
+			} break;
+		}
+	}
 }
 
-export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false) : Promise<GuildMember|undefined> {
+export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false): Promise<GuildMember | undefined> {
 	if(/[0-9]+/.test(nameOrID)) {
-		const member = await (async () => {
+		const memberByID = await (async () => {
 			try {
 				return await guild.members.fetch(nameOrID);
-			} catch (err) {
+			} catch(err) {
 				return undefined;
 			}
 		})();
-		if(member) { return member; }
+		if(memberByID) { return memberByID; }
 	}
 
-	nameOrID = caseStrict ? nameOrID : nameOrID.toLowerCase();
+	if(!caseStrict) {
+		nameOrID = nameOrID.toLowerCase();
+	}
+
+	let tagParts_discrim: undefined | string = undefined;
+	let tagParts_username: undefined | string = undefined;
 
 	// tag parts
-	const tagParts = nameOrID.includes("#") ? (nameOrID.startsWith("@") ? nameOrID.slice(1) : nameOrID).split("#") : undefined;
+	let isTag = false;
 
-	if(tagParts) {
-		if(tagParts.length !== 2) {
-			throw new Error(`Invalid tag given. Expected "username#discrim", got ${tagParts.length} unknown parts.`);
-		} else if(!/[0-9]{4}/.test(tagParts[1])) {
-			throw new Error("Invalid discrim given.");
-		} else if(tagParts[0].includes("@")) {
-			throw new Error("Invalid username given.");
+	{
+		const hashIndex = nameOrID.lastIndexOf("#");
+		if(hashIndex !== -1) {
+			const username = nameOrID.slice(0, hashIndex).replace(/\@/g, "");
+			if(username.length > 0) { tagParts_username = username; }
+			tagParts_discrim = nameOrID.slice(hashIndex + 1);
+			isTag = true;
 		}
 	}
 
-	for(const member of guild.members.values()) {
-		if(tagParts) { // tag strict equality check
-			const splitdtag = (caseStrict ? member.user.tag : member.user.tag.toLowerCase()).split("#");
-			if(splitdtag.length !== 2) { continue; } // invalid tag skip
+	for(const member of guild.members.array()) {
+		const username = caseStrict ? member.user.username : member.user.username.toLowerCase();
 
-			if((splitdtag[1] === tagParts[1]) && (strict ? (splitdtag[0] === tagParts[0]) : (tagParts[0].length === 0 ? true : splitdtag[0].includes(tagParts[0])))) {
-				return member;
+		if(isTag) { // tag strict equality check
+			if(tagParts_discrim !== member.user.discriminator) { continue; }
+			if(tagParts_username) {
+				if(strict) {
+					if(username !== tagParts_username) { continue; }
+				} else {
+					if(!username.includes(tagParts_username)) { continue; }
+				}
 			}
 
-			continue;
+			return member;
 		}
 
 		const nickname = member.nickname ? (caseStrict ? member.nickname : member.nickname.toLowerCase()) : undefined;
-		const username = caseStrict ? member.user.username : member.user.username.toLowerCase();
 
-		if(strict) {
-			if((nickname && nickname === nameOrID) || username === nameOrID) {
-				return member;
-			}
-		} else {
-			if((nickname && nickname.includes(nameOrID)) || username.includes(nameOrID)) {
-				return member;
-			}
+		switch(strict) {
+			case true: {
+				if((nickname && nickname === nameOrID) || username === nameOrID) {
+					return member;
+				}
+			} break;
+			case false: {
+				if((nickname && nickname.includes(nameOrID)) || username.includes(nameOrID)) {
+					return member;
+				}
+			} break;
 		}
 	}
 }
