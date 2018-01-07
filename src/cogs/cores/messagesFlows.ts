@@ -5,6 +5,7 @@ import PrefixAll from "./prefixAll/prefixAll";
 import { IModule, ModuleBase, ModuleLoadState } from "../../types/ModuleLoader";
 import { Message } from "discord.js";
 import { ISimpleCmdParseResult, simpleCmdParse } from "../utils/text";
+import * as Bluebird from "bluebird";
 
 export const MESSAGEFLOWS_SIGNATURE = "snowball.core_features.messageflows";
 export const HANDLER_TIMEOUT = 5000;
@@ -169,16 +170,13 @@ export default class MessagesFlows implements IModule {
 
 						if(checkValue instanceof Promise) {
 							const normalizedTimeoutWait = this._normalizeTimeout("check", flowUnit.timeoutCheck);
-							const chain: Array<Promise<boolean|any>> = [ checkValue ];
-
-							if(normalizedTimeoutWait !== -1) {
-								chain.push((async () => {
-									await sleep(normalizedTimeoutWait);
+							try {
+								return await (new Bluebird<boolean>((res, rej) => checkValue.then(res).catch(rej)).timeout(normalizedTimeoutWait));
+							} catch (err) {
+								if(err instanceof Bluebird.TimeoutError) {
 									throw new Error(`\`check\` execution of unit#${flowUnit._id} has timed out after ${(Date.now() - executionStart)}ms`);
-								})());
+								}
 							}
-
-							return chain.length === 1 ? await chain[0] : await Promise.race(chain);
 						}
 
 						return checkValue;
@@ -207,16 +205,14 @@ export default class MessagesFlows implements IModule {
 						
 						if(handlerExecution instanceof Promise) {
 							const normalizedTimeoutWait = this._normalizeTimeout("handler", flowUnit.timeoutHandler);
-							const chain : Array<Promise<void|FlowControl>> = [ handlerExecution ];
 
-							if(normalizedTimeoutWait !== -1) {
-								chain.push((async () => {
-									await sleep(normalizedTimeoutWait);
+							try {
+								return await (new Bluebird<void|FlowControl>((res, rej) => handlerExecution.then(res).catch(rej)).timeout(normalizedTimeoutWait));
+							} catch (err) {
+								if(err instanceof Bluebird.TimeoutError) {
 									throw new Error(`\`handler\` execution of unit#${flowUnit._id} has timed out after ${(Date.now() - executionStart)}ms`);
-								})());
+								}
 							}
-
-							return chain.length === 1 ? await chain[0] : await Promise.race(chain);
 						}
 					} catch(err) {
 						_handlerErr = err;
