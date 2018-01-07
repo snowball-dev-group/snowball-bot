@@ -614,9 +614,9 @@ class Profiles extends Plugin implements IModule {
 				icon_url: msg.guild.iconURL({ format: "webp", size: 128 })
 			},
 			image: undefined,
-			thumbnail: {
+			thumbnail: target.user.avatar ? {
 				url: target.user.displayAvatarURL(target.user.avatar.startsWith("a_") ? { format: "gif" } : { format: "png", size: 512 })
-			},
+			} : undefined,
 			timestamp: target.user.createdAt.toISOString()
 		};
 
