@@ -204,7 +204,7 @@ class FanServerThings extends Plugin implements IModule {
 					name: await localizeForUser(msg.member, "FSTHINGS_CHOOSE_EMBED_MEMBER"),
 					value: `${pickedMember}\n**${escapeDiscordMarkdown(pickedMember.displayName, true)}** (@${escapeDiscordMarkdown(pickedMember.user.tag, true)})\nID: ${pickedMember.id}`
 				}],
-				thumbUrl: pickedMember.user.displayAvatarURL(pickedMember.user.avatar.startsWith("a_") ? { format: "gif" } : { format: "png", size: 512 })
+				thumbUrl: pickedMember.user.avatar ? pickedMember.user.displayAvatarURL(pickedMember.user.avatar.startsWith("a_") ? { format: "gif" } : { format: "png", size: 512 }) : undefined
 			})
 		});
 	}
