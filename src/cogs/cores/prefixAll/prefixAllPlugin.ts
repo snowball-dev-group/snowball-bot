@@ -287,7 +287,6 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		}
 
 		if(msg.channel.type !== "text") {
-			// PREFIXALL_PREFIX_LIST_DM
 			return await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 					key: "PREFIXALL_PREFIX_LIST_DM",
