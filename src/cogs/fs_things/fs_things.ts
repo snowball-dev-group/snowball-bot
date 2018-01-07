@@ -1,11 +1,13 @@
 import { isPremium } from "../utils/premium";
 import { Plugin } from "../plugin";
 import { IModule } from "../../types/ModuleLoader";
-import { GuildMember, Message, TextChannel } from "discord.js";
+import { GuildMember, Message, Role, TextChannel } from "discord.js";
 import * as Random from "random-js";
 import { getLogger, EmbedType, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
 import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
 import { randomPick } from "../utils/random";
+
+const SYNC_INTERVAL_MIN = 1800000;
 
 interface ISubText {
 	roleId: string;
@@ -44,10 +46,12 @@ interface IOptions {
 	modRoles: string[];
 
 	nickRegexp: string;
-	
+
 	nickSkipped: string[];
 
 	wrongNickFallback: string;
+
+	syncInterval: number;
 }
 
 const acceptedCommands = ["choose", "pick"];
@@ -71,8 +75,7 @@ class FanServerThings extends Plugin implements IModule {
 			"guildMemberAdd": (member: GuildMember) => this.newMember(member),
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
-
-		this.options = options;
+		
 		this.nickRegexp = new RegExp(options.nickRegexp, "i");
 		const fsGuild = $discordBot.guilds.get(options.fsGuildId);
 		if(!fsGuild) {
@@ -97,10 +100,29 @@ class FanServerThings extends Plugin implements IModule {
 
 		this.log("ok", `Found general subscriber role: ${oneSubRole.id} - ${oneSubRole.name}`);
 
+		if(typeof options.syncInterval !== "number") {
+			this.log("info", `Sync interval set to minimal value - ${SYNC_INTERVAL_MIN}`);
+			options.syncInterval = SYNC_INTERVAL_MIN;
+		} else {
+			options.syncInterval = Math.max(SYNC_INTERVAL_MIN, options.syncInterval);
+			this.log("info", `Sync interval set to the value - ${options.syncInterval}`);
+		}
+
+		this.options = options;
+
 		this.handleEvents();
 	}
 
+	syncInterval: NodeJS.Timer;
+
 	async init() {
+		await this.sync();
+		if(!this.syncInterval) {
+			this.syncInterval = setInterval(async () => await this.sync(), this.options.syncInterval);
+		}
+	}
+
+	async sync() {
 		const fsGuild = $discordBot.guilds.get(this.options.fsGuildId);
 		if(!fsGuild) {
 			this.log("err", "Fan Server's guild not found, skipping init cycle");
@@ -134,7 +156,7 @@ class FanServerThings extends Plugin implements IModule {
 		// limited only to admins?
 		if(!msg.member.permissions.has("ADMINISTRATOR")) { return; }
 
-		let role = msg.mentions.roles.first();
+		let role: Role | undefined = msg.mentions.roles.first();
 		const roleName = msg.content.slice(`!${cmd} `.length);
 		if(roleName.length === 0 && !role) {
 			return await msg.channel.send({
@@ -188,10 +210,7 @@ class FanServerThings extends Plugin implements IModule {
 	}
 
 	async newMember(member: GuildMember) {
-		if(member.guild.id !== this.options.fsGuildId) {
-			return;
-		}
-
+		if(member.guild.id !== this.options.fsGuildId) { return; }
 		await this.nickCheck(member);
 	}
 
@@ -286,6 +305,9 @@ class FanServerThings extends Plugin implements IModule {
 	}
 
 	async unload() {
+		if(this.syncInterval) {
+			clearInterval(this.syncInterval);
+		}
 		this.unhandleEvents();
 		return true;
 	}
