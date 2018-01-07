@@ -67,7 +67,9 @@ class Ball8 extends Plugin implements IModule {
 		if(!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
 
 		messagesFlowsKeeper.onInit((flowsMan: MessagesFlows) => {
-			return this.flowHandler = flowsMan.watchForMessages((ctx) => this.onMessage(ctx), "8ball");
+			return this.flowHandler = flowsMan.watchForMessages((ctx) => this.onMessage(ctx), "8ball", {
+				timeoutHandler: 10000
+			});
 		});
 	}
 
