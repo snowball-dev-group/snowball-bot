@@ -9,7 +9,7 @@ import * as ua from "universal-analytics";
 import { parse as parseURI } from "url";
 import { replaceAll } from "../utils/text";
 import { command } from "../utils/help";
-import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
+import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "../utils/ez-i18n";
 import { randomString } from "../utils/random";
 import { IPCMessage, INullableHashMap } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
@@ -488,7 +488,9 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		try {
-			await msg.member.addRole(role);
+			await msg.member.addRole(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_CREATED_OWNER", {
+				guildName: args[0]
+			}));
 		} catch(err) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_ROLEASSIGNATIONFAILED")
@@ -1009,7 +1011,9 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		try {
-			await msg.member.removeRole(role);
+			await msg.member.removeRole(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_LEFT_GUILD", {
+				guildName: dbRow.name
+			}));
 			if(visitor) {
 				visitor.event("Members", "Left", msg.member.id).send();
 			}
@@ -1182,7 +1186,7 @@ class Guilds extends Plugin implements IModule {
 			}
 
 			if(!confirmed) {
-				_msg.edit("", {
+				await _msg.edit("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 						key: "GUILDS_JOIN_FAILED_RULES",
 						formatOptions: {
@@ -1190,7 +1194,7 @@ class Guilds extends Plugin implements IModule {
 						}
 					})
 				});
-				msg.author.send("", {
+				await msg.author.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, {
 						key: "GUILDS_JOIN_FAILED_RULES_DM",
 						formatOptions: {
@@ -1221,7 +1225,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		if(!dbRow) {
-			_msg.edit("", {
+			await _msg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_FAILED_DESTROYED")
 			});
 			return;
@@ -1232,19 +1236,21 @@ class Guilds extends Plugin implements IModule {
 		cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 
 		if(!role) {
-			msg.channel.send("", {
+			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_FAILED_ROLEDELETED")
 			});
 			return;
 		}
 
 		try {
-			await msg.member.addRole(role);
+			await msg.member.addRole(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_JOINED_GUILD", {
+				guildName: dbRow.name
+			}));
 			if(visitor) {
 				visitor.event("Members", "Joined", msg.member.id).send();
 			}
 		} catch(err) {
-			_msg.edit("", {
+			await _msg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_FAILED_ROLEASSIGN")
 			});
 			return;
@@ -1255,7 +1261,7 @@ class Guilds extends Plugin implements IModule {
 			if(!channel || channel.type !== "text") {
 				return;
 			}
-			(channel as TextChannel).send(cz.welcome_msg.replace("{usermention}", `<@${msg.author.id}>`).replace("{username}", escapeDiscordMarkdown(msg.author.username, true)));
+			await (channel as TextChannel).send(cz.welcome_msg.replace("{usermention}", `<@${msg.author.id}>`).replace("{username}", escapeDiscordMarkdown(msg.author.username, true)));
 		}
 
 		if(cz.invite_only) {
@@ -1266,7 +1272,7 @@ class Guilds extends Plugin implements IModule {
 			await this.updateGuildRow(dbRow);
 		}
 
-		_msg.edit("", {
+		await _msg.edit("", {
 			embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, {
 				key: "GUILDS_JOIN_DONE",
 				formatOptions: {
@@ -1281,7 +1287,7 @@ class Guilds extends Plugin implements IModule {
 		});
 
 		if(_dmRulesMsg) {
-			_dmRulesMsg.edit("", {
+			await _dmRulesMsg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 					key: "GUILDS_JOIN_JOINED_RULES_DM",
 					formatOptions: {
@@ -1364,7 +1370,7 @@ class Guilds extends Plugin implements IModule {
 				}
 			} else {
 				str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_INVITED", {
-					invited: cz.invites && cz.invites.includes(msg.author.id),
+					invited: cz.invites ? cz.invites.includes(msg.author.id) : false,
 					greenTick: this.config.emojis.greenTick,
 					redTick: this.config.emojis.redTick
 				});
@@ -1401,9 +1407,7 @@ class Guilds extends Plugin implements IModule {
 	}
 
 	async membersControl(msg: Message) {
-		if(msg.content === CMD_GUILDS_MEMBERS) {
-			return;
-		}
+		if(msg.content === CMD_GUILDS_MEMBERS) { return; } // TODO: add instructions lata?
 		let args = msg.content.split(",").map(arg => arg.trim());
 		args[0] = args[0].slice(CMD_GUILDS_MEMBERS.length).trim();
 		args = args.filter(arg => arg.trim() !== "");
@@ -1603,7 +1607,10 @@ class Guilds extends Plugin implements IModule {
 							continue;
 						}
 					} else {
-						await member.removeRole(dbRow.roleId);
+						await member.removeRole(dbRow.roleId, await localizeForGuild(msg.guild, action === "kick" ? "GUILDS_AUDITLOG_KICKED" : "GUILDS_AUDITLOG_BANNED", {
+							initiator: msg.author.tag,
+							guildName: dbRow.name
+						}));
 					}
 
 					if(action === "kick") {

@@ -1,4 +1,4 @@
-import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
+import { generateLocalizedEmbed, localizeForGuild, localizeForUser } from "../utils/ez-i18n";
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, Role, GuildMember, VoiceChannel } from "discord.js";
@@ -408,7 +408,9 @@ class VoiceRole extends Plugin implements IModule {
 					// let's give it to user if he has not it
 					if(!member.roles.has(row.voice_role)) {
 						// yep, take this role, my dear
-						await member.addRole(row.voice_role);
+						await member.addRole(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_JOINED_VC", {
+							channelName: member.voiceChannel.name
+						}));
 					} // nop, you have this role, next time.. next time...
 				} else {
 					// guild has no our voice role
@@ -429,7 +431,9 @@ class VoiceRole extends Plugin implements IModule {
 				// dear, do you have this specific role already?
 				if(!member.roles.has(specificRow.voice_role)) {
 					// nope, take it
-					await member.addRole(specificRow.voice_role);
+					await member.addRole(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_ADDED", {
+						channelName: member.voiceChannel.name
+					}));
 				}
 			}
 		}
@@ -451,7 +455,9 @@ class VoiceRole extends Plugin implements IModule {
 					// but let's check if user HAS this role
 					if(member.roles.has(row.voice_role)) {
 						// yes, he has it, can remove
-						await member.removeRole(row.voice_role);
+						await member.removeRole(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_LEFT_VC", {
+							channelName: member.voiceChannel.name
+						}));
 					} // else we doing nothin'
 				} else {
 					// wowee, role got deleted
@@ -474,7 +480,9 @@ class VoiceRole extends Plugin implements IModule {
 				// there we got good answer means everything is OK
 				// we can remove old specific role
 				if(member.roles.has(specificRow.voice_role)) {
-					await member.removeRole(specificRow.voice_role);
+					await member.removeRole(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_REMOVED", {
+						channelName: member.voiceChannel.name
+					}));
 				}
 			}
 		}
