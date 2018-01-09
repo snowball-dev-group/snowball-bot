@@ -15,7 +15,6 @@ const TABLE_NAME = "voice_role";
 const SPECIFIC_TABLE_NAME = "specificvoicerole";
 const PREFIX = "!voiceRole";
 const MANAGE_PERMS = (member: GuildMember) => (member.permissions.has(["MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"]) || member.permissions.has("ADMINISTRATOR"));
-const LOCALIZED = (str: string) => `VOICEROLE_${str.toUpperCase()}`;
 
 const HELP_CHECKS = {
 	default: (msg: Message) => msg.channel.type === "text" && MANAGE_PERMS(msg.member)
@@ -41,26 +40,26 @@ interface ISpecificRoleRow {
 	voice_role: string;
 }
 
-@command(HELP_CATEGORY, `${PREFIX.slice(1)} set`, `loc:${LOCALIZED("META_SET")}`, {
-	[`loc:${LOCALIZED("META_SET_ARG0")}`]: {
-		description: `loc:${LOCALIZED("META_SET_ARG0_DESC")}`,
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} set`, `loc:VOICEROLE_META_SET`, {
+	[`loc:VOICEROLE_META_SET_ARG0`]: {
+		description: `loc:VOICEROLE_META_SET_ARG0_DESC`,
 		optional: false
 	}
 }, HELP_CHECKS.default)
-@command(HELP_CATEGORY, `${PREFIX.slice(1)} delete`, `loc:${LOCALIZED("META_DELETE")}`, undefined, HELP_CHECKS.default)
-@command(HELP_CATEGORY, `${PREFIX.slice(1)} specific set`, `loc:${LOCALIZED("META_SPECIFICSET")}`, {
-	[`loc:${LOCALIZED("META_SPECIFICSET_ARG0")}`]: {
-		description: `loc:${LOCALIZED("META_SPECIFICSET_ARG0_DESC")}`,
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} delete`, `loc:VOICEROLE_META_DELETE`, undefined, HELP_CHECKS.default)
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} specific set`, `loc:VOICEROLE_META_SPECIFICSET`, {
+	[`loc:VOICEROLE_META_SPECIFICSET_ARG0`]: {
+		description: `loc:VOICEROLE_META_SPECIFICSET_ARG0_DESC`,
 		optional: false
 	},
-	[`loc:${LOCALIZED("META_SET_ARG0")}`]: {
-		description: `loc:${LOCALIZED("META_SET_ARG0_DESC")}`,
+	[`loc:VOICEROLE_META_SET_ARG0`]: {
+		description: `loc:VOICEROLE_META_SET_ARG0_DESC`,
 		optional: false
 	}
 }, HELP_CHECKS.default)
-@command(HELP_CATEGORY, `${PREFIX.slice(1)} speficic delete`, `loc:${LOCALIZED("META_SPECIFICDELETE")}`, {
-	[`loc:${LOCALIZED("META_SPECIFICDELETE_ARG0")}`]: {
-		description: `loc:${LOCALIZED("META_SPECIFICDELETE_ARG0_DESC")}`,
+@command(HELP_CATEGORY, `${PREFIX.slice(1)} speficic delete`, `loc:VOICEROLE_META_SPECIFICDELETE`, {
+	[`loc:VOICEROLE_META_SPECIFICDELETE_ARG0`]: {
+		description: `loc:VOICEROLE_META_SPECIFICDELETE_ARG0_DESC`,
 		optional: false
 	}
 }, HELP_CHECKS.default)
@@ -485,7 +484,7 @@ class VoiceRole extends Plugin implements IModule {
 		const hasPermissionToChange = MANAGE_PERMS(msg.member);
 
 		if(!hasPermissionToChange) {
-			msg.channel.send(await localizeForUser(msg.member, LOCALIZED("NOPERMS")));
+			msg.channel.send(await localizeForUser(msg.member, "VOICEROLE_NOPERMS"));
 			return;
 		}
 
@@ -493,9 +492,9 @@ class VoiceRole extends Plugin implements IModule {
 		if(subCommand === "" || subCommand === "help") {
 			msg.channel.send((
 				await localizeForUser(msg.member,
-					LOCALIZED("SETTING_HELP_TITLE"))) +
-				"\n" + (await localizeForUser(msg.member, LOCALIZED("SETTING_HELP"))) +
-				"\n" + (await localizeForUser(msg.member, LOCALIZED("SETTING_HELP_SPECIFIC"))
+					"VOICEROLE_SETTING_HELP_TITLE")) +
+				"\n" + (await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP")) +
+				"\n" + (await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_SPECIFIC")
 				));
 			return;
 		}
@@ -505,7 +504,7 @@ class VoiceRole extends Plugin implements IModule {
 			const resolvedRole = resolveGuildRole(subCommand.slice("set ".length), msg.guild, false);
 			if(!resolvedRole) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLENOTFOUND"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
 				});
 				return;
 			}
@@ -514,7 +513,7 @@ class VoiceRole extends Plugin implements IModule {
 
 			if(!row) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBGUILDNOTFOUND"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND")
 				});
 				return;
 			}
@@ -527,12 +526,12 @@ class VoiceRole extends Plugin implements IModule {
 					}
 				});
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLECLEANUP"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLECLEANUP")
 				});
 			};
 
 			const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
-				key: LOCALIZED("SETTING_CONFIRMATION_SET"),
+				key: "VOICEROLE_SETTING_CONFIRMATION_SET",
 				formatOptions: {
 					role: replaceAll(resolvedRole.name, "`", "'")
 				}
@@ -540,7 +539,7 @@ class VoiceRole extends Plugin implements IModule {
 
 			if(!confirmation) {
 				await msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CANCELED"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CANCELED")
 				});
 				return;
 			}
@@ -567,7 +566,7 @@ class VoiceRole extends Plugin implements IModule {
 					extra: { row, newRole: resolvedRole, ...messageToExtra(msg) }
 				});
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_SAVING"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_SAVING")
 				});
 				return;
 			}
@@ -587,7 +586,7 @@ class VoiceRole extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					custom: true,
-					string: replaceAll(await localizeForUser(msg.member, LOCALIZED("SETTING_HELP_SET")), "\n", "\n\t")
+					string: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_SET"), "\n", "\n\t")
 				})
 			});
 			return;
@@ -598,7 +597,7 @@ class VoiceRole extends Plugin implements IModule {
 
 			if(!row) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBGUILDNOTFOUND"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND")
 				});
 				return;
 			}
@@ -611,13 +610,13 @@ class VoiceRole extends Plugin implements IModule {
 					}
 				});
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLECLEANUP"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLECLEANUP")
 				});
 			};
 
 			if(row.voice_role === "-") {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, LOCALIZED("SETTING_FAULT_VRNOTSET"))
+					embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, "VOICEROLE_SETTING_FAULT_VRNOTSET")
 				});
 				return;
 			}
@@ -630,7 +629,7 @@ class VoiceRole extends Plugin implements IModule {
 						extra: { ...messageToExtra(msg), row, voiceRoleDeleted: true }
 					});
 					msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 					});
 					return false;
 				}
@@ -643,23 +642,23 @@ class VoiceRole extends Plugin implements IModule {
 				row.voice_role = "-";
 				if(await updateRow()) {
 					msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("SETTING_FASTDELETE"))
+						embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_FASTDELETE")
 					});
 				}
 				return;
 			}
 
 			const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
-				key: LOCALIZED("SETTING_CONFIRMATION_DELETE"),
+				key: "VOICEROLE_SETTING_CONFIRMATION_DELETE",
 				formatOptions: {
 					role: replaceAll(resolvedRole.name, "`", "'"),
-					notice: await localizeForUser(msg.member, LOCALIZED("SETTING_CONFIRMATIONS_NOTICE"))
+					notice: await localizeForUser(msg.member, "VOICEROLE_SETTING_CONFIRMATIONS_NOTICE")
 				}
 			}), msg);
 
 			if(!confirmation) {
 				await msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CANCELED"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CANCELED")
 				});
 				return;
 			}
@@ -693,7 +692,7 @@ class VoiceRole extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					custom: true,
-					string: replaceAll(await localizeForUser(msg.member, LOCALIZED("SETTING_HELP_DELETE")), "\n", "\n\t")
+					string: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_DELETE"), "\n", "\n\t")
 				})
 			});
 			return;
@@ -703,7 +702,7 @@ class VoiceRole extends Plugin implements IModule {
 			const args = subCommand.slice("specific set".length).split(",").map(arg => arg.trim());
 			if(args.length > 2) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ARGERR"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ARGERR")
 				});
 				return;
 			}
@@ -711,12 +710,12 @@ class VoiceRole extends Plugin implements IModule {
 			const resolvedChannel = resolveGuildChannel(args[0], msg.guild, false);
 			if(!resolvedChannel) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CHANNELERR"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELERR")
 				});
 				return;
 			} else if(resolvedChannel.type !== "voice") {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CHANNELTYPEERR"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELTYPEERR")
 				});
 				return;
 			}
@@ -724,13 +723,13 @@ class VoiceRole extends Plugin implements IModule {
 			const resolvedRole = resolveGuildRole(args[1], msg.guild, false);
 			if(!resolvedRole) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLENOTFOUND"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
 				});
 				return;
 			}
 
 			const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
-				key: LOCALIZED("SETTING_SPECIFIC_CONFIRMATION"),
+				key: "VOICEROLE_SETTING_SPECIFIC_CONFIRMATION",
 				formatOptions: {
 					role: replaceAll(resolvedRole.name, "`", "'"),
 					voiceChannel: replaceAll(resolvedChannel.name, "`", "'")
@@ -739,7 +738,7 @@ class VoiceRole extends Plugin implements IModule {
 
 			if(!confirmation) {
 				await msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CANCELED"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CANCELED")
 				});
 				return;
 			}
@@ -751,7 +750,7 @@ class VoiceRole extends Plugin implements IModule {
 				current.voice_role = resolvedRole.id;
 
 				const progMsg = (await msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, LOCALIZED("SETTING_SAVING"))
+					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
 				})) as Message;
 
 				const cleanupFault = async (err) => {
@@ -762,7 +761,7 @@ class VoiceRole extends Plugin implements IModule {
 						}
 					});
 					msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLECLEANUP"))
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLECLEANUP")
 					});
 				};
 
@@ -787,7 +786,7 @@ class VoiceRole extends Plugin implements IModule {
 						}
 					});
 					msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 					});
 					return;
 				}
@@ -799,7 +798,7 @@ class VoiceRole extends Plugin implements IModule {
 				}
 
 				progMsg.edit("", {
-					embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("SETTING_SAVING_DONE"))
+					embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SAVING_DONE")
 				});
 				msg.react("👍");
 
@@ -813,7 +812,7 @@ class VoiceRole extends Plugin implements IModule {
 			};
 
 			const progMsg = (await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("SETTING_SAVING"))
+				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_SAVING")
 			})) as Message;
 			try {
 				await this.updateSpecificRole(newRow);
@@ -826,12 +825,12 @@ class VoiceRole extends Plugin implements IModule {
 					}
 				});
 				progMsg.edit("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 				});
 			}
 
 			progMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("SETTING_SETTINGDONE"))
+				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SETTINGDONE")
 			});
 			msg.react("👍");
 
@@ -840,9 +839,9 @@ class VoiceRole extends Plugin implements IModule {
 			// #HelpSpecificSetGuildVoiceRole
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-					key: LOCALIZED("SETTING_HELP_SPECIFIC_SET"),
+					key: "VOICEROLE_SETTING_HELP_SPECIFIC_SET",
 					formatOptions: {
-						argInfo: replaceAll(await localizeForUser(msg.member, LOCALIZED("SETTING_ARGINFO_SPECIFIC")), "\n", "\n\t")
+						argInfo: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_ARGINFO_SPECIFIC"), "\n", "\n\t")
 					}
 				})
 			});
@@ -853,14 +852,14 @@ class VoiceRole extends Plugin implements IModule {
 			const resolvedChannel = resolveGuildChannel(subCommand.slice("specific delete ".length), msg.guild, false);
 			if(!resolvedChannel) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CHANNELERR"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELERR")
 				});
 				return;
 			}
 
 			if(resolvedChannel.type !== "voice") {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CHANNELTYPEERR"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CHANNELTYPEERR")
 				});
 				return;
 			}
@@ -869,7 +868,7 @@ class VoiceRole extends Plugin implements IModule {
 
 			if(!current) {
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("SETTING_FAULT_NOSPECIFICROLE"))
+					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_FAULT_NOSPECIFICROLE")
 				});
 				return;
 			}
@@ -887,34 +886,34 @@ class VoiceRole extends Plugin implements IModule {
 						}
 					});
 					msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 					});
 					return;
 				}
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, LOCALIZED("SETTING_SPECIFIC_FASTDELETE"))
+					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "VOICEROLE_SETTING_SPECIFIC_FASTDELETE")
 				});
 				return;
 			}
 
 			const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
-				key: LOCALIZED("SETTING_SPECIFIC_DELETECONFIRMATION"),
+				key: "VOICEROLE_SETTING_SPECIFIC_DELETECONFIRMATION",
 				formatOptions: {
 					role: replaceAll(resolvedRole.name, "`", "'"),
 					voiceChannel: replaceAll(resolvedChannel.name, "`", "'"),
-					notice: await localizeForUser(msg.member, LOCALIZED("SETTING_CONFIRMATIONS_NOTICE"))
+					notice: await localizeForUser(msg.member, "VOICEROLE_SETTING_CONFIRMATIONS_NOTICE")
 				}
 			}), msg);
 
 			if(!confirmation) {
 				await msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_CANCELED"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_CANCELED")
 				});
 				return;
 			}
 
 			const progMsg = (await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, LOCALIZED("SETTING_SAVING"))
+				embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
 			})) as Message;
 
 			try {
@@ -927,7 +926,7 @@ class VoiceRole extends Plugin implements IModule {
 					}
 				});
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_DBSAVING"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_DBSAVING")
 				});
 				return;
 			}
@@ -947,13 +946,13 @@ class VoiceRole extends Plugin implements IModule {
 					}
 				});
 				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETTING_FAULT_ROLECLEANUP"))
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLECLEANUP")
 				});
 				return;
 			}
 
 			progMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("SETTING_SPEFIC_DELETED"))
+				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "VOICEROLE_SETTING_SPEFIC_DELETED")
 			});
 			msg.react("👍");
 
@@ -962,9 +961,9 @@ class VoiceRole extends Plugin implements IModule {
 			// #HelpSpecificDeleteGuildVoiceRole
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-					key: LOCALIZED("SETTING_HELP_SPECIFIC_DELETE"),
+					key: "VOICEROLE_SETTING_HELP_SPECIFIC_DELETE",
 					formatOptions: {
-						argInfo: replaceAll(await localizeForUser(msg.member, LOCALIZED("SETTING_ARGINFO_SPECIFIC")), "\n", "\n\t")
+						argInfo: replaceAll(await localizeForUser(msg.member, "VOICEROLE_SETTING_ARGINFO_SPECIFIC"), "\n", "\n\t")
 					}
 				})
 			});
