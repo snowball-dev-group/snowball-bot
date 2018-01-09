@@ -6,7 +6,7 @@ import { IFormatMessageVariables, HumanizerUnitToConvert } from "../../types/Loc
 import { IHumanizerOptionsOverrides } from "../../types/Humanizer";
 import { INullableHashMap } from "../../types/Types";
 
-export type identify = User | GuildMember;
+export type UserIdentify = User | GuildMember;
 const PREFERENCE_USER_LANGUAGE = ":language";
 const PREFERENCE_GUILD_LANGUAGE = ":language";
 const PREFERENCE_GUILD_ENFORCE = ":enforce_lang";
@@ -38,7 +38,7 @@ export async function isGuildEnforceEnabled(guild: Guild) {
 	return cached ? cached : await forceGuildEnforceUpdate(guild);
 }
 
-export async function getUserLanguage(user: identify) {
+export async function getUserLanguage(user: UserIdentify) {
 	if(user instanceof GuildMember && await isGuildEnforceEnabled(user.guild)) {
 		// no need in updating cache and checking user caching
 		// as guild enforces their language
@@ -48,13 +48,22 @@ export async function getUserLanguage(user: identify) {
 	return cached ? cached : await forceUserLanguageUpdate(user);
 }
 
-export async function localizeForUser(u: identify, str: string, formatOpts?: any) {
-	const lang = await getUserLanguage(u);
+export async function localizeForUser(user: UserIdentify, str: string, formatOpts?: IFormatMessageVariables) {
+	const lang = await getUserLanguage(user);
 	return formatOpts ? $localizer.getFormattedString(lang, str, formatOpts) : $localizer.getString(lang, str);
 }
 
-export async function humanizeDurationForUser(u: identify, duration: number, unit: HumanizerUnitToConvert = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
-	return $localizer.humanizeDuration(await getUserLanguage(u), duration, unit, humanizerOptions);
+export async function localizeForGuild(guild: Guild, str: string, formatOpts?: IFormatMessageVariables) {
+	const lang = await getGuildLanguage(guild);
+	return formatOpts ? $localizer.getFormattedString(lang, str, formatOpts) : $localizer.getString(lang, str);
+}
+
+export async function humanizeDurationForUser(user: UserIdentify, duration: number, unit: HumanizerUnitToConvert = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
+	return $localizer.humanizeDuration(await getUserLanguage(user), duration, unit, humanizerOptions);
+}
+
+export async function humanizeDurationForGuild(guild: Guild, duration: number, unit: HumanizerUnitToConvert = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
+	$localizer.humanizeDuration(await getGuildLanguage(guild), duration, unit, humanizerOptions);
 }
 
 export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
@@ -68,7 +77,7 @@ export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
 	return enforcingStatus;
 }
 
-export async function forceUserLanguageUpdate(user: identify): Promise<string> {
+export async function forceUserLanguageUpdate(user: UserIdentify): Promise<string> {
 	const preferedLanguage: string | undefined = await getUserPreferenceValue(user, PREFERENCE_USER_LANGUAGE);
 	if(!preferedLanguage) {
 		// user has no language set
@@ -111,7 +120,7 @@ function isCustomString(obj: any): obj is ICustomString {
 	return "custom" in obj && obj["custom"] === true && "string" in obj && !("formattingOptions" in obj) && !("key" in obj);
 }
 
-export async function generateLocalizedEmbed(type: EmbedType, user: identify, descriptionKey: string | ILocalizedEmbedString | ICustomString, options: IEmbedOptions = {}) {
+export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify, descriptionKey: string | ILocalizedEmbedString | ICustomString, options: IEmbedOptions = {}) {
 	switch(type) {
 		case EmbedType.Error: {
 			if(options.errorTitle) { break; }
