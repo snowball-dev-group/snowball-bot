@@ -521,7 +521,7 @@ class Profiles extends Plugin implements IModule {
 				m: (minutes) => $localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:MINUTES", { minutes }),
 				s: (seconds) => $localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:SECONDS", { seconds })
 			});
-			if(!humanizer) { return; }
+			if(!humanizer) { throw new Error("Expected to create new humanizer, but got nothing. Is world broken?"); }
 		}
 
 		return humanizer.humanize(duration, {
