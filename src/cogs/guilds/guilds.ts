@@ -475,7 +475,11 @@ class Guilds extends Plugin implements IModule {
 					permissions: [],
 					hoist: false, mentionable: false,
 					name: roleName
-				}
+				},
+				reason: await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_ROLE_CREATED", {
+					initiator: msg.author.tag,
+					guildName: args[0]
+				})
 			});
 		} else {
 			role = resolveGuildRole(args[1], msg.guild);
