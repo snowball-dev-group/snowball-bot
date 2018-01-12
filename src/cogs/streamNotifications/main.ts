@@ -1643,7 +1643,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		// #endregion
 
-		await this.handleEvents();
+		this.handleEvents();
 	}
 
 	async unload() {
