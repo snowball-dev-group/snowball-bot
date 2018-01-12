@@ -5,17 +5,18 @@ import { Message, Guild, TextChannel, GuildMember, DiscordAPIError, User, DMChan
 import { escapeDiscordMarkdown, getLogger } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import { simpleCmdParse } from "../utils/text";
-import { generateLocalizedEmbed, getGuildLanguage, getUserLanguage } from "../utils/ez-i18n";
+import { generateLocalizedEmbed, getGuildLanguage, getUserLanguage, localizeForUser } from "../utils/ez-i18n";
 import { EmbedType, sleep, IEmbedOptionsField, IEmbed } from "../utils/utils";
 import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IStreamStatus, StreamStatusChangedHandler, StreamStatusChangedAction } from "./baseService";
 import { createConfirmationMessage } from "../utils/interactive";
 import { command } from "../utils/help";
-import { IHashMap, INullableHashMap } from "../../types/Types";
+import { INullableHashMap } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
 import { isPremium } from "../utils/premium";
 
 const PREFIX = "!streams";
 const MAX_NOTIFIED_LIFE = 86400000; // ms
+const SUBS_PER_PAGE = 20;
 
 const TABLE = {
 	subscriptions: "sn_subscriptions",
@@ -255,6 +256,8 @@ class StreamNotifications extends Plugin implements IModule {
 	// Command handling
 	// =======================================
 
+	// #region Subcommands
+
 	async subcmd_setChannel(msg: Message, args: string[] | undefined) {
 		// !streams set_channel <#228174260307230721>
 		// args at this point: ["<#228174260307230721>"]
@@ -365,7 +368,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		// find this subscription to ensure that is exists
 
-		const subscription = await this.getSubscription({
+		const subscription = await this.findSubscription({
 			provider: args[0].toLowerCase(),
 			uid: args[1]
 		});
@@ -515,7 +518,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const provider = providerModule.base as IStreamingService;
 
-		let subscription = await this.getSubscription({
+		let subscription = await this.findSubscription({
 			provider: providerName,
 			username: args[1]
 		});
@@ -539,7 +542,7 @@ class StreamNotifications extends Plugin implements IModule {
 			}
 
 			if(!streamer) { return; }
-			subscription = await this.getSubscription({
+			subscription = await this.findSubscription({
 				provider: streamer.serviceName,
 				uid: streamer.uid
 			});
@@ -572,7 +575,7 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 
 		// fetching subscription
-		subscription = await this.getSubscription({
+		subscription = await this.findSubscription({
 			provider: subscription.provider,
 			uid: subscription.uid
 		});
@@ -680,7 +683,7 @@ class StreamNotifications extends Plugin implements IModule {
 		const providerName = args[0].toLowerCase();
 		const suid = args[1];
 
-		let rawSubscription = await this.getSubscription({
+		let rawSubscription = await this.findSubscription({
 			provider: providerName,
 			uid: suid
 		});
@@ -722,7 +725,7 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
-		rawSubscription = await this.getSubscription({
+		rawSubscription = await this.findSubscription({
 			provider: providerName,
 			uid: suid
 		});
@@ -844,8 +847,8 @@ class StreamNotifications extends Plugin implements IModule {
 			}
 		}
 
-		const offset = (20 * page) - 20;
-		const end = offset + 20;
+		const offset = (SUBS_PER_PAGE * (page - 1));
+		const end = offset + SUBS_PER_PAGE;
 
 		const rawSettings = await this.getSettings(msg.channel.type === "text" ? msg.guild : msg.author);
 
@@ -881,7 +884,10 @@ class StreamNotifications extends Plugin implements IModule {
 			fields.push({
 				inline: false,
 				name: `${++c}. ${result.username}`,
-				value: `**${result.serviceName}**, ID: **\`${result.uid}\`**`
+				value: await localizeForUser(msg.member, "STREAMING_LIST_ITEM", {
+					provider: result.serviceName,
+					id: result.uid
+				})
 			});
 		}
 
@@ -896,9 +902,74 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 	}
 
+	// #endregion
+
 	// =======================================
-	// Interval functions
+	// Easy functions
 	// =======================================
+
+	addSubscriber(subscription: ISubscriptionRow, target: string | Guild | User) {
+		target = this.normalizeTarget(target);
+		if(subscription.subscribers.includes(target)) {
+			throw new Error(`Target "${target}" is already subscribed to ${subscription.provider}[${subscription.uid}]`);
+		}
+
+		subscription.subscribers.push(target);
+
+		return subscription;
+	}
+
+	isSubbed(subscription: ISubscriptionRow, target: Guild | User) {
+		const normalizedTarget = this.normalizeTarget(target);
+		return subscription.subscribers.includes(normalizedTarget);
+	}
+
+	removeSubscriber(subscription: ISubscriptionRow, target: string | Guild | User) {
+		target = this.normalizeTarget(target);
+
+		const index = subscription.subscribers.indexOf(target);
+		if(index === -1) {
+			throw new Error("Target is not found as a subscriber");
+		}
+
+		subscription.subscribers.splice(index, 1);
+
+		return subscription;
+	}
+
+	// #region User ID
+
+	getUserSubscriberID(user: User) {
+		return `u${user.id}`;
+	}
+
+	isUserSubscriberID(id: string) {
+		return id.startsWith("u");
+	}
+
+	recoverUserID(id: string) {
+		if(!id || !this.isUserSubscriberID(id)) { return undefined; }
+		return id.slice(1);
+	}
+
+	// #endregion
+
+	normalizeTarget(target: string | Guild | User) {
+		if(typeof target !== "string") {
+			if(target instanceof Guild) {
+				target = target.id;
+			} else if(target instanceof User) {
+				target = this.getUserSubscriberID(target);
+			}
+		}
+		return target;
+	}
+
+	// =======================================
+	// Notifications centre
+	// =======================================
+
+	// #region Notifications cleanup
 
 	cleanupPromise: undefined | Promise<void> = undefined;
 
@@ -924,17 +995,17 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 	}
 
-	guildSettingsCache: IHashMap<ISettingsParsedRow> = Object.create(null);
+	// #endregion
 
-	checknNotifyInterval: NodeJS.Timer;
+	// #region Handling notifications
+
+	guildSettingsCache: INullableHashMap<ISettingsParsedRow> = Object.create(null);
 
 	private _handlers: {
-		online: IHashMap<StreamStatusChangedHandler[]>,
-		updated: IHashMap<StreamStatusChangedHandler[]>,
-		offline: IHashMap<StreamStatusChangedHandler[]>
-	} = {
-		online: Object.create(null), updated: Object.create(null), offline: Object.create(null)
-	};
+		online: INullableHashMap<StreamStatusChangedHandler[]>,
+		updated: INullableHashMap<StreamStatusChangedHandler[]>,
+		offline: INullableHashMap<StreamStatusChangedHandler[]>
+	} = { online: Object.create(null), updated: Object.create(null), offline: Object.create(null) };
 
 	async handleNotifications() {
 		for(const providerName in this.servicesLoader.loadedModulesRegistry) {
@@ -968,7 +1039,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 			// loading subscriptions unto provider
 
-			const subscriptions = await this.getSubscriptionsByFilter({
+			const subscriptions = await this.findSubscriptionsByFilter({
 				provider: providerName
 			});
 
@@ -993,7 +1064,7 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async handleNotification(providerName: string, status: IStreamStatus) {
-		const subscriptions = (await this.getSubscriptionsByFilter({
+		const subscriptions = (await this.findSubscriptionsByFilter({
 			provider: providerName,
 			uid: status.streamer.uid
 		})).map(this.convertToNormalSubscription);
@@ -1005,12 +1076,13 @@ class StreamNotifications extends Plugin implements IModule {
 			}
 
 			for(const subscriberId of subscription.subscribers) {
-				const notification = await this.getNotification(subscription.provider, subscription.uid, (status.updated && status.oldId ? status.oldId : status.id), subscriberId);
+				const notification = await this.findNotification(subscription.provider, subscription.uid, (status.updated && status.oldId ? status.oldId : status.id), subscriberId);
 
-				if(subscriberId.startsWith("u")) {
+				const userId = this.recoverUserID(subscriberId);
+
+				if(userId) {
 					// user subscriber
 
-					const userId = subscriberId.slice(1);
 					const user = await $discordBot.users.fetch(userId);
 
 					if(!user) {
@@ -1037,6 +1109,12 @@ class StreamNotifications extends Plugin implements IModule {
 						continue;
 					} else if(!guild && !process.send) {
 						this.log("warn", `Could not find subscribed guild and notify other shards: ${subscriberId} to ${subscription.uid} (${subscription.provider})`);
+
+						const index = subscription.subscribers.indexOf(subscriberId);
+						if(index !== -1) {
+							subscription.subscribers.splice(index);
+							await this.updateSubscription(this.convertToRawSubscription(subscription));
+						}
 					} else if(guild) {
 						await this.pushNotification(guild, status, subscription, notification);
 					}
@@ -1203,7 +1281,7 @@ class StreamNotifications extends Plugin implements IModule {
 			}
 
 			notification = {
-				guild: isUser ? `u${scope.id}` : scope.id,
+				guild: this.normalizeTarget(scope),
 				channelId: channel.id,
 				messageId,
 				provider: subscription.provider,
@@ -1216,9 +1294,13 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 	}
 
+	// #endregion
+
 	// =======================================
 	// Additional bridge functions
 	// =======================================
+
+	// #region Getter functions with the fallbacks
 
 	async createOrGetSettings(scope: Guild | User) {
 		let settings = await this.getSettings(scope);
@@ -1233,9 +1315,13 @@ class StreamNotifications extends Plugin implements IModule {
 		return settings;
 	}
 
+	// #endregion
+
 	// =======================================
 	// Converting
 	// =======================================
+
+	// #region Convert functions
 
 	convertToNormalSettings(raw: ISettingsRow): ISettingsParsedRow {
 		return {
@@ -1289,23 +1375,27 @@ class StreamNotifications extends Plugin implements IModule {
 		};
 	}
 
+	// #endregion
+
 	// =======================================
 	// DB<>Plugin methods
 	// =======================================
+
+	// #region Working with DB
 
 	async getAllNotifications() {
 		return (await this.db(TABLE.notifications).select()) as INotification[];
 	}
 
-	async getSubscriptionsByFilter(filter: SubscriptionFilter): Promise<ISubscriptionRawRow[]> {
+	async findSubscriptionsByFilter(filter: SubscriptionFilter): Promise<ISubscriptionRawRow[]> {
 		return await this.db(TABLE.subscriptions).select().where(filter) as ISubscriptionRawRow[];
 	}
 
-	async getSubscription(filter: SubscriptionFilter): Promise<ISubscriptionRawRow | undefined> {
+	async findSubscription(filter: SubscriptionFilter): Promise<ISubscriptionRawRow | undefined> {
 		if(!filter.uid && !filter.username) {
 			throw new Error("Nor uid nor username provided");
 		}
-		return await this.db(TABLE.subscriptions).select().where(filter).first() as ISubscriptionRawRow;
+		return await this.db(TABLE.subscriptions).select().where(filter).first() as ISubscriptionRawRow | undefined;
 	}
 
 	async createSubscription(row: ISubscriptionRawRow) {
@@ -1362,20 +1452,26 @@ class StreamNotifications extends Plugin implements IModule {
 		return await this.db(TABLE.notifications).where(notification).delete();
 	}
 
-	async getNotification(provider: string, streamerId: string, streamId: string, guild: Guild | string) {
-		return await this.db(TABLE.notifications).where({
+	async findNotification(provider: string, streamerId: string, streamId: string, guild: Guild | string) {
+		return <INotification | undefined>await this.db(TABLE.notifications).where({
 			provider,
 			streamerId,
 			streamId,
 			guild: guild instanceof Guild ? guild.id : guild
-		} as INotification).first() as INotification;
+		} as INotification).first();
 	}
+
+	// #endregion
 
 	// =======================================
 	// Plugin init & unload
 	// =======================================
 
+	// #region Plugin initialization and unloading functions
+
 	async init() {
+		// #region Subscribers table preparation
+
 		const subscriptionsTableCreated = await this.db.schema.hasTable(TABLE.subscriptions);
 		if(!subscriptionsTableCreated) {
 			this.log("info", "Table of subscriptions not found, going to create it right now");
@@ -1388,6 +1484,10 @@ class StreamNotifications extends Plugin implements IModule {
 				}
 			});
 		}
+
+		// #endregion
+
+		// #region Settings table preparation
 
 		const settingsTableCreated = await this.db.schema.hasTable(TABLE.settings);
 		if(!settingsTableCreated) {
@@ -1411,6 +1511,10 @@ class StreamNotifications extends Plugin implements IModule {
 				}
 			});
 		}
+
+		// #endregion
+
+		// #region Creating notifications table
 
 		const notificationsTableCreated = await this.db.schema.hasTable(TABLE.notifications);
 		if(!notificationsTableCreated) {
@@ -1447,16 +1551,28 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 		}
 
+		// #endregion
+
+		// #region Notifications providers loading
+
 		for(const serviceName in this.servicesList) {
 			await this.servicesLoader.load(serviceName);
 		}
 
-		const whitelistModule = $modLoader.signaturesRegistry["snowball.core_features.whitelist"];
+		// #endregion
+
+		// #region Whitelist module checkup
+
+		const whitelistModule = $modLoader.findKeeper<Whitelist>("snowball.core_features.whitelist");
 		if(!whitelistModule) {
-			this.log("warn", "Whitelist module not found :CCCCC");
+			this.log("warn", "Could not find whitelist module.");
 		} else {
-			this.whitelistModule = whitelistModule as ModuleBase<Whitelist>;
+			this.whitelistModule = whitelistModule;
 		}
+
+		// #endregion
+
+		// #region Sharding
 
 		if($botConfig.mainShard) {
 			this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
@@ -1525,20 +1641,22 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 		}
 
-		this.handleEvents();
+		// #endregion
+
+		await this.handleEvents();
 	}
 
 	async unload() {
-		if(this.cleanupInterval) {
-			clearInterval(this.cleanupInterval);
-		}
-		if(this.checknNotifyInterval) {
-			clearInterval(this.checknNotifyInterval);
-		}
+		if(this.cleanupInterval) { clearInterval(this.cleanupInterval); }
+
 		await this.servicesLoader.unload(Object.getOwnPropertyNames(this.servicesLoader.loadedModulesRegistry));
+
 		this.unhandleEvents();
+
 		return true;
 	}
+
+	// #endregion
 }
 
 module.exports = StreamNotifications;

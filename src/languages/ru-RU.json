@@ -658,6 +658,7 @@
     "STREAMING_LIST_INVALIDPAGE": "Неправильный номер страницы",
     "STREAMING_LIST_ISEMPTY": "Эта страница пуста",
     "STREAMING_LIST_USAGE": "Использование команды: `{prefix} <сервис> [страница]`",
+    "STREAMING_LIST_ITEM": "`{provider}`, ID: {id}",
     "STREAMING_MATURE_NAME": "18+?",
     "STREAMING_MATURE_VALUE_MIXER": "{audience, select, 18+ {18+} teen {16+} other {Семейный просмотр}}",
     "STREAMING_MATURE_VALUE_TWITCH": "{mature, select, true {Да} other {Нет}}",

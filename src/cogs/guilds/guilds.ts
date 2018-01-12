@@ -867,6 +867,7 @@ class Guilds extends Plugin implements IModule {
 			this.sendHelp(msg.channel as TextChannel, CMD_GUILDS_DELETE, msg.member);
 			return;
 		}
+
 		let dbRow: IGuildRow | undefined = undefined;
 		try {
 			dbRow = await this.getGuildRow(msg.guild, guildName);
