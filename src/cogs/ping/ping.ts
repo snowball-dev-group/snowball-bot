@@ -1,4 +1,3 @@
-import { IHumanizerOptionsOverrides } from "../../types/Humanizer";
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
@@ -51,13 +50,12 @@ class Ping extends Plugin implements IModule {
 		delay = receivedTime - startDate,
 		delayWoPing = delay - ping,
 		isNegativeDelay = delayWoPing < 0,
-		delayWoPingStr = isNegativeDelay ? `${delayWoPing}` : `+${delayWoPing}`,
-		humanizerOptions = <IHumanizerOptionsOverrides>{ units: ["ms", "s"] };
+		delayWoPingStr = isNegativeDelay ? `${delayWoPing}` : `+${delayWoPing}`;
 
 		pongStr = $localizer.getFormattedString(userLang, "PING_PONG_DETAILS", {
-			ping: $localizer.humanizeDuration(userLang, ping, "ms", humanizerOptions),
-			delay: $localizer.humanizeDuration(userLang, delayWoPing, "ms", humanizerOptions),
-			total: $localizer.humanizeDuration(userLang, delay, "ms", humanizerOptions),
+			ping,
+			delay: delayWoPing,
+			total: delay,
 			isNegativeDelay
 		});
 
