@@ -1,9 +1,11 @@
+import { IHumanizerOptionsOverrides } from "../../types/Humanizer";
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 import { command } from "../utils/help";
 import { getLogger } from "../utils/utils";
 import MessagesFlows, { IPublicFlowUnit, IMessageFlowContext } from "../cores/messagesFlows";
+import { getUserLanguage } from "../utils/ez-i18n";
 
 const ALLOWED_CMDS = ["ping", "ping_embed"];
 
@@ -37,19 +39,29 @@ class Ping extends Plugin implements IModule {
 		if(!ctx.parsed) { return; }
 		if(!ALLOWED_CMDS.includes(ctx.parsed.command!)) { return; }
 
-		let pongStr = "ℹ Pong!";
+		const userLang = await getUserLanguage(ctx.message.member || ctx.message.member);
+
+		let pongStr = $localizer.getString(userLang, "PING_PONG");
 
 		const isEmbed = ctx.parsed.command === "ping_embed",
 		startDate = Date.now(),
 		msg = <Message>await ctx.message.channel.send(isEmbed ? { embed: { description: "Pong!" } } : "ℹ Pong!"),
 		receivedTime = Date.now(),
 		ping = Math.max(0, (msg.createdAt.getTime() - startDate)),
-		delay = (receivedTime - startDate) - ping, 
-		delayStr = delay >= 0 ? `+${delay}` : `${delay}`;
+		delay = receivedTime - startDate,
+		delayWoPing = delay - ping,
+		isNegativeDelay = delayWoPing < 0,
+		delayWoPingStr = isNegativeDelay ? `${delayWoPing}` : `+${delayWoPing}`,
+		humanizerOptions = <IHumanizerOptionsOverrides>{ units: ["ms", "s"] };
 
-		pongStr = `ℹ Pong - \`${ping}ms\` (\`${delayStr}ms\`)`;
+		pongStr = $localizer.getFormattedString(userLang, "PING_PONG_DETAILS", {
+			ping: $localizer.humanizeDuration(userLang, ping, "ms", humanizerOptions),
+			delay: $localizer.humanizeDuration(userLang, delayWoPing, "ms", humanizerOptions),
+			total: $localizer.humanizeDuration(userLang, delay, "ms", humanizerOptions),
+			isNegativeDelay
+		});
 
-		this.log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms (${delayStr}ms)`);
+		this.log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms (${delayWoPingStr}ms, =${delay})`);
 
 		return await msg.edit(isEmbed ? { embed: { description: pongStr } } : pongStr);
 	}

@@ -484,6 +484,8 @@
     "OWPROFILEPLUGIN_WINRATE": "{winrate, number}% винрейт",
     "PING_CMDMETA_DEFAULT_DESCRIPTION": "Пингует бота (чтобы проверить в сети ли он)",
     "PING_CMDMETA_EMBED_DESCRIPTION": "Пингует бота (использует встраиваемый объект)",
+    "PING_PONG": "ℹ Понг!",
+    "PING_PONG_DETAILS": "ℹ Понг - `{ping}мс` (`{isNegativeDelay, select, true {-{delay}} other {{delay}}}мс`, `={total}мс`)",
     "PREFIXALL_INFO": "**Это команда управления префиксами Snowball**.\n\nДоступные субкоманды:\n{items}\n\nНаберите субкоманду без аргументов, чтобы получить дополнительную справку.",
     "PREFIXALL_INFO_ITEMS": "• `add` (или `+`) — добавить ещё один префикс для команд\n• `remove` (или `-`) — убрать префикс\n• `list` (или `?`) — отправить список всех префиксов",
     "PREFIXALL_INFO_ADD": "**Эта субкоманда добавляет префиксы**.\n\nИспользуйте `{prefix} [префикс]`, чтобы добавить новый префикс для команд.",
