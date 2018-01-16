@@ -7,7 +7,7 @@ import { startsOrEqual, slice } from "../utils/text";
 import { EmbedType, getLogger } from "../utils/utils";
 import { setPreferenceValue as setUserPref } from "../utils/userPrefs";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref } from "../utils/guildPrefs";
-import { IHashMap } from "../../types/Types";
+import { IHashMap, createHashMap } from "../../types/Types";
 
 const BASE_PREFIX = "!sb_lang";
 const CMD = {
@@ -63,7 +63,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		if(options) {
 			this.noLazy = !!options["no_lazy"];
 			this.crowdinLink = options.crowdinLink;
-			this.flags = options.flags || Object.create(null);
+			this.flags = createHashMap(options.flags);
 		} else { throw new Error("No options found"); }
 	}
 
