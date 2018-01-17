@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { ModuleLoader, IModuleInfo, convertToModulesMap, SCHEMA_MODULEINFO } from "./ModuleLoader";
 import { ILocalizerOptions, Localizer, SCHEMA_LOCALIZEROPTIONS } from "./Localizer";
-import logger = require("loggy");
+import * as logger from "loggy";
 import * as djs from "discord.js";
 import { ISchema, Typer } from "./Typer";
 import * as Raven from "raven";
