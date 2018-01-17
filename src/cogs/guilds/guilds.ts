@@ -11,7 +11,7 @@ import { replaceAll } from "../utils/text";
 import { command } from "../utils/help";
 import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "../utils/ez-i18n";
 import { randomString } from "../utils/random";
-import { IPCMessage, INullableHashMap, createHashMap } from "../../types/Types";
+import { IPCMessage, INullableHashMap } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
 
 const TABLE_NAME = "guilds";
