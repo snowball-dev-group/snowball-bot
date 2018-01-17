@@ -59,7 +59,7 @@ class Ping extends Plugin implements IModule {
 			isNegativeDelay
 		});
 
-		this.log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms (${delayWoPingStr}ms, =${delay})`);
+		this.log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms (${delayWoPingStr}ms, =${delay}ms)`);
 
 		return await msg.edit(isEmbed ? { embed: { description: pongStr } } : pongStr);
 	}
