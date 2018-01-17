@@ -1,6 +1,6 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
-import { Message, Guild, GuildMember, Role, TextChannel, DMChannel } from "discord.js";
+import { Message, Guild, GuildMember, Role, TextChannel, DMChannel, DiscordAPIError, Emoji } from "discord.js";
 import { getLogger, EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import { default as fetch } from "node-fetch";
@@ -11,7 +11,7 @@ import { replaceAll } from "../utils/text";
 import { command } from "../utils/help";
 import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "../utils/ez-i18n";
 import { randomString } from "../utils/random";
-import { IPCMessage, INullableHashMap } from "../../types/Types";
+import { IPCMessage, INullableHashMap, createHashMap } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
 
 const TABLE_NAME = "guilds";
@@ -36,6 +36,8 @@ const TABLE_SCHEMA = {
 };
 
 const BANNED_HOSTS = ["goo.gl", "grabify.link", "bit.ly"];
+const EMOJI_NAME_REGEXP = /[a-z0-9\_\-]{2,36}/i;
+const EMOJI_ACCESSIBLE_FORMATS = [".png", ".webp", ".jpg", ".gif"];
 
 function isHostBanned(host: string) {
 	if(host.startsWith("www.")) {
@@ -124,6 +126,10 @@ export interface IGuildCustomize {
 	 * Banned users
 	 */
 	banned?: string[];
+	/**
+	 * Emoji
+	 */
+	emoji?: INullableHashMap<string>;
 }
 
 const BASE_PREFIX = "!guilds";
@@ -470,7 +476,7 @@ class Guilds extends Plugin implements IModule {
 				return;
 			}
 
-			role = await msg.guild.createRole({
+			role = await msg.guild.roles.create({
 				data: {
 					permissions: [],
 					hoist: false, mentionable: false,
@@ -556,7 +562,7 @@ class Guilds extends Plugin implements IModule {
 			}
 		}
 
-		if(["image", "description", "rules", "welcome_msg_channel", "welcome_msg", "icon", "owner", "google-ua", "private", "invite_only", "add_admin", "add_adm", "remove_admin", "rm_admin", "delete_admin"].indexOf(editableParam) === -1) {
+		if(["image", "description", "rules", "welcome_msg_channel", "welcome_msg", "icon", "owner", "google-ua", "private", "invite_only", "add_admin", "add_adm", "remove_admin", "rm_admin", "delete_admin", "add_emoji", "remove_emoji"].indexOf(editableParam) === -1) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDPARAM")
 			});
@@ -846,6 +852,113 @@ class Guilds extends Plugin implements IModule {
 				}
 				const mention = msg.mentions.members.first().id;
 				customize.admins.splice(customize.admins.indexOf(mention), 1);
+			} break;
+			case "add_emoji": {
+				if(!EMOJI_NAME_REGEXP.test(content)) {
+					msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDEMOJINAME")
+					});
+					return;
+				}
+				if(msg.attachments.size === 0) {
+					msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOATTACHMENT")
+					});
+					return;
+				} else if(msg.attachments.size > 1) {
+					msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_TOOMANYATTACHMENTS")
+					});
+					return;
+				}
+
+				const attachment = msg.attachments.first();
+				if(!!attachment.height || !!attachment.width || !EMOJI_ACCESSIBLE_FORMATS.find(t => attachment.url.endsWith(`${t}`))) {
+					msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDTYPE")
+					});
+					return;
+				}
+
+
+				let emoji: Emoji;
+				try {
+					emoji = await msg.guild.emojis.create(attachment.url, content, {
+						roles: [dbRow.guildId]
+					});
+				} catch(err) {
+					if(err instanceof DiscordAPIError) {
+						let key = "GUILDS_EDIT_EMOJIOTHERERR";
+						switch(err.code) {
+							case 50013: { key = "GUILDS_EDIT_NOEMOJIPERMISSIONS"; } break;
+							case 20001: { key = "GUILDS_EDIT_BADFORBOT"; } break;
+							default: {
+								$snowball.captureException(new Error("Can't add emoji"), {
+									extra: {
+										err, name: content, uri: attachment.url
+									}
+								});
+							} break;
+						}
+
+						msg.channel.send({
+							embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, key)
+						});
+						return;
+					}
+
+					// ???
+					$snowball.captureException(err);
+					return;
+				}
+
+				if(!emoji) {
+					// th
+					return;
+				}
+
+				if(!customize.emoji) {
+					customize.emoji = createHashMap<string>();
+				}
+
+				customize.emoji[emoji.name] = emoji.id;
+
+				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_EMOJICREATED", {
+					name: emoji.name,
+					emoji: emoji.toString()
+				});
+			} break;
+			case "remove_emoji": {
+				if(!customize.emoji) {
+					msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOEMOJIS")
+					});
+					return;
+				}
+
+				const actualID = customize.emoji[content];
+				if(!actualID) {
+					msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_EMOJINOTFOUND")
+					});
+					return;
+				}
+
+				const actualEmoji = msg.guild.emojis.get(actualID);
+				if(!actualEmoji) {
+					msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_EMOJIALREADYREMOVED")
+					});
+					return;
+				}
+
+				await actualEmoji.delete();
+
+				delete customize.emoji[actualEmoji.name];
+
+				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_EMOJIREMOVED", {
+					name: actualEmoji.name
+				});
 			} break;
 		}
 
@@ -1496,8 +1609,8 @@ class Guilds extends Plugin implements IModule {
 				let str = "# " + await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST", {
 					guildName: this.membersControl_fixString(dbRow.name)
 				});
-				
-				let ownerStr: string|undefined;
+
+				let ownerStr: string | undefined;
 				const admins: string[] = [];
 				const otherMembers: string[] = [];
 
