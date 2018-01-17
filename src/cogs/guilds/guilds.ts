@@ -876,10 +876,12 @@ class Guilds extends Plugin implements IModule {
 					return;
 				}
 
+				const botsRole = msg.guild.me.roles.find(r => r.managed);
+
 				let emoji: Emoji;
 				try {
 					emoji = await msg.guild.emojis.create(attachment.url, content, {
-						roles: [dbRow.roleId]
+						roles: [dbRow.roleId, botsRole]
 					});
 				} catch(err) {
 					if(err instanceof DiscordAPIError) {
@@ -914,7 +916,7 @@ class Guilds extends Plugin implements IModule {
 
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_EMOJICREATED", {
 					name: emoji.name,
-					emoji: emoji.toString()
+					emoji: botsRole ? emoji.toString() : ""
 				});
 			} break;
 		}
