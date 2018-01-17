@@ -105,7 +105,7 @@ export default class MessagesFlows implements IModule {
 	 * @param {CheckArgument} check Command checking function
 	 * @param {IWatcherCreationOptions} options Options for watcher
 	 */
-	public watchForMessages(handler: Handler, check: CheckArgument|string, options: IWatcherCreationOptions = {
+	public watchForMessages(handler: Handler, check: CheckArgument|string|string[], options: IWatcherCreationOptions = {
 		followsTheFlow: true,
 		checkPrefix: true,
 		timeoutCheck: this._timings.timeoutCheck,
@@ -113,10 +113,19 @@ export default class MessagesFlows implements IModule {
 	}): Readonly<IPublicFlowUnit> {
 		const id = this._randomId();
 
+		const normalCheck = (() => {
+			if(Array.isArray(check)) {
+				return (ctx) => ctx.parsed && ctx.parsed.command ? check.includes(ctx.parsed.command) : false;
+			} else if(typeof check === "string") {
+				return (ctx) => ctx.parsed && ctx.parsed.command ? check === ctx.parsed.command : false;
+			}
+			return check;
+		})();
+
 		this._flowUnits.push({
 			_id: id,
 			handler,
-			check: typeof check !== "string" ? check : (ctx) => !!(ctx.parsed && ctx.parsed.command === check),
+			check: normalCheck,
 			parser: options.customParser,
 			followsTheFlow: typeof options.followsTheFlow !== "boolean" ? true : options.followsTheFlow,
 			checkPrefix: !!options.checkPrefix,
