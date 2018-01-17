@@ -27,10 +27,7 @@ class Ping extends Plugin implements IModule {
 		if(!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
 
 		messagesFlowsKeeper.onInit((flowsMan: MessagesFlows) => {
-			return this.flowHandler = flowsMan.watchForMessages((ctx) => <any>this.onMessage(ctx), (ctx) => {
-				if(!ctx.parsed) { return false; }
-				return ctx.parsed.command ? ALLOWED_CMDS.includes(ctx.parsed.command) : false;
-			});
+			return this.flowHandler = flowsMan.watchForMessages((ctx) => <any>this.onMessage(ctx), ALLOWED_CMDS);
 		});
 	}
 
