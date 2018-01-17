@@ -126,10 +126,6 @@ export interface IGuildCustomize {
 	 * Banned users
 	 */
 	banned?: string[];
-	/**
-	 * Emoji
-	 */
-	emoji?: INullableHashMap<string>;
 }
 
 const BASE_PREFIX = "!guilds";
@@ -873,18 +869,17 @@ class Guilds extends Plugin implements IModule {
 				}
 
 				const attachment = msg.attachments.first();
-				if(!!attachment.height || !!attachment.width || !EMOJI_ACCESSIBLE_FORMATS.find(t => attachment.url.endsWith(`${t}`))) {
+				if(!EMOJI_ACCESSIBLE_FORMATS.find(t => attachment.url.endsWith(t))) {
 					msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDTYPE")
 					});
 					return;
 				}
 
-
 				let emoji: Emoji;
 				try {
 					emoji = await msg.guild.emojis.create(attachment.url, content, {
-						roles: [dbRow.guildId]
+						roles: [dbRow.roleId]
 					});
 				} catch(err) {
 					if(err instanceof DiscordAPIError) {
@@ -917,47 +912,9 @@ class Guilds extends Plugin implements IModule {
 					return;
 				}
 
-				if(!customize.emoji) {
-					customize.emoji = createHashMap<string>();
-				}
-
-				customize.emoji[emoji.name] = emoji.id;
-
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_EMOJICREATED", {
 					name: emoji.name,
 					emoji: emoji.toString()
-				});
-			} break;
-			case "remove_emoji": {
-				if(!customize.emoji) {
-					msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOEMOJIS")
-					});
-					return;
-				}
-
-				const actualID = customize.emoji[content];
-				if(!actualID) {
-					msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_EMOJINOTFOUND")
-					});
-					return;
-				}
-
-				const actualEmoji = msg.guild.emojis.get(actualID);
-				if(!actualEmoji) {
-					msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_EMOJIALREADYREMOVED")
-					});
-					return;
-				}
-
-				await actualEmoji.delete();
-
-				delete customize.emoji[actualEmoji.name];
-
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_EMOJIREMOVED", {
-					name: actualEmoji.name
 				});
 			} break;
 		}
