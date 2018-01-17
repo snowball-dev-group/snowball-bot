@@ -13,7 +13,7 @@ import { createConfirmationMessage } from "../utils/interactive";
 const POSSIBLE_CHAT_ROOMS = ["admins", "admin-channel", "admin_channel", "admins-chat", "admins_chat", "admin", "mod-channel", "mods-channel", "mods", "mods-chat", "mod_chat", "chat", "general"];
 const HELP_CATEGORY = "WHITELIST";
 
-enum GUILD_STATE {
+export enum WHITELIST_STATE {
 	/**
 	 * Guild is listed in plugin options and cannot be left by bot itself
 	 */
@@ -181,22 +181,22 @@ export class Whitelist extends Plugin implements IModule {
 	async joinedGuild(guild: Guild) {
 		this.log("info", `Joined guild "${guild.name}" (${guild.members.size} members)`);
 		const whitelistStatus = await this.isWhitelisted(guild);
-		if(whitelistStatus.state === GUILD_STATE.UNKNOWN || whitelistStatus.state === GUILD_STATE.BYPASS) {
+		if(whitelistStatus.state === WHITELIST_STATE.UNKNOWN || whitelistStatus.state === WHITELIST_STATE.BYPASS) {
 			// how about to give guild limited time?
 			// or check if it full of boooooooootz
 			await this.tryToGiveTrial(guild);
-		} else if(whitelistStatus.state === GUILD_STATE.TRIAL_EXPIRED) {
+		} else if(whitelistStatus.state === WHITELIST_STATE.TRIAL_EXPIRED) {
 			this.leaveGuild(guild, "WHITELIST_LEAVE_TRIALEXPIRED1");
-		} else if(whitelistStatus.state === GUILD_STATE.EXPIRED) {
+		} else if(whitelistStatus.state === WHITELIST_STATE.EXPIRED) {
 			this.leaveGuild(guild, "WHITELIST_LEAVE_EXPIRED1");
-		} else if(whitelistStatus.state === GUILD_STATE.BANNED) {
+		} else if(whitelistStatus.state === WHITELIST_STATE.BANNED) {
 			this.leaveGuild(guild);
 		}
 	}
 
 	async isWhitelisted(guild: Guild): Promise<{
 		ok: boolean,
-		state: GUILD_STATE,
+		state: WHITELIST_STATE,
 		until: null | number;
 	}> {
 		let mode = this.currentMode;
@@ -204,42 +204,42 @@ export class Whitelist extends Plugin implements IModule {
 		if(this.alwaysWhitelisted.includes(guild.id)) {
 			return {
 				ok: true,
-				state: GUILD_STATE.IMMORTAL,
+				state: WHITELIST_STATE.IMMORTAL,
 				until: null
 			};
 		}
-		const whitelistStatus = await getGuildPref(guild, "whitelist:status", true) as GUILD_STATE;
+		const whitelistStatus = await getGuildPref(guild, "whitelist:status", true) as WHITELIST_STATE;
 		const whitelistedUntil = await getGuildPref(guild, "whitelist:until", true) as number | null;
 		if(!whitelistStatus) {
 			return {
 				ok: false,
-				state: GUILD_STATE.UNKNOWN,
+				state: WHITELIST_STATE.UNKNOWN,
 				until: null
 			};
 		}
-		if(whitelistStatus === GUILD_STATE.BANNED) {
+		if(whitelistStatus === WHITELIST_STATE.BANNED) {
 			return {
 				ok: false,
-				state: GUILD_STATE.BANNED,
+				state: WHITELIST_STATE.BANNED,
 				until: null
 			};
 		} else if(!mode.whitelist) {
 			return {
 				ok: true,
-				state: GUILD_STATE.BYPASS,
+				state: WHITELIST_STATE.BYPASS,
 				until: null
 			};
-		} else if(whitelistStatus === GUILD_STATE.UNLIMITED) {
+		} else if(whitelistStatus === WHITELIST_STATE.UNLIMITED) {
 			return {
 				ok: true,
-				state: GUILD_STATE.UNLIMITED,
+				state: WHITELIST_STATE.UNLIMITED,
 				until: null
 			};
 		} 
 		if(whitelistedUntil && whitelistedUntil < Date.now()) {
 			return {
 				ok: false,
-				state: whitelistStatus === GUILD_STATE.TRIAL ? GUILD_STATE.TRIAL_EXPIRED : GUILD_STATE.EXPIRED,
+				state: whitelistStatus === WHITELIST_STATE.TRIAL ? WHITELIST_STATE.TRIAL_EXPIRED : WHITELIST_STATE.EXPIRED,
 				until: whitelistedUntil
 			};
 		}
@@ -261,13 +261,13 @@ export class Whitelist extends Plugin implements IModule {
 	async checkGuilds() {
 		for(const g of $discordBot.guilds.values()) {
 			const whitelistStatus = await this.isWhitelisted(g);
-			if(whitelistStatus.state === GUILD_STATE.EXPIRED) {
+			if(whitelistStatus.state === WHITELIST_STATE.EXPIRED) {
 				await this.leaveGuild(g, "WHITELIST_LEAVE_EXPIRED");
-			} else if(whitelistStatus.state === GUILD_STATE.TRIAL_EXPIRED) {
+			} else if(whitelistStatus.state === WHITELIST_STATE.TRIAL_EXPIRED) {
 				await this.leaveGuild(g, "WHITELIST_LEAVE_TRIALEXPIRED");
-			} else if(whitelistStatus.state === GUILD_STATE.BANNED) {
+			} else if(whitelistStatus.state === WHITELIST_STATE.BANNED) {
 				await this.leaveGuild(g);
-			} else if(whitelistStatus.state === GUILD_STATE.UNKNOWN) {
+			} else if(whitelistStatus.state === WHITELIST_STATE.UNKNOWN) {
 				await this.tryToGiveTrial(g);
 			}
 		}
@@ -297,7 +297,7 @@ export class Whitelist extends Plugin implements IModule {
 			return;
 		}
 		if(mode.whitelist) {
-			await setGuildPref(guild, "whitelist:status", GUILD_STATE.TRIAL);
+			await setGuildPref(guild, "whitelist:status", WHITELIST_STATE.TRIAL);
 			const endDate = Date.now() + this.trialTime;
 			await setGuildPref(guild, "whitelist:until", endDate);
 			this.log("info", `Activated trial on guild "${guild.name}"`);
@@ -354,26 +354,26 @@ export class Whitelist extends Plugin implements IModule {
 			})) + "\n";
 			str += (await localizeForUser(msg.member, "WHITELIST_INFO_STATUS")) + " ";
 			switch(whitelistInfo.state) {
-				case GUILD_STATE.BANNED: {
+				case WHITELIST_STATE.BANNED: {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BANNED");
 				} break;
-				case GUILD_STATE.IMMORTAL: {
+				case WHITELIST_STATE.IMMORTAL: {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_IMMORTAL");
 				} break;
-				case GUILD_STATE.LIMITED: {
+				case WHITELIST_STATE.LIMITED: {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_LIMITED");
 				} break;
-				case GUILD_STATE.TRIAL: {
+				case WHITELIST_STATE.TRIAL: {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_TRIAL");
 				} break;
-				case GUILD_STATE.UNLIMITED: {
+				case WHITELIST_STATE.UNLIMITED: {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_UNLIMITED");
 				} break;
-				case GUILD_STATE.BYPASS: {
+				case WHITELIST_STATE.BYPASS: {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BYPASS");
 				}
 			}
-			if(whitelistInfo.state === GUILD_STATE.LIMITED || whitelistInfo.state === GUILD_STATE.TRIAL) {
+			if(whitelistInfo.state === WHITELIST_STATE.LIMITED || whitelistInfo.state === WHITELIST_STATE.TRIAL) {
 				str += "\n";
 				const endString = moment(whitelistInfo.state, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 				str += await localizeForUser(msg.member, "WHITELIST_INFO_UNTIL", {
@@ -415,7 +415,7 @@ export class Whitelist extends Plugin implements IModule {
 						});
 						return;
 					}
-					await setGuildPref(cmd.args[0], "whitelist:status", GUILD_STATE.UNLIMITED);
+					await setGuildPref(cmd.args[0], "whitelist:status", WHITELIST_STATE.UNLIMITED);
 				} else {
 					const time = parseTime(cmd.args[1], "ms");
 					const endTime = new Date(Date.now() + time);
@@ -438,7 +438,7 @@ export class Whitelist extends Plugin implements IModule {
 					}
 
 					await setGuildPref(cmd.args[0], "whitelist:until", endTime);
-					await setGuildPref(cmd.args[0], "whitelist:status", GUILD_STATE.LIMITED);
+					await setGuildPref(cmd.args[0], "whitelist:status", WHITELIST_STATE.LIMITED);
 				}
 
 				msg.channel.send("", {
@@ -517,7 +517,7 @@ export class Whitelist extends Plugin implements IModule {
 				}
 
 				await delGuildPref(cmd.args[0], "whitelist:until");
-				await setGuildPref(cmd.args[0], "whitelist:status", GUILD_STATE.BANNED);
+				await setGuildPref(cmd.args[0], "whitelist:status", WHITELIST_STATE.BANNED);
 
 				const currentGuild = $discordBot.guilds.get(cmd.args[0]);
 				if(currentGuild) {
