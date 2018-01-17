@@ -313,12 +313,12 @@ export class ModuleLoader {
 		}
 		if(!this.registry[name]) {
 			const reason = "Module not found in registry. Use `ModuleLoader#register` to put your module into registry";
-			this.log("err", "#load: attempt to load module", name, "failed:", reason);
+			this.log("err", `#load: attempt to load module "${name}" failed: ${reason}`);
 			throw new Error(reason);
 		}
 		if(this.loadedModulesRegistry[name]) {
 			const reason = "Module already loaded";
-			this.log("err", "#load: attempt to load module", name, "failed:", reason);
+			this.log("err", `#load: attempt to load module "${name}" failed: ${reason}`);
 			throw new Error(reason);
 		}
 
@@ -332,7 +332,7 @@ export class ModuleLoader {
 
 		try {
 			moduleInfo.path = require.resolve(moduleInfo.path);
-			this.log("info", "#load: path converted:", moduleInfo.path, "(module can be loaded)");
+			this.log("info", `#load: path converted: "${moduleInfo.path}" (module can be loaded)`);
 		} catch(err) {
 			this.log("err", "#load: path conversation failed (module can't be loaded)");
 			throw err;
@@ -343,17 +343,15 @@ export class ModuleLoader {
 
 		// handling events
 		moduleKeeper.on("error", (errInfo: any) => {
-			this.log("err", keeperLogPrefix, "ERROR:", errInfo);
+			this.log("err", `${keeperLogPrefix} ERROR:`, errInfo);
 		}).on("loaded", (signature: string) => {
-			this.log("ok", keeperLogPrefix, "LOADED:", { signature });
+			this.log("ok", `${keeperLogPrefix} LOADER: ${signature}`);
 		}).on("unloaded", () => {
-			this.log("info", keeperLogPrefix, "UNLOADED");
+			this.log("info", `${keeperLogPrefix} UNLOADED`);
 		}).on("destroyed", () => {
-			this.log("info", keeperLogPrefix, "DESTROYED");
-			this.log("warn", keeperLogPrefix, "WARNING: Destroying should be avoided, it's totally unsafe and can lead to memory leaks. Please contact module maintainer and ask to fix this problem.");
-		}).on("initialized", () => {
-			this.log("info", keeperLogPrefix, "INITIALIZED");
-		});
+			this.log("info", `${keeperLogPrefix} DESTROYED`);
+			this.log("warn", `${keeperLogPrefix} WARNING: Destroying should be avoided, it's totally unsafe and can lead to memory leaks. Please contact module maintainer and ask to fix this problem.`);
+		}).on("initialized", () => this.log("info", `${keeperLogPrefix} INITIALIZED`));
 
 		try {
 			if(clearRequireCache) {
@@ -366,12 +364,12 @@ export class ModuleLoader {
 			if(!moduleKeeper.signature) {
 				violation = "empty signature";
 			} else if(this.signaturesRegistry[moduleKeeper.signature]) {
-				violation = "signature already registered";
+				violation = `signature "${moduleKeeper.signature}" already registered`;
 			}
 
 			if(violation) {
 				// any signature violation is unacceptable
-				this.log("err", "#load: signature violation found:", moduleKeeper.info.name, "-", violation, ", caused unload");
+				this.log("err", `#load: signature violation found: "${moduleKeeper.info.name}" - violation "${violation}" caused unload`);
 				await moduleKeeper.unload("signature_violation");
 				return;
 			}
@@ -381,11 +379,11 @@ export class ModuleLoader {
 				this.signaturesRegistry[moduleKeeper.signature] = moduleKeeper;
 			}
 		} catch(err) {
-			this.log("err", "#load: module", moduleKeeper.info.name, " rejected loading");
+			this.log("err", `#load: module "${moduleKeeper.info.name}" rejected loading`);
 			throw err;
 		}
 
-		this.log("ok", "#load: module", moduleKeeper.info.name, "resolved (loading complete)");
+		this.log("ok", `#load: module "${moduleKeeper.info.name}" resolved (loading complete)`);
 		this.loadedModulesRegistry[moduleKeeper.info.name] = moduleKeeper;
 	}
 
@@ -405,13 +403,14 @@ export class ModuleLoader {
 
 		if(!this.loadedModulesRegistry[name]) {
 			const reason = "Module not found or not loaded yet";
-			this.log("err", "#unload: check failed: ", reason);
+			this.log("err", `#unload: check failed: ${reason}`);
 			throw new Error(reason);
 		}
 		const moduleKeeper = this.loadedModulesRegistry[name];
 
-		if(!moduleKeeper) {
-			this.log("warn", "#unload: check failed: registry member is already `undefined`");
+		// tslint:disable-next-line:triple-equals
+		if(moduleKeeper == null) {
+			this.log("warn", `#unload: check failed: registry member is already \`${moduleKeeper}\``);
 			delete this.loadedModulesRegistry[name];
 			return;
 		}
@@ -421,7 +420,7 @@ export class ModuleLoader {
 		}
 
 		if(skipCallingUnload) {
-			this.log("warn", "#unload: skiping calling `unload` method");
+			this.log("warn", "#unload: skiping calling of `unload` method");
 			delete this.loadedModulesRegistry[name];
 		} else {
 			try {
@@ -430,10 +429,10 @@ export class ModuleLoader {
 					moduleKeeper.clearRequireCache();
 				}
 			} catch(err) {
-				this.log("err", "#unload: module", name, "rejected to unload:", err);
+				this.log("err", `#unload: module "${name}" rejected to unload:`, err);
 				throw err;
 			}
-			this.log("ok", "#unload: module", name, "successfully unloaded");
+			this.log("ok", `#unload: module "${name}" successfully unloaded`);
 			delete this.loadedModulesRegistry[name];
 		}
 	}
@@ -470,7 +469,7 @@ export class ModuleLoader {
 			try {
 				await keeper.init();
 			} catch (err) {
-				this.log("warn", "Failed to initialize module", keeper.info.name, err);
+				this.log("warn", `Failed to initialize module "${keeper.info.name}":`, err);
 			}
 		}
 	}
@@ -496,7 +495,7 @@ export class ModuleLoader {
 		switch(argType) {
 			case "name": { return <ModuleBase<T>|undefined>this.loadedModulesRegistry[searchArg]; }
 			case "signature": { return <ModuleBase<T>|undefined>this.signaturesRegistry[searchArg]; }
-			default: { throw new Error("Invalid search argument type"); }
+			default: { throw new Error(`Invalid search argument type - ${argType}`); }
 		}
 	}
 }
@@ -507,8 +506,6 @@ export class ModuleLoader {
 */
 export function convertToModulesMap(obj: IModuleInfo[]) {
 	const modulesMap: INullableHashMap<IModuleInfo> = Object.create(null);
-	for(const moduleInfo of obj) {
-		modulesMap[moduleInfo.name] = moduleInfo;
-	}
+	for(const moduleInfo of obj) { modulesMap[moduleInfo.name] = moduleInfo; }
 	return modulesMap;
 }
