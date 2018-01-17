@@ -277,6 +277,7 @@
     "GUILDS_EDIT_NOEMOJIPERMISSIONS": "Бот не имеет права управления эмодзи",
     "GUILDS_EDIT_BADFORBOT": "Похоже, этот бот не может добавлять эмодзи",
     "GUILDS_EDIT_EMOJICREATED": "Эмодзи `{name}` успешно создано! {emoji} {emoji} {emoji}",
+    "GUILDS_EDIT_NOSLOTS": "На сервере не осталось слотов для эмодзи этого типа 😦",
     "GUILDS_INFO_DESCRIPTIONPLACEHOLDER": "- нет описания -",
     "GUILDS_INFO_FAILED_ROLEFAILURE": "Гильдия повреждена",
     "GUILDS_INFO_FIELDS_IOSTATUS": "Приглашен?",

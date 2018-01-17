@@ -888,6 +888,7 @@ class Guilds extends Plugin implements IModule {
 						let key = "GUILDS_EDIT_EMOJIOTHERERR";
 						switch(err.code) {
 							case 50013: { key = "GUILDS_EDIT_NOEMOJIPERMISSIONS"; } break;
+							case 30008: { key = "GUILDS_EDIT_NOSLOTS"; } break;
 							case 20001: { key = "GUILDS_EDIT_BADFORBOT"; } break;
 							default: {
 								$snowball.captureException(new Error("Can't add emoji"), {
@@ -899,7 +900,7 @@ class Guilds extends Plugin implements IModule {
 						}
 
 						msg.channel.send({
-							embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, key)
+							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, key)
 						});
 						return;
 					}
