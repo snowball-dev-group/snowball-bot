@@ -420,16 +420,35 @@ export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = tru
 	}
 }
 
-export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false): Promise<GuildMember | undefined> {
+const USER_MENTION_SNOWFLAKE = /^\<\@\!?([0-9]{16,20})\>$/;
+
+/**
+ * It's not actually that safe, just returns undefined on error
+ * @param {Guild} guild Guild from where member comes
+ * @param {string} id ID of member
+ * @param {function} errCallback Callback to call on error
+ */
+export async function safeMemberFetch(guild: Guild, id: string, errCallback?: (err) => void) {
+	try {
+		return guild.members.get(id) || await guild.members.fetch(id);
+	} catch(err) {
+		if(errCallback) { errCallback(err); }
+		return undefined;
+	}
+}
+
+export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false, possibleMention = false): Promise<GuildMember | undefined> {
+	if(possibleMention) {
+		const res = USER_MENTION_SNOWFLAKE.exec(nameOrID);
+		if(res && res[1]) {
+			const member = await safeMemberFetch(guild, res[1]);
+			if(member) { return member; }
+		}
+	}
+
 	if(SNOWFLAKE_REGEXP.test(nameOrID)) {
-		const memberByID = await (async () => {
-			try {
-				return await guild.members.fetch(nameOrID);
-			} catch(err) {
-				return undefined;
-			}
-		})();
-		if(memberByID) { return memberByID; }
+		const member = safeMemberFetch(guild, nameOrID);
+		if(member) { return member; }
 	}
 
 	if(!caseStrict) {
