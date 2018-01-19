@@ -24,6 +24,12 @@ const TABLE = {
 	notifications: "sn_notifications"
 };
 
+const SHARDING_MESSAGE_TYPES = {
+	SUBSCRIBE: "streams:sub",
+	UNSUBSCRIBE: "streams:free",
+	PUSH: "streams:push"
+};
+
 interface INotificationsModuleSettings {
 	/**
 	 * Streaming services
@@ -494,7 +500,7 @@ class StreamNotifications extends Plugin implements IModule {
 		} else if((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds && settings.subscribedTo.length >= this.options.limits.users)) {
 			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
 			if(whitelistStatus.state === 1) {
-				msg.channel.send("", {
+				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 						key: LOCALIZED("ADD_FAULT_NOPARTNER"),
 						formatOptions: {
@@ -518,51 +524,31 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const provider = providerModule.base as IStreamingService;
 
-		let subscription = await this.findSubscription({
-			provider: providerName,
-			username: args[1]
-		});
-
 		let streamer: IStreamingServiceStreamer | undefined = undefined;
-		if(!subscription) {
-			try {
-				streamer = await provider.getStreamer(args[1]);
-			} catch(err) {
-				if(err instanceof StreamingServiceError) {
-					await msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED(err.stringKey))
-					});
-				} else {
-					$snowball.captureException(err, { extra: messageToExtra(msg) });
-					await msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_UNKNOWN"))
-					});
-				}
-				return;
+
+		try {
+			streamer = await provider.getStreamer(args[1]);
+		} catch(err) {
+			if(err instanceof StreamingServiceError) {
+				await msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED(err.stringKey))
+				});
+			} else {
+				$snowball.captureException(err, { extra: messageToExtra(msg) });
+				await msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_UNKNOWN"))
+				});
 			}
-
-			if(!streamer) { return; }
-			subscription = await this.findSubscription({
-				provider: streamer.serviceName,
-				uid: streamer.uid
-			});
+			return;
 		}
 
-		if(!subscription) {
-			if(!streamer) { return; }
-			subscription = await this.createSubscription({
-				provider: streamer.serviceName,
-				uid: streamer.uid,
-				username: streamer.username,
-				subscribers: "[]"
-			});
-		}
+		if(!streamer) { return; }
 
 		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, i18nSubject, {
 			key: LOCALIZED(scope === "guild" ? "ADD_CONFIRMATION" : "ADD_CONFIRMATION_DM"),
 			formatOptions: {
-				streamerName: subscription.username,
-				streamerId: subscription.uid
+				streamerName: streamer.username,
+				streamerId: streamer.uid
 			}
 		});
 
@@ -574,71 +560,9 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
-		// fetching subscription
-		subscription = await this.findSubscription({
-			provider: subscription.provider,
-			uid: subscription.uid
-		});
+		const subscription = await this.addStreamerSubscriber(streamer, subject);
 
-		if(!subscription) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_DESTROYED"))
-			});
-			return;
-		}
-
-		const subscriberId = scope === "guild" ? msg.guild.id : `u${msg.author.id}`;
-
-		const subscribers = JSON.parse(subscription.subscribers) as string[];
-
-		if(subscribers.includes(subscriberId)) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_ALREADYSUBBED"))
-			});
-			return;
-		}
-
-		subscribers.push(subscriberId);
-		subscription.subscribers = JSON.stringify(subscribers);
-
-		const index = settings.subscribedTo.findIndex((streamer) => {
-			return !!subscription && streamer.serviceName === providerName && streamer.uid === subscription.uid;
-		});
-
-		if(index === -1) {
-			settings.subscribedTo.push({
-				serviceName: providerName,
-				uid: subscription.uid,
-				username: subscription.username
-			});
-
-			await this.updateSettings(this.convertToRawSettings(settings));
-		}
-
-		await this.updateSubscription(subscription);
-
-		if(providerModule && provider) {
-			if($botConfig.mainShard) {
-				if(!provider.isSubscribed(subscription.uid)) {
-					provider.addSubscription({
-						serviceName: subscription.provider,
-						uid: subscription.uid,
-						username: subscription.username
-					});
-				}
-			} else {
-				if(process.send) { // notifying then
-					process.send({
-						type: "streams:sub",
-						payload: {
-							provider: subscription.provider,
-							uid: subscription.uid,
-							username: subscription.username
-						}
-					});
-				}
-			}
-		}
+		await this.noFetchingAvoidance(subscription);
 
 		await msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.OK, i18nSubject, {
@@ -681,120 +605,66 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 
 		const providerName = args[0].toLowerCase();
-		const suid = args[1];
+		const streamerUID = args[1];
 
 		let rawSubscription = await this.findSubscription({
 			provider: providerName,
-			uid: suid
+			uid: streamerUID
 		});
-
-		if(!rawSubscription) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("REMOVE_FAULT_SUBNOTFOUND"))
-			});
-			return;
-		}
-
-		let subscription = this.convertToNormalSubscription(rawSubscription);
 
 		const subscriber = scope === "guild" ? msg.guild : msg.author;
 
-		const subscriberId = scope === "guild" ? subscriber.id : `u${subscriber.id}`;
-
-		if(!subscription.subscribers.includes(subscriberId)) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("REMOVE_FAULT_NOTSUBBED"))
-			});
-			return;
-		}
-
-		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, i18nSubject, {
-			key: LOCALIZED("REMOVE_CONFIRMATION"),
-			formatOptions: {
-				streamerId: subscription.uid,
-				streamerUsername: subscription.username
+		await (async () => {
+			if(!rawSubscription) {
+				await msg.channel.send("", {
+					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_FAULT_SUBNOTFOUND"))
+				});
+				return;
 			}
-		});
 
-		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-
-		if(!confirmation) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_CANCELED"))
-			});
-			return;
-		}
-
-		rawSubscription = await this.findSubscription({
-			provider: providerName,
-			uid: suid
-		});
-
-		if(!rawSubscription) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("REMOVE_FAULT_ALREADYDELETED"))
-			});
-			return;
-		}
-
-		subscription = this.convertToNormalSubscription(rawSubscription);
-
-		const subscriptionIndex = subscription.subscribers.indexOf(subscriberId);
-
-		if(subscriptionIndex === -1) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("REMOVE_FAULT_ALREADYUNSUBBED"))
-			});
-			return;
-		}
-
-		subscription.subscribers.splice(subscriptionIndex, 1);
-
-		let rawSettings = await this.createOrGetSettings(subscriber);
-		const parsedSettings = rawSettings ? this.convertToNormalSettings(rawSettings) : undefined;
-
-		if(parsedSettings) {
-			const index = parsedSettings.subscribedTo.findIndex((streamer) => {
-				return streamer.serviceName === providerName && streamer.uid === suid;
-			});
-			if(index !== -1) {
-				parsedSettings.subscribedTo.splice(index);
-				rawSettings = this.convertToRawSettings(parsedSettings);
-				await this.updateSettings(rawSettings);
-			}
-		}
-
-		if(subscription.subscribers.length === 0) {
-			// delete subscription
-			await this.removeSubscription(rawSubscription);
-
-			// we'll gonna notify provider that it can free cache for this subscription
-			const providerModule = this.servicesLoader.loadedModulesRegistry[args[0].toLowerCase()];
-			if(providerModule) {
-				const provider = providerModule.base as IStreamingService;
-
-				if($botConfig.mainShard) {
-					provider.removeSubscription(subscription.uid);
-				} else {
-					if(process.send) { // notifying then
-						process.send({
-							type: "streams:free",
-							payload: {
-								provider: args[0].toLowerCase(),
-								uid: subscription.uid
-							}
-						});
-					}
+			const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, i18nSubject, {
+				key: LOCALIZED("REMOVE_CONFIRMATION"),
+				formatOptions: {
+					streamerId: rawSubscription.uid,
+					streamerUsername: rawSubscription.username
 				}
+			});
+	
+			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+	
+			if(!confirmation) {
+				await msg.channel.send({
+					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_CANCELED"))
+				});
+				return;
 			}
-		} else {
-			// updating subscription
-			rawSubscription = this.convertToRawSubscription(subscription);
-			await this.updateSubscription(rawSubscription);
-		}
+	
+			rawSubscription = await this.findSubscription({
+				provider: providerName,
+				uid: streamerUID
+			});
 
-		await msg.channel.send("", {
-			embed: await generateLocalizedEmbed(EmbedType.Information, i18nSubject, LOCALIZED("REMOVE_DONE"))
+			if(!rawSubscription) {
+				await msg.channel.send({
+					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_FAULT_SUBNOTFOUND_REFETCH"))
+				});
+				return;
+			}
+
+			let normalSubscription = this.convertToNormalSubscription(rawSubscription);
+
+			normalSubscription = await this.removeSubscriber(subscriber, normalSubscription);
+
+			await this.uselessFetchingAvoidance(normalSubscription);
+
+			await msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.OK, i18nSubject, LOCALIZED("REMOVE_DONE"))
+			});
+		})();
+
+		await this.retirePseudoSubscription(subscriber, {
+			provider: providerName,
+			uid: streamerUID
 		});
 	}
 
@@ -908,7 +778,7 @@ class StreamNotifications extends Plugin implements IModule {
 	// Easy functions
 	// =======================================
 
-	addSubscriber(subscription: ISubscriptionRow, target: string | Guild | User) {
+	async addSubscriber(target: string | Guild | User, subscription: ISubscriptionRow) {
 		target = this.normalizeTarget(target);
 		if(subscription.subscribers.includes(target)) {
 			throw new Error(`Target "${target}" is already subscribed to ${subscription.provider}[${subscription.uid}]`);
@@ -916,25 +786,187 @@ class StreamNotifications extends Plugin implements IModule {
 
 		subscription.subscribers.push(target);
 
+		await this.updateSubscription(this.convertToRawSubscription(subscription));
+
 		return subscription;
 	}
 
-	isSubbed(subscription: ISubscriptionRow, target: Guild | User) {
-		const normalizedTarget = this.normalizeTarget(target);
-		return subscription.subscribers.includes(normalizedTarget);
-	}
-
-	removeSubscriber(subscription: ISubscriptionRow, target: string | Guild | User) {
+	async removeSubscriber(target: string | Guild | User, subscription: ISubscriptionRow) {
 		target = this.normalizeTarget(target);
 
 		const index = subscription.subscribers.indexOf(target);
 		if(index === -1) {
-			throw new Error("Target is not found as a subscriber");
+			throw new Error(`Target "${target}" is not found as a subscriber of ${subscription.provider}[${subscription.uid}]`);
 		}
 
 		subscription.subscribers.splice(index, 1);
 
+		await this.updateSubscription(this.convertToRawSubscription(subscription));
+
 		return subscription;
+	}
+
+	async addStreamerSubscriber(streamer: IStreamingServiceStreamer, target: string | Guild | User) {
+		let subscription = await this.findSubscription({
+			provider: streamer.serviceName,
+			uid: streamer.uid
+		});
+
+		if(!subscription) {
+			subscription = await this.createSubscription({
+				provider: streamer.serviceName,
+				uid: streamer.uid,
+				username: streamer.username,
+				subscribers: "[]"
+			});
+		}
+
+		return await this.addSubscriber(target, this.convertToNormalSubscription(subscription));
+	}
+
+	async removeStreamerSubscriber(streamer: IStreamingServiceStreamer, target: string | Guild | User) {
+		const subscription = await this.findSubscription({
+			provider: streamer.serviceName,
+			uid: streamer.uid
+		});
+
+		if(!subscription) { return undefined; }
+
+		return await this.removeSubscriber(target, this.convertToNormalSubscription(subscription));
+	}
+
+	async recordSubscription(target: string | User | Guild, subscription: ISubscriptionRow, settings?: ISettingsParsedRow) {
+		target = this.normalizeTarget(target);
+
+		if(!settings) {
+			settings = this.convertToNormalSettings(await this.createOrGetSettings(target));
+		}
+
+		if(!subscription.subscribers.includes(target)) {
+			return settings; // doing nothin'!
+		}
+
+		const activeSubscription = settings.subscribedTo.find(s => s.serviceName === subscription.provider && s.uid === subscription.uid);
+
+		if(!activeSubscription) {
+			settings.subscribedTo.push({
+				serviceName: subscription.provider,
+				uid: subscription.uid,
+				username: subscription.username
+			});
+
+			await this.updateSettings(this.convertToRawSettings(settings));
+		}
+
+		return settings;
+	}
+
+	async retireSubscription(target: string | User | Guild, subscription: ISubscriptionRow, settings?: ISettingsParsedRow) {
+		target = this.normalizeTarget(target);
+
+		if(subscription.subscribers && subscription.subscribers.includes(target)) {
+			return settings;
+		}
+
+		await this.retirePseudoSubscription(target, subscription, settings);
+	}
+
+	async retirePseudoSubscription(target: string | User| Guild, pseudoSubsciption: {
+		provider: string;
+		uid: string
+	}, settings?: ISettingsParsedRow) {
+		target = this.normalizeTarget(target);
+
+		if(!settings) {
+			settings = this.convertToNormalSettings(await this.createOrGetSettings(target));
+		}
+
+		const activeSubscriptionIndex = settings.subscribedTo.findIndex(s => s.serviceName === pseudoSubsciption.provider && s.uid === pseudoSubsciption.uid);
+
+		if(activeSubscriptionIndex !== -1) {
+			settings.subscribedTo.splice(activeSubscriptionIndex, 1);
+			await this.updateSettings(this.convertToRawSettings(settings));
+		}
+
+		return settings;
+	}
+
+	async noFetchingAvoidance(subscription: ISubscriptionRow) {
+		if(subscription.subscribers.length === 0) {
+			this.log("warn_trace", `[No Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but no subscriptions found. Consider calling 'uselessFetchingAvoidance' instead. No action taken, returning \`false\` result`);
+			return false;
+		}
+
+		const provider = this.servicesLoader.findBase<IStreamingService>(subscription.provider, "name");
+
+		if(!provider) {
+			this.log("warn", `[No Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but such provider not found. No action taken, returning \`false\` result`);
+			return false;
+		}
+
+		if($botConfig.mainShard) {
+			if(provider.isSubscribed(subscription.uid)) {
+				this.log("warn", `[No Fetching Avoidance] Already subscribed to "${subscription.provider}[${subscription.uid}]". No action taken, returning \`false\` result`);
+				return false;
+			}
+			
+			provider.addSubscription(this.convertToStreamer(subscription));
+		} else if(process.send) {
+			this.log("info", `[No Fetching Avoidance] Sending message to other shards to set up fetching of "${subscription.provider}[${subscription.uid}]"`);
+
+			process.send({
+				type: "streams:free",
+				payload: {
+					provider: subscription.provider,
+					uid: subscription.uid
+				}
+			});
+		} else {
+			const eText = `Not in the main shard, but \`process.send\` is not provided. Deadlock reached.`;
+			this.log("err_trace", `[No Fetching Avoidance] ${eText}`);
+			throw new Error(eText);
+		}
+
+		return true;
+	}
+
+	async uselessFetchingAvoidance(pseudoSubscription: {
+		provider: string;
+		uid: string;
+		subscribers?: string[];
+	}) {
+		if(pseudoSubscription.subscribers && pseudoSubscription.subscribers.length > 0) { return false; }
+
+		// delete subscription
+		await this.removeSubscription(pseudoSubscription);
+
+		const provider = this.servicesLoader.findBase<IStreamingService>(pseudoSubscription.provider, "name");
+
+		if(!provider) {
+			this.log("warn", `[Useless Fetching Avoidance] Asked to check "${pseudoSubscription.provider}[${pseudoSubscription.uid}]", but such provider not found. No action taken, returning \`false\` result`);
+			return false;
+		}
+
+		if($botConfig.mainShard) {
+			this.log("ok", `[Useless Fetching Avoidance] Stopping fetching of "${pseudoSubscription.provider}[${pseudoSubscription.uid}]"`);
+			if(!provider.isSubscribed(pseudoSubscription.uid)) { return true; }
+			provider.removeSubscription(pseudoSubscription.uid);
+		} else if(process.send) {
+			this.log("info", `[Useless Fetching Avoidance] Sending message to other shards asking to remove fetching of "${pseudoSubscription.provider}[${pseudoSubscription.uid}]"`);
+			process.send({
+				type: "streams:free",
+				payload: {
+					provider: pseudoSubscription.provider,
+					uid: pseudoSubscription.uid
+				}
+			});
+		} else {
+			const eText = `Not in the main shard, but \`process.send\` is not provided. Deadlock reached.`;
+			this.log("err_trace", `[Useless Fetching Avoidance] ${eText}`);
+			throw new Error(eText);
+		}
+
+		return true;
 	}
 
 	// #region User ID
@@ -953,6 +985,11 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	// #endregion
+
+	isSubbed(subscription: ISubscriptionRow, target: Guild | User) {
+		const normalizedTarget = this.normalizeTarget(target);
+		return subscription.subscribers.includes(normalizedTarget);
+	}
 
 	normalizeTarget(target: string | Guild | User) {
 		if(typeof target !== "string") {
@@ -1019,8 +1056,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 			const provider = mod.base as IStreamingService;
 
-			for(const a of ["online", "updated", "offline"]) {
-				const action = a as StreamStatusChangedAction;
+			for(const action of <StreamStatusChangedAction[]>["online", "updated", "offline"]) {
 				const handler = (status) => {
 					try {
 						this.handleNotification(providerName, status);
@@ -1113,7 +1149,13 @@ class StreamNotifications extends Plugin implements IModule {
 						const index = subscription.subscribers.indexOf(subscriberId);
 						if(index !== -1) {
 							subscription.subscribers.splice(index);
-							await this.updateSubscription(this.convertToRawSubscription(subscription));
+							const rawSubscription = this.convertToRawSubscription(subscription);
+							if(subscription.subscribers.length === 0) {
+								await this.removeSubscription(rawSubscription);
+								return;
+							}
+
+							await this.updateSubscription(rawSubscription);
 						}
 					} else if(guild) {
 						await this.pushNotification(guild, status, subscription, notification);
@@ -1302,12 +1344,12 @@ class StreamNotifications extends Plugin implements IModule {
 
 	// #region Getter functions with the fallbacks
 
-	async createOrGetSettings(scope: Guild | User) {
+	async createOrGetSettings(scope: Guild | User | string) {
 		let settings = await this.getSettings(scope);
 		if(!settings) {
 			settings = await this.createSettings({
 				channelId: null,
-				guild: scope instanceof User ? `u${scope.id}` : scope.id,
+				guild: typeof scope === "string" ? scope : (scope instanceof User ? `u${scope.id}` : scope.id),
 				mentionsEveryone: "[]",
 				subscribedTo: "[]"
 			});
@@ -1367,7 +1409,7 @@ class StreamNotifications extends Plugin implements IModule {
 		};
 	}
 
-	convertToStreamer(subscription: ISubscriptionRow): IStreamingServiceStreamer {
+	convertToStreamer(subscription: ISubscriptionRow|ISubscriptionRawRow): IStreamingServiceStreamer {
 		return {
 			serviceName: subscription.provider,
 			uid: subscription.uid,
@@ -1411,18 +1453,20 @@ class StreamNotifications extends Plugin implements IModule {
 		}).update(newSubscription);
 	}
 
-	async removeSubscription(subscription: ISubscriptionRawRow) {
+	async removeSubscription(pseudoSubscription: {
+		provider: string;
+		uid: string;
+	}) {
 		return await this.db(TABLE.subscriptions).where({
-			provider: subscription.provider,
-			uid: subscription.uid,
-			username: subscription.username
+			provider: pseudoSubscription.provider,
+			uid: pseudoSubscription.uid
 		}).delete();
 	}
 
-	async getSettings(scope: Guild | User): Promise<ISettingsRow | undefined> {
+	async getSettings(scope: Guild | User | string): Promise<ISettingsRow | undefined> {
 		return await this.db(TABLE.settings).where({
-			guild: scope instanceof User ? `u${scope.id}` : scope.id
-		}).first() as ISettingsRow;
+			guild: typeof scope === "string" ? scope : (scope instanceof User ? `u${scope.id}` : scope.id)
+		}).first() as ISettingsRow|undefined;
 	}
 
 	async createSettings(row: ISettingsRow) {
@@ -1452,7 +1496,7 @@ class StreamNotifications extends Plugin implements IModule {
 		return await this.db(TABLE.notifications).where(notification).delete();
 	}
 
-	async findNotification(provider: string, streamerId: string, streamId: string, guild: Guild | string) {
+	async findNotification(provider: string, streamerId: string, streamId: string, guild: Guild | string) : Promise<INotification | undefined> {
 		return <INotification | undefined>await this.db(TABLE.notifications).where({
 			provider,
 			streamerId,
@@ -1468,6 +1512,8 @@ class StreamNotifications extends Plugin implements IModule {
 	// =======================================
 
 	// #region Plugin initialization and unloading functions
+
+	shardingHandler: (msg: any) => void | undefined;
 
 	async init() {
 		// #region Subscribers table preparation
@@ -1572,60 +1618,33 @@ class StreamNotifications extends Plugin implements IModule {
 
 		// #endregion
 
-		// #region Sharding
+		// #region Sharding messages handling
 
 		if($botConfig.mainShard) {
 			this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
 			await this.notificationsCleanup();
+			await this.handleNotifications();
+		}
 
-			process.on("message", (msg) => {
+		if($botConfig.sharded) {
+			const handler = $botConfig.mainShard ? (msg) => {
 				if(typeof msg !== "object") { return; }
 				if(!msg.type || !msg.payload) { return; }
-				if(!["streams:free", "streams:sub"].includes(msg.type)) { return; }
+				if(msg.type !== SHARDING_MESSAGE_TYPES.SUBSCRIBE && msg.type !== SHARDING_MESSAGE_TYPES.UNSUBSCRIBE) { return; }
 
 				this.log("info", "[ShardedMessageHandler] Received message", msg);
 
-				const payload = msg.payload as {
-					provider: string;
-					uid: string;
-					username?: string;
-				};
-
-				const mod = this.servicesLoader.loadedModulesRegistry[payload.provider];
-				if(!mod) { this.log("warn", "[ShardedMessageHandler] Provider not found", payload.provider, "- message ignored"); return; }
-				if(mod.state !== ModuleLoadState.Initialized || !mod.base) { this.log("warn", "[ShardedMessageHandler] Provider isn't loaded", payload.provider, "- message ignored"); return; }
-
-				const provider = mod.base as IStreamingService;
-
-				if(msg.type === "streams:free") {
-					if(!provider.isSubscribed(payload.uid)) {
-						this.log("warn", `[ShardedMessageHandler] Already unsubscribed from "${payload.uid}"`);
-						return;
-					}
-					provider.removeSubscription(payload.uid);
-				} else if(msg.type === "streams:sub") {
-					if(provider.isSubscribed(payload.uid)) {
-						this.log("warn", `[ShardedMessageHandler] Already subscribed to ${payload.uid}`);
-						return;
-					}
-					provider.addSubscription({
-						serviceName: payload.provider,
-						uid: payload.uid,
-						username: payload.username!
-					});
+				if(msg.type === SHARDING_MESSAGE_TYPES.UNSUBSCRIBE) {
+					this.uselessFetchingAvoidance(msg.payload);
+				} else if(msg.type === SHARDING_MESSAGE_TYPES.SUBSCRIBE) {
+					this.noFetchingAvoidance(msg.payload);
 				}
-			});
-
-			await this.handleNotifications();
-		} else {
-			this.log("warn", "Working not in lead shard, waiting for messages");
-
-			process.on("message", (msg) => {
+			} : (msg) => {
 				if(typeof msg !== "object") { return; }
 				if(!msg.type || !msg.payload) { return; }
-				if(msg.type !== "streams:push") { return; }
+				if(msg.type !== SHARDING_MESSAGE_TYPES.PUSH) { return; }
 
-				this.log("info", "Received message", msg);
+				this.log("info", "[ShardedMessageHandler] Received message", msg);
 				if(msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
 					const guild = $discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
 					if(guild) {
@@ -1638,7 +1657,11 @@ class StreamNotifications extends Plugin implements IModule {
 						this.pushNotification(guild, notifyAbout.result, notifyAbout.subscription, notifyAbout.notification);
 					}
 				}
-			});
+			};
+
+			this.shardingHandler = handler;
+
+			process.on("message", handler);
 		}
 
 		// #endregion
@@ -1648,6 +1671,8 @@ class StreamNotifications extends Plugin implements IModule {
 
 	async unload() {
 		if(this.cleanupInterval) { clearInterval(this.cleanupInterval); }
+
+		if(this.shardingHandler) { process.removeListener("message", this.shardingHandler); }
 
 		await this.servicesLoader.unload(Object.getOwnPropertyNames(this.servicesLoader.loadedModulesRegistry));
 
