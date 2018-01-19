@@ -370,8 +370,10 @@ export function getLogger(name: string): ILoggerFunction {
 	return createLogger(name);
 }
 
+export const SNOWFLAKE_REGEXP = /^[0-9]{16,20}$/;
+
 export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, caseStrict = false) {
-	if(/[0-9]+/.test(nameOrID)) {
+	if(SNOWFLAKE_REGEXP.test(nameOrID)) {
 		// it's can be ID
 		const role = guild.roles.get(nameOrID);
 		if(role) { return role; }
@@ -396,7 +398,7 @@ export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, 
 }
 
 export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false) {
-	if(/[0-9]+/.test(nameOrID)) {
+	if(SNOWFLAKE_REGEXP.test(nameOrID)) {
 		const ch = guild.channels.get(nameOrID);
 		if(ch) { return ch; }
 	}
@@ -419,7 +421,7 @@ export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = tru
 }
 
 export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false): Promise<GuildMember | undefined> {
-	if(/[0-9]+/.test(nameOrID)) {
+	if(SNOWFLAKE_REGEXP.test(nameOrID)) {
 		const memberByID = await (async () => {
 			try {
 				return await guild.members.fetch(nameOrID);
