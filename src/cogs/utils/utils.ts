@@ -213,22 +213,22 @@ export interface IEmbed {
 }
 
 export const ICONS = {
-	ERROR: "https://i.imgur.com/9IwsjHS.png",
-	INFO: "https://i.imgur.com/cztrSSi.png",
-	OK: "https://i.imgur.com/FcnCpHL.png",
+	ERROR: "https://i.imgur.com/tNDFOYI.png",
+	INFO: "https://i.imgur.com/AUIYOy6.png",
+	OK: "https://i.imgur.com/MX3EPo8.png",
 	PROGRESS: "https://i.imgur.com/Lb04Jg0.gif",
-	CONFIRMATION: "https://i.imgur.com/CFzVpVt.png",
-	WARNING: "https://i.imgur.com/Lhq89ac.png",
-	TADA: "https://i.imgur.com/EkYEqfC.png"
+	CONFIRMATION: "https://i.imgur.com/lujOhUw.png",
+	WARNING: "https://i.imgur.com/Ga60TCT.png",
+	TADA: "https://i.imgur.com/ijm8BHV.png"
 };
 
 export const COLORS = {
-	ERROR: 0xe53935,
-	INFO: 0x2196F3,
-	OK: 0x43A047,
+	ERROR: 0xDD2E44,
+	INFO: 0x3B88C3,
+	OK: 0x3B88C3,
 	PROGRESS: 0x546E7A,
-	CONFIRMATION: 0x4DB6AC,
-	WARNING: 0xFF9800
+	CONFIRMATION: 0x3B88C3,
+	WARNING: 0xFFCC4D
 };
 
 export function generateEmbed(type: EmbedType, description: string, options?: IEmbedOptions) {
