@@ -397,7 +397,17 @@ export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, 
 	}
 }
 
-export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false) {
+const CHANNEL_MENTION_SNOWFLAKE = /^\<\#([0-9]{16,20})\>$/;
+
+export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false, possibleMention = false) {
+	if(possibleMention) {
+		const res = CHANNEL_MENTION_SNOWFLAKE.exec(nameOrID);
+		if(res && res[1]) {
+			const channel = guild.channels.get(res[1]);
+			if(channel) { return channel; }
+		}
+	}
+
 	if(SNOWFLAKE_REGEXP.test(nameOrID)) {
 		const ch = guild.channels.get(nameOrID);
 		if(ch) { return ch; }
