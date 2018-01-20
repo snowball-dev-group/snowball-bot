@@ -1,4 +1,4 @@
-export type IPCMessage<T> = string | ISnowballIPCMessage<T>;
+// #region Hashmaps
 
 /**
  * Raw Javascript object based hash map.
@@ -46,3 +46,12 @@ export function createHashMap<T>(entries?: Array<[string, T]> | IHashMap<T>) : I
 	}
 	return hashMap;
 }
+
+// #endregion
+
+// #region Dynamic types
+
+export type Possible<T> = T | undefined | null;
+export type IPCMessage<T> = string | ISnowballIPCMessage<T>;
+
+// #endregion
