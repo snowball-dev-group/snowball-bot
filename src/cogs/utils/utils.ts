@@ -399,7 +399,7 @@ export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, 
 
 const CHANNEL_MENTION_SNOWFLAKE = /^\<\#([0-9]{16,20})\>$/;
 
-export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false, possibleMention = false) {
+export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false, possibleMention = false, types: Array<"text"|"voice"|"category"> = ["text", "voice"]) {
 	if(possibleMention) {
 		const res = CHANNEL_MENTION_SNOWFLAKE.exec(nameOrID);
 		if(res && res[1]) {
@@ -418,13 +418,14 @@ export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = tru
 	}
 
 	for(const channel of guild.channels.values()) {
-		const vcName = caseStrict ? channel.name : channel.name.toLowerCase();
+		if(!types.includes(<any>channel.type)) { continue; }
+		const channelName = caseStrict ? channel.name : channel.name.toLowerCase();
 		switch(strict) {
 			case true: {
-				if(vcName === nameOrID) { return channel; }
+				if(channelName === nameOrID) { return channel; }
 			} break;
 			case false: {
-				if(vcName.includes(nameOrID)) { return channel; }
+				if(channelName.includes(nameOrID)) { return channel; }
 			} break;
 		}
 	}
