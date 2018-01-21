@@ -69,7 +69,7 @@ interface ISettingsRow {
 interface ISettingsParsedRow {
 	channelId: string | null;
 	guild: string;
-	mentionsEveryone: IStreamingServiceStreamer[];
+	mentionsEveryone: ISettingsSubscription[];
 	subscribedTo: ISettingsSubscription[];
 }
 
@@ -1066,9 +1066,12 @@ class StreamNotifications extends Plugin implements IModule {
 		return false;
 	}
 
-	async unsubscribe(subscription: ISubscriptionRow, subscriberId: string, altChannel?: string) {
-		await this.removeSubscriber(subscription, subscriberId);
-		await this.retireSubscription(subscriberId, subscription, altChannel);
+	async unsubscribe(subscription: ISubscriptionRow, subscriber: {
+		guildId: string;
+		channelId?: string;
+	}) {
+		await this.removeSubscriber(subscription, subscriber.channelId ? this.getGuildAlternativeID(subscriber.guildId, subscriber.channelId) : subscriber.guildId);
+		await this.retireSubscription(subscriber.guildId, subscription, subscriber.channelId);
 		await this.uselessFetchingAvoidance(subscription);
 	}
 
@@ -1260,8 +1263,12 @@ class StreamNotifications extends Plugin implements IModule {
 						const alternativeChannel: GuildChannel | undefined = gachIds.channelId ? guild.channels.get(gachIds.channelId) : undefined;
 						if(alternativeChannel && alternativeChannel.type !== "text") {
 							this.log("warn", `Invalid channel passed. Found that channel by ID "${gachIds.channelId}" is "${alternativeChannel.type}"`);
-							await this.unsubscribe(subscription, subscriberId, gachIds.channelId);
+							await this.unsubscribe(subscription, gachIds);
 							continue;
+						// tslint:disable-next-line:triple-equals
+						} else if(gachIds.channelId != null && !alternativeChannel) {
+							this.log("warn", `Alternative channel by ID "${gachIds.channelId}" not found`);
+							await this.unsubscribe(subscription, gachIds);
 						}
 						await this.pushNotification(guild, status, subscription, notification, <TextChannel>alternativeChannel);
 					} else if(!guild && process.send) {
@@ -1279,7 +1286,7 @@ class StreamNotifications extends Plugin implements IModule {
 						});
 					} else {
 						this.log("warn", `Could not find subscribed guild and notify other shards: ${subscriberId} to ${subscription.provider}[${subscription.uid}]`);
-						await this.unsubscribe(subscription, subscriberId, gachIds.channelId);
+						await this.unsubscribe(subscription, gachIds);
 					}
 				}
 			}
@@ -1344,7 +1351,7 @@ class StreamNotifications extends Plugin implements IModule {
 			}
 		}
 
-		if(!isUser) {
+		if(!isUser && !channel) {
 			if(!settings.channelId || settings.channelId === "-") { return; }
 
 			const guild = scope as Guild;
@@ -1357,7 +1364,7 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 
 		const shouldMentionEveryone = !!settings.mentionsEveryone.find(s => {
-			return s.serviceName === providerName && (s.uid === subscription.uid || s.username === subscription.username);
+			return s.serviceName === providerName && (s.uid === subscription.uid || s.username === subscription.username) && (alternativeChannel ? s.alternativeChannel === alternativeChannel.id : true);
 		});
 
 		if((result.updated || result.status === "offline") && (notification && notification.channelId === channel.id)) {
@@ -1441,7 +1448,7 @@ class StreamNotifications extends Plugin implements IModule {
 			}
 
 			notification = {
-				guild: this.normalizeTarget(scope),
+				guild: alternativeChannel ? this.getGuildAlternativeID(scope.id, alternativeChannel.id) : this.normalizeTarget(scope),
 				channelId: channel.id,
 				messageId,
 				provider: subscription.provider,
