@@ -491,7 +491,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const i18nSubject = msg.channel.type === "dm" ? msg.author : msg.member;
 
-		if(!args || args.length !== 2) {
+		if(!args || (args.length !== 2 && args.length !== 3)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, i18nSubject, {
 					key: LOCALIZED(scope === "guild" ? "ADD_USAGE" : "ADD_USAGE_DM"),
@@ -1056,7 +1056,7 @@ class StreamNotifications extends Plugin implements IModule {
 		return true;
 	}
 
-	async determineSSSLimitReached(settings: ISettingsParsedRow, pseudoSubsciption: IPseudoSubscription) {
+	determineSSSLimitReached(settings: ISettingsParsedRow, pseudoSubsciption: IPseudoSubscription) {
 		let simultaneousSubscriptions = 0;
 		for(const subscription of settings.subscribedTo) {
 			if(subscription.serviceName !== pseudoSubsciption.provider) { continue; }
@@ -1288,7 +1288,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	async pushNotification(scope: Guild | User, result: IStreamStatus, subscription: ISubscriptionRow, notification?: INotification, alternativeChannel?: TextChannel) {
 		const providerName = subscription.provider;
-		const provider = this.servicesLoader.findBase<IStreamingService>(providerName);
+		const provider = this.servicesLoader.findBase<IStreamingService>(providerName, "name");
 
 		if(!provider) {
 			this.log("warn", `[Push] "${providerName}" not found as loaded service`);
