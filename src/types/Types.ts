@@ -55,3 +55,22 @@ export type Possible<T> = T | undefined | null;
 export type IPCMessage<T> = string | ISnowballIPCMessage<T>;
 
 // #endregion
+
+// #region Errors
+
+// I don't sure about the name
+// This is just mix of "error" and "code"
+export class CodedError extends Error {
+	private _code: string;
+
+	public get code() {
+		return this._code;
+	}
+
+	constructor(code: string, message?: string) {
+		super(message);
+		this._code = code;
+	}
+}
+
+// #endregion
