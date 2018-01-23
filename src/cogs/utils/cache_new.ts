@@ -98,14 +98,17 @@ export async function getArray<T>(owner: string, key: string, jsonParse: boolean
 	const redisClient = await getRedisClient();
 
 	const builtKey = buildCacheKey(owner, key);
-	const res = <any[]>await redisClient.lrange(builtKey, 0, -1);
+	let res = <any[]>await redisClient.lrange(builtKey, 0, -1);
 
 	if(!!jsonParse) {
 		if(Array.isArray(jsonParse)) {
-			return parseByIndexes<T>(res, jsonParse);
+			res = parseByIndexes<T>(res, jsonParse);
+		} else {
+			res = parseArrayElements<T>(res);
 		}
-		return parseArrayElements<T>(res);
 	}
+
+	if(pop) { await redisClient.del(builtKey); }
 
 	return res;
 }
