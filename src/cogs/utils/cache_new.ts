@@ -144,7 +144,7 @@ function parseArrayElements<T>(arr: any[]) {
 }
 
 function stripUnnecessaryChars(str: string) {
-	return str.replace(/[^A-Z\-\.\_\ \:]/ig, "").trim();
+	return str.replace(/[^A-Z0-9\-\.\_\ \:]/ig, "").trim();
 }
 
 function lengthCheck(key: string, val: string) {
