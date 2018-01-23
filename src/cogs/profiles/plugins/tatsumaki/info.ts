@@ -74,8 +74,6 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 			throw new Error("Internal Error");
 		}
 
-		LOG("ok", logPrefix, "Generating embed");
-
 		let str = "";
 		str += `**${escapeDiscordMarkdown(profile.name)}**\n`;
 		str += (await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_REP", {
