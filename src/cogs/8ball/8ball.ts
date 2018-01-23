@@ -75,17 +75,17 @@ class Ball8 extends Plugin implements IModule {
 
 	private async onMessage(ctx: IMessageFlowContext) {
 		const msg = ctx.message;
-		const u = msg.member || msg.author;
-		const ru = u instanceof GuildMember ? u.user : u;
+		const i18nTarget = msg.member || msg.author;
+		const actualUser = i18nTarget instanceof GuildMember ? i18nTarget.user : i18nTarget;
 
 		const random = new Random(Random.engines.mt19937().autoSeed());
 
-		const localName = await localizeForUser(u, "8BALL_NAME");
+		const localName = await localizeForUser(i18nTarget, "8BALL_NAME");
 
 		let message: Message;
 		try {
 			message = (await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Empty, u, "8BALL_THINKING", {
+				embed: await generateLocalizedEmbed(EmbedType.Empty, i18nTarget, "8BALL_THINKING", {
 					author: {
 						name: localName,
 						icon_url: ICONS.THINKING
@@ -109,17 +109,17 @@ class Ball8 extends Plugin implements IModule {
 
 		try {
 			await message.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.Empty, u, answer, {
+				embed: await generateLocalizedEmbed(EmbedType.Empty, i18nTarget, answer, {
 					author: {
 						icon_url: ICONS.RESPONSE,
 						name: localName
 					},
 					color: this.responses[category].color,
 					footer: {
-						text: await localizeForUser(u, "8BALL_INREPLY", {
-							username: u instanceof GuildMember ? u.displayName : (u as User).username
+						text: await localizeForUser(i18nTarget, "8BALL_INREPLY", {
+							username: i18nTarget instanceof GuildMember ? i18nTarget.displayName : (i18nTarget as User).username
 						}),
-						icon_url: ru.displayAvatarURL({ format: "webp", size: 128 })
+						icon_url: actualUser.displayAvatarURL({ format: "webp", size: 128 })
 					}
 				})
 			});
