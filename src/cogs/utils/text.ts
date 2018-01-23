@@ -54,6 +54,7 @@ function _getHex(str: string, key: number, maxlen: number): string {
 	// NOTE: 14-digit number in hex is 16-digit in base-10,
 	// In turn, the js rounds everything that comes after the 16th sign among
 	maxlen = Math.min(maxlen || 14, 14);
+	// tslint:disable-next-line:no-constant-condition
 	for(; true; i++) {
 		if(count++ >= str.length && n.toString(16).length >= maxlen) { break; }
 		if(str[i] === undefined) { i = 0; }
