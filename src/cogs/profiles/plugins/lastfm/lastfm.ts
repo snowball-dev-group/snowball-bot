@@ -1,4 +1,4 @@
-import { default as fetch, Response } from "node-fetch";
+import { default as fetch } from "node-fetch";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
 import { getLogger } from "../../../utils/utils";
 import { get, storeValue } from "../../../utils/cache_new";
