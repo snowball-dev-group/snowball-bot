@@ -1,17 +1,17 @@
 import { getDB, createTableBySchema } from "./db";
 import { User, GuildMember } from "discord.js";
 import { getLogger } from "./utils";
-import { IHashMap } from "../../types/Types";
+import { INullableHashMap } from "../../types/Types";
 
 const PREMIUM_TABLE = "premiums";
-const LOG = getLogger("Premium");
+const LOG = getLogger("Utils:Premium");
 const INTERNALCALLSIGN = (Math.floor(Math.random() * 50000000000)).toString(16) + (Math.floor(Math.random() * 50000000000)).toString(16) + (Math.floor(Math.random() * 50000000000)).toString(16) + (Math.floor(Math.random() * 50000000000)).toString(16);
 
 const db = getDB();
 let complete = false;
 let retry = true;
 
-const cache: IHashMap<IPremiumRow | null> = Object.create(null);
+const cache: INullableHashMap<IPremiumRow> = Object.create(null);
 
 export interface IPremiumRow {
 	id: string;
@@ -20,10 +20,12 @@ export interface IPremiumRow {
 }
 
 interface IPremiumRawRow {
-	id: string; subscribed_at: number; due_to: number;
+	id: string;
+	subscribed_at: number;
+	due_to: number;
 }
 
-export async function getAllSubs() {
+export async function getAllPremiumSubscribers() {
 	return ((await db(PREMIUM_TABLE).select()) as IPremiumRawRow[]).map(e => {
 		return {
 			due_to: new Date(e.due_to),
@@ -78,7 +80,7 @@ export async function deletePremium(person: GuildMember | User): Promise<boolean
 		person_id: person.id
 	});
 
-	const logPrefix = `deletePremium(${person.id})`;
+	const logPrefix = `deletePremium(${person.id}):`;
 
 	LOG("info", logPrefix, "Checking current premium");
 
@@ -110,7 +112,8 @@ export async function getPremium(person: GuildMember | User, internalCallSign?: 
 	let premiumRow: IPremiumRawRow | undefined = undefined;
 	let source: "db" | "cache" = "cache";
 
-	if(cached !== null && cached !== undefined) {
+	// tslint:disable-next-line:triple-equals
+	if(cached != null) {
 		// was cached
 		premiumRow = toRaw(cached);
 	} else if(cached === undefined) {
@@ -182,39 +185,34 @@ function toRaw(row: IPremiumRow): IPremiumRawRow {
 export async function givePremium(person: GuildMember | User, dueTo: Date, override = false): Promise<boolean> {
 	if(!(await init())) { throw new Error("Initialization failed"); }
 
-	LOG("info", "Premium giving action registered", {
-		person_id: person.id, dueTo, override
-	});
-
 	const currentPremium = await checkPremium(person);
 
-	const logPrefix = `#givePremium(${person.id}): `;
+	const logPrefix = `#givePremium(${person.id}):`;
 
 	if(currentPremium && override) {
-		LOG("info", logPrefix, "Premium exists, override present, row deleting...");
+		LOG("info", logPrefix, "Premium exists, override present, deleting the row...");
 		try {
 			await db(PREMIUM_TABLE).where(toRaw(currentPremium)).delete();
 		} catch(err) {
-			LOG("err", logPrefix, "Row deletion failure");
+			LOG("err", logPrefix, "Row deletion failure", err);
 			throw err;
 		}
 	} else if(currentPremium) {
-		LOG("info", logPrefix, "Premium exists, override doesn't present");
+		LOG("info", logPrefix, "Premium exists, override doesn't present, is override possible?");
 		const diff = dueTo.getTime() - currentPremium.due_to.getTime();
-		LOG("info", logPrefix, "Calculation of difference done");
 		if(diff < 0) {
-			LOG("err", logPrefix, "Seems override isn't present, but dueTo date is lower than current, error found");
+			LOG("err", logPrefix, "Override is not possible, active premium is longer than new one");
 			const err = new Error("Can't renew premium, use override");
 			err.name = "ERR_PREMIUM_DIFFLOW";
 			throw err;
 		}
-		const nDate = currentPremium.due_to.getTime() + diff;
-		LOG("info", logPrefix, "Adding new premium subscription");
+		const newDueTo = currentPremium.due_to.getTime() + diff;
+		LOG("info", logPrefix, "Override is possible, working on it");
 		try {
 			const raw: IPremiumRawRow = {
 				id: person.id,
 				subscribed_at: Date.now(),
-				due_to: nDate
+				due_to: newDueTo
 			};
 			await db(PREMIUM_TABLE).where(toRaw(currentPremium)).update(raw);
 			cache[person.id] = toStandard(raw);
