@@ -1,108 +1,65 @@
 import { default as fetch, Response } from "node-fetch";
-import { getFromCache, clearCache, cache, ICachedRow } from "../../../utils/cacheResponse";
-import { timeDiff } from "../../../utils/time";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
 import { getLogger } from "../../../utils/utils";
+import { get, storeValue } from "../../../utils/cache_new";
+import { DetailedError } from "../../../../types/Types";
 
 const CACHE_OWNER = "lastfm:recents";
 const LOG = getLogger("LastFMPlugin");
 
 export async function getRecents(username: string, apiKey: string): Promise<IRecentTracksResponse> {
-	let resp: Response | undefined = undefined;
-	const logPrefix = `${username} (getRecents)|`;
-	try {
-		const uri = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${apiKey}&format=json`;
-		LOG("info", logPrefix, "Fetching", uri.replace(apiKey, "{{API_KEY}}"));
-		resp = await fetch(uri);
-	} catch(err) {
-		LOG("err", logPrefix, "Failed to fetch URI");
-		if(err && err.status === 404) {
-			throw new Error("Profile not found");
+	
+	const logPrefix = `getRecents(${username}):`;
+	const uri = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${apiKey}&format=json`;
+	const resp = await fetch(uri);
+
+	if(resp.status !== 200) {
+		switch(resp.status) {
+			case 404: throw new DetailedError("LASTFM_GETRECENTS_ERR_NOTFOUND");
+			case 500: throw new DetailedError("LASTFM_GETRECENTS_ERR_SERVERERROR");
+			default: throw new DetailedError("LASTFM_GETRECENTS_ERR_UNKNOWN");
 		}
-		throw new Error("Profile not found or API server is not available.");
 	}
 
-	if(!resp) {
-		LOG("err", logPrefix, "Got no `resp` variable");
-		throw new Error("No response");
-	}
+	const parsedRecents: IRecentTracksResponse | undefined = await (async () => {
+		try {
+			return await resp.json();
+		} catch (err) {
+			LOG("err", logPrefix, "JSON parsing failed", err);
+			return undefined;
+		}
+	})();
 
-	let parsedRecents: IRecentTracksResponse | undefined = undefined;
-	try {
-		LOG("info", logPrefix, "Parsing JSON response");
-		parsedRecents = await resp.json();
-	} catch(err) {
-		LOG("err", logPrefix, "Failed to parse API response");
-		throw new Error("Failed to parse API response.");
-	}
-
-	if(!parsedRecents) {
-		LOG("err", logPrefix, "Got no `parsedRecents` variable");
-		throw new Error("Internal error");
-	}
-
-	try {
-		LOG("info", logPrefix, "Caching response");
-		await cache(CACHE_OWNER, username, JSON.stringify(parsedRecents), true);
-	} catch(err) {
-		LOG("err", logPrefix, "Failed to cache response");
-	}
+	if(!parsedRecents) { throw new DetailedError("LASTFM_GETRECENTS_ERR_PARSING"); }
 
 	return parsedRecents;
 }
 
-export async function getOrFetchRecents(uid: string, apiKey: string): Promise<IRecentTracksResponse> {
-	let cached: ICachedRow | undefined = undefined;
-	const logPrefix = `${uid} (getOrFetchRecents)|`;
+export async function getOrFetchRecents(username: string, apiKey: string): Promise<IRecentTracksResponse> {
+	const logPrefix = `getOrFetchRecents(${username}):`;
+
+	let cached : IRecentTracksResponse|null = null;
 
 	try {
-		cached = await getFromCache(CACHE_OWNER, uid);
-		LOG("ok", logPrefix, "Got element from cache");
+		cached = await get<IRecentTracksResponse>(CACHE_OWNER, username, true);
 	} catch(err) {
-		LOG("err", logPrefix, "Failed to get element from cache.", err);
-		throw err;
+		LOG("warn", logPrefix, "Cache failed", err);
 	}
 
-	if(cached) {
-		LOG("info", logPrefix, "There's cached version, checking difference");
-		if(timeDiff(cached.timestamp, Date.now(), "s") < 60) {
-			LOG("ok", logPrefix, "We can use cached version");
+	if(cached) { return cached; }
 
-			LOG("info", logPrefix, "Parsing cached JSON...");
-			let obj: IRecentTracksResponse | undefined = undefined;
-			try {
-				obj = JSON.parse(cached.value) as IRecentTracksResponse;
-				LOG("ok", logPrefix, "Cached JSON parsed!");
-			} catch(err) {
-				LOG("err", logPrefix, "Failed to parse cached JSON!", cached.value);
-			}
-
-			if(obj) {
-				LOG("ok", logPrefix, "Returning parsed cached version");
-				return obj;
-			}
-		} else {
-			LOG("warn", logPrefix, "Old cache detected, removing...");
-			try {
-				await clearCache(CACHE_OWNER, uid);
-			} catch(err) {
-				LOG("err", logPrefix, "Caching removal failed", err);
-			}
-		}
-	}
-
-	LOG("info", logPrefix, "Fetching profile...", uid);
 	let recents: IRecentTracksResponse | undefined = undefined;
 	try {
-		recents = await getRecents(uid, apiKey);
-		LOG("ok", logPrefix, "Fetching done.");
+		recents = await getRecents(username, apiKey);
 	} catch(err) {
 		LOG("err", logPrefix, "Fetching failed", err);
+		throw new DetailedError("LASTFM_GETORFETCH_ERR", undefined, err);
 	}
 
-	if(!recents) {
-		LOG("err", logPrefix, "No profile at final of GET operation!");
-		throw new Error("Got no profile");
+	try {
+		await storeValue(CACHE_OWNER, username, recents);
+	} catch(err) {
+		LOG("err", logPrefix, "Caching failed");
 	}
 
 	return recents;

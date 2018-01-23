@@ -5,6 +5,7 @@ import { getOrFetchRecents } from "./lastfm";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
 import { localizeForUser } from "../../../utils/ez-i18n";
 import { replaceAll } from "../../../utils/text";
+import { DetailedError } from "../../../../types/Types";
 
 const LOG = getLogger("LastFMPlugin");
 
@@ -41,42 +42,51 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 	}
 
 	async setup(str: string) {
-		const js: ILastFMInfo = {
-			username: str
-		};
-
-		const logPrefix = `${js.username} (setup)|`;
+		const info: ILastFMInfo = { username: str };
 
 		try {
-			LOG("info", logPrefix, "Getting recent tracks...");
-			await getOrFetchRecents(js.username, this.config.apiKey);
+			await getOrFetchRecents(info.username, this.config.apiKey);
 		} catch(err) {
-			LOG("err", logPrefix, "Failed to get recent tracks", err);
-			throw new Error("Can't get recent tracks.");
+			LOG("err", `setup(${info.username}): Failed to get recent tracks`, err);
+			throw new Error(`Failed to fetch recent tracks of "${info.username}"`);
 		}
 
 		return {
-			json: JSON.stringify(js),
+			json: JSON.stringify(info),
 			type: AddedProfilePluginType.Embed
 		};
 	}
 
 	async getEmbed(info: ILastFMInfo | string, caller: GuildMember): Promise<IEmbedOptionsField> {
-		if(typeof info !== "object") {
-			info = JSON.parse(info) as ILastFMInfo;
-		}
+		if(typeof info !== "object") { info = JSON.parse(info) as ILastFMInfo; }
 
-		const logPrefix = `${info.username} (getEmbed)|`;
+		const logPrefix = `getEmbed(${info.username}):`;
 		let profile: IRecentTracksResponse | undefined = undefined;
 		try {
 			LOG("info", logPrefix, "Getting recent tracks...");
 			profile = await getOrFetchRecents(info.username, this.config.apiKey);
 		} catch(err) {
 			LOG("err", logPrefix, "Failed to get recent tracks", err);
+
+			let errKey = "LASTFMPROFILEPLUGIN_ERR_UNKNOWN@NOERROR";
+			if(err instanceof DetailedError) {
+				switch(err.code) {
+					case "LASTFM_GETRECENTS_ERR_NOTFOUND": {
+						errKey = "LASTFMPROFILEPLUGIN_ERR_NOTFOUND";
+					} break;
+					case "LASTFM_GETRECENTS_ERR_SERVERERROR": {
+						errKey = "LASTFMPROFILEPLUGIN_ERR_SERVERERROR";
+					} break;
+					default: {
+						errKey = "LASTFMPROFILEPLUGIN_ERR_UNKNOWN";
+					} break;
+				}
+			}
+
 			return {
 				inline: true,
 				name: `${this.config.emojiIconID} Last.FM`,
-				value: `❌ ${err.message}`
+				value: `❌ ${await localizeForUser(caller, errKey)}`
 			};
 		}
 
@@ -89,7 +99,6 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 			};
 		}
 
-		LOG("ok", logPrefix, "Generating embed...");
 
 		try {
 			const recentTrack = profile.recenttracks.track[0];
