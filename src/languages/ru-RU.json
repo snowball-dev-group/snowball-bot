@@ -442,6 +442,7 @@
     "OWPROFILEPLUGIN_DEFAULT_ARGS": "<BattleTag>[;Регион[;Платформа]]",
     "OWPROFILEPLUGIN_ERR_ARGS": "Аргументы не предоставлены.",
     "OWPROFILEPLUGIN_ERR_FETCHINGFAILED": "**Вы не играете на этом регионе или профиль не найден.**\n\nДумаете, это ошибка? Проверьте BattleTag, он регистрозависимый",
+    "OWPROFILEPLUGIN_ERR_FETCHINGFAILED_API": "**Невозможно получить ответ от API.**\n\nПопробуйте чуть позже :C",
     "OWPROFILEPLUGIN_ERR_NOBTAG": "Не введен BattleTag",
     "OWPROFILEPLUGIN_ERR_WRONGPLATFORM": "Неправильная платформа введена.",
     "OWPROFILEPLUGIN_ERR_WRONGREGION": "Неправильный регион введен.",

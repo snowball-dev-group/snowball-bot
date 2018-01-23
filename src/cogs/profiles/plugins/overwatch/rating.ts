@@ -4,6 +4,7 @@ import { generateEmbed, EmbedType, IEmbedOptionsField, getLogger } from "../../.
 import { localizeForUser } from "../../../utils/ez-i18n";
 import { IRegionalProfile } from "./owApiInterfaces";
 import { getProfile, IOverwatchProfilePluginInfo } from "./overwatch";
+import { DetailedError } from "../../../../types/Types";
 
 const ACCEPTED_REGIONS = ["eu", "kr", "us"];
 const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
@@ -111,26 +112,27 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentation");
 		}
 
-		status = await localizeForUser(member, "OWPROFILEPLUGIN_FETCHINGPROFILE");
+		status = await localizeForUser(msg.member, "OWPROFILEPLUGIN_FETCHINGPROFILE");
 		postStatus();
-		let profile: IRegionalProfile | null = null;
 		try {
-			profile = await getProfile(info.battletag, info.region, info.platform);
+			await getProfile(info.battletag, info.region, info.platform);
 		} catch(err) {
-			await statusMsg.edit("", {
-				embed: generateEmbed(EmbedType.Error, err.message)
-			});
-			throw err;
+			if(err instanceof DetailedError) {
+				switch(err.code) {
+					case "OWAPI_FETCH_ERR_PROFILE_NOTFOUND": {
+						await statusMsg.edit("", {
+							embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED"))
+						});
+					} break;
+					default: {
+						await statusMsg.edit("", {
+							embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED_API"))
+						});
+					} break;
+				}
+			}
+			throw new Error("Could not get the profile");
 		}
-
-		if(!profile) {
-			await statusMsg.edit("", {
-				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED"))
-			});
-			throw new Error("Player not registered on this region.");
-		}
-
-		info.verifed = true;
 
 		const json = JSON.stringify(info);
 

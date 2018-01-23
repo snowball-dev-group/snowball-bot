@@ -144,7 +144,7 @@ export interface IBlobResponse {
 	eu?: IRegionalProfile;
 	kr?: IRegionalProfile;
 	us?: IRegionalProfile;
-	retry: number;
+	retry?: number;
 }
 
 export interface IAverageStats {

@@ -1,137 +1,103 @@
 import { getLogger } from "../../../utils/utils";
-import { default as fetch, Response } from "node-fetch";
+import { default as fetch } from "node-fetch";
 import { IBlobResponse, IRegionalProfile } from "./owApiInterfaces";
-import { getFromCache, clearCache, cache, ICachedRow } from "../../../utils/cacheResponse";
-import { timeDiff } from "../../../utils/time";
+import { INullableHashMap, DetailedError } from "../../../../types/Types";
+import { get, storeValue } from "../../../utils/cache_new";
 
-const CACHE_OWNER = "profileplug:ow";
+const CACHE_OWNER = "owapi-profile";
 const LOG = getLogger("OWApi");
 
-const alreadyFetching = new Map<string, Promise<IBlobResponse>>();
+const fetchingPromisesStore: INullableHashMap<Promise<IBlobResponse>> = Object.create(null);
 
 export async function fetchBlobProfile(battletag: string, platform?: string): Promise<IBlobResponse> {
 	const context = `${battletag}//${platform}`;
-	if(alreadyFetching.has(context)) {
-		const previousContextPromise = alreadyFetching.get(context);
-		if(previousContextPromise) {
-			return await previousContextPromise;
-		}
-	}
+
+	const currentPromise = fetchingPromisesStore[context];
+	if(currentPromise) { return await currentPromise; }
+
 	const contextFunction: {
 		resolve?: (obj: IBlobResponse) => void;
 		reject?: (obj: any) => void
 	} = Object.create(null);
-	const contextPromise = new Promise<IBlobResponse>((res, rej) => {
+
+	fetchingPromisesStore[context] = new Promise<IBlobResponse>((res, rej) => {
 		contextFunction.resolve = res;
 		contextFunction.reject = rej;
 	});
-	alreadyFetching.set(context, contextPromise);
 
-	let resp: Response | undefined = undefined;
-	const logPrefix = `fetching (${battletag}, ${platform})`;
+	const logPrefix = `fetchBlobProfile(${battletag}, ${platform}):`;
 	const uri = `https://owapi.net/api/v3/u/${battletag}/blob${platform ? `?platform=${platform}` : ""}`;
-	try {
-		LOG("info", logPrefix, "Fetching URL", uri);
-		resp = await fetch(uri);
-	} catch(err) {
-		LOG("err", logPrefix, "Errored response", err);
-		if(err.status === 404) {
-			const _err = new Error("Profile not found.");
-			if(contextFunction.reject) { contextFunction.reject(_err); }
-			throw _err;
+	const resp = await fetch(uri);
+
+	if(resp.status !== 200) {
+		switch(resp.status) {
+			case 404: throw new DetailedError("OWAPI_FETCH_ERR_PROFILE_NOTFOUND");
+			case 500: throw new DetailedError("OWAPI_FETCH_ERR_SERVICE_UNAVAIABLE");
+			default: throw new DetailedError("OWAPI_FETCH_ERR_OTHER", resp.statusText);
 		}
-		const _err = new Error("API error");
-		if(contextFunction.reject) { contextFunction.reject(_err); }
-		throw _err;
 	}
 
-	if(!resp) {
-		LOG("err", logPrefix, "Got response, but no `resp` variable, wth...");
-		const _err = new Error("No API response");
-		if(contextFunction.reject) { contextFunction.reject(_err); }
-		throw _err;
-	}
-
-	let parsed: IBlobResponse | undefined = undefined;
-	try {
-		LOG("info", logPrefix, "Parsing JSON...");
-		parsed = await resp.json();
-	} catch(err) {
-		LOG("info", logPrefix, "Parsing failed", err, await resp.text());
-		const _err = new Error("Can't parse API response");
-		if(contextFunction.reject) { contextFunction.reject(_err); }
-		throw _err;
-	}
+	const parsed: IBlobResponse | undefined = await (async () => {
+		try {
+			return <IBlobResponse> await resp.json();
+		} catch (err) {
+			LOG("err", logPrefix, "Failed to parse response", err);
+			return undefined;
+		}
+	})();
 
 	if(!parsed) {
-		LOG("err", logPrefix, "Parsed response, but no `parsed` variable, wth...");
-		const _err = new Error("Something went wrong (parsing)");
-		if(contextFunction.reject) { contextFunction.reject(_err); }
-		alreadyFetching.delete(context);
-		throw _err;
+		throw new DetailedError("OWAPI_FETCH_ERR_JSONFAILED");
 	}
 
-	if(parsed.retry) {
-		const _delayedResp = (await new Promise((res, rej) => {
+	if(parsed.retry != null) {
+		const _delayedResp = <IBlobResponse>await new Promise((res, rej) => {
 			setTimeout(() => {
 				fetchBlobProfile(battletag, platform).then(res, rej);
-			}, parsed ? parsed.retry * 1000 : 5000);
-		})) as IBlobResponse;
+			}, parsed!.retry! * 1000);
+		});
+
 		if(contextFunction.resolve) { contextFunction.resolve(_delayedResp); }
-		alreadyFetching.delete(context);
+
+		delete fetchingPromisesStore[context];
+
 		return _delayedResp;
 	}
 
-	LOG("info", logPrefix, "Caching...");
-	await cache(CACHE_OWNER, battletag, JSON.stringify(parsed), true);
-
 	if(contextFunction.resolve) { contextFunction.resolve(parsed); }
-	alreadyFetching.delete(context);
+
+	delete fetchingPromisesStore[context];
+
 	return parsed;
 }
 
 export async function getProfile(battletag: string, region: string = "eu", platform: string = "pc"): Promise<IRegionalProfile> {
 	const logPrefix = `${battletag}(${region}, ${platform}): `;
-	let cached: ICachedRow | undefined = undefined;
-	try {
-		cached = await getFromCache(CACHE_OWNER, battletag);
-	} catch(err) {
-		LOG("warn", "Failed to get cache for profile:", ...arguments);
-	}
-	if(!cached) {
-		let p: IBlobResponse | undefined = undefined;
-		try {
-			LOG("info", logPrefix, "There's no cache version, fetching profile");
-			p = await fetchBlobProfile(battletag, platform);
-		} catch(err) {
-			LOG("err", logPrefix, "Failed to fetch profile (no cache):");
-			throw new Error("Failed to fetch profile (without cache)");
-		}
-		return p[region];
-	} else {
-		if(timeDiff(cached.timestamp, Date.now(), "s") > 60) {
-			LOG("warn", logPrefix, "Can't use cached version");
-			try {
-				LOG("info", logPrefix, "Clearing old cache record");
-				await clearCache(CACHE_OWNER, battletag);
-			} catch(err) {
-				LOG("warn", "Failed to clear old cache", ...arguments);
-			}
 
-			let p: IBlobResponse | undefined = undefined;
-			try {
-				LOG("info", logPrefix, "Fetching profile");
-				p = await fetchBlobProfile(battletag, platform);
-			} catch(err) {
-				LOG("err", logPrefix, "Failed to fetch profile:");
-				throw new Error("Failed to fetch profile");
-			}
-			return p[region];
-		} else {
-			LOG("info", logPrefix, "Used cached version.");
-			return (JSON.parse(cached.value))[region];
-		}
+	let cached: null | IBlobResponse = null;
+
+	try {
+		cached = await get<IBlobResponse>(CACHE_OWNER, battletag, true);
+	} catch(err) {
+		LOG("warn", logPrefix, "Failed to get cache", err);
 	}
+
+	if(cached != null) { return cached[region]; }
+
+	let fetchedData: undefined | IBlobResponse = undefined;
+	try {
+		fetchedData = await fetchBlobProfile(battletag, platform);
+	} catch(err) {
+		throw new DetailedError("OWAPI_GETPROFILE_ERR_FETCHING", undefined, fetchedData);
+	}
+
+	try {
+		await storeValue(CACHE_OWNER, battletag, JSON.stringify(fetchedData), 300);
+	} catch(err) {
+		LOG("warn", logPrefix, "Failed to store cache", err);
+	}
+
+	return fetchedData[region];
 }
 
 export interface IOverwatchProfilePluginInfo {

@@ -60,16 +60,18 @@ export type IPCMessage<T> = string | ISnowballIPCMessage<T>;
 
 // I don't sure about the name
 // This is just mix of "error" and "code"
-export class CodedError extends Error {
+export class DetailedError extends Error {
 	private _code: string;
+	private _subError?: Error;
 
-	public get code() {
-		return this._code;
-	}
+	public get code() { return this._code; }
+	public get subError() { return this._subError; }
 
-	constructor(code: string, message?: string) {
+	constructor(code: string, message?: string, subError?: Error) {
 		super(message);
+
 		this._code = code;
+		this._subError = subError;
 	}
 }
 
