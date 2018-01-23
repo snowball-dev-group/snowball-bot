@@ -15,7 +15,7 @@ import { getDB } from "../../utils/db";
 // customize
 const TWITCH_ICON = "https://p.dafri.top/snowball/res/twitch_glitch.png";
 const TWITCH_COLOR = 0x6441A4;
-const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
+const TWITCH_USERNAME_REGEXP = /^[a-z0-9_]{3,24}$/;
 const TWITCH_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_twitch.png";
 
 // defaults
@@ -573,8 +573,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		if(a.game_id !== b.game_id) { return false; }
 		if(a.user_id !== b.user_id) { return false; }
 
-		if(this._oneOfThemNull(a.hearthstone, b.hearthstone)) { return false; }
-		else if(a.hearthstone && b.hearthstone) {
+		if(this._oneOfThemNull(a.hearthstone, b.hearthstone)) {
+			return false;
+		} else if(a.hearthstone && b.hearthstone) {
 			// comprasion
 			if(this._oneOfThemNull(a.hearthstone.broadcaster, b.hearthstone.broadcaster)) {
 				return false;
@@ -593,8 +594,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			}
 		}
 
-		if(this._oneOfThemNull(a.overwatch, b.overwatch)) { return false; }
-		else if(a.overwatch && b.overwatch) {
+		if(this._oneOfThemNull(a.overwatch, b.overwatch)) {
+			return false;
+		} else if(a.overwatch && b.overwatch) {
 			if(this._oneOfThemNull(a.overwatch.broadcaster, b.overwatch.broadcaster)) {
 				return false;
 			} else if(a.overwatch.broadcaster && b.overwatch.broadcaster) {
@@ -769,11 +771,13 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
+		username = username.toLowerCase();
+
 		if(!TWITCH_USERNAME_REGEXP.test(username)) {
 			throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
 		}
 
-		const foundUsers = await this.makeRequest<ITwitchPagenatedResponse<ITwitchUser>>(this.getAPIURL_User([username]));
+		const foundUsers = await this.makeRequest<ITwitchPagenatedResponse<ITwitchUser>>(this.getAPIURL_User([username.toLowerCase()]));
 
 		if(foundUsers.data.length === 0) {
 			throw new StreamingServiceError("TWITCH_USERNOTFOUND", "User not found.");
