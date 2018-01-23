@@ -408,7 +408,6 @@ export class ModuleLoader {
 		}
 		const moduleKeeper = this.loadedModulesRegistry[name];
 
-		// tslint:disable-next-line:triple-equals
 		if(moduleKeeper == null) {
 			this.log("warn", `#unload: check failed: registry member is already \`${moduleKeeper}\``);
 			delete this.loadedModulesRegistry[name];

@@ -84,14 +84,14 @@ export async function storeValue<T>(owner: string, key: string, value: AllowedTy
 	}
 }
 
-export async function get(owner: string, key: string, isJson = false, pop = false) {
+export async function get<T>(owner: string, key: string, isJson = false, pop = false) : Promise<T|null> {
 	const redisClient = await getRedisClient();
 
 	const builtKey = buildCacheKey(owner, key);
 	const res = await redisClient.get(builtKey);
 	if(pop) { await redisClient.del(builtKey); }
 
-	return isJson ? JSON.parse(res) : res;
+	return isJson && res != null ? JSON.parse(res) : res;
 }
 
 export async function getArray<T>(owner: string, key: string, jsonParse: boolean|number = false, pop = false) : Promise<T[]> {
@@ -127,7 +127,6 @@ export async function deleteKeys(owner: string, keys: string|string[]) {
 function parseByIndexes<T>(arr: any[], parseIndexes: number[]) {
 	for(const index of parseIndexes) {
 		const elem = arr[index];
-		// tslint:disable-next-line:triple-equals
 		if(elem == null) { continue; }
 		arr[index] = JSON.parse(elem);
 	}

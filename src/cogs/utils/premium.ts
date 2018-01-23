@@ -112,7 +112,6 @@ export async function getPremium(person: GuildMember | User, internalCallSign?: 
 	let premiumRow: IPremiumRawRow | undefined = undefined;
 	let source: "db" | "cache" = "cache";
 
-	// tslint:disable-next-line:triple-equals
 	if(cached != null) {
 		// was cached
 		premiumRow = toRaw(cached);

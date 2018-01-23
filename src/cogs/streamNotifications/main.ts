@@ -245,8 +245,7 @@ class StreamNotifications extends Plugin implements IModule {
 				}
 			}
 		}
-		
-		// tslint:disable-next-line:triple-equals
+
 		if(options.sss_limit != null) {
 			options.sss_limit = Math.max(0, Number(options.sss_limit));
 		} else {
@@ -938,8 +937,7 @@ class StreamNotifications extends Plugin implements IModule {
 			return settings; // doing nothin'!
 		}
 
-		// tslint:disable-next-line:triple-equals
-		const activeSubscription = settings.subscribedTo.find(s => s.serviceName === subscription.provider && s.uid === subscription.uid && s.alternativeChannel == altChannel);
+		const activeSubscription = settings.subscribedTo.find(s => s.serviceName === subscription.provider && s.uid === subscription.uid && s.alternativeChannel === altChannel);
 
 		if(!activeSubscription) {
 			settings.subscribedTo.push({
@@ -1265,7 +1263,6 @@ class StreamNotifications extends Plugin implements IModule {
 							this.log("warn", `Invalid channel passed. Found that channel by ID "${gachIds.channelId}" is "${alternativeChannel.type}"`);
 							await this.unsubscribe(subscription, gachIds);
 							continue;
-						// tslint:disable-next-line:triple-equals
 						} else if(gachIds.channelId != null && !alternativeChannel) {
 							this.log("warn", `Alternative channel by ID "${gachIds.channelId}" not found`);
 							await this.unsubscribe(subscription, gachIds);
