@@ -32,9 +32,6 @@ async function init() {
 		password: passwordOverride
 	});
 
-	LOG("info", "[Init] Connecting...");
-	await redisClient.connect();
-
 	return redisClient;
 }
 
