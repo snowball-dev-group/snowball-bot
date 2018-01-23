@@ -1,45 +1,53 @@
 {
-	"rules": {
-		"no-unused-expression": true,
-		"no-duplicate-variable": true,
-		"no-unused-variable": [true, {}],
-		"curly": true,
-		"class-name": true,
-		"semicolon": [true, "always"],
-		"triple-equals": true,
-		"array-type": [
-			true,
-			"array-simple"
-		],
-		"no-var-keyword": true,
-		"comment-format": [
-			true,
-			"check-space"
-		],
-		"no-var-requires": true,
-		"quotemark": [
-			true,
-			"double"
-		],
-		"no-empty": true,
-		"indent": [
-			true
-		],
-		"radix": true,
-		"interface-name": [
-			true
-		],
-		"variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case"],
-		"no-unnecessary-callback-wrapper": true,
-		"switch-final-break": false,
-		"arrow-return-shorthand": true,
-		"prefer-object-spread": true,
-		"prefer-const": true,
-		"await-promise": [true, "Promise", "Bluebird"]
-	},
-	"jsRules": {
-		"no-unused-new": true,
-		"no-unused-expression": true,
-		"semicolon": true
-	}
+    "rules": {
+        "no-unused-expression": true,
+        "no-duplicate-variable": true,
+        "no-unused-variable": [true, {}],
+        "curly": true,
+        "class-name": true,
+        "semicolon": [true, "always"],
+        "triple-equals": true,
+        "array-type": [
+            true,
+            "array-simple"
+        ],
+        "no-var-keyword": true,
+        "comment-format": [
+            true,
+            "check-space"
+        ],
+        "no-var-requires": true,
+        "quotemark": [
+            true,
+            "double"
+        ],
+        "no-empty": true,
+        "indent": [
+            true
+        ],
+        "radix": true,
+        "interface-name": [
+            true
+        ],
+        "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case"],
+        "no-unnecessary-callback-wrapper": true,
+        "switch-final-break": false,
+        "arrow-return-shorthand": true,
+        "prefer-object-spread": true,
+        "prefer-const": true,
+        "await-promise": [true, "Promise", "Bluebird"],
+        "no-constant-condition": true,
+        "no-regex-spaces": true,
+        "brace-style": [ true, "1tbs", { "allowSingleLine": true } ],
+        "ter-prefer-arrow-callback": true,
+        "object-curly-spacing": true
+    },
+    "jsRules": {
+        "no-unused-new": true,
+        "no-unused-expression": true,
+        "semicolon": true
+    },
+    "extends": [
+        "tslint-eslint-rules"
+    ]
 }
