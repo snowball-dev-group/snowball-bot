@@ -42,7 +42,9 @@
         "ter-prefer-arrow-callback": true,
         "object-curly-spacing": true,
         "prefer-readonly": true,
-        "no-this-assignment": true
+        "no-this-assignment": true,
+        "no-invalid-template-strings": true,
+        "no-return-await": true
     },
     "jsRules": {
         "no-unused-new": true,
