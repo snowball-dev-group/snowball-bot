@@ -118,22 +118,22 @@ class FanServerThings extends Plugin implements IModule {
 	async init() {
 		await this.sync();
 		if(!this.syncInterval) {
-			this.syncInterval = setInterval(async () => this.sync(), this.options.syncInterval);
+			this.syncInterval = setInterval(async () => this.sync(false), this.options.syncInterval);
 		}
 	}
 
-	async sync() {
+	async sync(log = true) {
 		const fsGuild = $discordBot.guilds.get(this.options.fsGuildId);
 		if(!fsGuild) {
 			this.log("err", "Fan Server's guild not found, skipping init cycle");
 			return;
 		}
-		this.log("info", "Synchronization started");
+		log && this.log("info", "Synchronization started");
 		const startedAt = Date.now();
 		for(const member of fsGuild.members.values()) {
 			await this.onUpdate(member, member);
 		}
-		this.log("ok", `Synchronization done in ${(Date.now() - startedAt)}ms!`);
+		log && this.log("ok", `Synchronization done in ${(Date.now() - startedAt)}ms!`);
 	}
 
 	async onUpdate(oldMember: GuildMember, newMember: GuildMember) {
