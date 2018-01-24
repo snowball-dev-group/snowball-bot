@@ -13,7 +13,7 @@ export async function fetchBlobProfile(battletag: string, platform?: string): Pr
 	const context = `${battletag}//${platform}`;
 
 	const currentPromise = fetchingPromisesStore[context];
-	if(currentPromise) { return await currentPromise; }
+	if(currentPromise) { return currentPromise; }
 
 	const contextFunction: {
 		resolve?: (obj: IBlobResponse) => void;

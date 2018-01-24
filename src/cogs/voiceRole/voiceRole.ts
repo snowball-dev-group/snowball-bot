@@ -218,7 +218,7 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async searchGuildRow(guild: Guild): Promise<IGuildRow | null> {
-		return await this.db(TABLE_NAME).where({
+		return this.db(TABLE_NAME).where({
 			guild_id: guild.id
 		}).first();
 	}
@@ -274,11 +274,11 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async deleteSpecificRow(row: ISpecificRoleRow) {
-		return await this.db(SPECIFIC_TABLE_NAME).where(row).delete().first();
+		return this.db(SPECIFIC_TABLE_NAME).where(row).delete().first();
 	}
 
 	async updateGuildRow(row: IGuildRow) {
-		return await this.db(TABLE_NAME).where({
+		return this.db(TABLE_NAME).where({
 			guild_id: row.guild_id
 		}).update(row);
 	}
@@ -561,7 +561,7 @@ class VoiceRole extends Plugin implements IModule {
 						}
 					}
 				} catch(err) {
-					return await cleanupFault(err);
+					return cleanupFault(err);
 				}
 			}
 
@@ -582,7 +582,7 @@ class VoiceRole extends Plugin implements IModule {
 			try {
 				await this.VCR_Cleanup(msg.guild);
 			} catch(err) {
-				return await cleanupFault(err);
+				return cleanupFault(err);
 			}
 
 			msg.react("👍");
@@ -678,7 +678,7 @@ class VoiceRole extends Plugin implements IModule {
 					}
 				}
 			} catch(err) {
-				return await cleanupFault(err);
+				return cleanupFault(err);
 			}
 
 			row.voice_role = "-";
@@ -688,7 +688,7 @@ class VoiceRole extends Plugin implements IModule {
 			try {
 				await this.VCR_Cleanup(msg.guild);
 			} catch(err) {
-				return await cleanupFault(err);
+				return cleanupFault(err);
 			}
 
 			msg.react("👍");
@@ -802,7 +802,7 @@ class VoiceRole extends Plugin implements IModule {
 				try {
 					await this.VCR_Cleanup(msg.guild);
 				} catch(err) {
-					return await cleanupFault(err);
+					return cleanupFault(err);
 				}
 
 				progMsg.edit("", {

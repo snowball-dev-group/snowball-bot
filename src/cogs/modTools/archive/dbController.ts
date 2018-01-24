@@ -53,7 +53,7 @@ export class ArchiveDBController {
 	 */
 	public async insertMessage(msg: IDBMessage): Promise<IDBMessage> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
-		return await this._db(this._tableName).insert(msg, "*");
+		return this._db(this._tableName).insert(msg, "*");
 	}
 
 	/**
@@ -91,7 +91,7 @@ export class ArchiveDBController {
 		if(offset > 0) {
 			req = req.offset(offset);
 		}
-		return await req;
+		return req;
 	}
 
 	/**
@@ -99,7 +99,7 @@ export class ArchiveDBController {
 	 * @param messageId {string} Discord Message ID
 	 */
 	public async getMessage(messageId: string): Promise<IDBMessage> {
-		return await this._db(this._tableName).first("*").where("messageId", messageId);
+		return this._db(this._tableName).first("*").where("messageId", messageId);
 	}
 }
 

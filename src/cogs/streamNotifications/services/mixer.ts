@@ -190,11 +190,11 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 			const delay = parseInt(resp.headers.get("retry-after"), 10);
 			this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 			await sleep(delay);
-			return await this.makeRequest(uri, attempt + 1);
+			return this.makeRequest(uri, attempt + 1);
 		} else if(resp.status === 404) {
 			throw new StreamingServiceError("MIXER_NOTFOUND", "Resource not found");
 		}
-		return (await resp.json());
+		return (resp.json());
 	}
 
 	// ========================================

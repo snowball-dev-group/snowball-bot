@@ -30,22 +30,22 @@ export function getPrefsNames() {
 
 export async function getGuildLanguage(guild: Guild) {
 	const cached = guildsCache[guild.id];
-	return cached ? cached : await forceGuildLanguageUpdate(guild);
+	return cached ? cached : forceGuildLanguageUpdate(guild);
 }
 
 export async function isGuildEnforceEnabled(guild: Guild) {
 	const cached = guildEnforceCache[guild.id];
-	return cached ? cached : await forceGuildEnforceUpdate(guild);
+	return cached ? cached : forceGuildEnforceUpdate(guild);
 }
 
 export async function getUserLanguage(user: UserIdentify) {
 	if(user instanceof GuildMember && await isGuildEnforceEnabled(user.guild)) {
 		// no need in updating cache and checking user caching
 		// as guild enforces their language
-		return await getGuildLanguage(user.guild);
+		return getGuildLanguage(user.guild);
 	}
 	const cached = usersCache[user.id];
-	return cached ? cached : await forceUserLanguageUpdate(user);
+	return cached ? cached : forceUserLanguageUpdate(user);
 }
 
 export async function localizeForUser(user: UserIdentify, str: string, formatOpts?: IFormatMessageVariables) {

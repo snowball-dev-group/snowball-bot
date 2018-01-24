@@ -118,7 +118,7 @@ class FanServerThings extends Plugin implements IModule {
 	async init() {
 		await this.sync();
 		if(!this.syncInterval) {
-			this.syncInterval = setInterval(async () => await this.sync(), this.options.syncInterval);
+			this.syncInterval = setInterval(async () => this.sync(), this.options.syncInterval);
 		}
 	}
 
@@ -148,7 +148,7 @@ class FanServerThings extends Plugin implements IModule {
 		const cmd = acceptedCommands.find(c => msg.content.startsWith(`!${c}`));
 		if(!cmd) { return; }
 		switch(cmd) {
-			case "choose": case "pick": return await this.cmd_choose(msg, cmd);
+			case "choose": case "pick": return this.cmd_choose(msg, cmd);
 		}
 	}
 
@@ -159,7 +159,7 @@ class FanServerThings extends Plugin implements IModule {
 		let role: Role | undefined = msg.mentions.roles.first();
 		const roleName = msg.content.slice(`!${cmd} `.length);
 		if(roleName.length === 0 && !role) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "FSTHINGS_CHOOSE_NOROLENAME")
 			});
 		} else if(!role) {
@@ -167,7 +167,7 @@ class FanServerThings extends Plugin implements IModule {
 		}
 
 		if(!role) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "FSTHINGS_CHOOSE_ROLENOTFOUND")
 			});
 		}
@@ -176,14 +176,14 @@ class FanServerThings extends Plugin implements IModule {
 		// filtering bots out
 		members = members.filter(m => !m.user.bot);
 		if(members.length === 0) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, "FSTHINGS_CHOOSE_EMPTYROLE")
 			});
 		}
 
 		const pickedMember = randomPick(members);
 		if(!pickedMember) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					key: "FSTHINGS_CHOOSE_INTERNALERROR001",
 					formatOptions: {
@@ -193,7 +193,7 @@ class FanServerThings extends Plugin implements IModule {
 			});
 		}
 
-		return await msg.channel.send({
+		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "FSTHINGS_CHOOSE_FOUND", {
 				fields: [{
 					inline: false,

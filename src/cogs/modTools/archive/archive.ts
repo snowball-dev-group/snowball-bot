@@ -119,16 +119,16 @@ class ModToolsArchive extends Plugin implements IModule {
 		const parsed = simpleCmdParse(msg.content);
 
 		switch(prefix) {
-			case PREFIX: return msg.member.permissions.has("MANAGE_MESSAGES") && await this.subcmd_archive(msg, parsed);
-			case MSG_PREFIX: return await this.subcmd_message(msg, parsed);
-			case ARCHIVE_ENABLING_PREFIX: return msg.member.permissions.has(["MANAGE_GUILD", "MANAGE_MESSAGES"]) && await this.subcmd_archiveStatus(msg, parsed);
+			case PREFIX: return msg.member.permissions.has("MANAGE_MESSAGES") && this.subcmd_archive(msg, parsed);
+			case MSG_PREFIX: return this.subcmd_message(msg, parsed);
+			case ARCHIVE_ENABLING_PREFIX: return msg.member.permissions.has(["MANAGE_GUILD", "MANAGE_MESSAGES"]) && this.subcmd_archiveStatus(msg, parsed);
 		}
 	}
 
 	private async subcmd_message(msg: Message, parsed: ISimpleCmdParseResult) {
 		const msgId = parsed.subCommand;
 		if(msg.content === PREFIX || !msgId) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "ARCHIVE_MESSAGE_HELP",
 					formatOptions: {
@@ -139,7 +139,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 
 		if(!SNOWFLAKE_REGEXP.test(msgId)) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_INVALID_ID")
 			});
 		}
@@ -147,7 +147,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		const message = await this._controller.getMessage(msgId);
 
 		if(!message) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOTFOUND")
 			});
 		}
@@ -159,13 +159,13 @@ class ModToolsArchive extends Plugin implements IModule {
 		const channel = await this._resolveGuildChannel(message.channelId, msg.guild);
 
 		if(!channel) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_CHANNELNOTFOUND")
 			});
 		}
 
 		if(!channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"])) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOPERMISSIONS")
 			});
 		}
@@ -175,7 +175,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		})();
 
 		if(!originalMessage && msg.member.permissions.has("MANAGE_MESSAGES")) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "NO_PERMISSION")
 			});
 		}
@@ -252,7 +252,7 @@ class ModToolsArchive extends Plugin implements IModule {
 
 	private async subcmd_archive(msg: Message, parsed: ISimpleCmdParseResult) {
 		if(msg.content === PREFIX) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "ARCHIVE_HELP",
 					formatOptions: {
@@ -268,7 +268,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		if(!target) { return; } // ???
 
 		if(!POSSIBLE_TARGETS.includes(target.toLowerCase())) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					key: "ARCHIVE_UNKNOWN_TARGET",
 					formatOptions: {
@@ -286,7 +286,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			lines = parseInt(parsed.args[parsed.args.length - 1], 10);
 			parsed.args.splice(-1, 1);
 			if(lines > MESSAGES_LIMIT) {
-				return await msg.channel.send({
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 						key: "ARCHIVE_INVALID_LENGTH",
 						formatOptions: {
@@ -312,7 +312,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		switch(target) {
 			case "user": {
 				if(!parsed.args || parsed.args.length === 0) {
-					return await msg.channel.send({
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 							key: "ARCHIVE_REQUIRES_ARGS_USER",
 							formatOptions: {
@@ -369,7 +369,7 @@ class ModToolsArchive extends Plugin implements IModule {
 								caches.users[user.id] = user;
 								users.push(user.id);
 							} catch(err) {
-								return await msg.channel.send({
+								return msg.channel.send({
 									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 										key: "ARCHIVE_ERR_RESOLVING_USER",
 										formatOptions: {
@@ -396,7 +396,7 @@ class ModToolsArchive extends Plugin implements IModule {
 								caches.channels[channel.id] = channel;
 								channels.push(channel.id);
 							} catch(err) {
-								return await msg.channel.send({
+								return msg.channel.send({
 									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 										key: "ARCHIVE_ERR_RESOLVING_CHANNEL",
 										formatOptions: {
@@ -432,14 +432,14 @@ class ModToolsArchive extends Plugin implements IModule {
 				}
 			});
 		} else {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "ARCHIVE_ERR_NOTHINGFOUND")
 			});
 		}
 
 		const result = await this._messagesToString(foundMessages.reverse(), caches.users, await getUserLanguage(msg.member));
 
-		return await msg.channel.send({
+		return msg.channel.send({
 			content: await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }),
 			files: [{
 				attachment: Buffer.from(result),
@@ -466,7 +466,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			throw new Error("Bad ID");
 		}
 
-		return (await $discordBot.users.fetch(resolvableUser));
+		return ($discordBot.users.fetch(resolvableUser));
 	}
 
 	private async _resolveGuildChannel(resolvableChannel: string, guild: Guild) {
@@ -549,7 +549,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			case "true": { newStatus = true; } break;
 			case "false": { newStatus = false; } break;
 			default: {
-				return await msg.channel.send({
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 						key: "ARCHIVE_STATUS_INVALIDARG",
 						formatOptions: {
@@ -561,7 +561,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 
 		if(isEnabledAlready === newStatus) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "ARCHIVE_STATUS_ALREADY",
 					formatOptions: {
@@ -608,7 +608,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	private async _recordMessage(msg: Message) {
 		if(!(await this._isEnabledAt(msg.channel.type === "dm" ? "dm" : msg.guild))) { return; }
 		const payload = convertToDBMessage(msg);
-		return await this._controller.insertMessage(payload);
+		return this._controller.insertMessage(payload);
 	}
 
 	public async init() {

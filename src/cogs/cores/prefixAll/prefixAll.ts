@@ -130,7 +130,7 @@ export default class PrefixAll implements IModule {
 
 	public async getPrefixes(guild: Guild) {
 		if(!guild) { return [this.defaultPrefix]; }
-		return await this._getGuildPrefix(guild);
+		return this._getGuildPrefix(guild);
 	}
 
 	public async setPrefixes(guild: Guild, prefixes: string[] | null) {

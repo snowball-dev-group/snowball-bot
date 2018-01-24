@@ -912,7 +912,7 @@ class StreamNotifications extends Plugin implements IModule {
 			});
 		}
 
-		return await this.addSubscriber(this.convertToNormalSubscription(subscription), target);
+		return this.addSubscriber(this.convertToNormalSubscription(subscription), target);
 	}
 
 	async removeStreamerSubscriber(streamer: IStreamingServiceStreamer, target: string | Guild | User) {
@@ -923,7 +923,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		if(!subscription) { return undefined; }
 
-		return await this.removeSubscriber(this.convertToNormalSubscription(subscription), target);
+		return this.removeSubscriber(this.convertToNormalSubscription(subscription), target);
 	}
 
 	async recordSubscription(target: string | User | Guild, subscription: ISubscriptionRow, altChannel?: string, settings?: ISettingsParsedRow) {
@@ -1576,7 +1576,7 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async updateSubscription(newSubscription: ISubscriptionRawRow) {
-		return await this.db(TABLE.subscriptions).where({
+		return this.db(TABLE.subscriptions).where({
 			provider: newSubscription.provider,
 			uid: newSubscription.uid,
 			username: newSubscription.username
@@ -1584,7 +1584,7 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async deleteSubscription(pseudoSubscription: IPseudoSubscription) {
-		return await this.db(TABLE.subscriptions).where({
+		return this.db(TABLE.subscriptions).where({
 			provider: pseudoSubscription.provider,
 			uid: pseudoSubscription.uid
 		}).delete();
@@ -1608,11 +1608,11 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async saveNotification(notification: INotification) {
-		return await this.db(TABLE.notifications).insert(notification);
+		return this.db(TABLE.notifications).insert(notification);
 	}
 
 	async updateNotification(notification: INotification) {
-		return await this.db(TABLE.notifications).where({
+		return this.db(TABLE.notifications).where({
 			guild: notification.guild,
 			provider: notification.provider,
 			streamerId: notification.streamerId
@@ -1620,7 +1620,7 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async deleteNotification(notification: INotification) {
-		return await this.db(TABLE.notifications).where(notification).delete();
+		return this.db(TABLE.notifications).where(notification).delete();
 	}
 
 	async findNotification(provider: string, streamerId: string, streamId: string, guild: Guild | string): Promise<INotification | undefined> {

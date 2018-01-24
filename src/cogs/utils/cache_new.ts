@@ -124,7 +124,7 @@ export async function deleteKeys(owner: string, keys: string|string[]) {
 		keys = [buildCacheKey(owner, keys)];
 	}
 
-	return await redisClient.del(...keys);
+	return redisClient.del(...keys);
 }
 
 function parseByIndexes<T>(arr: any[], parseIndexes: number[]) {

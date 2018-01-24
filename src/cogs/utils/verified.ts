@@ -19,7 +19,7 @@ const TABLE_NAME = "verified_status";
 /// ======================================
 
 async function insertNew(member: GuildMember) {
-	return await DB(TABLE_NAME).insert({
+	return DB(TABLE_NAME).insert({
 		guildId: member.guild.id,
 		memberId: member.id,
 		level: 0
@@ -27,21 +27,21 @@ async function insertNew(member: GuildMember) {
 }
 
 async function getVerificationRow(member: GuildMember): Promise<IVerifiedRow> {
-	return await DB(TABLE_NAME).where({
+	return DB(TABLE_NAME).where({
 		guildId: member.guild.id,
 		memberId: member.id
 	}).first();
 }
 
 async function updateRow(row: IVerifiedRow) {
-	return await DB(TABLE_NAME).where({
+	return DB(TABLE_NAME).where({
 		guildId: row.guildId,
 		memberId: row.memberId
 	}).update(row);
 }
 
 async function deleteRow(row: IVerifiedRow) {
-	return await DB(TABLE_NAME).where(row).delete().first();
+	return DB(TABLE_NAME).where(row).delete().first();
 }
 
 /// ======================================

@@ -850,14 +850,14 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				const sleepTime = ((resetAt * 1000) - Date.now()) + 5; // time problems
 				this.log("info", `Request to "${uri}" was ratelimited. Sleeping for ${sleepTime}...`);
 				await sleep(sleepTime);
-				return await loop(attempt + 1);
+				return loop(attempt + 1);
 			} else if(resp.status !== 200 && resp.status !== 202) {
 				throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch", {
 					status: resp.status,
 					body: (await resp.text())
 				});
 			}
-			return isJson ? await resp.json() : await resp.text();
+			return isJson ? resp.json() : resp.text();
 		};
 		return <T>(await loop());
 	}
@@ -933,8 +933,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		parsed.pathname = parsed.pathname.slice(whSettings.path.length);
 
 		switch(req.method.toLowerCase()) {
-			case "post": return await this._processTwitchUpdate(req, resp, parsed);
-			case "get": return await this._processTwitchConfirmation(req, resp, parsed);
+			case "post": return this._processTwitchUpdate(req, resp, parsed);
+			case "get": return this._processTwitchConfirmation(req, resp, parsed);
 			default: {
 				resp.statusCode = 400;
 				return resp.end("Invalid method specified");

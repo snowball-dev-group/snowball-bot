@@ -100,9 +100,9 @@ class SetLanguageCommand extends Plugin implements IModule {
 		} else if(startsOrEqual(CMD.SWITCH, msg.content)) {
 			await this.switchLanguage(msg);
 		} else if(startsOrEqual(CMD.GUILDS_SWITCH, msg.content)) {
-			return await this.guildSwitch(msg);
+			return this.guildSwitch(msg);
 		} else if(startsOrEqual(CMD.GUILDS_ENFORCE, msg.content)) {
-			return await this.guildEnforce(msg);
+			return this.guildEnforce(msg);
 		} else if(startsOrEqual(CMD.CODES, msg.content)) {
 			await this.getCodes(msg);
 		} else {

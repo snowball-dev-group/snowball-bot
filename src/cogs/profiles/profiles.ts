@@ -504,11 +504,11 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async getUserStatusString(activity: string, localizingFor: GuildMember | User) {
-		const localizeStatus = async (str: string) => await localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`);
+		const localizeStatus = async (str: string) => localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`);
 		switch(activity) {
-			case "online": { return await localizeStatus("online"); }
-			case "idle": { return await localizeStatus("idle"); }
-			case "dnd": { return await localizeStatus("dnd"); }
+			case "online": { return localizeStatus("online"); }
+			case "idle": { return localizeStatus("idle"); }
+			case "dnd": { return localizeStatus("dnd"); }
 			default: { return localizeStatus("offline"); }
 		}
 	}
@@ -758,7 +758,7 @@ class Profiles extends Plugin implements IModule {
 
 	async createProfile(member: GuildMember, guild: Guild) {
 		member = await member.guild.members.fetch(member.id);
-		return await this.db(TABLE_NAME).insert({
+		return this.db(TABLE_NAME).insert({
 			uid: member.id,
 			real_name: null,
 			guild_id: guild.id,
@@ -771,7 +771,7 @@ class Profiles extends Plugin implements IModule {
 	}
 
 	async updateProfile(dbProfile: IDBUserProfile) {
-		return await this.db(TABLE_NAME).where({
+		return this.db(TABLE_NAME).where({
 			uid: dbProfile.uid,
 			guild_id: dbProfile.guild_id
 		}).update(dbProfile);

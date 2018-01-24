@@ -35,7 +35,7 @@ type userIndx = GuildMember | User;
 
 async function createPreference(member: userIndx, preference: string, value: string) {
 	if(!initDone) { await init(); }
-	return await DB(TABLE_NAME).insert({
+	return DB(TABLE_NAME).insert({
 		gid: member instanceof GuildMember ? member.guild.id : "global",
 		uid: member.id,
 		preference, value
@@ -44,7 +44,7 @@ async function createPreference(member: userIndx, preference: string, value: str
 
 export async function getPreferenceRow(member: userIndx, preference: string): Promise<IUserPreference> {
 	if(!initDone) { await init(); }
-	return await DB(TABLE_NAME).where({
+	return DB(TABLE_NAME).where({
 		gid: member instanceof GuildMember ? member.guild.id : "global",
 		uid: member.id,
 		preference
@@ -53,7 +53,7 @@ export async function getPreferenceRow(member: userIndx, preference: string): Pr
 
 async function updatePreferenceRow(row: IUserPreference) {
 	if(!initDone) { await init(); }
-	return await DB(TABLE_NAME).where({
+	return DB(TABLE_NAME).where({
 		gid: row.gid,
 		uid: row.uid,
 		preference: row.preference

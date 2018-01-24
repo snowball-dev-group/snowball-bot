@@ -103,7 +103,7 @@ export async function createTableBySchema(tableName: string, schema:ITableSchema
 		await connection.schema.dropTable(tableName);
 	}
 
-	return await connection.schema.createTable(tableName, tb => {
+	return connection.schema.createTable(tableName, tb => {
 		// let's build!
 		for(const key of Object.keys(schema)) {
 			const info = schema[key];

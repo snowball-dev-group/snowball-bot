@@ -360,7 +360,7 @@ export class SnowballBot extends EventEmitter {
 		if(!this._discordClient) {
 			throw new Error("Discord client not requires reconnecting");
 		}
-		return await this._discordClient.login(this._config.token);
+		return this._discordClient.login(this._config.token);
 	}
 
 	/**

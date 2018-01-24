@@ -16,7 +16,7 @@ class SHIBCHANNEL extends Plugin implements IModule {
 
 	async onMessageUpdated(oldMessage:Message, newMessage:Message) {
 		if(oldMessage.channel.id !== "300019335055802368") { return; }
-		return await this.onMessage(newMessage);
+		return this.onMessage(newMessage);
 	}
 
 	async onMessage(msg: Message) {

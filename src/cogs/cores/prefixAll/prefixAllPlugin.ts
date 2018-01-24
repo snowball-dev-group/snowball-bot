@@ -83,7 +83,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		if(parsed.command !== "prefix") { return; } // checking if there's no command call
 
 		if(!parsed.subCommand) { // if there's no subcommand then sending helpful message
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "PREFIXALL_INFO",
 					formatOptions: {
@@ -96,9 +96,9 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		switch(parsed.subCommand.toLowerCase()) { // otherwise let's switch to the best one
 			// TODO: (done) passing instance of prefixall instead of repetitive searching and checking \
 			// if instance is already loaded. Improves some .ms time.
-			case "add": case "+": return await this.subcmd_add(msg, parsed, prefix, prefixAllInstance);
-			case "remove": case "-": return await this.subcmd_remove(msg, parsed, prefix, prefixAllInstance);
-			case "list": case "?": return await this.subcmd_list(msg, parsed, prefix, prefixAllInstance);
+			case "add": case "+": return this.subcmd_add(msg, parsed, prefix, prefixAllInstance);
+			case "remove": case "-": return this.subcmd_remove(msg, parsed, prefix, prefixAllInstance);
+			case "list": case "?": return this.subcmd_list(msg, parsed, prefix, prefixAllInstance);
 		}
 	}
 
@@ -115,7 +115,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		const cmd = `${prefix}${parsed.command}`;
 
 		if(!parsed.args) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "PREFIXALL_INFO_ADD",
 					formatOptions: {
@@ -170,7 +170,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		}), msg);
 
 		if(!confirmation) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREFIXALL_PREFIX_CANCELED")
 			});
 		}
@@ -179,7 +179,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 		await prefixAllInstance.setPrefixes(msg.guild, guildPrefixes);
 
-		return await msg.channel.send({
+		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 				key: "PREFIXALL_PREFIX_ADDED",
 				formatOptions: {
@@ -194,7 +194,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		const cmd = `${prefix}${parsed.command}`;
 
 		if(!parsed.args) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "PREFIXALL_INFO_REMOVE",
 					formatOptions: {
@@ -210,13 +210,13 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 		if(!guildPrefixes) {
 			this.log("info", `#remove: prefixAllInstance.getPrefixes(${msg.guild.id}): Returned none prefixes!`);
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREFIXALL_PREFIX_NOPREFIXES")
 			});
 		}
 
 		if(guildPrefixes.length === 1) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREFIXALL_PREFIX_CANTREMOVELATEST")
 			});
 		}
@@ -225,7 +225,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 		if(index === -1) {
 			const star = randomNumber(0, 7) === 6;
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					custom: true,
 					string: (await localizeForUser(msg.member, "PREFIXALL_PREFIX_NOTFOUND")) + (star ? ("\n" + await localizeForUser(msg.member, "PREFIXALL_PREFIX_NOTFOUND_6")) : "")
@@ -243,7 +243,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		}), msg);
 
 		if(!confirmation) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREFIXALL_PREFIX_CANCELED")
 			});
 		}
@@ -252,7 +252,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 		await prefixAllInstance.setPrefixes(msg.guild, guildPrefixes);
 
-		return await msg.channel.send({
+		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 				key: "PREFIXALL_PREFIX_REMOVED",
 				formatOptions: {
@@ -267,7 +267,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		const msgAuthor = msg.member || msg.author;
 
 		if(parsed.args) {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 					key: "PREFIXALL_INFO_LIST",
 					formatOptions: {
@@ -281,13 +281,13 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 		if(!guildPrefixes) {
 			this.log("info", `#list: prefixAllInstance.getPrefixes(${msg.guild.id}): Returned none prefixes!`);
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msgAuthor, "PREFIXALL_PREFIX_LIST_NONE")
 			});
 		}
 
 		if(msg.channel.type !== "text") {
-			return await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 					key: "PREFIXALL_PREFIX_LIST_DM",
 					formatOptions: { prefix: guildPrefixes[0] }
@@ -303,7 +303,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			}));
 		}
 
-		return await msg.channel.send({
+		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 				key: "PREFIXALL_PREFIX_LIST",
 				formatOptions: {

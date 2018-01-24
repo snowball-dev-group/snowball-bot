@@ -38,7 +38,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 	}
 
 	async getSetupArgs(caller: GuildMember) {
-		return await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ARGS");
+		return localizeForUser(caller, "LASTFMPROFILEPLUGIN_ARGS");
 	}
 
 	async setup(str: string) {

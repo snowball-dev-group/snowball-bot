@@ -16,7 +16,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 	}
 
 	async getSetupArgs(caller: GuildMember) {
-		return await localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
+		return localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
 	}
 
 	async setup(str: string, member: GuildMember, msg: Message) {

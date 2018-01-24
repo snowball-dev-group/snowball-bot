@@ -382,7 +382,7 @@ class Guilds extends Plugin implements IModule {
 				});
 			} break;
 		}
-		return await channel.send("", {
+		return channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Information, member, {
 				custom: true,
 				string: str
@@ -440,7 +440,7 @@ class Guilds extends Plugin implements IModule {
 
 		if(dbRow) {
 			if(!msg.guild.roles.has(dbRow.roleId)) {
-				return await msg.channel.send("", {
+				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_ALREADYFOUND_NOROLE")
 				});
 			}
@@ -1116,7 +1116,7 @@ class Guilds extends Plugin implements IModule {
 		if(!dbRow || !role) { return; }
 
 		const getEmbed = async (str: string) => {
-			return await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
+			return generateLocalizedEmbed(EmbedType.Progress, msg.member, {
 				custom: true,
 				string: str
 			}, {
@@ -1989,13 +1989,13 @@ class Guilds extends Plugin implements IModule {
 	}
 
 	async updateGuildRow(guildRow: IGuildRow) {
-		return await this.db(TABLE_NAME).where({
+		return this.db(TABLE_NAME).where({
 			gid: guildRow.gid
 		}).update(guildRow);
 	}
 
 	async createGuildRow(guild: Guild, name: string) {
-		return await this.db(TABLE_NAME).insert({
+		return this.db(TABLE_NAME).insert({
 			guildId: guild.id,
 			name: name,
 			customize: "{}",
@@ -2006,7 +2006,7 @@ class Guilds extends Plugin implements IModule {
 	}
 
 	async deleteGuildRow(guildRow: IGuildRow) {
-		return await this.db(TABLE_NAME).delete().where({
+		return this.db(TABLE_NAME).delete().where({
 			gid: guildRow.gid
 		});
 	}

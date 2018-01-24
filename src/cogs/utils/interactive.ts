@@ -72,7 +72,7 @@ export async function createCustomizeConfirmationMessage(embed, channel: TextCha
 		throw new Error("Cannot react!");
 	}
 
-	return await _confirmationMessage.awaitReactions((reaction: MessageReaction, user: User) => {
+	return _confirmationMessage.awaitReactions((reaction: MessageReaction, user: User) => {
 		if(!rules.variants.includes(reaction.emoji.name)) { return false; }
 		if(rules.whoCanReact) {
 			return !!rules.whoCanReact.find(u => u.id === user.id);
@@ -87,7 +87,7 @@ interface ICustomWaitMessageOptions {
 }
 
 export async function waitForMessages(channel: TextChannel | DMChannel, rules: ICustomWaitMessageOptions) {
-	return await channel.awaitMessages((msg: Message) => {
+	return channel.awaitMessages((msg: Message) => {
 		return rules.authors.includes(msg.author.id) && rules.variants.includes(msg.content);
 	}, {
 			errors: ["time"],

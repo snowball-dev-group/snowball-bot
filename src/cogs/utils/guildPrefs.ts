@@ -29,7 +29,7 @@ const TABLE_NAME = "guild_prefs";
 
 async function createPreference(guild: Guild | string, preference: string, value: string) {
 	if(!initDone) { await init(); }
-	return await DB(TABLE_NAME).insert({
+	return DB(TABLE_NAME).insert({
 		guildId: guild instanceof Guild ? guild.id : guild,
 		preference, value
 	});
@@ -37,7 +37,7 @@ async function createPreference(guild: Guild | string, preference: string, value
 
 export async function getPreferenceRow(guild: Guild | string, preference: string): Promise<IGuildPreference> {
 	if(!initDone) { await init(); }
-	return await DB(TABLE_NAME).where({
+	return DB(TABLE_NAME).where({
 		guildId: guild instanceof Guild ? guild.id : guild,
 		preference
 	}).first();
@@ -45,7 +45,7 @@ export async function getPreferenceRow(guild: Guild | string, preference: string
 
 async function updatePreferenceRow(row: IGuildPreference) {
 	if(!initDone) { await init(); }
-	return await DB(TABLE_NAME).where({
+	return DB(TABLE_NAME).where({
 		guildId: row.guildId,
 		preference: row.preference
 	}).update(row);
