@@ -166,7 +166,7 @@ export class SnowballBot extends EventEmitter {
 	/**
 	 * Log function
 	 */
-	private _log: Function;
+	private readonly _log: Function;
 
 	constructor(
 		/**

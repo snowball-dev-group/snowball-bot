@@ -276,7 +276,7 @@ export class ModuleLoader {
 	 */
 	public signaturesRegistry: INullableHashMap<ModuleBase<any>> = Object.create(null);
 
-	private log: Function;
+	private readonly log: Function;
 
 	constructor(config: IModuleLoaderConfig) {
 		this.config = config;

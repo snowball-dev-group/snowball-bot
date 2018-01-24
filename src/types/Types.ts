@@ -61,8 +61,8 @@ export type IPCMessage<T> = string | ISnowballIPCMessage<T>;
 // I don't sure about the name
 // This is just mix of "error" and "code"
 export class DetailedError extends Error {
-	private _code: string;
-	private _subError?: Error;
+	private readonly _code: string;
+	private readonly _subError?: Error;
 
 	public get code() { return this._code; }
 	public get subError() { return this._subError; }

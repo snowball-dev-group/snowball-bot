@@ -19,7 +19,7 @@ export default class MessagesFlows implements IModule {
 		return MESSAGEFLOWS_SIGNATURE;
 	}
 
-	private _flowUnits: IFlowUnit[] = [];
+	private readonly _flowUnits: IFlowUnit[] = [];
 
 	// kinda flow optimizations
 	private _anyWith = {
@@ -28,7 +28,7 @@ export default class MessagesFlows implements IModule {
 	};
 
 	// default timings
-	private _timings = {
+	private readonly _timings = {
 		timeoutHandler: HANDLER_TIMEOUT,
 		timeoutCheck: CHECK_TIMEOUT,
 		maxTimeoutHandler: HANDLER_MAXTIMEOUT,
@@ -36,12 +36,12 @@ export default class MessagesFlows implements IModule {
 	};
 
 	// message handler?
-	private _messageHandler: ((msg: Message) => any);
+	private readonly _messageHandler: ((msg: Message) => any);
 
 	// prefixal' instance
 	private prefixAllKeeper?: ModuleBase<PrefixAll>;
 
-	private log = getLogger("MessagesFlows");
+	private readonly log = getLogger("MessagesFlows");
 
 	constructor() {
 		this._messageHandler = ((msg: Message) => this._executeMessageFlow(msg));

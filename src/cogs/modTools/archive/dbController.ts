@@ -13,10 +13,10 @@ const ERRORS = {
 let totalInstances = 0;
 
 export class ArchiveDBController {
-	private _tableName: string = DEFAULT_TABLE_NAME;
-	private _db = getDB();
+	private readonly _tableName: string = DEFAULT_TABLE_NAME;
+	private readonly _db = getDB();
 	private _initComplete = false;
-	private _log = getLogger(`ArchiveDBController:${++totalInstances}`);
+	private readonly _log = getLogger(`ArchiveDBController:${++totalInstances}`);
 
 	constructor(tableName: string = DEFAULT_TABLE_NAME) {
 		this._tableName = tableName;

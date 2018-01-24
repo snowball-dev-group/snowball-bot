@@ -25,9 +25,9 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 
 	public name = "mixer";
 
-	private log = getLogger("MixerStreamingService");
+	private readonly log = getLogger("MixerStreamingService");
 
-	private ca: Carina;
+	private readonly ca: Carina;
 
 	constructor(apiKey) {
 		super();
@@ -48,8 +48,8 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	//           Updates handlers
 	// ========================================
 
-	private _carinaListeners: IHashMap<((data) => void)> = Object.create(null);
-	private currentData: IHashMap<ICacheItem> = Object.create(null);
+	private readonly _carinaListeners: IHashMap<((data) => void)> = Object.create(null);
+	private readonly currentData: IHashMap<ICacheItem> = Object.create(null);
 
 	private generateID(cacheItem: ICacheItem) {
 		return getUUIDByString(`${this.name.toUpperCase()}::{${cacheItem.startedAt}-${cacheItem.channel.id}}`);

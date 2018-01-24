@@ -43,14 +43,14 @@ const REQUIRED_META_KEYS = ["+NAME", "+COUNTRY"];
 const IGNORED_KEYS = ["+COVERAGE", "$schema"];
 
 export class Localizer {
-	private _opts: ILocalizerOptions;
+	private readonly _opts: ILocalizerOptions;
+	private readonly _log: ILoggerFunction;
+	private readonly _sourceLang: string;
+	private readonly _fallbackQueue: string[] = [];
+	private readonly _humanizersMap: ILanguageHashMap<Humanizer> = Object.create(null);
 	private _langMaps: ILanguageHashMap<IStringsMap> = Object.create(null);
 	private _initDone: boolean = false;
-	private _log: ILoggerFunction;
-	private _sourceLang: string;
 	private _loadedLanguages: string[] = [];
-	private _fallbackQueue: string[] = [];
-	private _humanizersMap: ILanguageHashMap<Humanizer> = Object.create(null);
 
 	/**
 	 * Returns default language

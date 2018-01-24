@@ -23,8 +23,8 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 		return "snowball.features.profile.plugins.lastfm";
 	}
 
-	private config: ILastFMPluginConfig;
-	private _emoji: string;
+	private readonly config: ILastFMPluginConfig;
+	private readonly _emoji: string;
 
 	constructor(config: ILastFMPluginConfig) {
 		this.config = config;

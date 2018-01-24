@@ -15,7 +15,7 @@ class Ping extends Plugin implements IModule {
 		return "snowball.core_features.ping";
 	}
 
-	private log = getLogger("PingJS");
+	private readonly log = getLogger("PingJS");
 	private flowHandler: IPublicFlowUnit;
 
 	constructor() {

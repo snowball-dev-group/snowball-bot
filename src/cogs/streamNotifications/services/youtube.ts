@@ -27,7 +27,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 
 	public name = "youtube";
 
-	private options: IServiceOptions;
+	private readonly options: IServiceOptions;
 
 	constructor(options: string | IServiceOptions) {
 		super();
@@ -41,7 +41,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	//             Subscriptions
 	// ========================================
 
-	private subscriptions: IStreamingServiceStreamer[] = [];
+	private readonly subscriptions: IStreamingServiceStreamer[] = [];
 
 	public addSubscription(streamer: IStreamingServiceStreamer) {
 		if(this.isSubscribed(streamer.uid)) {
@@ -106,8 +106,8 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	//              Fetching
 	// ========================================
 
-	private streamsCache: IHashMap<ICacheItem<IYouTubeVideo>> = {};
-	private channelCache: IHashMap<ICacheItem<IYouTubeChannel>> = {};
+	private readonly streamsCache: IHashMap<ICacheItem<IYouTubeVideo>> = {};
+	private readonly channelCache: IHashMap<ICacheItem<IYouTubeChannel>> = {};
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
 		for(const streamer of streamers) {

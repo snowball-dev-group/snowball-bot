@@ -215,12 +215,12 @@ class StreamNotifications extends Plugin implements IModule {
 		return "snowball.features.stream_notifications";
 	}
 
-	private log = getLogger("StreamNotifications");
-	private db = getDB();
-	private servicesLoader: ModuleLoader;
-	private servicesList: INullableHashMap<IModuleInfo>;
+	private readonly log = getLogger("StreamNotifications");
+	private readonly db = getDB();
+	private readonly servicesLoader: ModuleLoader;
+	private readonly servicesList: INullableHashMap<IModuleInfo>;
 	private whitelistModule: ModuleBase<Whitelist>;
-	private options: INotificationsModuleSettings;
+	private readonly options: INotificationsModuleSettings;
 
 	constructor(options: INotificationsModuleSettings) {
 		super({
@@ -1156,7 +1156,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	guildSettingsCache: INullableHashMap<ISettingsParsedRow> = Object.create(null);
 
-	private _handlers: {
+	private readonly _handlers: {
 		online: INullableHashMap<StreamStatusChangedHandler[]>,
 		updated: INullableHashMap<StreamStatusChangedHandler[]>,
 		offline: INullableHashMap<StreamStatusChangedHandler[]>

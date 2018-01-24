@@ -132,9 +132,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public name = "twitch_new";
 
-	private log = getLogger("TwitchNewStreamingService");
+	private readonly log = getLogger("TwitchNewStreamingService");
 
-	private options: IServiceOptions;
+	private readonly options: IServiceOptions;
 
 	private webhooksServer: http.Server;
 
@@ -242,7 +242,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	//            Subscriptions
 	// ========================================
 
-	private subscriptions: IStreamingServiceStreamer[];
+	private readonly subscriptions: IStreamingServiceStreamer[];
 
 	public addSubscription(streamer: IStreamingServiceStreamer) {
 		if(this.isSubscribed(streamer.uid)) {
@@ -309,11 +309,11 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	//                Fetching
 	// ========================================
 
-	private streamsStore: INullableHashMap<ICacheItem<ITwitchStream | null>> = Object.create(null);
-	private gamesStore: INullableHashMap<ICacheItem<ITwitchGame>> = Object.create(null);
-	private metadataStore: INullableHashMap<ICacheItem<ITwitchMetadata>> = Object.create(null);
-	private usersStore: INullableHashMap<ICacheItem<ITwitchUser>> = Object.create(null);
-	private currentPayloadsStore: INullableHashMap<ICacheItem<ITwitchNewPluginPayload>> = Object.create(null);
+	private readonly streamsStore: INullableHashMap<ICacheItem<ITwitchStream | null>> = Object.create(null);
+	private readonly gamesStore: INullableHashMap<ICacheItem<ITwitchGame>> = Object.create(null);
+	private readonly metadataStore: INullableHashMap<ICacheItem<ITwitchMetadata>> = Object.create(null);
+	private readonly usersStore: INullableHashMap<ICacheItem<ITwitchUser>> = Object.create(null);
+	private readonly currentPayloadsStore: INullableHashMap<ICacheItem<ITwitchNewPluginPayload>> = Object.create(null);
 	private lastFetchedAt: number = Date.now();
 
 	public async createPayloads(uids: string[]): Promise<INullableHashMap<ITwitchNewPluginPayload>> {
@@ -870,8 +870,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	// #region Webhooks Stuff
 
-	private _registeredHooks: INullableHashMap<IRegisteredWebhook> = Object.create(null);
-	private _hooksIDs: INullableHashMap<string> = Object.create(null);
+	private readonly _registeredHooks: INullableHashMap<IRegisteredWebhook> = Object.create(null);
+	private readonly _hooksIDs: INullableHashMap<string> = Object.create(null);
 	private _allowWebhooks = false;
 
 	private initWebhooksServer() {
@@ -1268,7 +1268,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 	}
 
-	private _scheduledRenews: IHashMap<NodeJS.Timer | undefined> = Object.create(null);
+	private readonly _scheduledRenews: IHashMap<NodeJS.Timer | undefined> = Object.create(null);
 
 	private _scheduleWebhookRenew(hook: IRegisteredWebhook, leaseMs: number) {
 		this._scheduledRenews[hook.uid] = setTimeout(() => this.registerWebhook(hook.uid), leaseMs);

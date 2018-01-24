@@ -153,7 +153,7 @@ export interface IEventsMap <T> {
 }
 
 export class Plugin {
-	private _eventsMap:IEventsMap<any>;
+	private readonly _eventsMap:IEventsMap<any>;
 
 	constructor(events: IEventsMap<any>, dontAutoHandle = false) {
 		this._eventsMap = events;

@@ -27,9 +27,9 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 
 	private prefixAllKeeper: ModuleBase<PrefixAll>;
 	private whitelistKeeper: ModuleBase<Whitelist>;
-	private log = getLogger("PrefixAllPlugin");
-	private allowNoWhitelistHandling = false;
-	private limitations: IPrefixAllPluginLimitations;
+	private readonly log = getLogger("PrefixAllPlugin");
+	private readonly allowNoWhitelistHandling: boolean;
+	private readonly limitations: IPrefixAllPluginLimitations;
 
 	constructor(options: IPrefixAllPluginOptions) {
 		super({

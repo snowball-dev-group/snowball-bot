@@ -68,10 +68,10 @@ class ModToolsArchive extends Plugin implements IModule {
 		return "snowball.modtools.archive";
 	}
 
-	private _log = getLogger("ModTools:Archive");
-	private _options: IModToolsArchiveOptions;
+	private readonly _log = getLogger("ModTools:Archive");
+	private readonly _options: IModToolsArchiveOptions;
 	private _controller: ArchiveDBController;
-	private _enabledAt: IHashMap<boolean> = Object.create(null);
+	private readonly _enabledAt: IHashMap<boolean> = Object.create(null);
 
 	constructor(options: IModToolsArchiveOptions) {
 		super({

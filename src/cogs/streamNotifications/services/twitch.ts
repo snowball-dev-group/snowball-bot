@@ -27,9 +27,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public name = "twitch";
 
-	private log = getLogger("TwitchStreamingService");
+	private readonly log = getLogger("TwitchStreamingService");
 
-	private options: IServiceOptions;
+	private readonly options: IServiceOptions;
 
 	constructor(options: string | IServiceOptions) {
 		super();
@@ -43,7 +43,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	//            Subscriptions
 	// ========================================
 
-	private subscriptions: IStreamingServiceStreamer[] = [];
+	private readonly subscriptions: IStreamingServiceStreamer[] = [];
 
 	public addSubscription(streamer: IStreamingServiceStreamer) {
 		if(this.isSubscribed(streamer.uid)) {
@@ -108,7 +108,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	//                Fetching
 	// ========================================
 
-	private streamsMap: IHashMap<ICacheItem> = Object.create(null);
+	private readonly streamsMap: IHashMap<ICacheItem> = Object.create(null);
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
 		if(streamers.length > 0) {

@@ -20,7 +20,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		return "snowball.features.profile.plugins.tatsumaki";
 	}
 
-	private config: ITatsumakiPluginConfig;
+	private readonly config: ITatsumakiPluginConfig;
 
 	constructor(config: ITatsumakiPluginConfig) {
 		if(!config) {

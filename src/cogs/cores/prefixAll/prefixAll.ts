@@ -20,11 +20,11 @@ export default class PrefixAll implements IModule {
 		return this._defaultPrefix;
 	}
 
-	private _prefixesCache: INullableHashMap<string[]> = Object.create(null);
-	private _messagesCache: INullableHashMap<ICachedCheck> = Object.create(null);
-	private _dbController: PrefixAllDBController = new PrefixAllDBController();
-	private _defaultPrefix: string;
-	private _messagesCacheDestructionTime: number;
+	private readonly _prefixesCache: INullableHashMap<string[]> = Object.create(null);
+	private readonly _messagesCache: INullableHashMap<ICachedCheck> = Object.create(null);
+	private readonly _dbController: PrefixAllDBController = new PrefixAllDBController();
+	private readonly _defaultPrefix: string;
+	private readonly _messagesCacheDestructionTime: number;
 
 	constructor(options?: IPrefixAllOptions) {
 		if(coreInitialized) {

@@ -12,10 +12,10 @@ const DEFAULT_TALBENAME = "prefixes";
 let totalInstances = 0;
 
 export class PrefixAllDBController {
-	private _tableName: string;
-	private _db = getDB();
+	private readonly _tableName: string;
+	private readonly _db = getDB();
 	private _initComplete = false;
-	private _log = getLogger(`PrefixAllDBController:${++totalInstances}`);
+	private readonly _log = getLogger(`PrefixAllDBController:${++totalInstances}`);
 
 	constructor(tableName: string = DEFAULT_TALBENAME) {
 		this._tableName = tableName;
