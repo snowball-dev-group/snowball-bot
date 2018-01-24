@@ -1,6 +1,6 @@
 {
     "rules": {
-        "no-unused-expression": true,
+        "no-unused-expression": [true, "allow-fast-null-checks"],
         "no-duplicate-variable": true,
         "no-unused-variable": [true, {}],
         "curly": true,
@@ -40,7 +40,9 @@
         "no-regex-spaces": true,
         "brace-style": [ true, "1tbs", { "allowSingleLine": true } ],
         "ter-prefer-arrow-callback": true,
-        "object-curly-spacing": true
+        "object-curly-spacing": true,
+        "prefer-readonly": true,
+        "no-this-assignment": true
     },
     "jsRules": {
         "no-unused-new": true,
