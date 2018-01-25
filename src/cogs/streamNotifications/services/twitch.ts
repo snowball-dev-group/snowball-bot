@@ -208,8 +208,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	//                 Discord
 	// ========================================
 
-	public async getEmbed(streamStatus: IStreamStatus, lang: string): Promise<IEmbed> {
-		const stream = streamStatus.payload as ITwitchStream;
+	public async getEmbed(status: IStreamStatus, lang: string): Promise<IEmbed> {
+		const stream = status.payload as ITwitchStream;
 		if(!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
 		const gameName = stream.game ? stream.game : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
 		return {
@@ -217,7 +217,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				icon_url: TWITCH_ICON,
 				text: "Twitch"
 			},
-			description: $localizer.getFormattedString(lang, streamStatus.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
+			description: $localizer.getFormattedString(lang, status.status === "online" ? "STREAMING_DESCRIPTION_TWITCH" : "STREAMING_DESCRIPTION_OFFLINE", {
 				username: escapeDiscordMarkdown(stream.channel.display_name || stream.channel.name, true),
 				type: stream.stream_type
 			}),
@@ -236,7 +236,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			url: stream.channel.url,
 			color: TWITCH_COLOR,
 			image: {
-				url: streamStatus.status === "online" ? `${stream.preview.template.replace("{width}", "1280").replace("{height}", "720")}?ts=${Date.now()}` : ( stream.channel.video_banner || TWITCH_OFFLINE_BANNER )
+				url: status.status === "online" ? `${stream.preview.template.replace("{width}", "1280").replace("{height}", "720")}?ts=${Date.now()}` : (
+					stream.channel.video_banner || TWITCH_OFFLINE_BANNER
+				)
 			},
 			fields: [{
 				inline: gameName.length < 25,
