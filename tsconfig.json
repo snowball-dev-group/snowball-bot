@@ -1,9 +1,7 @@
 {
 	"compilerOptions": {
 		"target": "es2017",
-		"lib": [
-			"es2017"
-		],
+		"lib": [ "es2017" ],
 		"outDir": "out",
 		"module": "commonjs",
 		"strictNullChecks": true,
