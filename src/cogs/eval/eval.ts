@@ -95,7 +95,7 @@ class EvalJS extends Plugin implements IModule {
 				process: undefined // should not have access to process thread
 			});
 
-			const isPromise = output.constructor.name === "Promise";
+			const isPromise = output && output.constructor && output.constructor.name === "Promise";
 
 			if(isPromise) {
 				await this._outputEdit(resultMsg, user, startTime, output, "Waiting", EmbedType.Progress);
@@ -132,15 +132,13 @@ class EvalJS extends Plugin implements IModule {
 					}],
 					universalTitle: text
 				})
-			}, );
+			});
 		} catch(err) {
 			await resultMsg.edit(undefined, {
 				embed: await generateLocalizedEmbed(EmbedType.Error, member, {
 					custom: true,
 					string: "Can't send result, it's longer than 2000 chars"
-				}, {
-						errorTitle: "There's an error"
-					})
+				}, { errorTitle: "There's an error" })
 			});
 			return;
 		}
