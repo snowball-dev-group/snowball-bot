@@ -115,6 +115,8 @@ class EvalJS extends Plugin implements IModule {
 
 					this._outputEdit(resultMsg, user, totalExecutionTime, resolvedValue, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE"), EmbedType.OK, i18nTarget);
 				} catch(err) {
+					totalExecutionTime += Date.now() - startTime;
+
 					this._outputEdit(resultMsg, user, totalExecutionTime, err, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE_ERR"), EmbedType.Warning, i18nTarget);
 				}
 			} else {
