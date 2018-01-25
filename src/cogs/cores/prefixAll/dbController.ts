@@ -40,8 +40,8 @@ export class PrefixAllDBController {
 
 	/**
 	 * Gets prefixes of selected guild
-	 * @param {Guild|string} guild Selected guild. ID or the discord.js' Guild object
-	 * @returns {string[]|null} Prefixes of the selected guild or, if not found, null
+	 * @param guild Selected guild. ID or the discord.js' Guild object
+	 * @returns Prefixes of the selected guild or, if not found, null
 	 */
 	public async getPrefixes(guild: Guild | string): Promise<string[] | null> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
@@ -52,8 +52,8 @@ export class PrefixAllDBController {
 
 	/**
 	 * Tries to get prefixes of the selected guild and if fails, creates new row with passed prefixes. Otherwise, if successed, modifies the current row and pushes edit to database.
-	 * @param {Guild|string} guild Selected guild. ID or the discord.js' Guild object
-	 * @param {string[]} prefixes Prefixes for the selected guild.
+	 * @param guild Selected guild. ID or the discord.js' Guild object
+	 * @param prefixes Prefixes for the selected guild.
 	 */
 	public async setPrefixes(guild: Guild | string, prefixes: string[] | null) : Promise<void> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }

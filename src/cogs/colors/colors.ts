@@ -1179,7 +1179,6 @@ class Colors extends Plugin implements IModule {
 
 	/**
 	 * Get guild's colorful information
-	 * @param guildId
 	 */
 	async getInfo(guildId: string | Guild, deep: boolean = false): Promise<IColorfulGuildInfo> {
 		if(typeof guildId !== "string") {

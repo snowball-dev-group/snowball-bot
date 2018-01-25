@@ -353,7 +353,6 @@ export class SnowballBot extends EventEmitter {
 
 	/**
 	 * Connect to Discord
-	 * @returns {Promise}
 	 */
 	public async login() {
 		this._log("info", "Connecting to Discord...");

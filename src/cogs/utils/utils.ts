@@ -435,9 +435,9 @@ const USER_MENTION_SNOWFLAKE = /^\<\@\!?([0-9]{16,20})\>$/;
 
 /**
  * It's not actually that safe, just returns undefined on error
- * @param {Guild} guild Guild from where member comes
- * @param {string} id ID of member
- * @param {function} errCallback Callback to call on error
+ * @param guild Guild from where member comes
+ * @param id ID of member
+ * @param errCallback Callback to call on error
  */
 export async function safeMemberFetch(guild: Guild, id: string, errCallback?: (err) => void) {
 	try {

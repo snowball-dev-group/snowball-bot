@@ -31,11 +31,11 @@ interface IPushResults<T> {
 
 /**
  * **Stores value for some time by special key.**
- * Special key is generated based on owner and key. By default we strip many special characters, this can result an empty string (we check for it), so be smart picking the key and owner names :)
- * @param {string} owner **Cache owner identifier**
- * @param {string} key **Key which will be used next to the owner**, so this owner could have multiple valeus store.
- * @param value **Value to store in the database**. For JS objects `JSON.stringify` will be used, be aware
- * @param {number} ttl **Time for what cache lives** in the Redis DB (seconds)
+ * Special key is generated based on owner and key. By default we strip many special characters, this can result an empty string (we check for it and will throw an error if this happens), so be smart picking the key and owner names :)
+ * @param owner __Cache owner identifier__
+ * @param key __Key which will be used next to the owner__, so this owner could have multiple valeus store.
+ * @param value __Value to store in the database__. For JS objects `JSON.stringify` will be used, be aware
+ * @param ttl __Time for what cache lives__ in the Redis DB (seconds)
  */
 export async function storeValue<T>(owner: string, key: string, value: AllowedTypes|AllowedTypes[], ttl = DEFAULT_TTL) : Promise<IPushResults<T>> {
 	const redisClient = await getRedisClient();
@@ -100,7 +100,7 @@ export async function getArray<T>(owner: string, key: string, jsonParse: boolean
 	const builtKey = buildCacheKey(owner, key);
 	let res = <any[]>await redisClient.lrange(builtKey, 0, -1);
 
-	if(!!jsonParse) {
+	if(jsonParse) {
 		if(Array.isArray(jsonParse)) {
 			res = parseByIndexes<T>(res, jsonParse);
 		} else {

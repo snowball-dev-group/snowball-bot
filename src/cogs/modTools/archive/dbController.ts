@@ -49,7 +49,7 @@ export class ArchiveDBController {
 
 	/**
 	 * Inserts IDBMessage into the table
-	 * @param msg {IDBMessage} Message to insert into the database
+	 * @param msg Message to insert into the database
 	 */
 	public async insertMessage(msg: IDBMessage): Promise<IDBMessage> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
@@ -58,11 +58,11 @@ export class ArchiveDBController {
 
 	/**
 	 * Searches for selected messages by passed filter
-	 * @param filter {IDBSearchFilter} The search filter. Must contain at least one selector
-	 * @param filter.guildId {string|string[]} Selector by Guild ID(s)
-	 * @param filter.userId {string|string[]} Selector by User ID(s)
-	 * @param filter.channelId {string|string[]} Selector by Channel ID(s)
-	 * @param filter.messageId {string|string[]} Selector by Message ID(s)
+	 * @param filter The search filter. Must contain at least one selector
+	 * @param filter.guildId Selector by Guild ID(s)
+	 * @param filter.userId Selector by User ID(s)
+	 * @param filter.channelId Selector by Channel ID(s)
+	 * @param filter.messageId Selector by Message ID(s)
 	 */
 	public async search(filter: IDBSearchFilter, limit = 50, offset = 0): Promise<IDBMessage[]> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
@@ -96,7 +96,7 @@ export class ArchiveDBController {
 
 	/**
 	 * Gets first message selected by specified ID as is
-	 * @param messageId {string} Discord Message ID
+	 * @param messageId Discord Message ID
 	 */
 	public async getMessage(messageId: string): Promise<IDBMessage> {
 		return this._db(this._tableName).first("*").where("messageId", messageId);

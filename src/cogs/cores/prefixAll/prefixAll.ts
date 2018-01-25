@@ -93,7 +93,7 @@ export default class PrefixAll implements IModule {
 
 	/**
 	 * Checks if message starts with guild's prefixes
-	 * @param {Message} message Message to check
+	 * @param message Message to check
 	 */
 	public async checkPrefix(message: Message) {
 		const cached = this._messagesCache[message.id];

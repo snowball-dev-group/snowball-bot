@@ -33,7 +33,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 		super();
 		try {
 			this.ca = new Carina({
-				isBot: true,
+				isBot: !!apiKey ? false : true,
 				authToken: apiKey,
 				autoReconnect: true
 			}).on("error", (err) => {

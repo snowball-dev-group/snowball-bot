@@ -124,7 +124,7 @@ export class ModuleBase<T> extends EventEmitter {
 
 	/**
 	 * Function to load module
-	 * @returns {Promise<ModuleBase>} Promise which'll be resolved with this module's base once module is loaded
+	 * @returns Promise which'll be resolved with this module's base once module is loaded
 	 */
 	public async load() {
 		if(this.state !== ModuleLoadState.Ready && this.state !== ModuleLoadState.Unloaded && this.state !== ModuleLoadState.Destroyed) {
@@ -175,7 +175,7 @@ export class ModuleBase<T> extends EventEmitter {
 	 * Function to unload or complete destroy module if it has no unload method
 	 * Very important to keep unload function in your module, else unloading can cause exceptions at running
 	 * @param reason Reason of unloading which'll be transmitted to module. By default "unload"
-	 * @returns {Promise<ModuleBase>} Promise which'll be resolved with this module's base once module is unloaded or destroyed
+	 * @returns Promise which'll be resolved with this module's base once module is unloaded or destroyed
 	 */
 	public async unload(reason: any = "unload") {
 		if(this.state !== ModuleLoadState.Initialized) { throw new Error("Module is not loaded"); }
@@ -229,7 +229,6 @@ export class ModuleBase<T> extends EventEmitter {
 	 * Shortcut for checking if module already initialized or you need to wait for it.
 	 * If module already initialized, then immediately calls the callback.
 	 * Otherwise subscribes you to the `initialized` event
-	 * @param callback 
 	 */
 	public onInit(callback: (base: T) => void) {
 		if(this.state === ModuleLoadState.Initialized && this.base) {
@@ -243,7 +242,7 @@ export class ModuleBase<T> extends EventEmitter {
 	 * Clears require cache for this module.
 	 * Useful while reloading module:
 	 *   In this case module file will be read from disk
-	 * @returns {ModuleBase} This module's base
+	 * @returns This module's base
 	 */
 	public clearRequireCache() {
 		if(require.cache[this.info.path]) {
@@ -293,7 +292,7 @@ export class ModuleLoader {
 
 	/**
 	 * Add new module to registry
-	 * @param {IModuleInfo} info Information about module
+	 * @param info Information about module
 	 */
 	public register(info: IModuleInfo) {
 		this.registry[info.name] = info;
@@ -302,9 +301,9 @@ export class ModuleLoader {
 
 	/**
 	 * Load module by this name in registry
-	 * @param {string|string[]} name Name(s) in registry
-	 * @param {boolean} clearRequireCache Require cache cleaning. `true` if `require` cache needed to be cleared before load
-	 * @returns {Promise} Promise which'll be resolved once module is loaded
+	 * @param name Name(s) in registry
+	 * @param clearRequireCache Require cache cleaning. `true` if `require` cache needed to be cleared before load
+	 * @returns Promise which'll be resolved once module is loaded
 	 */
 	public async load(name: string | string[], clearRequireCache = false) {
 		if(Array.isArray(name)) {
@@ -389,11 +388,11 @@ export class ModuleLoader {
 
 	/**
 	 * Unload module by this name in currently loaded modules registry
-	 * @param {string|string[]} name Name(s) of loaded module(s)
-	 * @param {string} reason Reason to unload module
-	 * @param {boolean} skipCallingUnload `true` if module should be unloaded without calling for unload method. Don't use it unless you know that module doesn't handles any events or doesn't has dynamic variables
-	 * @param {boolean} clearRequireCache `true` if `require` cache of this module file needed to cleared after unload. This works only if `skipCallingUnload` is `false`!
-	 * @returns {Promise} Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
+	 * @param name Name(s) of loaded module(s)
+	 * @param reason Reason to unload module
+	 * @param skipCallingUnload `true` if module should be unloaded without calling for unload method. Don't use it unless you know that module doesn't handles any events or doesn't has dynamic variables
+	 * @param clearRequireCache `true` if `require` cache of this module file needed to cleared after unload. This works only if `skipCallingUnload` is `false`!
+	 * @returns Promise which'll be resolved once module is unloaded and removed from modules with loaded registry
 	 */
 	public async unload(name: string | string[], reason: string = "manual", skipCallingUnload: boolean = false, clearRequireCache = false) {
 		if(Array.isArray(name)) {
@@ -439,7 +438,7 @@ export class ModuleLoader {
 	/**
 	 * Loads modules from registry with `require` cache clearing
 	 * By default loads only set passed as `defaultSet`
-	 * @param {boolean} forceAll Use `true` to force load ALL modules in registry
+	 * @param forceAll Use `true` to force load ALL modules in registry
 	 */
 	public async loadModules(forceAll = false) {
 		let toLoad: string[] = [];
@@ -501,7 +500,7 @@ export class ModuleLoader {
 
 /**
 * Convert modules object to Map object
-* @param obj {Array} Array of module info entries
+* @param obj Array of module info entries
 */
 export function convertToModulesMap(obj: IModuleInfo[]) {
 	const modulesMap: INullableHashMap<IModuleInfo> = Object.create(null);

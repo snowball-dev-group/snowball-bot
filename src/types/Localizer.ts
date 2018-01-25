@@ -156,8 +156,8 @@ export class Localizer {
 
 	/**
 	 * Checks converage of default language by selected language's dictionary
-	 * @param langFile {object} Dictionary of strings
-	 * @param defaultLanguage {object} Default language
+	 * @param langFile Dictionary of strings
+	 * @param defaultLanguage Default language
 	 */
 	private async testCoverage(langFile: IStringsMap, defaultLanguage = this._langMaps[this._opts.source_language] as IStringsMap) {
 		let unique = 0;
@@ -192,9 +192,9 @@ export class Localizer {
 
 	/**
 	 * Returns string from dictionary of translated strings of selected language
-	 * @param preferedLang {string} Language to get string from
-	 * @param key {string} Key in language dictionary
-	 * @param fallback {boolean} true if should try to find the fallback string in default and source languages
+	 * @param preferedLang Language to get string from
+	 * @param key Key in language dictionary
+	 * @param fallback true if should try to find the fallback string in default and source languages
 	 */
 	public getString(preferedLang: string = this._opts.source_language, key: string, fallback: boolean = true) : string {
 		const queue = fallback ? [preferedLang].concat(this._fallbackQueue) : [preferedLang];
@@ -211,10 +211,10 @@ export class Localizer {
 
 	/**
 	 * Returns formatted string in selected language using ICU formatting
-	 * @param lang {string} Language to get string from
-	 * @param key {string} Key in language translations
-	 * @param variables {object} Variables for selected key and futher formatting
-	 * @param fallback {boolean} true if should use string from default language as fallback
+	 * @param lang Language to get string from
+	 * @param key Key in language translations
+	 * @param variables Variables for selected key and futher formatting
+	 * @param fallback true if should use string from default language as fallback
 	 */
 	public getFormattedString(lang: string = this.sourceLanguage, key: string, variables: IFormatMessageVariables, fallback: boolean = true) {
 		const str = this.getString(lang, key, fallback);
@@ -223,9 +223,9 @@ export class Localizer {
 
 	/**
 	 * Returns humanized string for time in selected unit
-	 * @param lang {string} Which language's Humanizer to use
-	 * @param time {number} Time to humanize
-	 * @param unit {string} Unit of time
+	 * @param lang Which language's Humanizer to use
+	 * @param time Time to humanize
+	 * @param unit Unit of time
 	 */
 	public humanizeDuration(lang: string = this.sourceLanguage, time: number, unit: HumanizerUnitToConvert = "ms", options?: IHumanizerOptionsOverrides) {
 		const humanizer = this._humanizersMap[lang];
@@ -249,8 +249,8 @@ export class Localizer {
 
 	/**
 	 * Creates custom humanizer with choosen overrides
-	 * @param lang {string} Language to use in Humanizer
-	 * @param overrides {object} Custom language overrides for Humanizer
+	 * @param lang Language to use in Humanizer
+	 * @param overrides Custom language overrides for Humanizer
 	 */
 	public createCustomHumanizer(lang: string = this.sourceLanguage, languageOverride?: {
 		// it's overrides, so we gonna create anotha inline-interface?

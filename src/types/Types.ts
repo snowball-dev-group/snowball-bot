@@ -24,7 +24,7 @@ export interface ISnowballIPCMessage<T> {
 /**
  * Creates empty hashmap or from object (only own properies).
  * The main difference that it uses `Object.create(null)` to create an actual map, it doesn't has a prototype, so your map will not return anything by `toString` or something.
- * @param entries 
+ * @param entries Entries of the hashmap
  */
 export function createHashMap<T>(entries?: Array<[string, T]> | IHashMap<T>) : IHashMap<T> {
 	const hashMap = Object.create(null);

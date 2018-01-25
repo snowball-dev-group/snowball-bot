@@ -131,7 +131,7 @@ export function isInitDone() {
 
 /**
  * Returns a value that indicates member corresponds to server verification level
- * @param member {GuildMember} Member of guild
+ * @param member Member of guild
  */
 export async function isVerified(member: GuildMember) {
 	if(!initDone) {

@@ -101,9 +101,9 @@ export default class MessagesFlows implements IModule {
 
 	/**
 	 * Watches for any new messages and once some message arrives follows (or not if desired) the flow of checks and calls
-	 * @param {Handler} handler Command handler
-	 * @param {CheckArgument} check Command checking function
-	 * @param {IWatcherCreationOptions} options Options for watcher
+	 * @param handler Command handler
+	 * @param check Command checking function
+	 * @param options Options for watcher
 	 */
 	public watchForMessages(handler: Handler, check: CheckArgument|string|string[], options: IWatcherCreationOptions = {
 		followsTheFlow: true,
