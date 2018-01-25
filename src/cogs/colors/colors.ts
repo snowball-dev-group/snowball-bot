@@ -163,7 +163,7 @@ class Colors extends Plugin implements IModule {
 				default: return await this.assignColor(msg, args);
 			}
 		} catch(err) {
-			this.log("err", "Error due running command `", msg.content + "`:", err);
+			this.log("err", `Error due running command \`${msg.content}\``, err);
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_RUNNINGFAILED")
 			});
@@ -400,7 +400,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(!!colorfulInfo.rolePrefixes[args[0]]) {
+		if(colorfulInfo.rolePrefixes[args[0]]) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ALREADYEXISTS")
 			});
@@ -463,11 +463,11 @@ class Colors extends Plugin implements IModule {
 
 		// Вы собираетесь добавить цвет {colorName}, роль которого - `{colorRoleName}` ({colorHEX}, цвет показан справа)
 
-		let _confirmationString = (await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION", {
+		let _confirmationString = `${(await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION", {
 			colorName: namedArgs.name,
 			colorRoleName: colorRole.name,
 			colorHEX: colorRole.hexColor.toUpperCase()
-		})) + ".\n";
+		}))}.\n`;
 
 		if(requiredRoles) {
 			if(requiredRoles instanceof Role) {
@@ -486,7 +486,7 @@ class Colors extends Plugin implements IModule {
 			}
 		}
 
-		_confirmationString += "\n\n" + (await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_RIGHTSWARNING"));
+		_confirmationString += `"\n\n${await localizeForUser(msg.member, "COLORS_ADD_CONFIRMATION_RIGHTSWARNING")}`;
 
 		const _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			custom: true,
@@ -527,7 +527,7 @@ class Colors extends Plugin implements IModule {
 		// re-request colorful info, because it can be changed
 		colorfulInfo = await this.getInfo(msg.guild);
 
-		if(!!colorfulInfo.rolePrefixes[namedArgs.name]) {
+		if(colorfulInfo.rolePrefixes[namedArgs.name]) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_ALREADYEXISTS")
 			});
@@ -535,7 +535,7 @@ class Colors extends Plugin implements IModule {
 		}
 
 		colorfulInfo.rolePrefixes[namedArgs.name] = {
-			required_role: !!requiredRoles ? requiredRoles instanceof Array ? requiredRoles.map(r => r.id) : requiredRoles.id : undefined,
+			required_role: requiredRoles ? requiredRoles instanceof Array ? requiredRoles.map(r => r.id) : requiredRoles.id : undefined,
 			role: namedArgs.role
 		};
 
@@ -629,7 +629,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(!!colorfulInfo.rolePrefixes[args[1]]) {
+		if(colorfulInfo.rolePrefixes[args[1]]) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					key: "COLORS_RENAME_CONFIRMATIONWAITBINDED",
@@ -853,57 +853,51 @@ class Colors extends Plugin implements IModule {
 			str += `**${escapeDiscordMarkdown(name)}**\n`;
 			if(colorInfo.required_role) {
 				if(colorInfo.required_role instanceof Array) {
-					str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLES")) + "\n";
+					str += `  ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLES")}\n`;
 					const foundOne = !!colorInfo.required_role.find(roleId => msg.guild.roles.has(roleId));
 					let notFoundOne = false;
-					str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLESSEARCH")) + "\n";
+					str += `    ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLESSEARCH")}\n`;
 					for(const roleId of colorInfo.required_role) {
 						const role = msg.guild.roles.get(roleId);
 						if(!role) {
 							if(!notFoundOne) { notFoundOne = true; }
-							str += "      " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLENOTFOUND", {
+							str += `      ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLENOTFOUND", {
 								roleId: roleId
-							}));
+							})}\n`;
 						} else {
-							str += "      " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEROW", {
+							str += `      ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEROW", {
 								roleName: role.name,
 								roleId: role.id
-							})) + "\n";
+							})}\n`;
 						}
 					}
-					if(!foundOne) {
-						str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_BAD_HEALTH"));
-					} else if(notFoundOne) {
-						str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_MED_HEALTH"));
-					} else {
-						str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_GOOD_HEALTH"));
-					}
+					str += `    ${await localizeForUser(msg.member, foundOne ? "COLORS_DIAG_REPORT_BAD_HEALTH" : notFoundOne ? "COLORS_DIAG_REPORT_MED_HEALTH" : "COLORS_DIAG_REPORT_GOOD_HEALTH")}`;
 					str += "\n";
 				} else {
-					str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLE", {
+					str += `  ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIRESROLE", {
 						roleId: colorInfo.required_role
-					})) + "\n";
+					})}\n`;
 					const role = msg.guild.roles.get(colorInfo.required_role);
 					if(!role) {
-						str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEDELETED"));
+						str += `    ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEDELETED")}`;
 					} else {
-						str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEFOUND", {
+						str += `    ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_REQUIREDROLEFOUND", {
 							roleName: role.name
-						}));
+						})}`;
 					}
 					str += "\n";
 				}
 			}
-			str += "  " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLE", {
+			str += `  ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLE", {
 				roleId: colorInfo.role
-			})) + "\n";
+			})}\n`;
 			const role = msg.guild.roles.get(colorInfo.role);
 			if(!role) {
-				str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEDELETED"));
+				str += `    ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEDELETED")}`;
 			} else {
-				str += "    " + (await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEFOUND", {
+				str += `    ${await localizeForUser(msg.member, "COLORS_DIAG_REPORT_ROLEFOUND", {
 					roleName: role.name
-				}));
+				})}`;
 			}
 			str += "\n";
 		}
@@ -1051,7 +1045,7 @@ class Colors extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 					custom: true,
-					string: (await localizeForUser(msg.member, "COLORS_RANDOM_SETRANDOM")) + "\n\n" + (await localizeForUser(msg.member, "COLORS_RANDOM_SET_WARN"))
+					string: `${await localizeForUser(msg.member, "COLORS_RANDOM_SETRANDOM")}\n\n${await localizeForUser(msg.member, "COLORS_RANDOM_SET_WARN")}`
 				})
 			});
 		} else if(args[0] === "set") {
@@ -1086,7 +1080,7 @@ class Colors extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
 					custom: true,
-					string: await localizeForUser(msg.member, "COLORS_RANDOM_SET") + "\n\n" + (await localizeForUser(msg.member, "COLORS_RANDOM_SET_WARN"))
+					string: `${await localizeForUser(msg.member, "COLORS_RANDOM_SET")}\n\n${await localizeForUser(msg.member, "COLORS_RANDOM_SET_WARN")}`
 				})
 			});
 		} else {

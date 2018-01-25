@@ -20,7 +20,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 	}
 
 	async setup(str: string, member: GuildMember, msg: Message) {
-		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING"), prevStatus = status;
+		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
 		let statusMsg = await msg.channel.send("", {
 			embed: generateEmbed(EmbedType.Progress, status)
@@ -28,9 +28,8 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 
 		const postStatus = async () => {
 			statusMsg = await statusMsg.edit("", {
-				embed: generateEmbed(EmbedType.Progress, prevStatus + "\n" + status)
+				embed: generateEmbed(EmbedType.Progress, `${statusMsg.content}\n${status}`)
 			});
-			prevStatus = statusMsg.content;
 		};
 
 		const args = str.split(";").map(arg => arg.trim());

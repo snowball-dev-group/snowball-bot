@@ -88,12 +88,12 @@ class ModToolsArchive extends Plugin implements IModule {
 	async onMessage(msg: Message) {
 		if(this._options.bots !== undefined && !this._options.bots && msg.author.bot) { return; }
 
-		if(!!this._options.banned) {
-			if(!!this._options.banned.authors && this._options.banned.authors.includes(msg.author.id)) {
+		if(this._options.banned) {
+			if(this._options.banned.authors && this._options.banned.authors.includes(msg.author.id)) {
 				return;
-			} else if(!!this._options.banned.channels && this._options.banned.channels.includes(msg.channel.id)) {
+			} else if(this._options.banned.channels && this._options.banned.channels.includes(msg.channel.id)) {
 				return;
-			} else if(!!this._options.banned.guilds && !!msg.guild && this._options.banned.guilds.includes(msg.guild.id)) {
+			} else if(this._options.banned.guilds && !!msg.guild && this._options.banned.guilds.includes(msg.guild.id)) {
 				return;
 			}
 		}
@@ -219,10 +219,10 @@ class ModToolsArchive extends Plugin implements IModule {
 							value: await (async () => {
 								let str = "";
 								for(const attachment of other.attachments) {
-									str += (await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE", {
+									str += `${await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE", {
 										link: attachment.file.url,
 										fileName: attachment.file.name
-									})) + "\n";
+									})}\n`;
 								}
 								return str;
 							})()

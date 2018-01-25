@@ -1422,9 +1422,9 @@ class StreamNotifications extends Plugin implements IModule {
 			const escapedUsername = escapeDiscordMarkdown(subscription.username, true);
 			try {
 				const msg = (await channel.send(shouldMentionEveryone ?
-					"@everyone " + $localizer.getFormattedString(embedLanguage, LOCALIZED("NOTIFICATION_EVERYONE"), {
+					`@everyone ${$localizer.getFormattedString(embedLanguage, LOCALIZED("NOTIFICATION_EVERYONE"), {
 						username: escapedUsername
-					}) : (
+					})}` : (
 						isUser ? $localizer.getFormattedString(embedLanguage, LOCALIZED("NOTIFICATION_DM_STARTED"), {
 							username: escapedUsername,
 							notice: $localizer.getFormattedString(embedLanguage, LOCALIZED("NOTIFICATION_DM_NOTICE"), {

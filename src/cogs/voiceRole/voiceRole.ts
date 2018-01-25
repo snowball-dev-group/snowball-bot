@@ -498,12 +498,8 @@ class VoiceRole extends Plugin implements IModule {
 
 		const subCommand = msg.content.slice(PREFIX.length + 1);
 		if(subCommand === "" || subCommand === "help") {
-			msg.channel.send((
-				await localizeForUser(msg.member,
-					"VOICEROLE_SETTING_HELP_TITLE")) +
-				"\n" + (await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP")) +
-				"\n" + (await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_SPECIFIC")
-				));
+			msg.channel.send(`${await localizeForUser(msg.member,
+				"VOICEROLE_SETTING_HELP_TITLE")}\n${await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP")}\n${await localizeForUser(msg.member, "VOICEROLE_SETTING_HELP_SPECIFIC")}`);
 			return;
 		}
 

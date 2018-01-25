@@ -123,7 +123,7 @@ class EvalJS extends Plugin implements IModule {
 			await resultMsg.edit(undefined, {
 				embed: await generateLocalizedEmbed(type, member, {
 					custom: true,
-					string: "```js\n" + outputInsp + "\n```"
+					string: `\`\`\`js\n${outputInsp}\n\`\`\``
 				}, {
 					fields: [{
 						inline: false,

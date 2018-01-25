@@ -286,7 +286,7 @@ class FanServerThings extends Plugin implements IModule {
 			// not going to search channel if none of the subscriber roles is NEW
 			if(newSubRoles.size > 0) {
 				const announceChannel = newMember.guild.channels.find("id", this.options.subAncChannel);
-				if(!!announceChannel) {
+				if(announceChannel) {
 					for(const newSubscriberRole of newSubRoles.keys()) {
 						const texts = this.options.texts.filter(r => r.roleId === newSubscriberRole);
 						if(texts.length === 0) { continue; }
@@ -296,7 +296,7 @@ class FanServerThings extends Plugin implements IModule {
 					}
 				}
 			}
-		} else if(subRole.size === 0 && !!oneSubRole) {
+		} else if(subRole.size === 0 && oneSubRole) {
 			this.log("info", `${newMember.displayName} (ID: ${newMember.id}) - has no subscriber role(s), but has general one, removing`);
 
 			// doesn't has sub role but has onesub role

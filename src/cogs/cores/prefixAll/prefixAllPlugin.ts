@@ -228,7 +228,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					custom: true,
-					string: (await localizeForUser(msg.member, "PREFIXALL_PREFIX_NOTFOUND")) + (star ? ("\n" + await localizeForUser(msg.member, "PREFIXALL_PREFIX_NOTFOUND_6")) : "")
+					string: (await localizeForUser(msg.member, "PREFIXALL_PREFIX_NOTFOUND")) + (star ? (`\n${await localizeForUser(msg.member, "PREFIXALL_PREFIX_NOTFOUND_6")}`) : "")
 				}, star ? {
 					imageUrl: randomPick(ATTEMPTS_STARS)
 				}: undefined)

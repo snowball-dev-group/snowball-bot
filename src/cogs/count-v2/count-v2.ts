@@ -48,7 +48,7 @@ interface IScoreboardUserUpdateInfo {
 }
 
 const TABLENAME_MAIN = "countv2";
-const TABLENAME_SCOREBOARD = TABLENAME_MAIN + "_scoreboard";
+const TABLENAME_SCOREBOARD = `${TABLENAME_MAIN}_scoreboard`;
 const CHANNELID_MAIN = "302128461600784384";
 const CHANNELID_SCOREBOARD = "302129535913164803";
 const POINTS_GAIN = 2;
@@ -203,7 +203,7 @@ class CountV2 extends Plugin implements IModule {
 				msg.channel.send("✅ Перезапись числа завершена. Теперь введите это число.");
 			} catch(err) {
 				msg.react("❌");
-				msg.channel.send("❌ Ошибка перезаписи числа: `" + err.message + "`.");
+				msg.channel.send(`❌ Ошибка перезаписи числа: \`${err.message}\`.`);
 				this.log("err", "Can't insert new number into database", err);
 			}
 			return;
@@ -317,7 +317,7 @@ class CountV2 extends Plugin implements IModule {
 				}
 
 			}, deadTimer ? 500 : 10000);
-			latestRow.in_queue = Date.now() + "";
+			latestRow.in_queue = `${Date.now()}`;
 		}
 
 		try {
@@ -478,7 +478,7 @@ class CountV2 extends Plugin implements IModule {
 
 			// sorry, sorry... i'm sorry: 
 			// https://hydra-media.cursecdn.com/overwatch.gamepedia.com/e/e4/Mei_-_Sorry%2C_Sorry%2C_I%27m_Sorry_Sorry.mp3
-			const newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} \`${playerUpdate.member.displayName}\`: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : "+" + POINTS_RAISED} | ${playerUpdate.xp} ${playerUpdate.streak !== 0 ? `(**${playerUpdate.addition > 0 ? "+" + playerUpdate.addition : playerUpdate.addition}** - ${playerUpdate.streak > 0 ? "бонус за правильные ответы" : "штраф за неправильные ответы"})` : ""}`;
+			const newLine = `${playerUpdate.operation === XPOperation.Lower ? "🔻" : "🔺"} \`${playerUpdate.member.displayName}\`: ${playerUpdate.operation === XPOperation.Lower ? -Math.abs(POINTS_LOWERED) : `+${POINTS_RAISED}` } | ${playerUpdate.xp} ${playerUpdate.streak !== 0 ? `(**${playerUpdate.addition > 0 ? `+${playerUpdate.addition}` : playerUpdate.addition}** - ${playerUpdate.streak > 0 ? "бонус за правильные ответы" : "штраф за неправильные ответы"})` : ""}`;
 
 			lines.push(newLine);
 

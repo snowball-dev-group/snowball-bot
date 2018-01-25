@@ -91,7 +91,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	}
 
 	async setup(str: string, member: GuildMember, msg: Message) {
-		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING"), prevStatus = status;
+		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
 		let statusMsg = await msg.channel.send("", {
 			embed: generateEmbed(EmbedType.Progress, status)
@@ -99,9 +99,8 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		const postStatus = async () => {
 			statusMsg = await statusMsg.edit("", {
-				embed: generateEmbed(EmbedType.Progress, prevStatus + "\n" + status)
+				embed: generateEmbed(EmbedType.Progress, `${statusMsg.content}\n${status}`)
 			});
-			prevStatus = statusMsg.content;
 		};
 
 		const args = str.split(";").map(arg => arg.trim());
@@ -226,7 +225,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
 			str += `${this.config.emojis.competitive} __**${tStrs.competitive}**__\n`;
-			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")) + "\n";
+			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")}\n`;
 		} else {
 			const compOveral = profile.stats.competitive.overall_stats;
 			str += `${this.getTierEmoji(compOveral.tier)} __**${tStrs.competitive}**__\n`;
@@ -276,7 +275,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		str += `\n${this.config.emojis.quickplay} __**${tStrs.quickplay}**__\n`;
 
 		if(!profile.stats.quickplay) {
-			str += (await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")) + "\n";
+			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")}\n`;
 		} else {
 			const stats: HeroStats = [];
 			const heroesStats = profile.heroes.stats.quickplay;

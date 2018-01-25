@@ -184,7 +184,7 @@ class Profiles extends Plugin implements IModule {
 	// =====================================
 
 	async sendPluginsList(msg: Message) {
-		let str = "# " + await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE");
+		let str = `# ${await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE")}`;
 
 		for(const name in this.pluginsLoader.loadedModulesRegistry) {
 			const plugin = this.pluginsLoader.loadedModulesRegistry[name] as ModuleBase<IProfilesPlugin>;
@@ -344,7 +344,7 @@ class Profiles extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_SETUP_FAILED", {
 						fields: [{
 							name: await localizeForUser(msg.member, "PROFILES_PROFILE_SETUP_FAILED:DETAILS"),
-							value: "\`\`\`js\n" + util.inspect(err) + "\`\`\`"
+							value: `\`\`\`js\n${util.inspect(err)}\`\`\``
 						}]
 					})
 				});
@@ -536,13 +536,13 @@ class Profiles extends Plugin implements IModule {
 
 		if(target.presence.activity && !dbProfile.activity) {
 			if(target.presence.activity.type === "STREAMING") {
-				statusString += this.getUserStatusEmoji("streaming") + " ";
+				statusString += `${this.getUserStatusEmoji("streaming")} `;
 				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_STREAMING", {
 					streamName: escapeDiscordMarkdown(target.presence.activity.name),
 					url: target.presence.activity.url
 				});
 			} else if(target.presence.activity.type === "PLAYING") {
-				statusString += this.getUserStatusEmoji(target) + " ";
+				statusString += `${this.getUserStatusEmoji(target)} `;
 				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_PLAYING", {
 					gameName: escapeDiscordMarkdown(target.presence.activity.name)
 				});
@@ -552,7 +552,7 @@ class Profiles extends Plugin implements IModule {
 
 			statusString += jsonActivity.emoji;
 
-			statusString += " **" + ((text) => (jsonActivity.link ? `[${text}](${jsonActivity.link})` : text))(escapeDiscordMarkdown(jsonActivity.text)) + "**";
+			statusString += ` **${((text) => (jsonActivity.link ? `[${text}](${jsonActivity.link})` : text))(escapeDiscordMarkdown(jsonActivity.text))}**`;
 		} else {
 			statusString += this.getUserStatusEmoji(target);
 			statusString += await this.getUserStatusString(target.presence.status, msg.member);

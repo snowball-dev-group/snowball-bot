@@ -121,7 +121,7 @@ class PremiumControl extends Plugin implements IModule {
 				case "role": return await this.setPremiumRole(msg, args);
 			}
 		} catch(err) {
-			this.log("err", "Error due running command `", msg.content + "`:", err);
+			this.log("err", `Error due running command \`${msg.content}\`:`, err);
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_STARTFAILED")
 			});
@@ -379,9 +379,9 @@ class PremiumControl extends Plugin implements IModule {
 		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 
 		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
-		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
+		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
-		})) + "\n";
+		})}\n`;
 		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
 			validUntil: dtString
 		});
@@ -501,9 +501,9 @@ class PremiumControl extends Plugin implements IModule {
 		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
 
 		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
-		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
+		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
-		})) + "\n";
+		})}\n`;
 		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
 			validUntil: dtString
 		});
@@ -556,12 +556,12 @@ class PremiumControl extends Plugin implements IModule {
 		const durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
 		let msgStr = "";
-		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
+		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
-		})) + "\n";
-		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
+		})}\n`;
+		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
 			validUntil: dtString
-		})) + "\n";
+		})}\n`;
 		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_CHECKOUT_VALIDTIME", {
 			validTime: durString
 		});
@@ -570,11 +570,7 @@ class PremiumControl extends Plugin implements IModule {
 			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 				custom: true,
 				string: msgStr
-			}, {
-					author: {
-						name: subscriber.tag
-					}
-				})
+			}, { author: { name: subscriber.tag } })
 		});
 	}
 
@@ -608,15 +604,15 @@ class PremiumControl extends Plugin implements IModule {
 
 		const sep = "----------------";
 		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n${sep}\n`;
-		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
+		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
-		})) + "\n";
-		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
+		})}\n`;
+		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
 			validUntil: dtString
-		})) + "\n";
-		msgStr += (await localizeForUser(msg.member, "PREMIUMCTL_CHECKOUT_VALIDTIME", {
+		})}\n`;
+		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_CHECKOUT_VALIDTIME", {
 			validTime: durString
-		})) + "\n";
+		})}\n`;
 		msgStr += `${sep}\n`;
 		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_REMOVE_CONFIRMATION");
 
@@ -717,7 +713,7 @@ class PremiumControl extends Plugin implements IModule {
 			// counting
 			if(premiumResponse.source === "db") { fetched++; } else { reused++; }
 
-			if(!!premiumResponse.result && !member.roles.has(guildPremiumRole)) {
+			if(premiumResponse.result && !member.roles.has(guildPremiumRole)) {
 				try {
 					if(!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has no premium role, adding...`); }
 					await member.addRole(premiumRole);

@@ -26,7 +26,7 @@ export function toRegionalIndicators(str: string, stances?: Stances, unknownChar
 			return `${REGIONAL_CHAR}${String.fromCharCode(REGIONAL_SUBCHAR_START + letPos)}`;
 		} else if(numbersConversion && /^[0-9]{1}$/.test(s)) {
 			return convertNumbers(s);
-		} else if(!!unknownCharReplacer) {
+		} else if(unknownCharReplacer) {
 			return unknownCharReplacer(s);
 		}
 		return oS;
@@ -35,11 +35,11 @@ export function toRegionalIndicators(str: string, stances?: Stances, unknownChar
 }
 
 export function convertNumbers(num: string | number, unknownCharReplacer?: (s: string) => string) {
-	let str = num + "";
+	let str = `${num}`;
 	str = str.replace(/([0-9])/ig, (s) => {
 		if(/^[0-9]{1}$/.test(s)) {
 			return `${s}${KEYCAP_SUBCHAR}`;
-		} else if(!!unknownCharReplacer) {
+		} else if(unknownCharReplacer) {
 			return unknownCharReplacer(s);
 		}
 		return s;

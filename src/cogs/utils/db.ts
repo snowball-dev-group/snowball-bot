@@ -46,7 +46,7 @@ function getTypeInfo(type: string) {
 		return "";
 	});
 
-	if(!!(["string", "number"].find(t => type.startsWith(t)))) {
+	if(["string", "number"].find(t => type.startsWith(t))) {
 		type = type.replace(/[0-9]{1,}/, (n) => {
 			if(t.length !== undefined) {
 				throw new Error("Length can be specified once");

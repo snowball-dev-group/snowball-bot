@@ -30,7 +30,7 @@ const SHARD_TIMEOUT = 30000; // ms
 		return process.exit(-1);
 	}
 
-	log = logger(config.name + ":init");
+	log = logger(`${config.name}:init`);
 
 	log("ok", `[Version] Node ${process.version}`);
 	log("ok", `[Version] ${config.name} v${coreInfo.version}`);
@@ -132,7 +132,7 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 
 	const env = {
 		...process.env,
-		"SHARD_ID": shardId + "", "SHARDS_COUNT": shardsCount + ""
+		"SHARD_ID": `${shardId}`, "SHARDS_COUNT": `${shardsCount}`
 	};
 
 	const c = cluster.fork(env).on("online", () => {

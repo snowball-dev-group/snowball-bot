@@ -33,7 +33,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 		super();
 		try {
 			this.ca = new Carina({
-				isBot: !!apiKey ? false : true,
+				isBot: apiKey ? false : true,
 				authToken: apiKey,
 				autoReconnect: true
 			}).on("error", (err) => {
@@ -179,7 +179,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 		const json = (await this.makeRequest(this.getAPIURL_Channel(username))) as IMixerChannel;
 		return {
 			serviceName: this.name,
-			uid: json.id + "",
+			uid: `${json.id}`,
 			username: json.token
 		};
 	}

@@ -60,7 +60,7 @@ class Count extends Plugin implements IModule {
 				await this.dbClient("count").insert({
 					author: msg.author.id,
 					count: mNumber,
-					date: Date.now() + ""
+					date: `${Date.now()}`
 				});
 				return;
 			} else {
@@ -87,9 +87,9 @@ class Count extends Plugin implements IModule {
 
 		try {
 			await this.dbClient("count").insert({
-				author: msg.author.id + "",
+				author: msg.author.id,
 				count: mNumber,
-				date: Date.now() + ""
+				date: `${Date.now()}`
 			});
 		} catch(err) {
 			this.log("err", "Can't push number to DB", err);
@@ -106,7 +106,7 @@ class Count extends Plugin implements IModule {
 
 		try {
 			await (msg.channel as TextChannel).edit({
-				topic: ":v: Последнее число: " + convertNumbers(mNumber)
+				topic: `:v: Последнее число: ${convertNumbers(mNumber)}`
 			});
 		} catch(err) {
 			this.log("err", "Can't change description of channel", err);

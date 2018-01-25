@@ -193,7 +193,7 @@ export class Typer {
             }
 
             // => => Checking if `instanceOf` but `val` is not `instanceof schemaInfo.instanceOf`
-            if(!!schema.instanceOf && !(val instanceof schema.instanceOf)) {
+            if(schema.instanceOf && !(val instanceof schema.instanceOf)) {
                 throw new TyperError("Invalid instance of object", path, {
                     expectedInstance: schema.instanceOf,
                     actualInstance: val.constructor,

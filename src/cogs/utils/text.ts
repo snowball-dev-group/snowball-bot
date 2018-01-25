@@ -69,7 +69,7 @@ function _makeUUID(p: string[]) {
 	const s = [
 		p[0],
 		p[1].substr(0, 4),
-		4 + p[1].substr(4, 3), (Number("0x" + p[1][7]) & 0x3 | 0x8).toString(16) + p[1].substr(8, 3),
+		4 + p[1].substr(4, 3), (Number(`"0x"${p[1][7]}`) & 0x3 | 0x8).toString(16) + p[1].substr(8, 3),
 		p[2]
 	];
 	return s.join("-").toUpperCase();

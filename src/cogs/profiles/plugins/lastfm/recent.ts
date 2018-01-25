@@ -95,7 +95,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 			return {
 				inline: true,
 				name: `${this._emoji} Last.FM`,
-				value: "❌ " + await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ERR_INVALIDRESP")
+				value: `❌ ${await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ERR_INVALIDRESP")}`
 			};
 		}
 

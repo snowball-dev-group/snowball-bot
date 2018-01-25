@@ -1566,9 +1566,9 @@ class Guilds extends Plugin implements IModule {
 
 		switch(action) {
 			case "list": {
-				let str = "# " + await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST", {
+				let str = `# ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST", {
 					guildName: this.membersControl_fixString(dbRow.name)
-				});
+				})}`;
 
 				let ownerStr: string | undefined;
 				const admins: string[] = [];
@@ -1592,15 +1592,15 @@ class Guilds extends Plugin implements IModule {
 				}
 
 				let membersStr = "";
-				membersStr += "## " + (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_OWNER")) + "\n";
+				membersStr += `## ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_OWNER")}`;
 				membersStr += `- ${ownerStr || "[Owner left](This guild is owned by server)"}\n\n`;
 
 				if(admins.length > 0) {
-					membersStr += "## " + (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_ADMINS")) + "\n";
-					membersStr += admins.join("\n") + "\n\n";
+					membersStr += `## ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_ADMINS")}\n`;
+					membersStr += `${admins.join("\n")}\n\n`;
 				}
 
-				membersStr += "## " + (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_EVERYONE")) + "\n";
+				membersStr += `## ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_EVERYONE")}\n`;
 				membersStr += otherMembers.join("\n");
 
 				str += `\n\n${membersStr}`;
@@ -1646,9 +1646,9 @@ class Guilds extends Plugin implements IModule {
 					let adminRemoved = false;
 
 					if(!member) {
-						str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBEROFSERVER", {
+						str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBEROFSERVER", {
 							username: escapeDiscordMarkdown(mention.username, true)
-						})) + "\n";
+						})}\n`;
 						continue;
 					}
 
@@ -1658,9 +1658,9 @@ class Guilds extends Plugin implements IModule {
 							const cz = JSON.parse(dbRow.customize) as IGuildCustomize;
 							const index = (cz.admins || []).indexOf(member.id);
 							if(index < 0) {
-								str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_SERVERADM", {
+								str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_SERVERADM", {
 									username: escapeDiscordMarkdown(mention.username, true)
-								})) + "\n";
+								})}\n`;
 								continue;
 							}
 							cz.admins.splice(index, 1);
@@ -1670,18 +1670,18 @@ class Guilds extends Plugin implements IModule {
 						}
 					} else {
 						if(rightsCheck(member, dbRow, false)) {
-							str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_GUILDADMOROWNR", {
+							str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_GUILDADMOROWNR", {
 								username: escapeDiscordMarkdown(mention.username, true)
-							})) + "\n";
+							})}\n`;
 							continue;
 						}
 					}
 
 					if(!member.roles.has(dbRow.roleId)) {
 						if(action === "kick") {
-							str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBER", {
+							str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBER", {
 								username: escapeDiscordMarkdown(member.displayName, true)
-							})) + "\n";
+							})}\n`;
 							continue;
 						}
 					} else {
@@ -1692,18 +1692,18 @@ class Guilds extends Plugin implements IModule {
 					}
 
 					if(action === "kick") {
-						str += (await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_KICKEDADMITEM" : "GUILDS_MEMBERSCONTROL_KICKEDITEM", {
+						str += `${await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_KICKEDADMITEM" : "GUILDS_MEMBERSCONTROL_KICKEDITEM", {
 							username: escapeDiscordMarkdown(member.displayName, true)
-						})) + "\n";
+						})}\n`;
 						if(visitor) {
 							visitor.event("Users Management", "Member kicked", member.id).send();
 						}
 					} else if(action === "ban") {
 						if(!cz.banned) { cz.banned = []; }
 						cz.banned.push(member.id);
-						str += (await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_BANNEDADMITEM" : "GUILDS_MEMBERSCONTROL_BANNEDITEM", {
+						str += `${await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_BANNEDADMITEM" : "GUILDS_MEMBERSCONTROL_BANNEDITEM", {
 							username: escapeDiscordMarkdown(member.displayName, true)
-						})) + "\n";
+						})}\n`;
 						if(visitor) {
 							visitor.event("Users Management", "Member banned", member.id).send();
 						}
@@ -1711,15 +1711,15 @@ class Guilds extends Plugin implements IModule {
 						if(!cz.banned) { break; }
 						const index = cz.banned.indexOf(member.id);
 						if(index === -1) {
-							str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTBANNED", {
+							str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTBANNED", {
 								username: escapeDiscordMarkdown(member.displayName, true)
-							})) + "\n";
+							})}\n`;
 							continue;
 						}
 						cz.banned.splice(index, 1);
-						str += (await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_UNBANNEDITEM", {
+						str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_UNBANNEDITEM", {
 							username: escapeDiscordMarkdown(member.displayName, true)
-						})) + "\n";
+						})}\n`;
 					}
 					affected++;
 				}
@@ -1818,15 +1818,15 @@ class Guilds extends Plugin implements IModule {
 			for(const [uid, mention] of msg.mentions.users) {
 				const index = cz.invites.indexOf(uid);
 				if(index === -1) {
-					str += (await localizeForUser(msg.member, "GUILDS_INVITE_NOTINVITED", {
+					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_NOTINVITED", {
 						username: escapeDiscordMarkdown(mention.username, true)
-					})) + "\n";
+					})}\n`;
 					continue;
 				}
 				cz.invites.splice(index, 1);
-				str += (await localizeForUser(msg.member, "GUILDS_INVITE_REVOKEDITEM", {
+				str += `${await localizeForUser(msg.member, "GUILDS_INVITE_REVOKEDITEM", {
 					username: escapeDiscordMarkdown(mention.username, true)
-				})) + "\n";
+				})}\n`;
 			}
 			for(const uid of cz.invites) {
 				const index = cz.invites.indexOf(uid);
@@ -1835,14 +1835,14 @@ class Guilds extends Plugin implements IModule {
 					if(!member.roles.has(dbRow.roleId)) {
 						continue;
 					} else {
-						str += (await localizeForUser(msg.member, "GUILDS_INVITE_AUTOREVOKED_1", {
+						str += `${await localizeForUser(msg.member, "GUILDS_INVITE_AUTOREVOKED_1", {
 							username: escapeDiscordMarkdown(member.displayName, true)
-						})) + "\n";
+						})}\n`;
 					}
 				} else {
-					str += (await localizeForUser(msg.member, "GUILDS_INVITE_AUTOREVOKED", {
-						id: uid + ""
-					})) + "\n";
+					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_AUTOREVOKED", {
+						id: `${uid}`
+					})}\n`;
 				}
 				cz.invites.splice(index, 1);
 			}
@@ -1852,21 +1852,21 @@ class Guilds extends Plugin implements IModule {
 			for(const [userId, userObj] of msg.mentions.users) {
 				const member = msg.guild.members.get(userId);
 				if(!member) {
-					str += (await localizeForUser(msg.member, "GUILDS_INVITE_NOTAMEMBER", {
+					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_NOTAMEMBER", {
 						username: escapeDiscordMarkdown(userObj.username, true)
-					})) + "\n";
+					})}\n`;
 					continue;
 				}
 				if(member.roles.has(dbRow.roleId)) {
-					str += (await localizeForUser(msg.member, "GUILDS_INVITE_GUILDMEMBER", {
+					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_GUILDMEMBER", {
 						username: escapeDiscordMarkdown(userObj.username, true)
-					})) + "\n";
+					})}\n`;
 					continue;
 				}
 				if(cz.invites.includes(userId)) {
-					str += (await localizeForUser(msg.member, "GUILDS_INVITE_ALREADYINVITED", {
+					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_ALREADYINVITED", {
 						username: escapeDiscordMarkdown(userObj.username, true)
-					})) + "\n";
+					})}\n`;
 					continue;
 				}
 				cz.invites.push(userId);
@@ -1882,13 +1882,13 @@ class Guilds extends Plugin implements IModule {
 							}
 						})
 					});
-					str += (await localizeForUser(msg.member, "GUILDS_INVITE_INVITESENT", {
+					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_INVITESENT", {
 						username: escapeDiscordMarkdown(member.displayName, true)
-					})) + "\n";
+					})}\n`;
 				} catch(err) {
-					str += (await localizeForUser(msg.member, "GUILDS_INVITE_NOTSENT", {
+					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_NOTSENT", {
 						username: escapeDiscordMarkdown(member.displayName, true)
-					})) + "\n";
+					})}\n`;
 				}
 				invited++;
 			}
@@ -1902,9 +1902,7 @@ class Guilds extends Plugin implements IModule {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(revoked === 0 ? EmbedType.Error : EmbedType.OK, msg.member, {
 					custom: true, string: str
-				}, {
-						title: await localizeForUser(msg.member, "GUILDS_INVITE_REVOKED", { revoked })
-					})
+				}, { title: await localizeForUser(msg.member, "GUILDS_INVITE_REVOKED", { revoked }) })
 			});
 		} else {
 			msg.channel.send("", {

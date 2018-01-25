@@ -76,16 +76,16 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 
 		let str = "";
 		str += `**${escapeDiscordMarkdown(profile.name)}**\n`;
-		str += (await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_REP", {
+		str += `${await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_REP", {
 			rep: profile.reputation
-		})) + "\n";
+		})}\n`;
 		str += await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_LVL", {
 			lvl: profile.level
 		});
 		str += ` (${profile.xp[0]}XP / ${profile.xp[1]}XP)\n`;
-		str += (await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_CREDITS", {
+		str += `${await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_CREDITS", {
 			credits: profile.credits
-		})) + "\n";
+		})}\n`;
 		str += await localizeForUser(caller, "TATSUMAKIPROFILEPLUGIN_RANK", {
 			rank: profile.rank
 		});

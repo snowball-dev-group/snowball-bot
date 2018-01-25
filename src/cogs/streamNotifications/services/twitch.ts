@@ -131,7 +131,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 				for(const streamer of chunk) {
 					const stream = streamsResp.streams.find((stream) => {
-						return (stream.channel._id + "") === streamer.uid;
+						return (`${stream.channel._id}`) === streamer.uid;
 					});
 					const cacheItem = this.streamsMap[streamer.uid];
 					if(stream) {
@@ -162,8 +162,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 								this.emit("updated", {
 									status: "online",
 									streamer,
-									id: stream._id + "",
-									oldId: cacheItem.value._id + "",
+									id: `${stream._id}`,
+									oldId: `${cacheItem.value._id}`,
 									updated: true,
 									payload: stream
 								});
@@ -172,7 +172,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 							this.emit("online", {
 								status: "online",
 								streamer,
-								id: stream._id + "",
+								id: `${stream._id}`,
 								payload: stream
 							});
 						}
@@ -185,7 +185,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 							this.emit("offline", {
 								status: "offline",
 								streamer,
-								id: cacheItem.value._id + "",
+								id: `${cacheItem.value._id}`,
 								payload: cacheItem.value
 							});
 						}
@@ -236,9 +236,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			url: stream.channel.url,
 			color: TWITCH_COLOR,
 			image: {
-				url: streamStatus.status === "online" ? stream.preview.template.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}` : (
-					stream.channel.video_banner || TWITCH_OFFLINE_BANNER
-				)
+				url: streamStatus.status === "online" ? `${stream.preview.template.replace("{width}", "1280").replace("{height}", "720")}?ts=${Date.now()}` : ( stream.channel.video_banner || TWITCH_OFFLINE_BANNER )
 			},
 			fields: [{
 				inline: gameName.length < 25,
@@ -248,7 +246,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				inline: true,
 				name: $localizer.getString(lang, "STREAMING_MATURE_NAME"),
 				value: $localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
-					mature: stream.channel.mature + ""
+					mature: stream.channel.mature
 				})
 			}]
 		};

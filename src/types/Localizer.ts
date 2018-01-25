@@ -87,7 +87,7 @@ export class Localizer {
 			this._langMaps = Object.create(null);
 			this._log("info", "Started loading of language files");
 			for(const lang of this._opts.languages) {
-				if(!!this._langMaps[lang]) {
+				if(this._langMaps[lang]) {
 					throw new Error(`Language "${lang}" is already registered`);
 				}
 
@@ -134,7 +134,7 @@ export class Localizer {
 					this._langMaps[langName] = langFile;
 					continue;
 				}
-				langFile["+COVERAGE"] = (await this.testCoverage(langFile, defaultLanguage as IStringsMap)) + "";
+				langFile["+COVERAGE"] = `${await this.testCoverage(langFile, defaultLanguage as IStringsMap)}`;
 				langFile["+COMMUNITY_MANAGED"] = langFile["+COMMUNITY_MANAGED"] === "true" ? "true" : "false";
 				this._langMaps[langName] = langFile;
 				this._log("ok", `- ${langName} ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${langFile["+COVERAGE"]}`);

@@ -349,10 +349,10 @@ export class Whitelist extends Plugin implements IModule {
 	async onMessage(msg: Message) {
 		if(msg.content === "!sb_pstatus" && this.isAdmin(msg.member)) {
 			const whitelistInfo = await this.isWhitelisted(msg.guild);
-			let str = "#" + (await localizeForUser(msg.member, "WHITELIST_INFO_HEADER", {
+			let str = `# ${await localizeForUser(msg.member, "WHITELIST_INFO_HEADER", {
 				guildName: escapeDiscordMarkdown(msg.guild.name, true)
-			})) + "\n";
-			str += (await localizeForUser(msg.member, "WHITELIST_INFO_STATUS")) + " ";
+			})}\n`;
+			str += `${await localizeForUser(msg.member, "WHITELIST_INFO_STATUS")} `;
 			switch(whitelistInfo.state) {
 				case WHITELIST_STATE.BANNED: {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BANNED");
@@ -563,7 +563,7 @@ export class Whitelist extends Plugin implements IModule {
 					}
 				})(cmd.args[1]);
 
-				if(modeVal && !!modes[selectedMode]) {
+				if(modeVal && modes[selectedMode]) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Warning, u, {
 							key: "WHITELIST_MODE_ALREADYENABLED",

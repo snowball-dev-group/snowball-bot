@@ -418,7 +418,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		}
 
 		for(const uid of uids) {
-			if(ready[uid] === null && !!ready[uid]) { continue; } // ignoring duplicates and nulls
+			if(ready[uid] === null && ready[uid]) { continue; } // ignoring duplicates and nulls
 
 			const streamCache = this.streamsStore[uid];
 			const stream = streamCache ? streamCache.value : undefined;
@@ -658,7 +658,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			inline: true,
 			name: $localizer.getString(lang, "STREAMING_MATURE_NAME"),
 			value: $localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
-				mature: isMature + ""
+				mature: isMature
 			})
 		}];
 
@@ -692,10 +692,10 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 					let str = "";
 
 					if(providedMetadata.broadcaster) {
-						str += $localizer.getFormattedString(lang, "STREAMING_GAME_VALUE_HEARTHSTONE", {
+						str += `${$localizer.getFormattedString(lang, "STREAMING_GAME_VALUE_HEARTHSTONE", {
 							target: "broadcaster",
 							...hsMetadata.broadcaster.hero
-						}) + "\n";
+						})}\n`;
 					}
 
 					if(providedMetadata.opponent) {
@@ -743,7 +743,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			url: streamUri,
 			color: TWITCH_COLOR,
 			image: {
-				url: streamStatus.status === "online" ? payload.previewUri.replace("{width}", "1280").replace("{height}", "720") + `?ts=${Date.now()}` : (
+				url: streamStatus.status === "online" ? `${payload.previewUri.replace("{width}", "1280").replace("{height}", "720")}?ts=${Date.now()}` : (
 					payload.streamer.offlineBanner || TWITCH_OFFLINE_BANNER
 				)
 			},
