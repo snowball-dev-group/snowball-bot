@@ -44,7 +44,14 @@
         "prefer-readonly": true,
         "no-this-assignment": true,
         "no-invalid-template-strings": true,
-        "no-return-await": true
+        "no-return-await": true,
+        "no-redundant-jsdoc": true,
+        "prefer-template": true,
+        "deprecation": true,
+        "no-debugger": true,
+        "no-extra-boolean-cast": true,
+        "no-extra-semi": true,
+        "no-multi-spaces": true
     },
     "jsRules": {
         "no-unused-new": true,
