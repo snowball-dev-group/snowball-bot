@@ -23,7 +23,7 @@ interface IUserPreference {
 
 let initDone = false;
 
-const LOG = getLogger("UsersPreferences");
+const LOG = getLogger("Utils:UsersPreferences");
 const DB = getDB();
 const TABLE_NAME = "users_prefs";
 
@@ -80,8 +80,6 @@ export async function init(): Promise<boolean> {
 				LOG("err", "Can't create table", err);
 				return false;
 			}
-		} else {
-			LOG("ok", "Table found");
 		}
 	} catch(err) {
 		LOG("err", "Can't check table status", err);
