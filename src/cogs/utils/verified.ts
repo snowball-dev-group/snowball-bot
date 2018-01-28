@@ -11,7 +11,7 @@ interface IVerificationData {
 
 let _isInitializated = false;
 
-const LOG = getLogger("VerifiedStatus");
+const LOG = getLogger("Utils:VerifiedStatus");
 const DB = getDB();
 const TABLE_NAME = "verified_status";
 
