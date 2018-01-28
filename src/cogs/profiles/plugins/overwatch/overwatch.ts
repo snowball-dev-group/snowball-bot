@@ -2,7 +2,7 @@ import { getLogger } from "../../../utils/utils";
 import { default as fetch } from "node-fetch";
 import { IBlobResponse, IRegionalProfile } from "./owApiInterfaces";
 import { INullableHashMap, DetailedError } from "../../../../types/Types";
-import { get, storeValue } from "../../../utils/cache_new";
+import { get, storeValue } from "../../../utils/cache";
 
 const CACHE_OWNER = "owapi-profile";
 const LOG = getLogger("OWApi");

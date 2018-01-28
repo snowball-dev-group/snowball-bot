@@ -1,7 +1,7 @@
 import { default as fetch, Response } from "node-fetch";
 import { getLogger } from "../../../utils/utils";
 import { DetailedError } from "../../../../types/Types";
-import { get, storeValue } from "../../../utils/cache_new";
+import { get, storeValue } from "../../../utils/cache";
 
 export interface IUserInfo {
 	/**

@@ -1,7 +1,7 @@
 import { default as fetch } from "node-fetch";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
 import { getLogger } from "../../../utils/utils";
-import { get, storeValue } from "../../../utils/cache_new";
+import { get, storeValue } from "../../../utils/cache";
 import { DetailedError } from "../../../../types/Types";
 
 const CACHE_OWNER = "lastfm:recents";
