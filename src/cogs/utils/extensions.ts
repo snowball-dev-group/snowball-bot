@@ -2,7 +2,7 @@
 // created-by: sindresorhus
 // license-type: mit
 // source: https://github.com/sindresorhus/negative-array/blob/master/index.js
-export function negativeArray<T>(input) {
+export function negativeArray<T>(input: T[]) : T[] {
 	if(!Array.isArray(input)) {
 		throw new TypeError("Expected an array");
 	}
