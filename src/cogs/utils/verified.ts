@@ -1,47 +1,83 @@
 import { getDB } from "./db";
 import { GuildMember, Message } from "discord.js";
 import { getLogger } from "./utils";
+import { INullableHashMap } from "../../types/Types";
 
-interface IVerifiedRow {
+interface IVerificationData {
 	guildId: string;
 	memberId: string;
 	level: number;
 }
 
-let initDone = false;
+let _isInitializated = false;
 
 const LOG = getLogger("VerifiedStatus");
 const DB = getDB();
 const TABLE_NAME = "verified_status";
 
+let localStorage: INullableHashMap<number> = Object.create(null);
+
 /// ======================================
 /// DB FUNCTIONS
 /// ======================================
 
-async function insertNew(member: GuildMember) {
-	return DB(TABLE_NAME).insert({
+function getLocalStorageKey(member: GuildMember) {
+	return `${member.guild.id}:${member.id}`; // pretty simple, huh?
+}
+
+export async function flushLocalStorage() {
+	localStorage = Object.create(null); // don't change anything, perfo reasons
+	return true;
+}
+
+async function storeNewVerification(member: GuildMember) {
+	const res = DB(TABLE_NAME).insert({
 		guildId: member.guild.id,
 		memberId: member.id,
 		level: 0
 	});
+	
+	localStorage[getLocalStorageKey(member)] = 0;
+
+	return res;
 }
 
-async function getVerificationRow(member: GuildMember): Promise<IVerifiedRow> {
-	return DB(TABLE_NAME).where({
+async function getStoredVerification(member: GuildMember): Promise<IVerificationData|undefined> {
+	const localStorageKey = getLocalStorageKey(member);
+	const localStored = localStorage[localStorageKey];
+	if(typeof localStored === "number") {
+		return {
+			guildId: member.guild.id,
+			memberId: member.id,
+			level: localStored
+		};
+	}
+
+	const res = <IVerificationData|undefined> await DB(TABLE_NAME).where({
 		guildId: member.guild.id,
 		memberId: member.id
 	}).first();
+
+	if(res != null) { localStorage[localStorageKey] = res.level; }
+
+	return res;
 }
 
-async function updateRow(row: IVerifiedRow) {
-	return DB(TABLE_NAME).where({
-		guildId: row.guildId,
-		memberId: row.memberId
-	}).update(row);
+async function updateStoredVerification(verificationData: IVerificationData) {
+	const res = DB(TABLE_NAME).where({
+		guildId: verificationData.guildId,
+		memberId: verificationData.memberId
+	}).update(verificationData);
+	
+	localStorage[verificationData.memberId] = verificationData.level;
+
+	return res;
 }
 
-async function deleteRow(row: IVerifiedRow) {
-	return DB(TABLE_NAME).where(row).delete().first();
+async function deleteStoredVerification(verificationData: IVerificationData) {
+	localStorage[verificationData.memberId] = undefined; // nullying, improves perfo
+
+	return DB(TABLE_NAME).where(verificationData).delete().first();
 }
 
 /// ======================================
@@ -50,42 +86,37 @@ async function deleteRow(row: IVerifiedRow) {
 
 export async function guildMemberAddEvent(member: GuildMember) {
 	if(member.guild.verificationLevel === 0) { return; }
-	await insertNew(member);
+	await storeNewVerification(member);
 }
 
 export async function guildMemberRemoveEvent(member: GuildMember) {
-	const dbRow = await getVerificationRow(member);
-	if(dbRow) { await deleteRow(dbRow); }
+	const dbRow = await getStoredVerification(member);
+	if(dbRow) { await deleteStoredVerification(dbRow); }
 }
 
 export async function messageEvent(msg: Message) {
-	if(msg.channel.type !== "text") {
-		// direct messages, nope
-		return;
+	if(msg.channel.type !== "text" || !msg.member || msg.guild.verificationLevel === 0 || msg.member.roles.size > 0) {
+		return; // all the cases in one if
 	}
-	if(!msg.member) {
-		return;
-	}
-	if(msg.guild.verificationLevel === 0) {
-		// skipping guilds with no verification level
-		return;
-	}
+
 	try {
-		let row = await getVerificationRow(msg.member);
-		if(!row) {
-			await insertNew(msg.member);
-			row = await getVerificationRow(msg.member);
-			if(!row) {
+		let storedVerification = await getStoredVerification(msg.member);
+		if(!storedVerification) {
+			await storeNewVerification(msg.member);
+			storedVerification = await getStoredVerification(msg.member);
+			if(!storedVerification) {
 				LOG("err", "Bad times, row not found after creation");
 				return;
 			}
 		}
-		if(row.level >= msg.guild.verificationLevel) {
+
+		if(storedVerification.level >= msg.guild.verificationLevel) {
 			// this means that user is verified at guild verification level
 			return;
 		}
-		row.level = msg.guild.verificationLevel;
-		await updateRow(row);
+
+		storedVerification.level = msg.guild.verificationLevel;
+		await updateStoredVerification(storedVerification);
 	} catch(err) {
 		LOG("err", "Verification failed", err);
 	}
@@ -96,7 +127,7 @@ export async function messageEvent(msg: Message) {
 /// ======================================
 
 export async function init(): Promise<boolean> {
-	if(initDone) { return true; }
+	if(_isInitializated) { return true; }
 	try {
 		if(!(await DB.schema.hasTable(TABLE_NAME))) {
 			try {
@@ -119,29 +150,29 @@ export async function init(): Promise<boolean> {
 		return false;
 	}
 
-	return initDone = true;
+	return _isInitializated = true;
 }
 
 /**
  * Returns a value that indicates if verified was init'ed
  */
-export function isInitDone() {
-	return initDone;
-}
+export const isInitializated = () => _isInitializated;
 
 /**
  * Returns a value that indicates member corresponds to server verification level
  * @param member Member of guild
  */
 export async function isVerified(member: GuildMember) {
-	if(!initDone) {
+	if(!_isInitializated) {
 		throw new Error("Initialization wasn't complete. You should enable `verifiedHandler` in order to use this util");
 	}
-	if(member.guild.verificationLevel === 0) {
-		// of course member is verified
-		return true;
-	}
-	const dbElem = await getVerificationRow(member);
-	if(!dbElem) { return false; }
-	return dbElem.level >= member.guild.verificationLevel;
+
+	if(member.roles.size > 0) { return true; } // members with roles bypass verification anyway
+	if(member.guild.verificationLevel === 0) { return true; }
+
+	const storedVerification = await getStoredVerification(member);
+
+	if(!storedVerification) { return false; }
+
+	return storedVerification.level >= member.guild.verificationLevel;
 }

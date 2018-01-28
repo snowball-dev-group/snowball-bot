@@ -8,7 +8,7 @@ import { createConfirmationMessage } from "../utils/interactive";
 import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "../utils/ez-i18n";
 import { getPreferenceValue, setPreferenceValue, removePreference } from "../utils/guildPrefs";
 import { randomPick } from "../utils/random";
-import { isVerified, isInitDone as isVerifiedEnabled } from "../utils/verified";
+import { isVerified, isInitializated as isVerifiedEnabled } from "../utils/verified";
 import { messageToExtra } from "../utils/failToDetail";
 import { Whitelist } from "../whitelist/whitelist";
 import * as knex from "knex";
