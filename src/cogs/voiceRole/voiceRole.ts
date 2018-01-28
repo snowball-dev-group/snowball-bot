@@ -333,9 +333,9 @@ class VoiceRole extends Plugin implements IModule {
 
 			if(role) {
 				if(!voiceChannelOfMember && member.roles.has(role.id)) {
-					member.removeRole(role);
+					member.roles.remove(role);
 				} else if(voiceChannelOfMember && !member.roles.has(role.id)) {
-					member.addRole(role);
+					member.roles.add(role);
 				}
 			}
 
@@ -352,7 +352,7 @@ class VoiceRole extends Plugin implements IModule {
 					}
 				}
 				if(!ok) {
-					member.removeRole(memberRole);
+					member.roles.remove(memberRole);
 				} // else keeping role
 			}
 
@@ -382,7 +382,7 @@ class VoiceRole extends Plugin implements IModule {
 				if(specificRoleForChannel) {
 					if(guild.roles.has(specificRoleForChannel.voice_role)) {
 						if(!member.roles.has(specificRoleForChannel.voice_role)) {
-							member.addRole(specificRoleForChannel.voice_role);
+							member.roles.add(specificRoleForChannel.voice_role);
 						}
 					} else {
 						await this.deleteSpecificRow(specificRoleForChannel);
@@ -408,7 +408,7 @@ class VoiceRole extends Plugin implements IModule {
 					// let's give it to user if he has not it
 					if(!member.roles.has(row.voice_role)) {
 						// yep, take this role, my dear
-						await member.addRole(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_JOINED_VC", {
+						await member.roles.add(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_JOINED_VC", {
 							channelName: member.voiceChannel.name
 						}));
 					} // nop, you have this role, next time.. next time...
@@ -431,7 +431,7 @@ class VoiceRole extends Plugin implements IModule {
 				// dear, do you have this specific role already?
 				if(!member.roles.has(specificRow.voice_role)) {
 					// nope, take it
-					await member.addRole(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_ADDED", {
+					await member.roles.add(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_ADDED", {
 						channelName: member.voiceChannel.name
 					}));
 				}
@@ -455,7 +455,7 @@ class VoiceRole extends Plugin implements IModule {
 					// but let's check if user HAS this role
 					if(member.roles.has(row.voice_role)) {
 						// yes, he has it, can remove
-						await member.removeRole(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_LEFT_VC", {
+						await member.roles.remove(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_LEFT_VC", {
 							channelName: member.voiceChannel.name
 						}));
 					} // else we doing nothin'
@@ -480,7 +480,7 @@ class VoiceRole extends Plugin implements IModule {
 				// there we got good answer means everything is OK
 				// we can remove old specific role
 				if(member.roles.has(specificRow.voice_role)) {
-					await member.removeRole(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_REMOVED", {
+					await member.roles.remove(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_REMOVED", {
 						channelName: member.voiceChannel.name
 					}));
 				}
@@ -553,7 +553,7 @@ class VoiceRole extends Plugin implements IModule {
 					for(const member of msg.guild.members.values()) {
 						if(!row) { continue; }
 						if(member.roles.has(row.voice_role)) {
-							await member.removeRole(row.voice_role);
+							await member.roles.remove(row.voice_role);
 						}
 					}
 				} catch(err) {
@@ -670,7 +670,7 @@ class VoiceRole extends Plugin implements IModule {
 			try {
 				for(const member of msg.guild.members.values()) {
 					if(member.roles.has(row.voice_role)) {
-						await member.removeRole(row.voice_role);
+						await member.roles.remove(row.voice_role);
 					}
 				}
 			} catch(err) {
@@ -772,7 +772,7 @@ class VoiceRole extends Plugin implements IModule {
 				try {
 					for(const member of msg.guild.members.values()) {
 						if(member.roles.has(oldRole)) {
-							await member.removeRole(oldRole);
+							await member.roles.remove(oldRole);
 						}
 					}
 				} catch(err) {
@@ -938,7 +938,7 @@ class VoiceRole extends Plugin implements IModule {
 			try {
 				for(const member of msg.guild.members.values()) {
 					if(member.roles.has(current.voice_role)) {
-						await member.removeRole(current.voice_role);
+						await member.roles.remove(current.voice_role);
 					}
 				}
 				await this.VCR_Cleanup(msg.guild);

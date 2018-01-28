@@ -279,7 +279,7 @@ class FanServerThings extends Plugin implements IModule {
 			this.log("info", `${newMember.displayName} (ID: ${newMember.id}) - found subscriber role(s): ${subRole.map(r => r.name).join(", ")}`);
 
 			// has subrole but not onesub role
-			await newMember.addRole(this.options.oneSubRole);
+			await newMember.roles.add(this.options.oneSubRole);
 
 			const random = new Random(Random.engines.mt19937().autoSeed());
 
@@ -300,7 +300,7 @@ class FanServerThings extends Plugin implements IModule {
 			this.log("info", `${newMember.displayName} (ID: ${newMember.id}) - has no subscriber role(s), but has general one, removing`);
 
 			// doesn't has sub role but has onesub role
-			await newMember.removeRole(this.options.oneSubRole);
+			await newMember.roles.remove(this.options.oneSubRole);
 		}
 	}
 

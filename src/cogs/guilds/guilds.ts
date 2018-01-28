@@ -494,7 +494,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		try {
-			await msg.member.addRole(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_CREATED_OWNER", {
+			await msg.member.roles.add(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_CREATED_OWNER", {
 				guildName: args[0]
 			}));
 		} catch(err) {
@@ -1089,7 +1089,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		try {
-			await msg.member.removeRole(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_LEFT_GUILD", {
+			await msg.member.roles.remove(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_LEFT_GUILD", {
 				guildName: dbRow.name
 			}));
 			if(visitor) {
@@ -1321,7 +1321,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		try {
-			await msg.member.addRole(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_JOINED_GUILD", {
+			await msg.member.roles.add(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_JOINED_GUILD", {
 				guildName: dbRow.name
 			}));
 			if(visitor) {
@@ -1685,7 +1685,7 @@ class Guilds extends Plugin implements IModule {
 							continue;
 						}
 					} else {
-						await member.removeRole(dbRow.roleId, await localizeForGuild(msg.guild, action === "kick" ? "GUILDS_AUDITLOG_KICKED" : "GUILDS_AUDITLOG_BANNED", {
+						await member.roles.remove(dbRow.roleId, await localizeForGuild(msg.guild, action === "kick" ? "GUILDS_AUDITLOG_KICKED" : "GUILDS_AUDITLOG_BANNED", {
 							initiator: msg.author.tag,
 							guildName: dbRow.name
 						}));

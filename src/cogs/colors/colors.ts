@@ -191,7 +191,7 @@ class Colors extends Plugin implements IModule {
 
 			const randomColor = randomPick(roles);
 			try {
-				member.addRole(randomColor.role, await localizeForGuild(member.guild, "COLORS_AUDITLOG_ONJOIN_RANDOM_ROLE"));
+				await member.roles.add(randomColor.role, await localizeForGuild(member.guild, "COLORS_AUDITLOG_ONJOIN_RANDOM_ROLE"));
 			} catch(err) {
 				this.log("err", "Failed to assing random color", err, member.guild.id);
 				$snowball.captureException(err, {
@@ -208,7 +208,7 @@ class Colors extends Plugin implements IModule {
 			if(!color) { return; } // color was removed prob
 
 			try {
-				member.addRole(color.role, await localizeForGuild(member.guild, "COLORS_AUDITLOG_ONJOIN_ROLE"));
+				await member.roles.add(color.role, await localizeForGuild(member.guild, "COLORS_AUDITLOG_ONJOIN_ROLE"));
 			} catch(err) {
 				this.log("err", "Failed to assign color role", err, member.guild.id);
 				$snowball.captureException(err, {
@@ -300,7 +300,7 @@ class Colors extends Plugin implements IModule {
 
 		if(toUnassign.length > 0) {
 			try {
-				await msg.member.removeRoles(toUnassign, await localizeForGuild(msg.guild, "COLORS_AUDITLOG_PREVIOUS_COLOR_REMOVED"));
+				await msg.member.roles.remove(toUnassign, await localizeForGuild(msg.guild, "COLORS_AUDITLOG_PREVIOUS_COLOR_REMOVED"));
 			} catch(err) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_FAILED_UNASSIGN")
@@ -313,7 +313,7 @@ class Colors extends Plugin implements IModule {
 		}
 
 		try {
-			await msg.member.addRole(colorInfo.role, await localizeForGuild(msg.guild, "COLORS_AUDITLOG_COLOR_ASSIGNED", {
+			await msg.member.roles.add(colorInfo.role, await localizeForGuild(msg.guild, "COLORS_AUDITLOG_COLOR_ASSIGNED", {
 				colorName
 			}));
 		} catch(err) {
@@ -352,7 +352,7 @@ class Colors extends Plugin implements IModule {
 		}
 
 		try {
-			await msg.member.removeRoles(toUnassign, await localizeForGuild(msg.guild, "COLORS_AUDITLOG_COLORS_RESET"));
+			await msg.member.roles.remove(toUnassign, await localizeForGuild(msg.guild, "COLORS_AUDITLOG_COLORS_RESET"));
 		} catch(err) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_RESET_FAILED")
@@ -421,7 +421,7 @@ class Colors extends Plugin implements IModule {
 			return;
 		}
 
-		if(colorRole.position > msg.guild.me.highestRole.position) {
+		if(colorRole.position > msg.guild.me.roles.highest.position) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_INVALIDROLEPOSITION")
 			});
