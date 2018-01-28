@@ -1,6 +1,6 @@
 import { getRedisClient } from "./redis";
 
-const DEFAULT_TTL = 30*60; // 30 min?
+const DEFAULT_TTL = 30 * 60; // 30 min?
 
 type AllowedTypes = string | number | object;
 
@@ -37,7 +37,7 @@ interface IPushResults<T> {
  * @param value __Value to store in the database__. For JS objects `JSON.stringify` will be used, be aware
  * @param ttl __Time for what cache lives__ in the Redis DB (seconds)
  */
-export async function storeValue<T>(owner: string, key: string, value: AllowedTypes|AllowedTypes[], ttl = DEFAULT_TTL) : Promise<IPushResults<T>> {
+export async function storeValue<T>(owner: string, key: string, value: AllowedTypes | AllowedTypes[], ttl = DEFAULT_TTL): Promise<IPushResults<T>> {
 	const redisClient = await getRedisClient();
 
 	const builtKey = buildCacheKey(owner, key);
@@ -49,7 +49,7 @@ export async function storeValue<T>(owner: string, key: string, value: AllowedTy
 		// tbh I still unsure if I need to reassign pipeline var
 		// if nope, pls report an issue or make merge request
 		// thanx <3
-		for(let i =0; i < value.length; i++) {
+		for(let i = 0; i < value.length; i++) {
 			let val = value[i];
 			if(typeof val === "object") {
 				val = JSON.stringify(val);
@@ -84,7 +84,7 @@ export async function storeValue<T>(owner: string, key: string, value: AllowedTy
 	}
 }
 
-export async function get<T>(owner: string, key: string, isJson = false, pop = false) : Promise<T|null> {
+export async function get<T>(owner: string, key: string, isJson = false, pop = false): Promise<T | null> {
 	const redisClient = await getRedisClient();
 
 	const builtKey = buildCacheKey(owner, key);
@@ -94,7 +94,7 @@ export async function get<T>(owner: string, key: string, isJson = false, pop = f
 	return isJson && res != null ? JSON.parse(res) : res;
 }
 
-export async function getArray<T>(owner: string, key: string, jsonParse: boolean|number = false, pop = false) : Promise<T[]> {
+export async function getArray<T>(owner: string, key: string, jsonParse: boolean | number = false, pop = false): Promise<T[]> {
 	const redisClient = await getRedisClient();
 
 	const builtKey = buildCacheKey(owner, key);
@@ -113,11 +113,11 @@ export async function getArray<T>(owner: string, key: string, jsonParse: boolean
 	return res;
 }
 
-export async function deleteKeys(owner: string, keys: string|string[]) {
+export async function deleteKeys(owner: string, keys: string | string[]) {
 	const redisClient = await getRedisClient();
 
 	if(Array.isArray(keys)) {
-		for(let i = 0; i < keys.length; i++){
+		for(let i = 0; i < keys.length; i++) {
 			keys[i] = buildCacheKey(owner, keys[i]);
 		}
 	} else {
@@ -156,5 +156,5 @@ function buildCacheKey(owner: string, key: string) {
 	owner = lengthCheck("owner", stripUnnecessaryChars(owner));
 	key = lengthCheck("key", stripUnnecessaryChars(key));
 
-	return `sb_cache:${owner}[${owner}]`;
+	return `sb_cache:${owner}[${key}]`;
 }
