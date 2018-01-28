@@ -180,7 +180,7 @@ export class Whitelist extends Plugin implements IModule {
 
 	async joinedGuild(guild: Guild) {
 		this.log("info", `Joined guild "${guild.name}" (${guild.members.size} members)`);
-		const whitelistStatus = await this.isWhitelisted(guild);
+		const whitelistStatus = await this.getWhitelistStatus(guild);
 		if(whitelistStatus.state === WHITELIST_STATE.UNKNOWN || whitelistStatus.state === WHITELIST_STATE.BYPASS) {
 			// how about to give guild limited time?
 			// or check if it full of boooooooootz
@@ -194,13 +194,19 @@ export class Whitelist extends Plugin implements IModule {
 		}
 	}
 
-	async isWhitelisted(guild: Guild): Promise<{
+	async isWhitelisted(guild: Guild) : Promise<boolean> {
+		const status = await this.getWhitelistStatus(guild);
+		return status.state === WHITELIST_STATE.IMMORTAL || status.state === WHITELIST_STATE.UNLIMITED;
+	}
+
+	async getWhitelistStatus(guild: Guild): Promise<{
 		ok: boolean,
 		state: WHITELIST_STATE,
 		until: null | number;
 	}> {
 		let mode = this.currentMode;
 		if(!mode) { mode = await this.fetchCurrentMode(); }
+
 		if(this.alwaysWhitelisted.includes(guild.id)) {
 			return {
 				ok: true,
@@ -208,8 +214,10 @@ export class Whitelist extends Plugin implements IModule {
 				until: null
 			};
 		}
-		const whitelistStatus = await getGuildPref(guild, "whitelist:status", true) as WHITELIST_STATE;
-		const whitelistedUntil = await getGuildPref(guild, "whitelist:until", true) as number | null;
+
+		const whitelistStatus = <WHITELIST_STATE> await getGuildPref(guild, "whitelist:status", true);
+		const whitelistedUntil = <number | null> await getGuildPref(guild, "whitelist:until", true);
+
 		if(!whitelistStatus) {
 			return {
 				ok: false,
@@ -217,6 +225,7 @@ export class Whitelist extends Plugin implements IModule {
 				until: null
 			};
 		}
+
 		if(whitelistStatus === WHITELIST_STATE.BANNED) {
 			return {
 				ok: false,
@@ -260,7 +269,7 @@ export class Whitelist extends Plugin implements IModule {
 
 	async checkGuilds() {
 		for(const g of $discordBot.guilds.values()) {
-			const whitelistStatus = await this.isWhitelisted(g);
+			const whitelistStatus = await this.getWhitelistStatus(g);
 			if(whitelistStatus.state === WHITELIST_STATE.EXPIRED) {
 				await this.leaveGuild(g, "WHITELIST_LEAVE_EXPIRED");
 			} else if(whitelistStatus.state === WHITELIST_STATE.TRIAL_EXPIRED) {
@@ -304,32 +313,32 @@ export class Whitelist extends Plugin implements IModule {
 		}
 	}
 
-	async sendMsg(guild: Guild, embed) {
-		let chToSendMessage: TextChannel | undefined = undefined;
+	async notify(guild: Guild, embed) {
+		let notificationChannel: TextChannel | undefined = undefined;
 
-		for(const toCheck of POSSIBLE_CHAT_ROOMS) {
-			chToSendMessage = (guild.channels.find((ch) => {
-				return ch.name.includes(toCheck) && ch.type === "text";
-			})) as TextChannel;
-			if(chToSendMessage) { break; }
+		for(const possibleChannel of POSSIBLE_CHAT_ROOMS) {
+			notificationChannel = <TextChannel> guild.channels.find((ch) => {
+				return ch.name.includes(possibleChannel) && ch.type === "text";
+			});
+			if(notificationChannel) { break; }
 		}
 
-		if(chToSendMessage) {
+		if(notificationChannel) {
 			try {
-				await chToSendMessage.send("", { embed });
+				await notificationChannel.send("", { embed });
 			} catch(err) {
 				$snowball.captureException(err, {
 					level: "warning",
 					extra: { guildId: guild, embed }
 				});
-				this.log("warn", `Failed to send message to channel ${chToSendMessage.name} (${chToSendMessage.id})`);
+				this.log("warn", `Failed to send message to channel ${notificationChannel.name} (${notificationChannel.id})`);
 			}
 		}
 	}
 
 	async leaveGuild(guild: Guild, reason?: string) {
 		if(reason) {
-			await this.sendMsg(guild, await generateLocalizedEmbed(EmbedType.Warning, guild.owner, {
+			await this.notify(guild, await generateLocalizedEmbed(EmbedType.Warning, guild.owner, {
 				key: reason,
 				formatOptions: {
 					serverName: escapeDiscordMarkdown(guild.name, true),
@@ -348,7 +357,7 @@ export class Whitelist extends Plugin implements IModule {
 
 	async onMessage(msg: Message) {
 		if(msg.content === "!sb_pstatus" && this.isAdmin(msg.member)) {
-			const whitelistInfo = await this.isWhitelisted(msg.guild);
+			const whitelistInfo = await this.getWhitelistStatus(msg.guild);
 			let str = `# ${await localizeForUser(msg.member, "WHITELIST_INFO_HEADER", {
 				guildName: escapeDiscordMarkdown(msg.guild.name, true)
 			})}\n`;
@@ -612,24 +621,24 @@ export class Whitelist extends Plugin implements IModule {
 		}
 	}
 
-	parseMode(mode: WhitelistModes): IParsedMode {
+	parseMode(modeInt: WhitelistModes): IParsedMode {
 		return {
-			whitelist: (mode & WhitelistModes.Whitelist) === WhitelistModes.Whitelist,
-			noBotFarms: (mode & WhitelistModes.NoBotFarms) === WhitelistModes.NoBotFarms,
-			trialAllowed: (mode & WhitelistModes.TrialAllowed) === WhitelistModes.TrialAllowed,
-			noLowMembers: (mode & WhitelistModes.NoLowMembers) === WhitelistModes.NoLowMembers,
-			noMaxMembers: (mode & WhitelistModes.NoMaxMembers) === WhitelistModes.NoMaxMembers
+			whitelist: (modeInt & WhitelistModes.Whitelist) === WhitelistModes.Whitelist,
+			noBotFarms: (modeInt & WhitelistModes.NoBotFarms) === WhitelistModes.NoBotFarms,
+			trialAllowed: (modeInt & WhitelistModes.TrialAllowed) === WhitelistModes.TrialAllowed,
+			noLowMembers: (modeInt & WhitelistModes.NoLowMembers) === WhitelistModes.NoLowMembers,
+			noMaxMembers: (modeInt & WhitelistModes.NoMaxMembers) === WhitelistModes.NoMaxMembers
 		};
 	}
 
 	convertToMode(parsedMode: IParsedMode): WhitelistModes {
-		let m = 0;
-		if(parsedMode.whitelist) { m |= WhitelistModes.Whitelist; }
-		if(parsedMode.trialAllowed) { m |= WhitelistModes.TrialAllowed; }
-		if(parsedMode.noBotFarms) { m |= WhitelistModes.NoBotFarms; }
-		if(parsedMode.noLowMembers) { m |= WhitelistModes.NoLowMembers; }
-		if(parsedMode.noMaxMembers) { m |= WhitelistModes.NoMaxMembers; }
-		return m;
+		let modeInt = 0;
+		if(parsedMode.whitelist) { modeInt |= WhitelistModes.Whitelist; }
+		if(parsedMode.trialAllowed) { modeInt |= WhitelistModes.TrialAllowed; }
+		if(parsedMode.noBotFarms) { modeInt |= WhitelistModes.NoBotFarms; }
+		if(parsedMode.noLowMembers) { modeInt |= WhitelistModes.NoLowMembers; }
+		if(parsedMode.noMaxMembers) { modeInt |= WhitelistModes.NoMaxMembers; }
+		return modeInt;
 	}
 
 	async unload() {

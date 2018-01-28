@@ -149,7 +149,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			});
 		}
 
-		const limitation = whitelistInstance && (await whitelistInstance.isWhitelisted(msg.guild)).state === 1 ? this.limitations.partners : this.limitations.non_partners;
+		const limitation = whitelistInstance && (await whitelistInstance.isWhitelisted(msg.guild))? this.limitations.partners : this.limitations.non_partners;
 
 		if(guildPrefixes.length >= limitation) { // inclusive
 			return msg.channel.send({

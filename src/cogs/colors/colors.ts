@@ -1002,7 +1002,7 @@ class Colors extends Plugin implements IModule {
 
 		if(this.whitelistModule && this.whitelistModule.base) {
 			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
-			if(whitelistStatus.state !== 0 && whitelistStatus.state === 1) {
+			if(!whitelistStatus) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ONLYPARTNERED")
 				});
