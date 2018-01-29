@@ -703,8 +703,11 @@ class VoiceRole extends Plugin implements IModule {
 				return;
 			}
 
-			const specSubCmd = parsed.args[0];
-			const specArgs = parsed.args.slice(1);
+			// back comp
+			const specCallCont = ctx.message.content.slice(`${ctx.prefix!}${parsed.command} ${parsed.subCommand}`.length).trim();
+			const _spcIndex = specCallCont.indexOf(" ");
+			const specSubCmd = specCallCont.slice(0, _spcIndex);
+			const specArgs = specCallCont.slice(_spcIndex).split(",").map(a => a.trim());
 
 			if(specSubCmd === "set") {
 				if(specArgs.length === 0) {
