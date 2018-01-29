@@ -79,14 +79,10 @@ class SetLanguageCommand extends Plugin implements IModule {
 			this.log("info", `Updating enforcing status for guild "${g.name}"`);
 			await forceGuildEnforceUpdate(g);
 			this.log("info", `-- Started language update for ${g.members.size} members`);
-			for(const m of g.members.values()) {
-				await getUserLanguage(m);
-			}
+			for(const m of g.members.values()) { await getUserLanguage(m); }
 		}
 		this.log("info", `Started language update for ${$discordBot.users.size} users`);
-		for(const m of $discordBot.users.values()) {
-			await forceUserLanguageUpdate(m);
-		}
+		for(const m of $discordBot.users.values()) { await getUserLanguage(m); }
 		this.log("ok", "Sync done, poor DB");
 	}
 
