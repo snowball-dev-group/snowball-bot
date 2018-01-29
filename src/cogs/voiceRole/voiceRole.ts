@@ -71,7 +71,7 @@ class VoiceRole extends Plugin implements IModule {
 
 	private flowHandler: IPublicFlowUnit;
 	private db: knex;
-	private log = getLogger("VoiceRole");
+	private readonly log = getLogger("VoiceRole");
 
 	constructor() {
 		super({
