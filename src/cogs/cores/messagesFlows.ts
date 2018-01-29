@@ -128,7 +128,7 @@ export default class MessagesFlows implements IModule {
 			check: normalCheck,
 			parser: options.customParser,
 			followsTheFlow: typeof options.followsTheFlow !== "boolean" ? true : options.followsTheFlow,
-			checkPrefix: !!options.checkPrefix,
+			checkPrefix: typeof options.checkPrefix !== "boolean" ? true : options.checkPrefix,
 			timeoutCheck: typeof options.timeoutCheck === "boolean" ? (!options.timeoutCheck ? -1 : this._timings.timeoutCheck) : (typeof options.timeoutCheck === "number" ? options.timeoutCheck : this._timings.timeoutCheck),
 			timeoutHandler: typeof options.timeoutHandler === "boolean" ? (!options.timeoutHandler ? -1 : this._timings.timeoutHandler) : (typeof options.timeoutHandler === "number" ? options.timeoutHandler : this._timings.timeoutHandler)
 		});
@@ -169,7 +169,7 @@ export default class MessagesFlows implements IModule {
 				if(flowUnit.checkPrefix && !prefix) { return; }
 
 				const parserResult = typeof flowUnit.parser !== "function" ? simpleParserResult : await flowUnit.parser(msg);
-				const ctx = { message: msg, parsed: parserResult };
+				const ctx = { message: msg, parsed: parserResult, prefix: flowUnit.checkPrefix ? prefix || undefined : undefined };
 
 				let _checkErr: PossibleError;
 				const checkResult = await (async () => {
