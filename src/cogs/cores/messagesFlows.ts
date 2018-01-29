@@ -275,7 +275,7 @@ export default class MessagesFlows implements IModule {
 
 	async unload() {
 		$discordBot.removeListener("message", this._messageHandler);
-		return false;
+		return true;
 	}
 }
 
