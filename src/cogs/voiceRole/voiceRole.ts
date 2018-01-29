@@ -133,7 +133,9 @@ class VoiceRole extends Plugin implements IModule {
 		if(!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
 
 		messagesFlowsKeeper.onInit((flowsMan: MessagesFlows) => {
-			return this.flowHandler = flowsMan.watchForMessages((ctx) => <any>this.onMessage(ctx), "voicerole");
+			return this.flowHandler = flowsMan.watchForMessages((ctx) => <any>this.onMessage(ctx), "voicerole", {
+				timeoutHandler: 61000 // 61 sec
+			});
 		});
 
 		this.handleEvents();
