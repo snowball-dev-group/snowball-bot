@@ -8,6 +8,7 @@ import { replaceAll } from "../utils/text";
 import * as util from "util";
 import * as VM from "vm";
 import * as Bluebird from "bluebird";
+import { isPromise } from "../utils/extensions";
 
 const PREFIX = "``";
 const PREFIX_LENGTH = PREFIX.length;
@@ -96,13 +97,9 @@ class EvalJS extends Plugin implements IModule {
 				process: undefined
 			});
 
-			// should been avoid this..
-			// but, leh it be so
-			const isPromise = typeof output === "object" && typeof output.then === "function";
-
 			totalExecutionTime += Date.now() - startTime;
 
-			if(isPromise) {
+			if(isPromise(output)) {
 				await this._outputEdit(resultMsg, user, totalExecutionTime, output, await localizeForUser(i18nTarget, "EVAL_PROMISE_WAITING"), EmbedType.Progress, i18nTarget);
 				try {
 					startTime = Date.now();
