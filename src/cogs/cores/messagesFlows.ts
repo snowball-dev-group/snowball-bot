@@ -343,7 +343,7 @@ export type CustomParser = (msg: Message) => Promise<ISimpleCmdParseResult>;
 export type CheckArgument = ((ctx: IMessageFlowContext) => Promise<boolean> | boolean);
 /**
  * If the check passed. Calls this function, if it returns Promise and `followTheFlow` set to `true`, then waits until Promise resolves.
- * Be aware! Promise should resolve in set timeout, this can be configured by option `flowTimings.handlerTimeout`, by default this value is set to constant `HANDLER_TIMEOUT` which you can get by improrting from this file. If promise will not resolve in set timeout, the flow continues.
+ * Be aware! Promise must resolve in set timeout, this can be configured by option `flowTimings.handlerTimeout`, by default this value is set to constant `HANDLER_TIMEOUT` which you can get by improrting from this file. If promise will not resolve in set timeout, the flow continues.
  * Be also aware that you can break flow if you need to: if promise resolves with {FlowControl}, then checks the argument and does required stuff with Flow.
  */
 export type Handler = ((ctx: IMessageFlowContext) => Promise<void>|void);

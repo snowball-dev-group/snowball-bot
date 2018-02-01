@@ -5,7 +5,7 @@ import { Guild } from "discord.js";
 // 100% copy-typing from "dbController" of archive :^)
 
 const ERRORS = {
-	INIT_NOT_COMPLETE: new Error("You haven't initialized the DB controller and attempted to call one of its members. You should call #init function before starting to use the controller. This will ensure that database is created and controller is able to manipulate required data")
+	INIT_NOT_COMPLETE: new Error("You haven't initialized the DB controller and attempted to call one of its members. You must call #init function before starting to use the controller. This will ensure that database is created and controller is able to manipulate required data")
 };
 const DEFAULT_TALBENAME = "prefixes";
 
@@ -58,7 +58,7 @@ export class PrefixAllDBController {
 	public async setPrefixes(guild: Guild | string, prefixes: string[] | null) : Promise<void> {
 		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		const isDelete = prefixes === null;
-		if(!Array.isArray(prefixes) && !isDelete) { throw new Error("The `prefixes` argument should be array of strings or `null`"); }
+		if(!Array.isArray(prefixes) && !isDelete) { throw new Error("The `prefixes` argument must be an array of strings or `null`"); }
 		const currentRow = await this._getGuildRow(this._normalizeGuildId(guild));
 		if(!currentRow) {
 			await this._db(this._tableName).insert(<IGuildPrefixRawRow>{
