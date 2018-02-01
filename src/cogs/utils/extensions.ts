@@ -38,3 +38,8 @@ export function negativeArray<T>(input: T[]) : T[] {
 		}
 	});
 }
+
+// created-by: dafri
+export function isPromise<T>(obj: any) : obj is Promise<T> {
+	return typeof obj === "object" && typeof obj.then === "function";
+}
