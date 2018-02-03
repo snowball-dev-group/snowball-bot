@@ -346,7 +346,7 @@ export type CheckArgument = ((ctx: IMessageFlowContext) => Promise<boolean> | bo
  * Be aware! Promise must resolve in set timeout, this can be configured by option `flowTimings.handlerTimeout`, by default this value is set to constant `HANDLER_TIMEOUT` which you can get by improrting from this file. If promise will not resolve in set timeout, the flow continues.
  * Be also aware that you can break flow if you need to: if promise resolves with {FlowControl}, then checks the argument and does required stuff with Flow.
  */
-export type Handler = ((ctx: IMessageFlowContext) => Promise<void>|void);
+export type Handler = ((ctx: IMessageFlowContext) => Promise<any>|any);
 /**
  * Possible Promise resolved result of the {Handler}.
  */
