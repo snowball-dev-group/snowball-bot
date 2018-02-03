@@ -1,9 +1,9 @@
 import { INullableHashMap } from "../../types/Types";
-import { Guild, GuildChannel } from "discord.js";
+import { Guild, TextChannel, DMChannel, GroupDMChannel } from "discord.js";
 import { EventEmitter } from "events";
 import { isPromise } from "./extensions";
 
-type PossibleTargets = string | Guild | GuildChannel;
+type PossibleTargets = string | Guild | TextChannel | DMChannel | GroupDMChannel;
 type EmptyVoid = () => void;
 
 /**
@@ -43,7 +43,7 @@ export default class DiscordLocker {
 	 * @returns `true` if lock happened, otherwise `false`
 	 */
 	public lock(targetId: PossibleTargets, onLock: (unlock: EmptyVoid) => void, lockFailed?: EmptyVoid) {
-		if(typeof targetId !== "string") { targetId = this._normalizeTarget(targetId); }
+		targetId = this._normalizeTarget(targetId);
 		if(this._lockStates[targetId]) {
 			lockFailed && process.nextTick(lockFailed);
 			return false;
@@ -60,12 +60,13 @@ export default class DiscordLocker {
 	 * @param lockFailed Callback function if lock failed
 	 * @returns Promise, which resolves with result of onLock function once unlock happens and rejects if lock failed
 	 */
-	public lockAwait<T = void>(targetId: PossibleTargets, onLock: (unlock: EmptyVoid) => T, lockFailed?: EmptyVoid) : Promise<T> {
-		if(typeof targetId !== "string") { targetId = this._normalizeTarget(targetId); }
+	public lockAwait<T = void>(targetId: PossibleTargets, onLock: () => T, lockFailed?: EmptyVoid) : Promise<T> {
+		targetId = this._normalizeTarget(targetId);
 		return new Promise((res, rej) => {
 			const isLocked = this.lock(targetId, async (unlock) => {
-				const onLockResult = onLock(unlock);
-				return isPromise<T>(onLockResult) ? res(await onLockResult) : res(onLockResult);
+				let onLockResult = onLock();
+				isPromise<T>(onLockResult) && (onLockResult = await onLockResult);
+				res(onLockResult); unlock();
 			}, lockFailed);
 
 			if(!isLocked) {
@@ -85,7 +86,7 @@ export default class DiscordLocker {
 	 * @param args Arguments to pass to callback function
 	 */
 	public waitForUnlock<T>(targetId: PossibleTargets, onUnlock: (...args: T[]) => void, ...args: T[]) {
-		if(typeof targetId !== "string") { targetId = this._normalizeTarget(targetId); }
+		targetId = this._normalizeTarget(targetId);
 		if(!this._lockStates[targetId]) { return process.nextTick(onUnlock, ...args); }
 		this._dispatcher.once(`${targetId}:unlock`, () => process.nextTick(onUnlock, ...args));
 	}
@@ -107,7 +108,7 @@ export default class DiscordLocker {
 	 * @returns `true` if unlock happened, otherwise `false`
 	 */
 	public unlock(targetId: PossibleTargets) {
-		if(typeof targetId !== "string") { targetId = this._normalizeTarget(targetId); }
+		targetId = this._normalizeTarget(targetId);
 		if(!this._lockStates[targetId]) { return false; }
 		this._lockStates[targetId] = false;
 		this._dispatcher.emit(`${targetId}:unlock`);
@@ -123,11 +124,8 @@ export default class DiscordLocker {
 	}
 
 	private _normalizeTarget(target: PossibleTargets) {
-		if(target instanceof Guild) {
-			return `g[${target.id}]`;
-		} else if(target instanceof GuildChannel) {
-			return `${target.type}[${target.id}]`;
-		}
-		return target;
+		if(typeof target === "string") { return target; }
+		if(target instanceof Guild) { return `g[${target.id}]`; }
+		return `${target.type}[${target.id}]`;
 	}
 }

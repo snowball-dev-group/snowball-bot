@@ -1,11 +1,11 @@
 import { INullableHashMap } from "../../types/Types";
-import { Guild, GuildChannel } from "discord.js";
+import { Guild, TextChannel, DMChannel, GroupDMChannel } from "discord.js";
 import { isPromise } from "./extensions";
 
 export const DEFAULT_CAPACITY = 1;
 
 type IQueueItem = (leave: () => number) => void;
-type PossibleTargets = string | Guild | GuildChannel;
+type PossibleTargets = string | Guild | TextChannel | DMChannel | GroupDMChannel;
 
 export default class DiscordSemaphore {
 	private readonly _queue: INullableHashMap<IQueueItem[]> = Object.create(null);
@@ -26,7 +26,7 @@ export default class DiscordSemaphore {
 	 * @returns `true` if number of active workers is equal to zero, otherwise false
 	 */
 	public isFree(targetId: PossibleTargets) {
-		if(typeof targetId !== "string") { targetId = this._normalizeTarget(targetId); }
+		targetId = this._normalizeTarget(targetId);
 		return this._getWorkersCount(targetId) === 0;
 	}
 
@@ -36,7 +36,7 @@ export default class DiscordSemaphore {
 	 * @returns Number of remaining tasks in the queue
 	 */
 	public queueSize(targetId: PossibleTargets) {
-		if(typeof targetId !== "string") { targetId = this._normalizeTarget(targetId); }
+		targetId = this._normalizeTarget(targetId);
 		return this._getQueue(targetId).length;
 	}
 
@@ -46,7 +46,7 @@ export default class DiscordSemaphore {
 	 * @param task Task to run
 	 */
 	public take(targetId: PossibleTargets, task: IQueueItem) {
-		if(typeof targetId !== "string") { targetId = this._normalizeTarget(targetId); }
+		targetId = this._normalizeTarget(targetId);
 
 		const queue = this._getQueue(targetId);
 
@@ -89,7 +89,8 @@ export default class DiscordSemaphore {
 		return workersRemaining; // useful data I guess
 	}
 
-	private _normalizeTarget(target: Guild | GuildChannel) {
+	private _normalizeTarget(target: PossibleTargets) {
+		if(typeof target === "string") { return target; }
 		if(target instanceof Guild) { return `g[${target.id}]`; }
 		return `${target.type}[${target.id}]`;
 	}
