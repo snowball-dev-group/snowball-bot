@@ -27,7 +27,7 @@ class Ping extends Plugin implements IModule {
 		if(!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
 
 		messagesFlowsKeeper.onInit((flowsMan: MessagesFlows) => {
-			return this.flowHandler = flowsMan.watchForMessages((ctx) => <any>this.onMessage(ctx), ALLOWED_CMDS);
+			return this.flowHandler = flowsMan.watchForMessages((ctx) => this.onMessage(ctx), ALLOWED_CMDS);
 		});
 	}
 
@@ -41,7 +41,7 @@ class Ping extends Plugin implements IModule {
 
 		const isEmbed = ctx.parsed.command === "ping_embed",
 		startDate = Date.now(),
-		msg = <Message>await ctx.message.channel.send(isEmbed ? { embed: { description: "Pong!" } } : "ℹ Pong!"),
+		msg = <Message> await ctx.message.channel.send(isEmbed ? { embed: { description: "Pong!" } } : "ℹ Pong!"),
 		receivedTime = Date.now(),
 		ping = Math.max(0, (msg.createdAt.getTime() - startDate)),
 		delay = receivedTime - startDate,
