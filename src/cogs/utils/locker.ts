@@ -23,8 +23,8 @@ type EmptyVoid = () => void;
  * Use semaphore if you could do changes at the same time or want to build queues.
  */
 export default class DiscordLocker {
-	private _lockStates: INullableHashMap<boolean>;
-	private _dispatcher: EventEmitter;
+	private readonly _lockStates: INullableHashMap<boolean>;
+	private readonly _dispatcher: EventEmitter;
 
 	/**
 	 * __Creates new locker__.

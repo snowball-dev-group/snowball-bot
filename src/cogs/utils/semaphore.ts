@@ -8,9 +8,9 @@ type IQueueItem = (leave: () => number) => void;
 type PossibleTargets = string | Guild | GuildChannel;
 
 export default class DiscordSemaphore {
-	private _queue: INullableHashMap<IQueueItem[]> = Object.create(null);
-	private _currentWorkers: INullableHashMap<number> = Object.create(null);
-	private _capacity: number;
+	private readonly _queue: INullableHashMap<IQueueItem[]> = Object.create(null);
+	private readonly _currentWorkers: INullableHashMap<number> = Object.create(null);
+	private readonly _capacity: number;
 
 	/**
 	 * Creates new semaphore for your 'track'
