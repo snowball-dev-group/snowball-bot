@@ -1,6 +1,6 @@
 import { getDB } from "./db";
 import { Guild } from "discord.js";
-import { getLogger } from "./utils";
+import * as getLogger from "loggy";
 
 interface IGuildPreference {
 	/**

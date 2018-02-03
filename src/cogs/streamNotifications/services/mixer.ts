@@ -1,9 +1,10 @@
 import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError, StreamStatusChangedAction } from "../baseService";
-import { IEmbed, sleep, getLogger, escapeDiscordMarkdown } from "../../utils/utils";
+import { IEmbed, sleep, escapeDiscordMarkdown } from "../../utils/utils";
 import { getUUIDByString } from "../../utils/text";
 import { default as fetch } from "node-fetch";
 import { Carina } from "carina";
 import * as ws from "ws";
+import * as getLogger from "loggy";
 import { EventEmitter } from "events";
 import { IHashMap } from "../../../types/Types";
 

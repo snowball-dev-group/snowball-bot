@@ -1,10 +1,11 @@
 import "any-promise/register/bluebird";
-import * as fs from "mz/fs";
 import { join as pathJoin } from "path";
-import * as formatMessage from "format-message";
-import { getLogger, ILoggerFunction } from "../cogs/utils/utils";
 import { Humanizer, IHumanizerLanguage, IHumanizerOptionsOverrides, IHumanizerPluralOverride, IHumanizerDefaultOptions } from "./Humanizer";
 import { ISchema } from "./Typer";
+import { ILogFunction } from "loggy";
+import * as fs from "mz/fs";
+import * as formatMessage from "format-message";
+import * as getLogger from "loggy";
 
 export interface ILocalizerOptions {
 	languages: string[];
@@ -44,7 +45,7 @@ const IGNORED_KEYS = ["+COVERAGE", "$schema"];
 
 export class Localizer {
 	private readonly _opts: ILocalizerOptions;
-	private readonly _log: ILoggerFunction;
+	private readonly _log: ILogFunction;
 	private readonly _sourceLang: string;
 	private readonly _fallbackQueue: string[] = [];
 	private readonly _humanizersMap: ILanguageHashMap<Humanizer> = Object.create(null);

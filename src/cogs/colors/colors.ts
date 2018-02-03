@@ -1,7 +1,7 @@
 import { IModule, ModuleBase } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, Role, GuildMember } from "discord.js";
-import { getLogger, EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "../utils/utils";
+import { EmbedType, resolveGuildRole, IEmbedOptionsField, escapeDiscordMarkdown } from "../utils/utils";
 import { getDB } from "../utils/db";
 import { command as cmd } from "../utils/help";
 import { createConfirmationMessage } from "../utils/interactive";
@@ -11,9 +11,10 @@ import { randomPick } from "../utils/random";
 import { isVerified, isInitializated as isVerifiedEnabled } from "../utils/verified";
 import { messageToExtra } from "../utils/failToDetail";
 import { Whitelist } from "../whitelist/whitelist";
-import * as knex from "knex";
 import { join as pathJoin } from "path";
 import { IHashMap, createHashMap } from "../../types/Types";
+import * as knex from "knex";
+import * as getLogger from "loggy";
 
 const TABLE_NAME = "color_prefixes";
 const COLORFUL_PREFIX = "!color";

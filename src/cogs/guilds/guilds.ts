@@ -1,11 +1,10 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, GuildMember, Role, TextChannel, DMChannel, DiscordAPIError, Emoji } from "discord.js";
-import { getLogger, EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
+import { EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import { default as fetch } from "node-fetch";
 import { createConfirmationMessage, waitForMessages } from "../utils/interactive";
-import * as ua from "universal-analytics";
 import { parse as parseURI } from "url";
 import { replaceAll } from "../utils/text";
 import { command } from "../utils/help";
@@ -13,6 +12,8 @@ import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "../ut
 import { randomString } from "../utils/random";
 import { IPCMessage, INullableHashMap } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
+import * as ua from "universal-analytics";
+import * as getLogger from "loggy";
 
 const TABLE_NAME = "guilds";
 

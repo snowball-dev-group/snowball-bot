@@ -2,7 +2,7 @@ import { Whitelist } from "../whitelist/whitelist";
 import { IModule, ModuleLoader, convertToModulesMap, IModuleInfo, ModuleBase } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, TextChannel, GuildMember, DiscordAPIError, User, DMChannel, GuildChannel } from "discord.js";
-import { escapeDiscordMarkdown, getLogger, resolveGuildChannel } from "../utils/utils";
+import { escapeDiscordMarkdown, resolveGuildChannel } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
 import { simpleCmdParse } from "../utils/text";
 import { generateLocalizedEmbed, getGuildLanguage, getUserLanguage, localizeForUser } from "../utils/ez-i18n";
@@ -13,6 +13,7 @@ import { command } from "../utils/help";
 import { INullableHashMap, Possible } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
 import { isPremium } from "../utils/premium";
+import * as getLogger from "loggy";
 
 const PREFIX = "!streams";
 const MAX_NOTIFIED_LIFE = 86400000; // ms
@@ -288,7 +289,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	// #region Subcommands
 
-	async subcmd_setChannel(msg: Message, args: string[] | undefined) {
+	private async subcmd_setChannel(msg: Message, args: string[] | undefined) {
 		// !streams set_channel <#228174260307230721>
 		// args at this point: ["<#228174260307230721>"]
 
@@ -354,7 +355,7 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 	}
 
-	async subcmd_edit(msg: Message, args: string[] | undefined) {
+	private async subcmd_edit(msg: Message, args: string[] | undefined) {
 		// !streams edit YouTube, ID, mention_everyone, true
 		// args at this point: ["YouTube", "ID", "mention_everyone", "true"]
 
@@ -473,7 +474,7 @@ class StreamNotifications extends Plugin implements IModule {
 	 * @param args Arguments array
 	 * @param scope Scope of calling. "user" if called to subscribe for user, or "user" if for guiild
 	 */
-	async subcmd_add(msg: Message, args: string[] | undefined, scope: "user" | "guild") {
+	private async subcmd_add(msg: Message, args: string[] | undefined, scope: "user" | "guild") {
 		// !streams add YouTube, BlackSilverUfa
 		// args at this point: ["YouTube", "BlackSilverUfa"]
 
@@ -636,7 +637,7 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 	}
 
-	async subcmd_remove(msg: Message, args: string[] | undefined, scope: "guild" | "user") {
+	private async subcmd_remove(msg: Message, args: string[] | undefined, scope: "guild" | "user") {
 		// !streams remove YouTube, ID
 		// args at this point: ["YouTube", "ID"]
 
@@ -759,7 +760,7 @@ class StreamNotifications extends Plugin implements IModule {
 		};
 	}
 
-	async subcmd_list(msg: Message, calledAs: string | undefined, args: string[] | undefined) {
+	private async subcmd_list(msg: Message, calledAs: string | undefined, args: string[] | undefined) {
 		// !streams 2
 		// !streams YouTube 2
 

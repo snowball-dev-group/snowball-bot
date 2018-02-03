@@ -3,7 +3,7 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, Role, GuildMember, VoiceChannel } from "discord.js";
 import { getDB } from "../utils/db";
-import { getLogger, EmbedType, resolveGuildRole, resolveGuildChannel } from "../utils/utils";
+import { EmbedType, resolveGuildRole, resolveGuildChannel } from "../utils/utils";
 import { isVerified, isInitializated as isVerifiedEnabled } from "../utils/verified";
 import * as knex from "knex";
 import { replaceAll } from "../utils/text";
@@ -11,6 +11,7 @@ import { messageToExtra } from "../utils/failToDetail";
 import { command } from "../utils/help";
 import { createConfirmationMessage } from "../utils/interactive";
 import MessagesFlows, { IPublicFlowUnit, IMessageFlowContext } from "../cores/messagesFlows";
+import * as getLogger from "loggy";
 
 const TABLE_NAME = "voice_role";
 const SPECIFIC_TABLE_NAME = "specificvoicerole";

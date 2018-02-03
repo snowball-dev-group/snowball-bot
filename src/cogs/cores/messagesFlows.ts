@@ -1,10 +1,11 @@
 import { randomString } from "../utils/random";
-import { getLogger, sleep } from "../utils/utils";
+import { sleep } from "../utils/utils";
 import { setTimeout } from "timers";
 import PrefixAll from "./prefixAll/prefixAll";
 import { IModule, ModuleBase, ModuleLoadState } from "../../types/ModuleLoader";
 import { Message } from "discord.js";
 import { ISimpleCmdParseResult, simpleCmdParse } from "../utils/text";
+import * as getLogger from "loggy";
 import * as Bluebird from "bluebird";
 
 export const MESSAGEFLOWS_SIGNATURE = "snowball.core_features.messageflows";

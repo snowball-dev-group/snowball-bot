@@ -2,10 +2,11 @@ import { isPremium } from "../utils/premium";
 import { Plugin } from "../plugin";
 import { IModule } from "../../types/ModuleLoader";
 import { GuildMember, Message, Role, TextChannel } from "discord.js";
-import * as Random from "random-js";
-import { getLogger, EmbedType, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
+import { EmbedType, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
 import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
 import { randomPick } from "../utils/random";
+import * as Random from "random-js";
+import * as getLogger from "loggy";
 
 const SYNC_INTERVAL_MIN = 1800000;
 

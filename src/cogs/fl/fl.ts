@@ -1,9 +1,10 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from ".././plugin";
 import { Message, GuildMember, TextChannel } from "discord.js";
-import { getLogger, EmbedType, generateEmbed } from "../utils/utils";
+import { EmbedType, generateEmbed } from "../utils/utils";
 import { command } from "../utils/help";
 import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
+import * as getLogger from "loggy";
 
 const FL_COLOR = 0x1E88E5;
 

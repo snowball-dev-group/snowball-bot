@@ -1,6 +1,6 @@
-import { getLogger } from "../../utils/utils";
 import { getDB } from "../../utils/db";
 import { Guild } from "discord.js";
+import * as getLogger from "loggy";
 
 // 100% copy-typing from "dbController" of archive :^)
 

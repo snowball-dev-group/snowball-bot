@@ -4,11 +4,12 @@ import { ISimpleCmdParseResult, replaceAll, simpleCmdParse } from "../../utils/t
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
 import { Message, Guild, SnowflakeUtil, TextChannel, User } from "discord.js";
-import { EmbedType, getLogger, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
+import { EmbedType, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
 import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "../../utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
 import { getPreferenceValue, setPreferenceValue } from "../../utils/guildPrefs";
 import { createConfirmationMessage } from "../../utils/interactive";
+import * as getLogger from "loggy";
 
 const PREFIX = "!archive";
 const MSG_PREFIX = "!message";

@@ -4,10 +4,11 @@ import { Message, GuildMember } from "discord.js";
 import { categoryLocalizedName, command } from "../utils/help";
 import { localizeForUser, getPrefsNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed, getUserLanguage } from "../utils/ez-i18n";
 import { startsOrEqual, slice } from "../utils/text";
-import { EmbedType, getLogger } from "../utils/utils";
+import { EmbedType } from "../utils/utils";
 import { setPreferenceValue as setUserPref } from "../utils/userPrefs";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref } from "../utils/guildPrefs";
 import { IHashMap, createHashMap } from "../../types/Types";
+import * as getLogger from "loggy";
 
 const BASE_PREFIX = "!sb_lang";
 const CMD = {

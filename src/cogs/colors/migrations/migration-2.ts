@@ -1,7 +1,7 @@
 import { IColorfulMigration, IColorfulGuildColorInfo } from "../colors";
 import * as knex from "knex";
+import * as getLogger from "loggy";
 import { IHashMap } from "../../../types/Types";
-import { getLogger } from "../../utils/utils";
 
 class NoES6Maps implements IColorfulMigration {
     name = "NO_ES6_MAPS";

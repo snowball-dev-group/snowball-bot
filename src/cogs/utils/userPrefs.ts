@@ -1,6 +1,6 @@
 import { getDB } from "./db";
 import { GuildMember, User } from "discord.js";
-import { getLogger } from "./utils";
+import * as getLogger from "loggy";
 
 interface IUserPreference {
 	/**

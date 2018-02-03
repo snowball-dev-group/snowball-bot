@@ -1,8 +1,8 @@
 import { default as fetch } from "node-fetch";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
-import { getLogger } from "../../../utils/utils";
 import { get, storeValue } from "../../../utils/cache";
 import { DetailedError } from "../../../../types/Types";
+import * as getLogger from "loggy";
 
 const CACHE_OWNER = "lastfm:recents";
 const LOG = getLogger("LastFMPlugin");

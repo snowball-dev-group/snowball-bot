@@ -1,6 +1,6 @@
 import { getDB, createTableBySchema } from "./db";
 import { User, GuildMember } from "discord.js";
-import { getLogger } from "./utils";
+import * as getLogger from "loggy";
 import { INullableHashMap } from "../../types/Types";
 
 const PREMIUM_TABLE = "premiums";

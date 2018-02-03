@@ -4,10 +4,11 @@ import { Message, Guild, TextChannel, GuildMember } from "discord.js";
 import { command } from "../utils/help";
 import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
 import { simpleCmdParse, canBeSnowflake } from "../utils/text";
-import { EmbedType, getLogger, escapeDiscordMarkdown } from "../utils/utils";
+import { EmbedType, escapeDiscordMarkdown } from "../utils/utils";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "../utils/guildPrefs";
 import * as parseTime from "timestring";
 import * as moment from "moment-timezone";
+import * as getLogger from "loggy";
 import { createConfirmationMessage } from "../utils/interactive";
 
 const POSSIBLE_CHAT_ROOMS = ["admins", "admin-channel", "admin_channel", "admins-chat", "admins_chat", "admin", "mod-channel", "mods-channel", "mods", "mods-chat", "mod_chat", "chat", "general"];

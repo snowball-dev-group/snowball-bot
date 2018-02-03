@@ -11,9 +11,10 @@ import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "../uti
 import { command as docCmd } from "../utils/help";
 import { isPremium } from "../utils/premium";
 import { timeDiff } from "../utils/time";
-import { EmbedType, escapeDiscordMarkdown, getLogger, IEmbed, IEmbedOptionsField, resolveGuildMember } from "../utils/utils";
+import { EmbedType, escapeDiscordMarkdown, IEmbed, IEmbedOptionsField, resolveGuildMember } from "../utils/utils";
 import { AddedProfilePluginType, IAddedProfilePlugin, IProfilesPlugin } from "./plugins/plugin";
 import { messageToExtra, memberToExtra, guildToExtra } from "../utils/failToDetail";
+import * as getLogger from "loggy";
 
 export interface IProfilesModuleConfig {
 	emojis: {

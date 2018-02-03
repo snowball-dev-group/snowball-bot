@@ -1,4 +1,3 @@
-import * as createLogger from "loggy";
 import { Guild, GuildMember } from "discord.js";
 import { replaceAll } from "./text";
 
@@ -363,11 +362,6 @@ export interface ILoggerFunction {
 export interface ILogger {
 	name: string;
 	log: ILoggerFunction;
-}
-
-export function getLogger(name: string): ILoggerFunction {
-	if(!name) { throw new Error("No logger name provided"); }
-	return createLogger(name);
 }
 
 export const SNOWFLAKE_REGEXP = /^[0-9]{16,20}$/;

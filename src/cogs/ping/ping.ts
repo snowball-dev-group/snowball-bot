@@ -2,9 +2,9 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 import { command } from "../utils/help";
-import { getLogger } from "../utils/utils";
 import MessagesFlows, { IPublicFlowUnit, IMessageFlowContext } from "../cores/messagesFlows";
 import { getUserLanguage } from "../utils/ez-i18n";
+import * as getLogger from "loggy";
 
 const ALLOWED_CMDS = ["ping", "ping_embed"];
 

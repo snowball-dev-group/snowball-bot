@@ -1,13 +1,14 @@
 import { Whitelist } from "../../whitelist/whitelist";
-import { EmbedType, getLogger } from "../../utils/utils";
+import { EmbedType } from "../../utils/utils";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
 import { ISimpleCmdParseResult, simpleCmdParse, stripSpaces } from "../../utils/text";
 import { Plugin } from "../../plugin";
-import PrefixAll from "./prefixAll";
 import { IModule, ModuleBase } from "../../../types/ModuleLoader";
 import { Message } from "discord.js";
 import { randomNumber, randomPick } from "../../utils/random";
 import { createConfirmationMessage } from "../../utils/interactive";
+import PrefixAll from "./prefixAll";
+import * as getLogger from "loggy";
 
 const DEFAULT_LIMITATIONS = <IPrefixAllPluginLimitations>{
 	non_partners: 2, // 1 additional prefix?

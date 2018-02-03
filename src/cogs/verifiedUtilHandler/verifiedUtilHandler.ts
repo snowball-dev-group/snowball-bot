@@ -1,7 +1,7 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { messageEvent, guildMemberAddEvent, guildMemberRemoveEvent, init } from "../utils/verified";
-import { getLogger } from "../utils/utils";
+import * as getLogger from "loggy";
 
 class VerifiedUtilHandler extends Plugin implements IModule {
 	public get signature() {

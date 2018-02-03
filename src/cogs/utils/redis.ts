@@ -1,5 +1,5 @@
 import * as Redis from "ioredis";
-import { getLogger } from "./utils";
+import * as getLogger from "loggy";
 
 let redisClient: undefined | Redis.Redis = undefined;
 

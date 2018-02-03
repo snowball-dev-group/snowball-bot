@@ -1,5 +1,5 @@
 import { default as fetch, Response } from "node-fetch";
-import { getLogger } from "../../../utils/utils";
+import * as getLogger from "loggy";
 import { DetailedError } from "../../../../types/Types";
 import { get, storeValue } from "../../../utils/cache";
 

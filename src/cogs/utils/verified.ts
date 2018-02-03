@@ -1,6 +1,6 @@
 import { getDB } from "./db";
 import { GuildMember, Message } from "discord.js";
-import { getLogger } from "./utils";
+import * as getLogger from "loggy";
 import { INullableHashMap } from "../../types/Types";
 
 interface IVerificationData {

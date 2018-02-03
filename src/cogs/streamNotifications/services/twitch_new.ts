@@ -1,5 +1,5 @@
 import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError, StreamStatusChangedAction } from "../baseService";
-import { IEmbed, sleep, getLogger, escapeDiscordMarkdown, IEmbedOptionsField } from "../../utils/utils";
+import { IEmbed, sleep, escapeDiscordMarkdown, IEmbedOptionsField } from "../../utils/utils";
 import { default as fetch } from "node-fetch";
 import { chunk } from "lodash";
 import { EventEmitter } from "events";
@@ -11,6 +11,7 @@ import { parse as parseUrl, Url, URL } from "url";
 import { randomString } from "../../utils/random";
 import { createHmac } from "mz/crypto";
 import { getDB } from "../../utils/db";
+import * as getLogger from "loggy";
 
 // customize
 const TWITCH_ICON = "https://p.dafri.top/snowball/res/twitch_glitch.png";

@@ -3,13 +3,14 @@ import { Plugin } from "../plugin";
 import { Message, Guild, DiscordAPIError } from "discord.js";
 import { command } from "../utils/help";
 import { init, checkPremium, givePremium, deletePremium, getPremium } from "../utils/premium";
-import { getLogger, EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
+import { EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
 import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser } from "../utils/ez-i18n";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "../utils/guildPrefs";
 import { createConfirmationMessage } from "../utils/interactive";
+import { messageToExtra } from "../utils/failToDetail";
 import * as timestring from "timestring";
 import * as moment from "moment-timezone";
-import { messageToExtra } from "../utils/failToDetail";
+import * as getLogger from "loggy";
 
 const PREMIUMCTRL_PREFIX = `!premiumctl`;
 const ALLOWED_TO_CONTROL = [$botConfig.botOwner];

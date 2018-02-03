@@ -1,6 +1,6 @@
 import { getDB } from "../../utils/db";
-import { getLogger } from "../../utils/utils";
 import { Message, MessageAttachment, MessageEmbed } from "discord.js";
+import * as getLogger from "loggy";
 
 const DEFAULT_TABLE_NAME = "messages";
 const ERRORS = {

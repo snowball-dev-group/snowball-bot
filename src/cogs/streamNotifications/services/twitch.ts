@@ -1,9 +1,10 @@
 import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError, StreamStatusChangedAction } from "../baseService";
-import { IEmbed, sleep, getLogger, escapeDiscordMarkdown } from "../../utils/utils";
+import { IEmbed, sleep, escapeDiscordMarkdown } from "../../utils/utils";
 import { default as fetch } from "node-fetch";
 import { chunk } from "lodash";
 import { EventEmitter } from "events";
 import { IHashMap } from "../../../types/Types";
+import * as getLogger from "loggy";
 
 const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
 const TWITCH_COLOR = 0x6441A4;

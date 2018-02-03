@@ -1,10 +1,11 @@
 import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { Message, GuildMember } from "discord.js";
-import { generateEmbed, EmbedType, IEmbedOptionsField, getLogger } from "../../../utils/utils";
+import { generateEmbed, EmbedType, IEmbedOptionsField } from "../../../utils/utils";
 import { localizeForUser, getUserLanguage } from "../../../utils/ez-i18n";
 import { IRegionalProfile, Tier } from "./owApiInterfaces";
 import { getProfile, IOverwatchProfilePluginInfo } from "./overwatch";
 import { DetailedError } from "../../../../types/Types";
+import * as getLogger from "loggy";
 
 const ACCEPTED_REGIONS = ["eu", "kr", "us"];
 const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];

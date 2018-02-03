@@ -2,13 +2,14 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User } from "discord.js";
 import { Context } from "vm";
-import { EmbedType, getLogger } from "../utils/utils";
+import { EmbedType } from "../utils/utils";
 import { generateLocalizedEmbed, localizeForUser, UserIdentify } from "../utils/ez-i18n";
 import { replaceAll } from "../utils/text";
+import { isPromise } from "../utils/extensions";
 import * as util from "util";
 import * as VM from "vm";
 import * as Bluebird from "bluebird";
-import { isPromise } from "../utils/extensions";
+import * as getLogger from "loggy";
 
 const PREFIX = "``";
 const PREFIX_LENGTH = PREFIX.length;

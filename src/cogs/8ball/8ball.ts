@@ -3,7 +3,8 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User } from "discord.js";
 import * as Random from "random-js";
-import { getLogger, EmbedType, sleep } from "../utils/utils";
+import * as getLogger from "loggy";
+import { EmbedType, sleep } from "../utils/utils";
 import { command } from "../utils/help";
 import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
 

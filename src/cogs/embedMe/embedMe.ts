@@ -3,7 +3,7 @@ import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 import { command as docCmd } from "../utils/help";
 import { localizeForUser } from "../utils/ez-i18n";
-import { getLogger } from "../utils/utils";
+import * as getLogger from "loggy";
 
 @docCmd("HELPFUL", "embed", "loc:EMBEDME_CMDMETA_DESCRIPTION", {
 	"loc:PROFILES_META_SETBIO_ARG0": {

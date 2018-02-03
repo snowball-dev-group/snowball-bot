@@ -2,9 +2,10 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, TextChannel, GuildMember } from "discord.js";
 import { getDB } from "../utils/db";
+import { generateEmbed, EmbedType } from "../utils/utils";
 import * as knex from "knex";
 import * as Random from "random-js";
-import { generateEmbed, EmbedType, getLogger } from "../utils/utils";
+import * as getLogger from "loggy";
 
 enum DBInitializationState {
 	NotInitialized = 2,
@@ -66,7 +67,8 @@ class CountV2 extends Plugin implements IModule {
 	public get signature() {
 		return "dafri.interactive.count-v2";
 	}
-	log: Function = getLogger("CountV2Channel");
+
+	log = getLogger("CountV2Channel");
 	dbClient: knex;
 	countRegex: RegExp;
 	dbInitialized: DBInitializationState = DBInitializationState.NotInitialized;
@@ -254,8 +256,7 @@ class CountV2 extends Plugin implements IModule {
 		const alreadyAnswered = rRowAnsweredBy.indexOf(msg.author.id) !== -1;
 
 		if(alreadyAnswered && answerTimeOK) {
-			msg.delete();
-			return;
+			return msg.delete();
 		} else if(!alreadyAnswered) {
 			rRowAnsweredBy.push(msg.author.id);
 			latestRow.answered_by = JSON.stringify(rRowAnsweredBy);

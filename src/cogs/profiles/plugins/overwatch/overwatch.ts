@@ -1,4 +1,4 @@
-import { getLogger } from "../../../utils/utils";
+import * as getLogger from "loggy";
 import { default as fetch } from "node-fetch";
 import { IBlobResponse, IRegionalProfile } from "./owApiInterfaces";
 import { INullableHashMap, DetailedError } from "../../../../types/Types";
