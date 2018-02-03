@@ -16,7 +16,8 @@
 		"noUnusedParameters": true,
 		"allowUnreachableCode": false,
 		"pretty": true,
-		"newLine": "LF"
+		"newLine": "LF",
+		"rootDir": "src"
 	},
 	"include": [
 		"src/**/*",
