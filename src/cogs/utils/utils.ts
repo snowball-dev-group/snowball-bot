@@ -529,8 +529,6 @@ export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEm
 			continue;
 		}
 
-		const resolvedEmoji = store.get(resolvedEmojisMap);
-
 		if(!SNOWFLAKE_REGEXP.test(emojiId)) {
 			if(strict) {
 				throw new Error(`Invalid Emoji ID provided by key "${emojiKey}" - "${emojiId}"`);
@@ -538,7 +536,9 @@ export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEm
 			continue;
 		}
 
-		if(strict && resolvedEmoji == null) {
+		const resolvedEmoji = store.get(emojiId);
+
+		if(strict && !resolvedEmoji) {
 			throw new Error(`Emoji with ID "${emojiId}" by key "${emojiKey}" not found`);
 		}
 
