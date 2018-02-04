@@ -183,6 +183,7 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 }
 
 let loadComplete = false;
+let exitCalls = 0;
 
 async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotConfig) {
 	log("info", "[Run] Initializing bot...");
@@ -199,7 +200,11 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotCo
 
 	log("info", "[Shutdown] Blocking SIGINT");
 	process.on("SIGINT", async () => {
-		if(!loadComplete) { return false; }
+		if(!loadComplete) {
+			if(++exitCalls < 5) { return false; }
+			return process.exit(130);
+		}
+		logger.setAsync(false);
 		log("info", "[Shutdown] We're stopping Snowball, please wait a bit...");
 		try {
 			await snowball.shutdown("interrupted");
@@ -218,6 +223,7 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotCo
 	snowball.prepareDiscordClient();
 
 	process.on("uncaughtException", (err) => {
+		logger.setAsync(false);
 		log("err", "[Run] Error", err);
 		process.exit(1);
 	});
