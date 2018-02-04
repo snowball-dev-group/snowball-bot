@@ -1,5 +1,6 @@
-import { Guild, GuildMember } from "discord.js";
+import { Guild, GuildMember, GuildEmojiStore } from "discord.js";
 import { replaceAll } from "./text";
+import { INullableHashMap } from "../../types/Types";
 
 export function stringifyError(err, filter = null, space = 2) {
 	const plainObject = {};
@@ -515,4 +516,27 @@ export function sleep<T>(delay: number = 1000, value?: T): Promise<T> {
 			resolve(value);
 		}, delay);
 	});
+}
+
+export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEmojiStore, strict = true) : INullableHashMap<string> {
+	const resolvedEmojisMap = Object.create(null);
+	for(const emojiKey in emojis) {
+		const emojiId = emojis[emojiKey]!;
+
+		// raw cases
+		if(emojiId.startsWith("raw:")) {
+			resolvedEmojisMap[emojiKey] = emojiId.slice(3); // 3 - length
+			continue;
+		}
+
+		const resolvedEmoji = store.resolve(resolvedEmojisMap);
+
+		if(strict && resolvedEmoji == null) {
+			throw new Error(`Emoji with ID "${emojiId}" by key "${emojiKey}" not found`);
+		}
+
+		resolvedEmojisMap[emojiKey] = resolvedEmoji ? resolvedEmoji.toString() : null;
+	}
+
+	return resolvedEmojisMap;
 }
