@@ -646,7 +646,7 @@
     "PROFILES_PROFILE_SETUP_FAILED": "Возникла ошибка при выполнении настройки плагина",
     "PROFILES_PROFILE_SETUP_FAILED:DETAILS": "Подробности",
     "PROFILES_PROFILE_STREAMING": "Стримит **[{streamName}]({url})**",
-    "PROFILES_PROFILE_LISTENING": "Слушает {icon, select, _ {} other {{icon} }}**{service}**\n{trackUrl, select, _ {} other {[}}{artists} - **{trackName}** ({albumName}){trackUrl, select, _ {} other {]({trackUrl})}}",
+    "PROFILES_PROFILE_LISTENING": "Слушает **{service}**\n{icon, select, _ {} other {{icon} }}{trackUrl, select, _ {} other {[}}{artists} - **{trackName}** ({albumName}){trackUrl, select, _ {} other {]({trackUrl})}}",
     "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR": ", ",
     "PROFILES_PROFILE_TIMEDOUT": "Истекло время ожидания",
     "PROFILES_PROFILE_UPDATED": "Профиль успешно обновлён.",
