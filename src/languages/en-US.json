@@ -646,7 +646,7 @@
     "PROFILES_PROFILE_SETUP_FAILED": "An error occurred while setting up this plugin",
     "PROFILES_PROFILE_SETUP_FAILED:DETAILS": "Details",
     "PROFILES_PROFILE_STREAMING": "Streaming **[{streamName}]({url})**",
-    "PROFILES_PROFILE_LISTENING": "Listening to {icon, select, _ {} other {{icon} }}**{service}**\n{trackUrl, select, _ {} other {[}}**{trackName}** by {artists} (on {albumName}){trackUrl, select, _ {} other {]({trackUrl})}}",
+    "PROFILES_PROFILE_LISTENING": "Listening to **{service}**\n{icon, select, _ {} other {{icon} }}{trackUrl, select, _ {} other {[}}**{trackName}** by {artists} (on {albumName}){trackUrl, select, _ {} other {]({trackUrl})}}",
     "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR": ", ",
     "PROFILES_PROFILE_TIMEDOUT": "Timed out",
     "PROFILES_PROFILE_UPDATED": "The profile has been successfully updated.",
