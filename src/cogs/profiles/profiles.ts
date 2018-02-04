@@ -542,6 +542,7 @@ class Profiles extends Plugin implements IModule {
 		const isBot = target.user.bot;
 
 		let statusString = "";
+		let showStatusChangeTime = true;
 
 		if(target.presence.activity && !dbProfile.activity) {
 			if(target.presence.activity.type === "STREAMING") {
@@ -565,6 +566,8 @@ class Profiles extends Plugin implements IModule {
 					service: escapeDiscordMarkdown(target.presence.activity.name),
 					icon: this.guessServiceEmoji(target.presence.activity.name)
 				});
+
+				showStatusChangeTime = false; // it's kinda not works in this case :9
 			}
 		} else if(dbProfile.activity) {
 			const jsonActivity = JSON.parse(dbProfile.activity) as IUserActivity;
@@ -589,13 +592,15 @@ class Profiles extends Plugin implements IModule {
 			statusString = `${badgesLine} ${statusString}`;
 		}
 
-		if(!isBot && dbProfile.status_changed) {
-			const changedAt = new Date(dbProfile.status_changed).getTime();
-			const diff = Date.now() - changedAt;
-			const sDiff = this.serverTimeHumanize(diff, 2, true, await getUserLanguage(msg.member));
-			statusString += ` (${sDiff})`;
-		} else {
-			statusString += ` (${(await localizeForUser(msg.member, "PROFILES_PROFILE_BOT")).toUpperCase()})`;
+		if(showStatusChangeTime) {
+			if(!isBot && dbProfile.status_changed) {
+				const changedAt = new Date(dbProfile.status_changed).getTime();
+				const diff = Date.now() - changedAt;
+				const sDiff = this.serverTimeHumanize(diff, 2, true, await getUserLanguage(msg.member));
+				statusString += ` (${sDiff})`;
+			} else {
+				statusString += ` (${(await localizeForUser(msg.member, "PROFILES_PROFILE_BOT")).toUpperCase()})`;
+			}
 		}
 
 		const fields: IEmbedOptionsField[] = [];
