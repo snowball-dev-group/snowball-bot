@@ -443,6 +443,8 @@
     "LASTFMPROFILEPLUGIN_ERR_SERVERERROR": "An error occurred on the Last.FM side.\nPlease try again later",
     "LASTFMPROFILEPLUGIN_ERR_UNKNOWN@NOERROR": "Unknown error code.",
     "LASTFMPROFILEPLUGIN_ERR_UNKNOWN": "Unknown error when loading profile.",
+    "LASTFMPROFILEPLUGIN_TRACK": "**{name}** by {artist}",
+    "LASTFMPROFILEPLUGIN_SINCEPLAYED": "{sincePlayed} ago",
     "OWNERCMDS_CHANGEAVY_DONE": "Avatar has been successfully changed",
     "OWNERCMDS_CHANGEAVY_FAULT_REQERROR": "An error occurred while sending request:\n{errMessage}",
     "OWNERCMDS_CHANGEAVY_FAULT_RESPERR": "Server with image returned error",
