@@ -1,12 +1,13 @@
 import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { GuildMember } from "discord.js";
-import { IEmbedOptionsField, escapeDiscordMarkdown } from "../../../utils/utils";
+import { IEmbedOptionsField, escapeDiscordMarkdown, resolveEmojiMap } from "../../../utils/utils";
 import { getOrFetchRecents } from "./lastfm";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
-import { localizeForUser } from "../../../utils/ez-i18n";
+import { localizeForUser, getUserLanguage } from "../../../utils/ez-i18n";
 import { replaceAll } from "../../../utils/text";
 import { DetailedError } from "../../../../types/Types";
 import * as getLogger from "loggy";
+import { default as ProfilesModule } from "../../profiles";
 
 const LOG = getLogger("LastFMPlugin");
 
@@ -16,7 +17,10 @@ export interface ILastFMInfo {
 
 export interface ILastFMPluginConfig {
 	apiKey: string;
-	emojiIconID: string;
+	emojis: {
+		logo: string;
+		ghost: string;
+	};
 }
 
 export class LastFMRecentProfilePlugin implements IProfilesPlugin {
@@ -25,24 +29,18 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 	}
 
 	private readonly config: ILastFMPluginConfig;
-	private readonly _emoji: string;
 
 	constructor(config: ILastFMPluginConfig) {
+		// converting to any
+		config.emojis = <any> resolveEmojiMap(config.emojis, $discordBot.emojis);
 		this.config = config;
-		const _emojiErr = new Error("Emoji not found");
-		if(!this.config.emojiIconID) {
-			throw _emojiErr;
-		}
-		const emoji = $discordBot.emojis.find("id", this.config.emojiIconID);
-		if(!emoji) { throw _emojiErr; }
-		this._emoji = emoji.toString();
 	}
 
-	async getSetupArgs(caller: GuildMember) {
+	public async getSetupArgs(caller: GuildMember) {
 		return localizeForUser(caller, "LASTFMPROFILEPLUGIN_ARGS");
 	}
 
-	async setup(str: string) {
+	public async setup(str: string) {
 		const info: ILastFMInfo = { username: str };
 
 		try {
@@ -58,7 +56,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 		};
 	}
 
-	async getEmbed(info: ILastFMInfo | string, caller: GuildMember): Promise<IEmbedOptionsField> {
+	public async getEmbed(info: ILastFMInfo | string, caller: GuildMember, profilesModule: ProfilesModule): Promise<IEmbedOptionsField> {
 		if(typeof info !== "object") { info = JSON.parse(info) as ILastFMInfo; }
 
 		const logPrefix = `getEmbed(${info.username}):`;
@@ -86,7 +84,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 
 			return {
 				inline: true,
-				name: `${this.config.emojiIconID} Last.FM`,
+				name: `${this.config.emojis.logo} Last.fm`,
 				value: `❌ ${await localizeForUser(caller, errKey)}`
 			};
 		}
@@ -95,22 +93,44 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 			LOG("err", logPrefix, "No 'profile' variable!");
 			return {
 				inline: true,
-				name: `${this._emoji} Last.FM`,
+				name: `${this.config.emojis.logo} Last.fm`,
 				value: `❌ ${await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ERR_INVALIDRESP")}`
 			};
 		}
 
-
 		try {
-			const recentTrack = profile.recenttracks.track[0];
+			let str = profile.recenttracks.track.length === 0 ? `${this.config.emojis.ghost} ${await localizeForUser(caller, "")}` : "";
+			let tracksCount = 0;
+			for(const track of profile.recenttracks.track) {
+				if(++tracksCount > 3) { break; }
+				const fixedUrl = replaceAll(replaceAll(track.url, "(", "%28"), ")", "%29");
 
-			const fixedUrl = recentTrack ? replaceAll(replaceAll(recentTrack.url, "(", "%28"), ")", "%29") : "";
+				let trackStr = await localizeForUser(caller, "LASTFMPROFILEPLUGIN_TRACK", {
+					name: escapeDiscordMarkdown(track.name, true),
+					artist: escapeDiscordMarkdown(track.artist["#text"], true)
+				});
 
-			const str = `${recentTrack ? `🎵 [${escapeDiscordMarkdown(`${recentTrack.artist["#text"]} - ${recentTrack.name}`, true)}](${fixedUrl})` : "no recent track"}`;
+				trackStr = `[${trackStr}](${fixedUrl})`;
+
+				// just typescript and "wtf":
+				//  see I checked `track["@attr"]` and now in second check of now playing
+				//  it tells me that `"@attr"` IS POSSIBLE TO BE UNDEFINED WOOOOOOOAH DUDEEEEE
+				if(track["@attr"] && track["@attr"]!.nowplaying) {
+					trackStr = `🎵 ${trackStr}`;
+				} else if(track.date) {
+					const playedAt = Number(track.date.uts) * 1000;
+					const sincePlayed = profilesModule.serverTimeHumanize(Date.now() - playedAt, 1, false, await getUserLanguage(caller));
+					trackStr = ` ${trackStr} \`${await localizeForUser(caller, "LASTFMPROFILEPLUGIN_SINCEPLAYED", {
+						sincePlayed
+					})}\``;
+				}
+
+				str += `${trackStr}\n`;
+			}
 
 			return {
 				inline: true,
-				name: `${this._emoji} Last.FM`,
+				name: `${this.config.emojis.logo} Last.fm`,
 				value: str
 			};
 		} catch(err) {

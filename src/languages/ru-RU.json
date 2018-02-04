@@ -443,6 +443,8 @@
     "LASTFMPROFILEPLUGIN_ERR_SERVERERROR": "Произошла ошибка на стороне Last.FM.\nПовторите попытку позже",
     "LASTFMPROFILEPLUGIN_ERR_UNKNOWN@NOERROR": "Неизвестный код ошибки.",
     "LASTFMPROFILEPLUGIN_ERR_UNKNOWN": "Неизвестная ошибка при загрузке профиля.",
+    "LASTFMPROFILEPLUGIN_TRACK": "{artist} - **{name}**",
+    "LASTFMPROFILEPLUGIN_SINCEPLAYED": "{sincePlayed} назад",
     "OWNERCMDS_CHANGEAVY_DONE": "Аватарка успешно изменена",
     "OWNERCMDS_CHANGEAVY_FAULT_REQERROR": "Ошибка отправки запроса:\n{errMessage}",
     "OWNERCMDS_CHANGEAVY_FAULT_RESPERR": "Сервер с изображением вернул ошибку",

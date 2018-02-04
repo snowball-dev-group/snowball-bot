@@ -8,9 +8,8 @@ const CACHE_OWNER = "lastfm:recents";
 const LOG = getLogger("LastFMPlugin");
 
 export async function getRecents(username: string, apiKey: string): Promise<IRecentTracksResponse> {
-	
 	const logPrefix = `getRecents(${username}):`;
-	const uri = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${apiKey}&format=json`;
+	const uri = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${apiKey}&limit=3&format=json`;
 	const resp = await fetch(uri);
 
 	if(resp.status !== 200) {
@@ -57,7 +56,7 @@ export async function getOrFetchRecents(username: string, apiKey: string): Promi
 	}
 
 	try {
-		await storeValue(CACHE_OWNER, username, recents);
+		await storeValue(CACHE_OWNER, username, recents, 60);
 	} catch(err) {
 		LOG("err", logPrefix, "Caching failed");
 	}
