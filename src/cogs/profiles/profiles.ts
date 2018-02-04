@@ -563,7 +563,7 @@ class Profiles extends Plugin implements IModule {
 					trackUrl: target.presence.activity["syncID"] || "_",
 					albumName: escapeDiscordMarkdown(target.presence.activity.assets.largeText),
 					service: escapeDiscordMarkdown(target.presence.activity.name),
-					guessedIcon: this.guessServiceEmoji(target.presence.activity.name)
+					icon: this.guessServiceEmoji(target.presence.activity.name)
 				});
 			}
 		} else if(dbProfile.activity) {
