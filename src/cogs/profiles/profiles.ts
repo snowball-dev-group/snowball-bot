@@ -560,7 +560,7 @@ class Profiles extends Plugin implements IModule {
 				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING", {
 					artists: escapeDiscordMarkdown(target.presence.activity.state.split(";").join(await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR"))),
 					trackName: escapeDiscordMarkdown(target.presence.activity.details),
-					trackUrl: target.presence.activity["syncID"] || "_",
+					trackUrl: (target.presence.activity["syncID"] && `https://open.spotify.com/track/${target.presence.activity["syncID"]}`) || "_",
 					albumName: escapeDiscordMarkdown(target.presence.activity.assets.largeText),
 					service: escapeDiscordMarkdown(target.presence.activity.name),
 					icon: this.guessServiceEmoji(target.presence.activity.name)
