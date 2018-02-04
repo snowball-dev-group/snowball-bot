@@ -646,6 +646,8 @@
     "PROFILES_PROFILE_SETUP_FAILED": "Произошла ошибка при настройке плагина",
     "PROFILES_PROFILE_SETUP_FAILED:DETAILS": "",
     "PROFILES_PROFILE_STREAMING": "",
+    "PROFILES_PROFILE_LISTENING": "",
+    "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR": "",
     "PROFILES_PROFILE_TIMEDOUT": "Истекло время ожидания",
     "PROFILES_PROFILE_UPDATED": "Профиль обновлён.",
     "PROFILES_PROFILEPLUGINS_ARGUMENTS": "Аргументы установки: {arguments}",

@@ -646,6 +646,8 @@
     "PROFILES_PROFILE_SETUP_FAILED": "Une erreur s'est produite durant l'installation du plugin",
     "PROFILES_PROFILE_SETUP_FAILED:DETAILS": "",
     "PROFILES_PROFILE_STREAMING": "",
+    "PROFILES_PROFILE_LISTENING": "",
+    "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR": "",
     "PROFILES_PROFILE_TIMEDOUT": "Délai d'attente dépassé",
     "PROFILES_PROFILE_UPDATED": "Le profil a été mis à jour.",
     "PROFILES_PROFILEPLUGINS_ARGUMENTS": "Arguments : {arguments}",

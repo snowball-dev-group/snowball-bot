@@ -646,6 +646,8 @@
     "PROFILES_PROFILE_SETUP_FAILED": "Si è verificato un errore durante la configurazione del plugin",
     "PROFILES_PROFILE_SETUP_FAILED:DETAILS": "Dettagli",
     "PROFILES_PROFILE_STREAMING": "In diretta: **[{streamName}]({url})**",
+    "PROFILES_PROFILE_LISTENING": "",
+    "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR": "",
     "PROFILES_PROFILE_TIMEDOUT": "È scaduto il tempo di attesa",
     "PROFILES_PROFILE_UPDATED": "Il profilo è stato aggiornato con successo.",
     "PROFILES_PROFILEPLUGINS_ARGUMENTS": "Parametri per l'installazione: {arguments}",
