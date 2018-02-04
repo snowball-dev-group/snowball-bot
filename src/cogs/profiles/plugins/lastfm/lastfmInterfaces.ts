@@ -24,13 +24,17 @@ export interface IImage extends IValue {
 	size: "small" | "medium" | "large" | "extralarge";
 }
 
+export interface IDate extends IValue {
+	utc: string;
+}
+
 export interface IRecentTrack {
 	album: IInfo;
 	artist: IInfo;
 	name: string;
-	date: IValue;
+	date?: IDate;
 	url: string;
-	"@attr": IRecentTrackAttr;
+	"@attr"?: IRecentTrackAttr;
 }
 
 export interface IRecentTracksResponse {
