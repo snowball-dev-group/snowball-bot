@@ -11,7 +11,7 @@ import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "../uti
 import { command as docCmd } from "../utils/help";
 import { isPremium } from "../utils/premium";
 import { timeDiff } from "../utils/time";
-import { EmbedType, escapeDiscordMarkdown, IEmbed, IEmbedOptionsField, resolveGuildMember } from "../utils/utils";
+import { EmbedType, escapeDiscordMarkdown, IEmbed, IEmbedOptionsField, resolveGuildMember, sleep } from "../utils/utils";
 import { AddedProfilePluginType, IAddedProfilePlugin, IProfilesPlugin } from "./plugins/plugin";
 import { messageToExtra, memberToExtra, guildToExtra } from "../utils/failToDetail";
 import * as getLogger from "loggy";
@@ -95,16 +95,16 @@ function isChat(msg: Message) {
 	}
 }, isChat)
 @docCmd(HELP_CATEGORY, "profile_plugins", "loc:PROFILES_META_PROFILEPLUGINS", undefined, isChat)
-class Profiles extends Plugin implements IModule {
+export default class Profiles extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.features.profile";
 	}
 
-	pluginsLoader: ModuleLoader;
-	log = getLogger("ProfilesJS");
-	db = getDB();
-	config: IProfilesModuleConfig;
-	customHumanizers: INullableHashMap<Humanizer> = Object.create(null);
+	private pluginsLoader: ModuleLoader;
+	private readonly log = getLogger("ProfilesJS");
+	private readonly db = getDB();
+	private readonly config: IProfilesModuleConfig;
+	private readonly customHumanizers: INullableHashMap<Humanizer> = Object.create(null);
 
 	constructor(config: IProfilesModuleConfig) {
 		super({
@@ -146,23 +146,23 @@ class Profiles extends Plugin implements IModule {
 	// MESSAGES HANDLING
 	// =====================================
 
-	async onMessage(msg: Message) {
+	private async onMessage(msg: Message) {
 		if(msg.channel.type !== "text") { return; }
 		if(msg.content === "!profile_plugins") {
-			this.sendPluginsList(msg);
+			this.cmd_profile_plugins(msg);
 		} else if(msg.content.startsWith("!profile")) {
-			this.showProfile(msg);
+			this.cmd_profile(msg);
 		} else if(msg.content.startsWith("!edit_profile")) {
-			this.editProfile(msg);
+			this.cmd_edit_profile(msg);
 		} else if(msg.content.startsWith("!set_bio")) {
-			this.editBio(msg);
+			this.cmd_set_bio(msg);
 		}
 		// else if(msg.content.startsWith("!status")) {
 		// 	this.editActivity(msg);
 		// }
 	}
 
-	async onPresenсeUpdate(old: GuildMember, member: GuildMember) {
+	private async onPresenсeUpdate(old: GuildMember, member: GuildMember) {
 		const profile = await this.getOrCreateProfile(member, member.guild);
 
 		if(old.presence.status !== member.presence.status) {
@@ -185,7 +185,7 @@ class Profiles extends Plugin implements IModule {
 	// MAIN FUNCTIONS
 	// =====================================
 
-	async sendPluginsList(msg: Message) {
+	private async cmd_profile_plugins(msg: Message) {
 		let str = `# ${await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE")}`;
 
 		for(const name in this.pluginsLoader.loadedModulesRegistry) {
@@ -204,7 +204,7 @@ class Profiles extends Plugin implements IModule {
 		});
 	}
 
-	async showProfile(msg: Message) {
+	private async cmd_profile(msg: Message) {
 		let profileOwner: GuildMember | undefined = undefined;
 
 		if(msg.content === "!profile") {
@@ -254,22 +254,22 @@ class Profiles extends Plugin implements IModule {
 		await this.sendProfile(msg, profile, profileOwner);
 	}
 
-	async addBadge(msg: Message) {
-		if(msg.author.id !== $botConfig.botOwner) {
-			return;
-		}
+	// private async addBadge(msg: Message) {
+	// 	if(msg.author.id !== $botConfig.botOwner) {
+	// 		return;
+	// 	}
 
-		const args = msg.content.slice("!add_badge ".length).split(",").map(arg => arg.trim());
-		if(args.length !== 4) {
-			// uid, gid, add/remove, badgeid
-			await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_ADDBADGE_ARGSERR")
-			});
-			return;
-		}
-	}
+	// 	const args = msg.content.slice("!add_badge ".length).split(",").map(arg => arg.trim());
+	// 	if(args.length !== 4) {
+	// 		// uid, gid, add/remove, badgeid
+	// 		await msg.channel.send({
+	// 			embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_ADDBADGE_ARGSERR")
+	// 		});
+	// 		return;
+	// 	}
+	// }
 
-	async editProfile(msg: Message) {
+	private async cmd_edit_profile(msg: Message) {
 		if(msg.content === "!edit_profile") {
 			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PROFILES_PROFILE_DESCRIPTION")
@@ -340,7 +340,7 @@ class Profiles extends Plugin implements IModule {
 
 			let completeInfo: IAddedProfilePlugin | undefined = undefined;
 			try {
-				completeInfo = await plugin.setup(arg, msg.member, msg);
+				completeInfo = await plugin.setup(arg, msg.member, msg, this);
 			} catch(err) {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_SETUP_FAILED", {
@@ -454,7 +454,7 @@ class Profiles extends Plugin implements IModule {
 		}
 	}
 
-	async editBio(msg: Message) {
+	private async cmd_set_bio(msg: Message) {
 		if(msg.content === "!set_bio") {
 			const strs = {
 				aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME"),
@@ -495,7 +495,7 @@ class Profiles extends Plugin implements IModule {
 	// async editActivity(msg:Message) {
 	// }
 
-	getUserStatusEmoji(user: User | GuildMember | string) {
+	public getUserStatusEmoji(user: User | GuildMember | string) {
 		switch(typeof user !== "string" ? user.presence.status : user) {
 			case "online": { return this.config.emojis.online; }
 			case "idle": { return this.config.emojis.idle; }
@@ -505,14 +505,14 @@ class Profiles extends Plugin implements IModule {
 		}
 	}
 
-	guessServiceEmoji(presenceName: string) {
+	public guessServiceEmoji(presenceName: string) {
 		switch(presenceName) {
 			case "Spotify": { return this.config.emojis.spotify; }
 			default: { return "_"; }
 		}
 	}
 
-	async getUserStatusString(activity: string, localizingFor: GuildMember | User) {
+	public async getUserStatusString(activity: string, localizingFor: GuildMember | User) {
 		const localizeStatus = async (str: string) => localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`);
 		switch(activity) {
 			case "online": { return localizeStatus("online"); }
@@ -522,7 +522,7 @@ class Profiles extends Plugin implements IModule {
 		}
 	}
 
-	serverTimeHumanize(duration: number, largest: number = 2, round: boolean = true, language: string = $localizer.defaultLanguage) {
+	public serverTimeHumanize(duration: number, largest: number = 2, round: boolean = true, language: string = $localizer.defaultLanguage) {
 		let humanizer = this.customHumanizers[language];
 		if(!humanizer) {
 			humanizer = this.customHumanizers[language] = $localizer.createCustomHumanizer(language, {
@@ -538,7 +538,7 @@ class Profiles extends Plugin implements IModule {
 		});
 	}
 
-	async sendProfile(msg: Message, dbProfile: IDBUserProfile, target: GuildMember) {
+	private async sendProfile(msg: Message, dbProfile: IDBUserProfile, target: GuildMember) {
 		const isBot = target.user.bot;
 
 		let statusString = "";
@@ -559,7 +559,11 @@ class Profiles extends Plugin implements IModule {
 			} else if(target.presence.activity.type === "LISTENING") {
 				statusString += `${this.getUserStatusEmoji(target)} `;
 				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING", {
-					artists: escapeDiscordMarkdown(target.presence.activity.state.split(";").join(await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR"))),
+					artists: escapeDiscordMarkdown(
+						target.presence.activity.state
+							.split(";")
+							.map(artistName => artistName.trim())
+							.join(await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR"))),
 					trackName: escapeDiscordMarkdown(target.presence.activity.details),
 					trackUrl: (target.presence.activity["syncID"] && `https://open.spotify.com/track/${target.presence.activity["syncID"]}`) || "_",
 					albumName: escapeDiscordMarkdown(target.presence.activity.assets.largeText),
@@ -655,7 +659,7 @@ class Profiles extends Plugin implements IModule {
 
 			pushing = true;
 			if(!pushedMessage) {
-				pushedMessage = await msg.channel.send({ embed: <any>embed }) as Message;
+				pushedMessage = <Message> await msg.channel.send({ embed: <any>embed });
 				pushing = false;
 				if(repushAfterPush) {
 					repushAfterPush = true;
@@ -664,7 +668,7 @@ class Profiles extends Plugin implements IModule {
 				return pushedMessage;
 			}
 			try {
-				pushedMessage = (await pushedMessage.edit({ embed: <any>embed }));
+				pushedMessage = await pushedMessage.edit({ embed: <any>embed });
 				pushing = false;
 			} catch(err) {
 				repushAfterPush = true;
@@ -672,6 +676,7 @@ class Profiles extends Plugin implements IModule {
 
 			if(repushAfterPush) {
 				repushAfterPush = false;
+				await sleep(100);
 				await pushUpdate();
 			}
 
@@ -722,7 +727,7 @@ class Profiles extends Plugin implements IModule {
 								pushUpdate();
 							}, 20000);
 
-							plugin.getEmbed(addedPlugin.json, msg.member).then(field => {
+							plugin.getEmbed(addedPlugin.json, msg.member, this).then(field => {
 								if(!canEdit) { return; }
 								if(t) { clearTimeout(t); }
 								fields[fNum] = field;
@@ -754,7 +759,7 @@ class Profiles extends Plugin implements IModule {
 								canEdit = false;
 							}, 20000);
 
-							plugin.getCustoms(addedPlugin.json, msg.member).then(customs => {
+							plugin.getCustoms(addedPlugin.json, msg.member, this).then(customs => {
 								if(!canEdit) { return; }
 								if(t) { clearTimeout(t); }
 								if(customs.image_url) {
@@ -780,7 +785,7 @@ class Profiles extends Plugin implements IModule {
 	// WORKING WITH DATABASE
 	// =====================================
 
-	async createProfile(member: GuildMember, guild: Guild) {
+	public async createProfile(member: GuildMember, guild: Guild) {
 		member = await member.guild.members.fetch(member.id);
 		return this.db(TABLE_NAME).insert({
 			uid: member.id,
@@ -794,21 +799,21 @@ class Profiles extends Plugin implements IModule {
 		});
 	}
 
-	async updateProfile(dbProfile: IDBUserProfile) {
+	public async updateProfile(dbProfile: IDBUserProfile) {
 		return this.db(TABLE_NAME).where({
 			uid: dbProfile.uid,
 			guild_id: dbProfile.guild_id
 		}).update(dbProfile);
 	}
 
-	async getProfile(member: GuildMember, guild: Guild): Promise<IDBUserProfile> {
+	public async getProfile(member: GuildMember, guild: Guild): Promise<IDBUserProfile> {
 		return (await this.db(TABLE_NAME).where({
 			guild_id: guild.id,
 			uid: member.id
 		}).first()) as IDBUserProfile;
 	}
 
-	async getOrCreateProfile(member: GuildMember, guild: Guild) {
+	public async getOrCreateProfile(member: GuildMember, guild: Guild) {
 		let currentUser = await this.getProfile(member, guild);
 		if(!currentUser) {
 			await this.createProfile(member, guild);
@@ -827,16 +832,8 @@ class Profiles extends Plugin implements IModule {
 	// PLUGIN SCRIPTS
 	// =====================================
 
-	async init() {
+	public async init() {
 		const options = this.config;
-
-		try {
-			this.db = getDB();
-		} catch(err) {
-			$snowball.captureException(err);
-			this.log("err", "Cannot connect to database");
-			return;
-		}
 
 		let status = false;
 		try {
@@ -873,7 +870,7 @@ class Profiles extends Plugin implements IModule {
 		this.handleEvents();
 	}
 
-	async unload() {
+	public async unload() {
 		await this.pluginsLoader.unload(Object.getOwnPropertyNames(this.pluginsLoader.loadedModulesRegistry));
 		this.unhandleEvents();
 		return true;

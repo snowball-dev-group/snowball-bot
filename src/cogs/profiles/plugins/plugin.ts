@@ -1,6 +1,7 @@
 import { IModule } from "../../../types/ModuleLoader";
 import { IEmbedOptionsField } from "../../utils/utils";
 import { Message, GuildMember } from "discord.js";
+import { default as ProfilesModule } from "../profiles";
 
 export enum AddedProfilePluginType {
 	Embed,
@@ -8,8 +9,8 @@ export enum AddedProfilePluginType {
 }
 
 export interface ICustoms {
-	image_url?:string;
-	thumbnail_url?:string;
+	image_url?: string;
+	thumbnail_url?: string;
 }
 
 export interface IAddedProfilePlugin {
@@ -18,8 +19,8 @@ export interface IAddedProfilePlugin {
 }
 
 export interface IProfilesPlugin extends IModule {
-	getCustoms?(info, caller:GuildMember): Promise<ICustoms>;
-	getEmbed?(info, caller:GuildMember) : Promise<IEmbedOptionsField>;
-	setup(args:string, member?:GuildMember, message?:Message) : Promise <IAddedProfilePlugin>;
-	getSetupArgs(caller:GuildMember): Promise<string|null>;
+	getCustoms?(info, caller: GuildMember, profilesModule: ProfilesModule): Promise<ICustoms>;
+	getEmbed?(info, caller: GuildMember, profilesModule: ProfilesModule): Promise<IEmbedOptionsField>;
+	setup(args: string, member: GuildMember, message: Message, profilesModule: ProfilesModule): Promise<IAddedProfilePlugin>;
+	getSetupArgs(caller: GuildMember): Promise<string | null>;
 }
