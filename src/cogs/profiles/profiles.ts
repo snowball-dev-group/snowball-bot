@@ -25,6 +25,7 @@ export interface IProfilesModuleConfig {
 		dnd: string;
 		streaming: string;
 		offline: string;
+		spotify: string;
 	};
 	plugins: IModuleInfo[];
 }
@@ -504,6 +505,13 @@ class Profiles extends Plugin implements IModule {
 		}
 	}
 
+	guessServiceEmoji(presenceName: string) {
+		switch(presenceName) {
+			case "Spotify": { return this.config.emojis.spotify; }
+			default: { return "_"; }
+		}
+	}
+
 	async getUserStatusString(activity: string, localizingFor: GuildMember | User) {
 		const localizeStatus = async (str: string) => localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`);
 		switch(activity) {
@@ -546,6 +554,16 @@ class Profiles extends Plugin implements IModule {
 				statusString += `${this.getUserStatusEmoji(target)} `;
 				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_PLAYING", {
 					gameName: escapeDiscordMarkdown(target.presence.activity.name)
+				});
+			} else if(target.presence.activity.type === "LISTENING") {
+				statusString += `${this.getUserStatusEmoji(target)} `;
+				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING", {
+					artists: escapeDiscordMarkdown(target.presence.activity.state.split(";").join(await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR"))),
+					trackName: escapeDiscordMarkdown(target.presence.activity.details),
+					trackUrl: target.presence.activity["syncID"] || "_",
+					albumName: escapeDiscordMarkdown(target.presence.activity.assets.largeText),
+					service: escapeDiscordMarkdown(target.presence.activity.name),
+					guessedIcon: this.guessServiceEmoji(target.presence.activity.name)
 				});
 			}
 		} else if(dbProfile.activity) {
