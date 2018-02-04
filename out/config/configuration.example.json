@@ -87,7 +87,10 @@
                 "path": "lastfm/recent",
                 "options": {
                     "apiKey": "LASTFM_APIKEY",
-                    "emojiIconID": "372905367694344194"
+                    "emojis": {
+                        "ghost": "409703933561405440",
+                        "logo": "372905367694344194"
+                    }
                 }
             }, {
                 "name": "overwatch-heroes",
