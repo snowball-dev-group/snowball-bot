@@ -9,7 +9,7 @@
         "ioredis": "^3.2.2",
         "knex": "^0.14.2",
         "lodash": "^4.17.4",
-        "loggy": "gitlab:BlackSilverBot/loggy#6095f80a14148b03d2180e1265686eecf8bcee11",
+        "loggy": "gitlab:BlackSilverBot/loggy#870c5c9f860efcbe083272a56980fe5f3016abdb",
         "minimist": "^1.2.0",
         "moment": "^2.20.1",
         "moment-timezone": "^0.5.14",
