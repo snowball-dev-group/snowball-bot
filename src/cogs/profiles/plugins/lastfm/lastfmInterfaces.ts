@@ -25,7 +25,7 @@ export interface IImage extends IValue {
 }
 
 export interface IDate extends IValue {
-	utc: string;
+	uts: string;
 }
 
 export interface IRecentTrack {
