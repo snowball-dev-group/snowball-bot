@@ -75,13 +75,13 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		// for later usage and ensurance of non-null value of instance creating the constant
 		// (!) this is probably memory costly as it's getting executing for every message
 		const prefixAllInstance = this.prefixAllKeeper.base;
-		if(!prefixAllInstance) { return; } // no instance means errored loading, or invalid state
+		if(!prefixAllInstance) { return undefined; } // no instance means errored loading, or invalid state
 
 		const prefix = await prefixAllInstance.checkPrefix(msg);
-		if(!prefix) { return; } // prefix not found, returning
+		if(!prefix) { return undefined; } // prefix not found, returning
 
 		const parsed = simpleCmdParse(msg.content.slice(prefix.length));
-		if(parsed.command !== "prefix") { return; } // checking if there's no command call
+		if(parsed.command !== "prefix") { return undefined; } // checking if there's no command call
 
 		if(!parsed.subCommand) { // if there's no subcommand then sending helpful message
 			return msg.channel.send({
@@ -101,6 +101,8 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 			case "remove": case "-": return this.subcmd_remove(msg, parsed, prefix, prefixAllInstance);
 			case "list": case "?": return this.subcmd_list(msg, parsed, prefix, prefixAllInstance);
 		}
+
+		return undefined;
 	}
 
 	private async _isNotServer(msg: Message) {

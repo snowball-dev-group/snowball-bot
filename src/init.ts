@@ -105,7 +105,7 @@ async function spawnShards(log:any, shardsCount:number) {
 
 	const clusterRegistry: { [id: string]: cluster.Worker } = Object.create(null);
 
-	const forwardMessage = (c, msg) => {
+	const forwardMessage = (c: any, msg: any) => {
 		for(const id in clusterRegistry) {
 			// no self msg
 			if(id === c.id) { continue; }

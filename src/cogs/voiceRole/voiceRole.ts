@@ -617,7 +617,7 @@ class VoiceRole extends Plugin implements IModule {
 				return;
 			}
 
-			const onFaultCleanup = async (err) => {
+			const onFaultCleanup = async (err: Error) => {
 				$snowball.captureException(err, {
 					extra: {
 						row,
@@ -768,7 +768,7 @@ class VoiceRole extends Plugin implements IModule {
 						embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "VOICEROLE_SETTING_SAVING")
 					});
 
-					const onFaultSubmit = async (err, specialMsgStr?: string) => {
+					const onFaultSubmit = async (err: Error, specialMsgStr?: string) => {
 						$snowball.captureException(err, {
 							extra: {
 								currentSpecVR, oldRole, newRole: resolvedRole,

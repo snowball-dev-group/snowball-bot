@@ -136,7 +136,7 @@ class CountV2 extends Plugin implements IModule {
 
 		this.countRegex = /^\d{0,}$/i;
 
-		let cid; let runs = 0;
+		let cid: NodeJS.Timer; let runs = 0;
 		cid = setInterval(() => {
 			runs++;
 			if(this.dbInitialized === DBInitializationState.FullyInitialized) {
@@ -175,18 +175,20 @@ class CountV2 extends Plugin implements IModule {
 		}
 
 		ch.send("**Первый запуск!**\n__Число__: 1322.\n__Далее__: **+15**");
+
+		return true;
 	}
 
 	async onMessage(msg: Message) {
-		if(this.dbInitialized !== DBInitializationState.FullyInitialized) { return; }
-		if(msg.channel.type === "dm") { return; } // never reply in direct messages
-		if(msg.channel.id !== CHANNELID_MAIN) { return; }
-		if(!msg.author) { msg.delete(); return; }
-		if(!msg.content) { msg.delete(); return; }
-		if(msg.author.id === $discordBot.user.id) { return; }
+		if(this.dbInitialized !== DBInitializationState.FullyInitialized) { return undefined; }
+		if(msg.channel.type === "dm") { return undefined; } // never reply in direct messages
+		if(msg.channel.id !== CHANNELID_MAIN) { return undefined; }
+		if(!msg.author) { msg.delete(); return undefined; }
+		if(!msg.content) { msg.delete(); return undefined; }
+		if(msg.author.id === $discordBot.user.id) { return undefined; }
 
 		const override = msg.content.startsWith("!");
-		if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
+		if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { return msg.delete(); }
 
 		if(override && msg.author.id === $botConfig.botOwner) {
 			msg.react("⏳");
@@ -202,7 +204,7 @@ class CountV2 extends Plugin implements IModule {
 					in_queue: "-1"
 				});
 				msg.react("✅");
-				msg.channel.send("✅ Перезапись числа завершена. Теперь введите это число.");
+				return msg.channel.send("✅ Перезапись числа завершена. Теперь введите это число.");
 			} catch(err) {
 				msg.react("❌");
 				msg.channel.send(`❌ Ошибка перезаписи числа: \`${err.message}\`.`);
@@ -210,8 +212,7 @@ class CountV2 extends Plugin implements IModule {
 			}
 			return;
 		} else if(override) {
-			msg.delete();
-			return;
+			return msg.delete();
 		}
 
 		const nNumber = parseInt(msg.content, 10);
@@ -224,7 +225,7 @@ class CountV2 extends Plugin implements IModule {
 			latestRow = undefined;
 		}
 
-		if(!latestRow) { return; }
+		if(!latestRow) { return undefined; }
 
 		const rRowNumber = parseInt(latestRow.number, 10);
 		const rRowQueueTime = parseInt(latestRow.in_queue, 10);
@@ -236,7 +237,7 @@ class CountV2 extends Plugin implements IModule {
 				rRowAnsweredBy = JSON.parse(latestRow.answered_by);
 			} catch(err) {
 				this.log("err", "Can't parse latest row `answered_by` column");
-				return;
+				return undefined;
 			}
 		} else {
 			rRowAnsweredBy = [];
@@ -263,8 +264,8 @@ class CountV2 extends Plugin implements IModule {
 		}
 
 		if(!answerTimeOK) {
-			await msg.delete();
 			messageDeleted = true;
+			return msg.delete();
 		} else {
 			const qTime = answerTimeOK && rRowQueueTime !== -1 ? 10000 - (Date.now() - rRowQueueTime) : 10000;
 
@@ -311,6 +312,7 @@ class CountV2 extends Plugin implements IModule {
 					msg.channel.send(":frowning: К сожалению, возникли проблемы с базой данных.");
 					return;
 				}
+
 				if(!deadTimer) {
 					msg.channel.send(`✅ **Ответы приняты**. Правильное число: **${rRowNumber}**. Далее: **${operation}** ${diffNumber}`);
 				} else {
@@ -335,7 +337,7 @@ class CountV2 extends Plugin implements IModule {
 				this.log("err", "Timer should not be called, clearing...");
 				clearTimeout(t);
 			}
-			return;
+			return undefined;
 		}
 	}
 

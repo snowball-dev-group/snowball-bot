@@ -961,7 +961,7 @@ class StreamNotifications extends Plugin implements IModule {
 			return settings;
 		}
 
-		await this.retirePseudoSubscription(target, this.convertToPseudoSettingsSub(subscription, altChannel), settings);
+		return this.retirePseudoSubscription(target, this.convertToPseudoSettingsSub(subscription, altChannel), settings);
 	}
 
 	async retirePseudoSubscription(target: string | User | Guild, pseudoSubsciption: IPseudoSettingsSubscription, settings?: ISettingsParsedRow) {

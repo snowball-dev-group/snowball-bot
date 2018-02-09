@@ -7,11 +7,17 @@ import * as getLogger from "loggy";
 import { EmbedType, sleep } from "../utils/utils";
 import { command } from "../utils/help";
 import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
+import { IHashMap } from "../../types/Types";
 
 const ICONS = {
 	THINKING: "https://i.imgur.com/hIuSpIl.png",
 	RESPONSE: "https://twemoji.maxcdn.com/72x72/1f3b1.png"
 };
+
+interface I8BallResponsesCategory {
+	color: number;
+	variants: string[];
+}
 
 @command("FUN", "8ball", "loc:8BALL_META_DEFAULT", {
 	"loc:8BALL_META_DEFAULT_ARG0": {
@@ -25,7 +31,7 @@ class Ball8 extends Plugin implements IModule {
 	}
 
 	log = getLogger("8Ball");
-	responses = {
+	responses: IHashMap<I8BallResponsesCategory> = {
 		"affirmative": {
 			color: 0x2196F3,
 			variants: [
@@ -104,9 +110,10 @@ class Ball8 extends Plugin implements IModule {
 
 		await sleep(random.integer(1500, 3000));
 
-		const category = random.pick<string>(this.categories);
+		const categoryName = random.pick<string>(this.categories);
+		const category = this.responses[categoryName];
 
-		const answer = random.pick<string>(this.responses[category].variants);
+		const answer = random.pick<string>(category.variants);
 
 		try {
 			await message.edit("", {
@@ -115,7 +122,7 @@ class Ball8 extends Plugin implements IModule {
 						icon_url: ICONS.RESPONSE,
 						name: localName
 					},
-					color: this.responses[category].color,
+					color: category.color,
 					footer: {
 						text: await localizeForUser(i18nTarget, "8BALL_INREPLY", {
 							username: i18nTarget instanceof GuildMember ? i18nTarget.displayName : (i18nTarget as User).username

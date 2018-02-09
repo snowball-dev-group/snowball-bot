@@ -106,7 +106,7 @@ export default class MessagesFlows implements IModule {
 	 * @param check Command checking function
 	 * @param options Options for watcher
 	 */
-	public watchForMessages(handler: Handler, check: CheckArgument|string|string[], options: IWatcherCreationOptions = {
+	public watchForMessages(handler: Handler, check: IFlowCheckArgument|string|string[], options: IWatcherCreationOptions = {
 		followsTheFlow: true,
 		checkPrefix: true,
 		timeoutCheck: this._timings.timeoutCheck,
@@ -116,9 +116,9 @@ export default class MessagesFlows implements IModule {
 
 		const normalCheck = (() => {
 			if(Array.isArray(check)) {
-				return (ctx) => ctx.parsed && ctx.parsed.command ? check.includes(ctx.parsed.command) : false;
+				return (ctx: IMessageFlowContext) => ctx.parsed && ctx.parsed.command ? check.includes(ctx.parsed.command) : false;
 			} else if(typeof check === "string") {
-				return (ctx) => ctx.parsed && ctx.parsed.command ? check === ctx.parsed.command : false;
+				return (ctx: IMessageFlowContext) => ctx.parsed && ctx.parsed.command ? check === ctx.parsed.command : false;
 			}
 			return check;
 		})();
@@ -281,7 +281,7 @@ export default class MessagesFlows implements IModule {
 }
 
 interface IFlowUnit {
-	check: CheckArgument;
+	check: IFlowCheckArgument;
 	handler: Handler;
 	followsTheFlow: boolean;
 	checkPrefix?: boolean;
@@ -341,7 +341,9 @@ export type CustomParser = (msg: Message) => Promise<ISimpleCmdParseResult>;
  * Argument of command checking.
  * Calls the functions and awaits for it's result (`true`/`false`).
  */
-export type CheckArgument = ((ctx: IMessageFlowContext) => Promise<boolean> | boolean);
+export interface IFlowCheckArgument {
+	(ctx: IMessageFlowContext): Promise<boolean> | boolean;
+}
 /**
  * If the check passed. Calls this function, if it returns Promise and `followTheFlow` set to `true`, then waits until Promise resolves.
  * Be aware! Promise must resolve in set timeout, this can be configured by option `flowTimings.handlerTimeout`, by default this value is set to constant `HANDLER_TIMEOUT` which you can get by improrting from this file. If promise will not resolve in set timeout, the flow continues.

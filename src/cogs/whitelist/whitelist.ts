@@ -111,7 +111,7 @@ export class Whitelist extends Plugin implements IModule {
 	signupUrl = "no_link";
 	trialTime = 86400000;
 
-	constructor(options) {
+	constructor(options: any) {
 		super({
 			"message": (msg: Message) => this.onMessage(msg),
 			"guildCreate": (guild: Guild) => this.joinedGuild(guild)
@@ -314,7 +314,7 @@ export class Whitelist extends Plugin implements IModule {
 		}
 	}
 
-	async notify(guild: Guild, embed) {
+	async notify(guild: Guild, embed: any) {
 		let notificationChannel: TextChannel | undefined = undefined;
 
 		for(const possibleChannel of POSSIBLE_CHAT_ROOMS) {

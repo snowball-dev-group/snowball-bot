@@ -2,7 +2,7 @@ import { Guild, GuildMember, GuildEmojiStore } from "discord.js";
 import { replaceAll } from "./text";
 import { INullableHashMap } from "../../types/Types";
 
-export function stringifyError(err, filter = null, space = 2) {
+export function stringifyError(err: Error, filter = null, space = 2) {
 	const plainObject = {};
 	for(const key of Object.getOwnPropertyNames(err)) {
 		plainObject[key] = err[key];
@@ -390,6 +390,8 @@ export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, 
 			} break;
 		}
 	}
+
+	return undefined;
 }
 
 const CHANNEL_MENTION_SNOWFLAKE = /^\<\#([0-9]{16,20})\>$/;
@@ -424,6 +426,8 @@ export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = tru
 			} break;
 		}
 	}
+
+	return undefined;
 }
 
 const USER_MENTION_SNOWFLAKE = /^\<\@\!?([0-9]{16,20})\>$/;
@@ -508,6 +512,8 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 			} break;
 		}
 	}
+
+	return undefined;
 }
 
 export function sleep<T>(delay: number = 1000, value?: T): Promise<T> {

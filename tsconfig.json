@@ -15,6 +15,10 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"allowUnreachableCode": false,
+		"alwaysStrict": true,
+		"charset": "utf8",
+		"noImplicitThis": true,
+		"forceConsistentCasingInFileNames": true,
 		"pretty": true,
 		"newLine": "LF",
 		"rootDir": "src"

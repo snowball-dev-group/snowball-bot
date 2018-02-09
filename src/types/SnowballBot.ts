@@ -289,7 +289,7 @@ export class SnowballBot extends EventEmitter {
 			}
 		});
 
-		this._discordClient.on("warn", (info) => this._log("warn", info));
+		this._discordClient.on("warn", (info: string) => this._log("warn", info));
 
 		// Global bot variable, which should be used by plugins
 		Object.defineProperty(global, "$discordBot", {
@@ -337,7 +337,7 @@ export class SnowballBot extends EventEmitter {
 	 * Creates, initializes, defines global variable of localizer
 	 */
 	public async prepareLocalizator() {
-		if(global["localizer"]) {
+		if($localizer) {
 			throw new Error("Localizer is already prepared");
 		}
 

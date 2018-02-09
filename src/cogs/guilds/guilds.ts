@@ -267,7 +267,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		for(const emojiName in config.emojis) {
-			const emojiId = config.emojis[emojiName];
+			const emojiId = config.emojis[emojiName as keyof(IGuildsModuleConfig["emojis"])];
 			const emoji = $discordBot.emojis.get(emojiId);
 			if(!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
 			config.emojis[emojiName] = emoji.toString();

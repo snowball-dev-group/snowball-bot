@@ -40,7 +40,7 @@ class EvalJS extends Plugin implements IModule {
 	 * Making our function a bit safe
 	 * @param cb Function that will be called
 	 */
-	makeSafe(cb) {
+	makeSafe(cb: () => void) {
 		return () => {
 			try {
 				cb();
@@ -92,8 +92,8 @@ class EvalJS extends Plugin implements IModule {
 				...global,
 				$bot: $discordBot,
 				$msg: message,
-				setTimeout: (handler, ms) => setTimeout(this.makeSafe(handler), ms),
-				setInterval: (handler, ms) => setInterval(this.makeSafe(handler), ms),
+				setTimeout: (handler: () => void, ms: number) => setTimeout(this.makeSafe(handler), ms),
+				setInterval: (handler: () => void, ms: number) => setInterval(this.makeSafe(handler), ms),
 				require: require,
 				process: undefined
 			});

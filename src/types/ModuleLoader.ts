@@ -190,7 +190,7 @@ export class ModuleBase<T> extends EventEmitter {
 			this.state = ModuleLoadState.Unloaded;
 		} else if(typeof this.base.unload !== "function") {
 			try {
-				for(const key of Object.keys(this.base)) {
+				for(const key in this.base) {
 					this.base[key] = undefined;
 					delete this.base[key];
 				}
