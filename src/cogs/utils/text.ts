@@ -31,6 +31,12 @@ export function simpleCmdParse(str: string) : ISimpleCmdParseResult {
 	};
 }
 
+export function reverseString(str: string) {
+	let o = "";
+	for(let i = str.length; i > -1; i--) { o += str[i]; }
+	return o;
+}
+
 export interface ISimpleCmdParseResult {
     command?: string;
     subCommand?: string;
