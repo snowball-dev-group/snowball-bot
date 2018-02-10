@@ -11,6 +11,7 @@ const SHARD_TIMEOUT = 30000; // ms
 
 (async () => {
 	let log = logger(":init");
+	logger.setAsync(false);
 
 	let config: IBotConfig;
 	try {
@@ -234,6 +235,8 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotCo
 
 		log("ok", "[Run] Successfully connected, preparing our localizer...");
 		await snowball.prepareLocalizator();
+
+		logger.setAsync(false);
 
 		log("ok", "[Run] Localizer prepared, preparing module loader...");
 		await snowball.prepareModLoader();
