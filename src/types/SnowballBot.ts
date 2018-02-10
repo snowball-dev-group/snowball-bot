@@ -337,9 +337,7 @@ export class SnowballBot extends EventEmitter {
 	 * Creates, initializes, defines global variable of localizer
 	 */
 	public async prepareLocalizator() {
-		if($localizer) {
-			throw new Error("Localizer is already prepared");
-		}
+		if(global["$localizer"]) { throw new Error("Localizer is already prepared"); }
 
 		const localizer = new Localizer(`${this._config.name}:Localizer`, this._config.localizerOptions);
 
