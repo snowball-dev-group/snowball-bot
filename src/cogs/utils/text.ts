@@ -1,13 +1,9 @@
-export function startsOrEqual(source: string, changed: string) {
-	return changed.startsWith(source) || changed === source;
+export function startsOrEqual(source: string, search: string) {
+	return search.length > source.length ? false : source.indexOf(search) === 0;
 }
 
-export function endsOrEqual(source: string, changed: string) {
-	return changed.endsWith(source) || changed === source;
-}
-
-export function slice(source: string, start?: number, end?: number) {
-	return source.slice(start, end);
+export function endsOrEqual(source: string, search: string) {
+	return search.length > source.length ? false : source.indexOf(search) === source.length - search.length;
 }
 
 export function escapeRegExp(str: string) {
