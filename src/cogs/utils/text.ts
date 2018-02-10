@@ -1,8 +1,8 @@
-export function startsOrEqual(source: string, search: string) {
+export function startsWith(source: string, search: string) {
 	return search.length > source.length ? false : source.indexOf(search) === 0;
 }
 
-export function endsOrEqual(source: string, search: string) {
+export function endsWith(source: string, search: string) {
 	return search.length > source.length ? false : source.indexOf(search) === source.length - search.length;
 }
 

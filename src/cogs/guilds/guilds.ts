@@ -6,7 +6,7 @@ import { getDB, createTableBySchema } from "../utils/db";
 import { default as fetch } from "node-fetch";
 import { createConfirmationMessage, waitForMessages } from "../utils/interactive";
 import { parse as parseURI } from "url";
-import { replaceAll, reverseString, startsOrEqual } from "../utils/text";
+import { replaceAll, reverseString, startsWith } from "../utils/text";
 import { command } from "../utils/help";
 import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "../utils/ez-i18n";
 import { randomString } from "../utils/random";
@@ -287,19 +287,19 @@ class Guilds extends Plugin implements IModule {
 			if(msg.content.startsWith(BASE_PREFIX)) {
 				if(msg.content === BASE_PREFIX) {
 					return await this.sendHelp(<TextChannel> msg.channel, undefined, msg.member);
-				} else if(startsOrEqual(msg.content, CMD_GUILDS_LIST)) {
+				} else if(startsWith(msg.content, CMD_GUILDS_LIST)) {
 					return await this.getGuildsList(msg);
-				} else if(startsOrEqual(msg.content, CMD_GUILDS_CREATE)) {
+				} else if(startsWith(msg.content, CMD_GUILDS_CREATE)) {
 					return await this.createGuild(msg);
-				} else if(startsOrEqual(msg.content, CMD_GUILDS_EDIT)) {
+				} else if(startsWith(msg.content, CMD_GUILDS_EDIT)) {
 					return await this.editGuild(msg);
-				} else if(startsOrEqual(msg.content, CMD_GUILDS_DELETE)) {
+				} else if(startsWith(msg.content, CMD_GUILDS_DELETE)) {
 					return await this.deleteGuild(msg);
-				} else if(startsOrEqual(msg.content, CMD_GUILDS_INFO)) {
+				} else if(startsWith(msg.content, CMD_GUILDS_INFO)) {
 					return await this.getGuildInfo(msg);
-				} else if(startsOrEqual(msg.content, CMD_GUILDS_INVITE)) {
+				} else if(startsWith(msg.content, CMD_GUILDS_INVITE)) {
 					return await this.inviteToGuild(msg);
-				} else if(startsOrEqual(msg.content, CMD_GUILDS_MEMBERS)) {
+				} else if(startsWith(msg.content, CMD_GUILDS_MEMBERS)) {
 					return await this.membersControl(msg);
 				}
 				return await this.joinLeaveGuild(msg);

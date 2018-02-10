@@ -3,7 +3,7 @@ import { Plugin } from "../plugin";
 import { Message, GuildMember } from "discord.js";
 import { categoryLocalizedName, command } from "../utils/help";
 import { localizeForUser, getPrefsNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed, getUserLanguage } from "../utils/ez-i18n";
-import { startsOrEqual, slice } from "../utils/text";
+import { startsWith } from "../utils/text";
 import { EmbedType } from "../utils/utils";
 import { setPreferenceValue as setUserPref } from "../utils/userPrefs";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref } from "../utils/guildPrefs";
@@ -25,21 +25,21 @@ interface ISetLanguageCommandOptions {
 	flags: IHashMap<string>;
 }
 
-@command(HELP_CATEGORY, slice(BASE_PREFIX, 1), "loc:LANGUAGE_META_DEFAULT")
-@command(HELP_CATEGORY, slice(CMD.SWITCH, 1), "loc:LANGUAGE_META_SWITCH", {
+@command(HELP_CATEGORY, BASE_PREFIX.slice(1), "loc:LANGUAGE_META_DEFAULT")
+@command(HELP_CATEGORY, CMD.SWITCH.slice(1), "loc:LANGUAGE_META_SWITCH", {
 	"loc:LANGUAGE_META_SWITCH_ARG0": {
 		optional: false,
 		description: "loc:LANGUAGE_META_SWITCH_ARG0_DESC"
 	}
 })
-@command(HELP_CATEGORY, slice(CMD.CODES, 1), "loc:LANGUAGE_META_CODES")
-@command(HELP_CATEGORY, slice(CMD.GUILDS_SWITCH), "loc:LANGUAGE_META_GUILDSWITCH", {
+@command(HELP_CATEGORY, CMD.CODES.slice(1), "loc:LANGUAGE_META_CODES")
+@command(HELP_CATEGORY, CMD.GUILDS_SWITCH.slice(1), "loc:LANGUAGE_META_GUILDSWITCH", {
 	"loc:LANGUAGE_META_SWITCH_ARG0": {
 		optional: false,
 		description: "loc:LANGUAGE_META_SWITCH_ARG0_DESC"
 	}
 })
-@command(HELP_CATEGORY, slice(CMD.GUILDS_ENFORCE), "loc:LANGUAGE_META_GUILDENFORCE", {
+@command(HELP_CATEGORY, CMD.GUILDS_ENFORCE.slice(1), "loc:LANGUAGE_META_GUILDENFORCE", {
 	"loc:LANGUAGE_META_GUILDENFORCE_ARG0": {
 		optional: false,
 		values: ["true", "false"],
@@ -94,13 +94,13 @@ class SetLanguageCommand extends Plugin implements IModule {
 		if(!msg.content.startsWith(BASE_PREFIX)) { return; }
 		if(msg.content === BASE_PREFIX) {
 			return this.getCurrentLang(msg);
-		} else if(startsOrEqual(CMD.SWITCH, msg.content)) {
+		} else if(startsWith(CMD.SWITCH, msg.content)) {
 			await this.switchLanguage(msg);
-		} else if(startsOrEqual(CMD.GUILDS_SWITCH, msg.content)) {
+		} else if(startsWith(CMD.GUILDS_SWITCH, msg.content)) {
 			return this.guildSwitch(msg);
-		} else if(startsOrEqual(CMD.GUILDS_ENFORCE, msg.content)) {
+		} else if(startsWith(CMD.GUILDS_ENFORCE, msg.content)) {
 			return this.guildEnforce(msg);
-		} else if(startsOrEqual(CMD.CODES, msg.content)) {
+		} else if(startsWith(CMD.CODES, msg.content)) {
 			await this.getCodes(msg);
 		} else {
 			await msg.channel.send({
