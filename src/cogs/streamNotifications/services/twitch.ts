@@ -34,10 +34,22 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	constructor(options: string | IServiceOptions) {
 		super();
+		this.isTwitchV5Retired();
 		this.options = typeof options === "object" ? options : {
 			clientId: options,
 			updatingInterval: 120000
 		};
+		this.log("err", "=== !!!DEPRECATED!!! ===");
+		this.log("err", "This module is deprecated and unrecommended to use.");
+		this.log("err", "Instead try `twitch_new`, it uses new Twitch API and supports some cool features");
+		this.log("err", "Support for old API v5 will be removed on 12/31/2018, on December 30 this module should stop working");
+	}
+
+	private isTwitchV5Retired() {
+		if(Date.now() > 1546102800000) {
+			throw new Error("You cannot use this module anymore. Twitch API v5 is retired");
+		}
+		return false;
 	}
 
 	// ========================================
@@ -47,6 +59,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	private readonly subscriptions: IStreamingServiceStreamer[] = [];
 
 	public addSubscription(streamer: IStreamingServiceStreamer) {
+		this.isTwitchV5Retired();
 		if(this.isSubscribed(streamer.uid)) {
 			throw new Error(`Already subscribed to ${streamer.uid}`);
 		}
@@ -77,6 +90,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	private pendingStart?: NodeJS.Timer;
 
 	public async start(delayed: number = 0) {
+		this.isTwitchV5Retired();
 		if(this.pendingStart) {
 			throw new Error("There's a pending start delayed");
 		} else if(this.interval) {
@@ -112,6 +126,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	private readonly streamsMap: IHashMap<ICacheItem> = Object.create(null);
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
+		this.isTwitchV5Retired();
 		if(streamers.length > 0) {
 			const processChunk = async (chunk: IStreamingServiceStreamer[]) => {
 				let streamsResp: {
@@ -269,6 +284,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
+		this.isTwitchV5Retired();
 		if(!TWITCH_USERNAME_REGEXP.test(username)) {
 			throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
 		}
