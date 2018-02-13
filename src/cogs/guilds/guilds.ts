@@ -1096,12 +1096,15 @@ class Guilds extends Plugin implements IModule {
 			}))
 		});
 
-		let _dmRulesMsg: Message | undefined = undefined;
-
 		if(cz.rules) {
 			const code = (randomString(6)).toUpperCase();
 
 			let __msg: Message | undefined = undefined;
+
+			// reuse?
+			const embedTitle = await localizeForUser(msg.member, "GUILDS_JOIN_RULES_TITLE", {
+				guildName: escapeDiscordMarkdown(dbRow.name, true)
+			});
 
 			try {
 				__msg = <Message> await msg.author.send({
@@ -1109,15 +1112,13 @@ class Guilds extends Plugin implements IModule {
 						custom: true,
 						string: cz.rules
 					}, {
-							title: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_TITLE", {
-								guildName: escapeDiscordMarkdown(dbRow.name, true)
-							}),
-							fields: [{
-								name: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FIELDS_CODE"),
-								value: code
-							}],
-							footerText: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FOOTER_TEXT")
-						})
+						universalTitle: embedTitle,
+						fields: [{
+							name: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FIELDS_CODE"),
+							value: code
+						}],
+						footerText: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FOOTER_TEXT")
+					})
 				});
 			} catch(err) {
 				return _msg.edit({
@@ -1212,12 +1213,19 @@ class Guilds extends Plugin implements IModule {
 						}
 					})
 				});
-			} else {
-				_dmRulesMsg = <Message> await msg.author.send({
-					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_JOIN_DONE_RULES_DM")
-				});
-				visitor && visitor.event("Members", "Rules accepted", msg.member.id).send();
 			}
+
+			await __msg.edit({
+				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
+					custom: true,
+					string: cz.rules
+				}, {
+					universalTitle: embedTitle,
+					footerText: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FOOTER_TEXT_OK")
+				})
+			});
+
+			visitor && visitor.event("Members", "Rules accepted", msg.member.id).send();
 		}
 
 		try {
@@ -1283,17 +1291,15 @@ class Guilds extends Plugin implements IModule {
 			})
 		});
 
-		if(_dmRulesMsg) {
-			return _dmRulesMsg.edit({
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
-					key: "GUILDS_JOIN_JOINED_RULES_DM",
-					formatOptions: {
-						guildName: escapeDiscordMarkdown(dbRow.name, true),
-						serverName: escapeDiscordMarkdown(msg.guild.name, true)
-					}
-				})
-			});
-		}
+		return msg.author.send({
+			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
+				key: "GUILDS_JOIN_JOINED_RULES_DM",
+				formatOptions: {
+					guildName: escapeDiscordMarkdown(dbRow.name, true),
+					serverName: escapeDiscordMarkdown(msg.guild.name, true)
+				}
+			}, { universalTitle: await localizeForUser(msg.member, "GUILDS_JOIN_JOINED_RULES_DM_TITLE") })
+		});
 	}
 
 	async getGuildInfo(msg: Message) {
