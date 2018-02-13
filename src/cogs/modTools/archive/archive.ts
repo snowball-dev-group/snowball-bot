@@ -514,7 +514,7 @@ class ModToolsArchive extends Plugin implements IModule {
 					const entryTypeStr = `[${$localizer.getString(language, "ARCHIVE_ITEM_ENTRY_TYPE:ATTACHMENT")}]`;
 					for(const attachment of parsedContent.attachments) {
 						str += "  ";
-						str += await $localizer.getFormattedString(language, "ARCHIVE_ITEM_ENTRY:ATTACHMENT", {
+						str += $localizer.getFormattedString(language, "ARCHIVE_ITEM_ENTRY:ATTACHMENT", {
 							"file.name": attachment.file.name,
 							"file.url": attachment.file.url,
 							"file.id": attachment.id,
