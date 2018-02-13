@@ -219,7 +219,7 @@ export class Localizer {
 	 */
 	public getFormattedString(lang: string = this.sourceLanguage, key: string, variables: IFormatMessageVariables, fallback: boolean = true) {
 		const str = this.getString(lang, key, fallback);
-		return formatMessage(str, variables, lang);
+		return <string> formatMessage(str, variables, lang);
 	}
 
 	/**
