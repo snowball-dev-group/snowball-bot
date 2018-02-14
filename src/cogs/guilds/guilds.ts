@@ -470,7 +470,7 @@ class Guilds extends Plugin implements IModule {
 				})
 			});
 		} else {
-			role = resolveGuildRole(args[1], msg.guild);
+			role = resolveGuildRole(args[1], msg.guild, false, false);
 			if(!role) {
 				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_RESOLVINGFAILED")
