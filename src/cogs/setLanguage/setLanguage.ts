@@ -88,19 +88,17 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
-		if(msg.channel.type !== "dm" && msg.channel.type !== "text") {
-			return;
-		}
-		if(!msg.content.startsWith(BASE_PREFIX)) { return; }
+		if(msg.channel.type !== "dm" && msg.channel.type !== "text") { return; }
+		if(!startsWith(msg.content, BASE_PREFIX)) { return; }
 		if(msg.content === BASE_PREFIX) {
 			return this.getCurrentLang(msg);
-		} else if(startsWith(CMD.SWITCH, msg.content)) {
+		} else if(startsWith(msg.content, CMD.SWITCH)) {
 			await this.switchLanguage(msg);
-		} else if(startsWith(CMD.GUILDS_SWITCH, msg.content)) {
+		} else if(startsWith(msg.content, CMD.GUILDS_SWITCH)) {
 			return this.guildSwitch(msg);
-		} else if(startsWith(CMD.GUILDS_ENFORCE, msg.content)) {
+		} else if(startsWith(msg.content, CMD.GUILDS_ENFORCE)) {
 			return this.guildEnforce(msg);
-		} else if(startsWith(CMD.CODES, msg.content)) {
+		} else if(startsWith(msg.content, CMD.CODES)) {
 			await this.getCodes(msg);
 		} else {
 			await msg.channel.send({
