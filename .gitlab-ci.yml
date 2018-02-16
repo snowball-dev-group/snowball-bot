@@ -5,8 +5,8 @@ cache:
     - node_modules
 
 before_script:
-  - npm install -g grunt-cli
-  - npm install
+  - npm install -gd gulp-cli
+  - npm install -d
 
 stages:
   - build
@@ -14,7 +14,7 @@ stages:
 compiling:
   stage: build
   script:
-    - npm run -s build
+    - gulp
   artifacts:
     untracked: true
     paths:
