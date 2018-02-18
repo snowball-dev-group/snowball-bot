@@ -1,6 +1,14 @@
-# Snowball - Mei's friend [![Discord](https://discordapp.com/api/guilds/283995293190455296/embed.png?style=shield)](https://discord.gg/WvNjZEW) [![Crowdin](https://d322cqt584bo4o.cloudfront.net/snowball-bot/localized.svg)](https://crowdin.com/project/snowball-bot)
+# Snowball - Mei's friend [![Crowdin](https://d322cqt584bo4o.cloudfront.net/snowball-bot/localized.svg)](https://crowdin.com/project/snowball-bot)
 
 Mei has beautiful friend called Snowball, which used to make a Blizzard and cease enemy resistance. Actually, this bot don't used to be in fights, it's just good friend that helps you with your server.
+
+## Our Discord servers
+
+Join one of our hubs and chat with other hosts, translators and code maintainers!
+
+| International Hub | Russian Hub |
+|:---:|:---:|
+| [![Server banner](https://discordapp.com/api/guilds/343298261244968960/embed.png?style=banner3)](https://s.dafri.top/sb_isrv) | [![Server banner](https://discordapp.com/api/guilds/331101356205015041/embed.png?style=banner3)](https://s.dafri.top/sb_srv) |
 
 ## Installing
 
