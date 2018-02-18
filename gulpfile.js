@@ -10,7 +10,6 @@ const destFolder = "out";
 const gulp = require("gulp");
 
 
-
 gulp.task("compile", () => {
     const gruntTypeScript = require("gulp-typescript");
     const tsProject = gruntTypeScript.createProject("tsconfig.json");
@@ -34,7 +33,7 @@ gulp.task("necessary-copying", gulp.series(["copy-langfiles", "copy-runscripts"]
 
 gulp.task("build", gulp.series(["compile", "necessary-copying"]));
 
-gulp.task('lint', () => {
+gulp.task("lint", () => {
     const gulpTslint = require("gulp-tslint");
     const tslint = require("tslint");
 
