@@ -222,7 +222,7 @@ export class Localizer {
 	 * @param throwOnError Throw error if reading of file in directory fails
 	 */
 	public async extendLanguages(languagesTree: IHashMap<IStringsMap | string> | string, toLangCode?: LangFileToCodeFunction, filter?: string, throwOnError = false) {
-		if(typeof languagesTree !== "object") { languagesTree = await this.directoryToLanguagesTree(languagesTree, toLangCode, filter); }
+		if(typeof languagesTree !== "object") { languagesTree = await this.directoryToLanguagesTree(languagesTree, toLangCode, filter, throwOnError); }
 		const results: IHashMap<IStringsMap> = Object.create(null);
 		for(const langName in languagesTree) {
 			const langFile = languagesTree[langName];
