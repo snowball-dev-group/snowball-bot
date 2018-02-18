@@ -1,0 +1,3 @@
+[submodule "src/cogs/reload"]
+	path = src/cogs/reload
+	url = https://gitlab.com/SnowballBot/Modules/Reload_Module.git
