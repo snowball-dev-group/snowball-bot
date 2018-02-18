@@ -109,22 +109,44 @@ chmod +x ./run.sh
 
 ### Pull Requests
 
-I really appreciate your contribution to this project. You can fix my errors, create new good cogs, but follow these styles:
+I really appreciate your contribution to this project. You can fix my errors, create new good modules.
 
-- Use [Visual Studio Code](https://code.visualstudio.com/), it's awesome editor better than others and has good support for TypeScript.
-- Use [`tslint`](https://palantir.github.io/tslint/), it'll notify you if there's an errors in your code. [**VSCODE EXTENSION**](https://marketplace.visualstudio.com/items?itemName=eg2.tslint)
-- Use my universal APIs. I created `db`, `letters`, `utils`, `cacheResponse`, `time`, be sure you using them, they pretty simple
-- Make plugin for all servers, not yours one. To be honest, you can create cog for `shib channel` - that's fine (I included same cogs in source just for fun), but you should provide support for other servers if you making *serious* plugins like `Overwatch statistic`.
+**There's a few requirements to every pull request:**
+
+- **You must commit to Gitlab origin**. (Github is our mirror for people who have problems with Gitlab and want to fork project there)
+- You must not have any errors while running TSLint (`tslint -p .`)
+- You must document all the changes you do in format `[moduleName]: [changes description]` (subject to change later)
+  - `[moduleName]` can be simplied with:
+    - `*` to replace "any of" (example - `profiles:*: added docs for plugins` -> `added docs for any of profiles plugins`)
+    - `{*}` if you changed many different files (example - `{*}: small refactoring` -> `small refactoring in *any* files`)
+    - `moduleName{addition,secondAddition,...}` to exclude duplicates names (example - `package{,-lock}.json: added some dependency` (notice this comma `,-l...`!) -> `added some dependency in package.json and package.json`)
+  - if you unsure about commit message - ask us on our Discord server!
+
+**Some pro tips:**
+
+- Use [Visual Studio **Code**](https://code.visualstudio.com/), it's awesome editor for TypeScript.
+  - [TSLint extension](https://marketplace.visualstudio.com/items?itemName=eg2.tslint) allows you to see most of TSLint errors without running it
+  - [Indent Rainbow](https://marketplace.visualstudio.com/items?itemName=oderwat.indent-rainbow) allows you to see indentation more clearly
+  - [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) to send HTTP requests without leaving editor
+  - [Better Comments](https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments) - improvements for comments
+- Use utilites in `utils` folder while writing code, they are pretty simple.
+- Make plugin for all servers, not only yours. To be honest, you can create cog for `shib channel` - that's fine (I included same cogs in source just for fun), but you should provide support for other servers if you making *serious* plugins like `Overwatch statistic`.
 
 Don't be scared of making Pull Requests! Make it! I will suggest you what to change, what to not and etc :)
 
+#### Don't know what to start with?
+
+See our [TODO list](./TODO.md) to know what we started and help us developing the things!
+
 ### Issues
 
-If you regular user, then report bugs and feedback to Issues section. You also can ask questions there.
+If you regular user, then report bugs on our Discord server. You also can ask questions there.
+
+If you're developer - report bugs in Issues section **on Gitlab**.
 
 ### Private Modules
 
-You can create private cogs without commiting them to public. Put your cog in `private_cogs` directory.
+You can create private modules without commiting them to public, it's totally fine. Just put your module in `private_cogs` directory, it will be ignored by git.
 
 ---
 **BOT MADE WITH ♥ BY DAFRI_NOCHITEROV**.
