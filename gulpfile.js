@@ -19,17 +19,10 @@ gulp.task("compile", () => {
         .js.pipe(gulp.dest(destFolder));
 });
 
-gulp.task("copy-langfiles", () => {
-    return gulp.src(["src/languages/*.json"])
-        .pipe(gulp.dest(`${destFolder}/languages/`))
+gulp.task("necessary-copying", () => {
+    return gulp.src([ "./package{,-lock}.json", "./src/**/*.*", "!./src/**/*.{ts,md}", "!./src/**/.git/*" ])
+        .pipe(gulp.dest(`${destFolder}/`));
 });
-
-gulp.task("copy-runscripts", () => {
-    return gulp.src(["src/run.bat", "src/run.sh", "package.json", "package-lock.json"])
-        .pipe(gulp.dest(`${destFolder}/`))
-});
-
-gulp.task("necessary-copying", gulp.series(["copy-langfiles", "copy-runscripts"]));
 
 gulp.task("build", gulp.series(["compile", "necessary-copying"]));
 
