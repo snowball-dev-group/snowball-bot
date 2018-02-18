@@ -1,20 +1,20 @@
 import "any-promise/register/bluebird";
-import { join as pathJoin, basename, extname } from "path";
 import { Humanizer, IHumanizerLanguage, IHumanizerOptionsOverrides, IHumanizerPluralOverride, IHumanizerDefaultOptions } from "./Humanizer";
 import { ISchema } from "./Typer";
-import { IHashMap } from "./Types";
+import { IHashMap, INullableHashMap } from "./Types";
 import { ILogFunction } from "loggy";
 import * as fs from "mz/fs";
+import * as path from "path";
 import * as formatMessage from "format-message";
 import * as getLogger from "loggy";
-import * as minimatch from "minimatch";
+import * as micromatch from "micromatch";
 
 export interface ILocalizerOptions {
 	languages: string[];
 	source_language: string;
 	default_language: string;
 	directory: string;
-	disable_coverage_log: boolean;
+	disable_coverage_log: boolean | string[];
 	extendOverride?: boolean;
 }
 
@@ -43,8 +43,9 @@ export interface ILanguageHashMap<T> {
 
 export type HumanizerUnitToConvert = "ms" | "s" | "m" | "h" | "d" | "w";
 
-const REQUIRED_META_KEYS = ["+NAME", "+COUNTRY"];
-const IGNORED_KEYS = ["+COVERAGE", "$schema"];
+const META_KEYS = ["+NAME", "+COUNTRY"];
+const DYNAMIC_META_KEYS = ["+COVERAGE"];
+const PRUNE_BANNED_KEYS = [...META_KEYS, ...DYNAMIC_META_KEYS];
 
 export class Localizer {
 	private readonly _opts: ILocalizerOptions;
@@ -52,7 +53,7 @@ export class Localizer {
 	private readonly _sourceLang: string;
 	private readonly _fallbackQueue: string[] = [];
 	private readonly _humanizersMap: ILanguageHashMap<Humanizer> = Object.create(null);
-	private _langMaps: ILanguageHashMap<IStringsMap> = Object.create(null);
+	private _langMaps: ILanguageHashMap<IStringsMap | undefined> = Object.create(null);
 	private _initDone: boolean = false;
 	private _loadedLanguages: string[] = [];
 
@@ -67,15 +68,37 @@ export class Localizer {
 	public get sourceLanguage() { return this._sourceLang; }
 
 	constructor(name: string, opts: ILocalizerOptions) {
-		this._opts = opts;
 		this._log = getLogger(name);
-		this._sourceLang = opts.source_language;
+
 		if(!opts.default_language) {
 			opts.default_language = this._sourceLang;
 		} else if(opts.default_language !== opts.source_language) {
 			this._fallbackQueue.push(opts.default_language);
 		}
+
+		{
+			const covgLogDisabledType = typeof opts.disable_coverage_log;
+			switch(covgLogDisabledType) {
+				case "object": {
+					if(!Array.isArray(opts.disable_coverage_log)) {
+						throw new Error("`disable_coverage_log` should be either array or boolean");
+					}
+					const possibleLanguages = [opts.source_language];
+					if(opts.default_language && opts.default_language !== opts.source_language) {
+						possibleLanguages.push(opts.default_language);
+					}
+					opts.disable_coverage_log = opts.disable_coverage_log.filter(possibleLanguages.includes);
+				} break;
+				case "boolean": { this._coverageDisabledGlobally = opts.disable_coverage_log; } break;
+				default: { throw new Error("`disable_coverage_log` should be either array or boolean"); }
+			}
+
+			this._coverageDisablingSet = true;
+		}
+
+		this._sourceLang = opts.source_language;
 		this._fallbackQueue.push(opts.source_language);
+		this._opts = opts;
 	}
 
 	/**
@@ -85,23 +108,23 @@ export class Localizer {
 		if(this._initDone) { return; }
 		try {
 			this._langMaps = Object.create(null);
-			this._log("info", "Started loading of language files");
-			for(const lang of this._opts.languages) {
-				if(this._langMaps[lang]) {
-					throw new Error(`Language "${lang}" is already registered`);
-				}
 
-				let langStrings: IStringsMap = Object.create(null);
+			this._log("info", "Started loading of language files");
+
+			for(const lang of this._opts.languages) {
+				if(this._langMaps[lang]) { throw new Error(`Language "${lang}" is already registered`); }
+
+				let stringsMap: IStringsMap = Object.create(null);
 				try {
-					langStrings = await this.loadStringsMap(pathJoin(this._opts.directory, `${lang}.json`));
+					stringsMap = await this.loadStringsMap(path.join(this._opts.directory, `${lang}.json`));
 				} catch(err) {
 					this._log("err", "Could not read", lang, "language file");
 					continue;
 				}
 
 				let rejectLoading = false, requiredMetaKey = "";
-				for(requiredMetaKey of REQUIRED_META_KEYS) {
-					if(!langStrings[requiredMetaKey]) {
+				for(requiredMetaKey of META_KEYS) {
+					if(!stringsMap[requiredMetaKey]) {
 						rejectLoading = true;
 						break;
 					}
@@ -112,7 +135,7 @@ export class Localizer {
 					continue;
 				}
 
-				this._langMaps[lang] = langStrings;
+				this._langMaps[lang] = stringsMap;
 
 				// Creating humanizer
 				this._humanizersMap[lang] = this.createCustomHumanizer(lang);
@@ -125,20 +148,7 @@ export class Localizer {
 			}
 
 			this._log("info", "Calculating language files coverages");
-			for(const langName in this._langMaps) {
-				const langFile = this._langMaps[langName];
-				if(!langFile) { continue; }
-				if(langName === this._opts.source_language) {
-					langFile["+COVERAGE"] = "100";
-					langFile["+DEFAULT"] = "true";
-					this._langMaps[langName] = langFile;
-					continue;
-				}
-				langFile["+COVERAGE"] = `${await this.testCoverage(langFile, defaultLanguage as IStringsMap)}`;
-				langFile["+COMMUNITY_MANAGED"] = langFile["+COMMUNITY_MANAGED"] === "true" ? "true" : "false";
-				this._langMaps[langName] = langFile;
-				this._log("ok", `- ${langName} ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${langFile["+COVERAGE"]}`);
-			}
+			await this.calculateCoverages();
 		} catch(err) {
 			this._log("err", "Error at initializing localizer", err);
 			return;
@@ -155,19 +165,88 @@ export class Localizer {
 	}
 
 	/**
+	 * Calculates coverages for languages
+	 * 
+	 * 'Coverage' means how many strings were translated
+	 * @param langNames Names of languages. By default all languages
+	 * @param log Should it log to console the results of calculation
+	 * @returns Hash map where key is language name and value is percentage of 'coverage'
+	 */
+	public async calculateCoverages(langNames?: string[], log = false) {
+		const results: INullableHashMap<number> = Object.create(null);
+		const sourceLanguage = this._langMaps[this._sourceLang];
+
+		const keys = (langNames || this._langMaps);
+
+		for(const langName in keys) {
+			const langFile = this._langMaps[langName]!;
+
+			if(langName === this._sourceLang) {
+				langFile["+COVERAGE"] = "100";
+				results[langName] = 100;
+				continue;
+			}
+
+			if(!langFile) { continue; }
+
+			results[langName] = await this.calculateCoverage(langFile, sourceLanguage, log);
+		}
+
+		return results;
+	}
+
+	private async calculateCoverage(langFile: string | IStringsMap, sourceLanguage?: IStringsMap, log = false, _langName?: string): Promise<number> {
+		let isSourceLanguage = false;
+		let knownName: string | undefined;
+
+		if(typeof langFile === "string") {
+			if(_langName) {
+				if(_langName !== langFile) {
+					// someone is trying to fool us?
+					throw new Error("Wrong language specified");
+				}
+				knownName = _langName;
+			} else { knownName = langFile; }
+
+			isSourceLanguage = langFile === this.sourceLanguage;
+			langFile = this._langMaps[langFile]!;
+
+			if(!langFile) { throw new Error("Language name with this name is not found"); }
+		}
+
+		if(!isSourceLanguage && sourceLanguage) {
+			isSourceLanguage = langFile === sourceLanguage;
+		}
+
+		if(isSourceLanguage) {
+			langFile["+COVERAGE"] = "100";
+			return 100;
+		}
+
+		const coverage = await this.testCoverage(langFile, (sourceLanguage || this._langMaps[this.sourceLanguage]), knownName);
+
+		langFile["+COVERAGE"] = `${coverage}`;
+		if(langFile["+COMMUNITY_MANAGED"] !== "true") { langFile["+COMMUNITY_MANAGED"] = "false"; }
+
+		if(log) { this._log("ok", `- ${langFile} ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${langFile["+COVERAGE"]}`); }
+
+		return coverage;
+	}
+
+	/**
 	 * Checks converage of default language by selected language's dictionary
 	 * @param langFile Dictionary of strings
 	 * @param defaultLanguage Default language
 	 */
-	private async testCoverage(langFile: IStringsMap, defaultLanguage = this._langMaps[this._opts.source_language] as IStringsMap) {
+	private async testCoverage(langFile: IStringsMap, defaultLanguage = this._langMaps[this._opts.source_language]!, _langName?: string) {
 		let unique = 0;
 		for(const key in defaultLanguage) {
 			// ignored keys
-			if(IGNORED_KEYS.includes(key)) { unique += 1; continue; }
+			if(DYNAMIC_META_KEYS.includes(key)) { unique += 1; continue; }
 			// "" for empty crowdin translations
 			if(typeof langFile[key] === "string" && langFile[key] !== "") {
 				unique += +1;
-			} else if(!this._opts.disable_coverage_log) {
+			} else if(!this._isCoverageDisabledFor(_langName)) {
 				this._log("warn", `String "${key}" not translated in lang ${langFile["+NAME"]}`);
 			}
 		}
@@ -175,22 +254,35 @@ export class Localizer {
 		return Math.round(coverage * 1e2) / 1e2; // 99.99%
 	}
 
+	private readonly _coverageDisabledGlobally;
+	private readonly _coverageDisablingSet;
+
+	private _isCoverageDisabledFor(langName?: string) {
+		return this._coverageDisabledGlobally || (this._coverageDisablingSet ? ( // is set?
+			langName ? ( // do we at all have lang name?
+				this._opts.disable_coverage_log && // it may be set as false here
+				// if not false - searching in array
+				((<string[]>this._opts.disable_coverage_log).includes(langName))
+			) : false // if not - we don't need to log it
+		) : false); // if not set - false
+	}
+
 	/**
 	 * Extends selected language with strings
-	 * @param langName Language name
+	 * @param langName Language name to extend
 	 * @param langFile Language file or filename
+	 * @returns List of imported keys to language
 	 */
-	public async extendLanguage(langName: string, langFile: string | IStringsMap) {
+	public async extendLanguage(langName: string, langFile: string | string[] | IStringsMap) {
+		const importedKeys: string[] = [];
 		const langMap = this._loadedLanguages[langName];
 		if(!langMap) { throw new Error(`Language "${langName}" is not loaded yet`); }
 
-		switch(typeof langFile) {
-			case "string": { langFile = await this.loadStringsMap(<string>langFile); } break;
-			case "object": break;
-			default: { throw new Error("Invalid type of strings map"); }
-		}
+		if(typeof langFile === "string" || Array.isArray(langFile)) {
+			langFile = await this.loadStringsMap(langFile);
+		} else { throw new Error("Invalid type of strings map"); }
 
-		for(const key in <IStringsMap>langFile) {
+		for(const key in langFile) {
 			let value = langFile[key];
 			const valueType = typeof value;
 
@@ -209,26 +301,44 @@ export class Localizer {
 			}
 
 			langMap[key] = value;
+			importedKeys.push(key);
 		}
 
-		return langMap;
+		return importedKeys;
 	}
 
 	/**
 	 * Extends language using hash map
-	 * @param languagesTree KVPs where key is language name and value is strings map or filename
+	 * @param languagesTree Hash map where key is language name and value is strings map or filename
 	 * @param toLangCode Function to convert strings map to language name, takes two arguments - filename and map itself
-	 * @param filter Minimatch string to filter files in directory
+	 * @param filter Glob string(s) to filter files in directory or function
 	 * @param throwOnError Throw error if reading of file in directory fails
+	 * @returns List of all imported keys to all languages
 	 */
-	public async extendLanguages(languagesTree: IHashMap<IStringsMap | string> | string, toLangCode?: LangFileToCodeFunction, filter?: string, throwOnError = false) {
+	public async extendLanguages(languagesTree: IHashMap<IStringsMap | string> | string, toLangCode?: LangFileToCodeFunction, filter?: FilterType, throwOnError = false) {
 		if(typeof languagesTree !== "object") { languagesTree = await this.directoryToLanguagesTree(languagesTree, toLangCode, filter, throwOnError); }
-		const results: IHashMap<IStringsMap> = Object.create(null);
+		const importedKeys: string[] = [];
 		for(const langName in languagesTree) {
 			const langFile = languagesTree[langName];
-			results[langName] = await this.extendLanguage(langName, langFile);
+			for(const key of await this.extendLanguage(langName, langFile)) {
+				if(!importedKeys.includes(key)) { importedKeys.push(key); }
+			}
 		}
-		return results;
+		return importedKeys;
+	}
+
+	/**
+	 * Removes specified keys from all languages
+	 * @param keys Keys to remove
+	 * @example $localizer.pruneLanguages(["8BALL_ANSWER_CERTAIN", ...])
+	 */
+	public async pruneLanguages(keys: string[]) {
+		keys = keys.filter(key => !PRUNE_BANNED_KEYS.includes(key));
+		for(const langName in this._langMaps) {
+			const langFile = this._langMaps[langName];
+			if(!langFile) { continue; }
+			for(const key of keys) { langFile[key] = undefined; }
+		}
 	}
 
 	/**
@@ -236,7 +346,8 @@ export class Localizer {
 	 * @param fileName File name to load
 	 * @returns Strings map
 	 */
-	public async loadStringsMap(fileName: string) {
+	public async loadStringsMap(fileName: string | string[]) {
+		if(Array.isArray(fileName)) { fileName = path.join(...fileName); }
 		const content = await fs.readFile(fileName, { "encoding": "utf8" });
 		const parsed = JSON.parse(content);
 		if(typeof parsed !== "object") { throw new Error(`Invalid type for strings map in file "${fileName}"`); }
@@ -246,24 +357,24 @@ export class Localizer {
 	/**
 	 * Creates languages hash map using directory (not extends current languages!)
 	 * @param directory Path to directory with files
-	 * @param toLangCode Function to convert strings map to language name, takes two arguments - filename and map itself
-	 * @param filter Minimatch string to filter files in directory
+	 * @param toLangCode Function to convert strings map to language name, takes two arguments - filename and map itself. By default uses file basename
+	 * @param filter Glob patterns or function that takes list of files and returns only true
 	 * @param throwOnError Throw error if reading of file in directory fails
 	 */
-	public async directoryToLanguagesTree(directory: string, toLangCode?: LangFileToCodeFunction, filter?: string, throwOnError = false) {
-		let fileNames = await fs.readdir(directory);
-		if(filter) { fileNames = fileNames.filter(minimatch.filter(filter)); }
+	public async directoryToLanguagesTree(directory: string | string[], toLangCode?: LangFileToCodeFunction, filter?: FilterType, throwOnError = false) {
+		if(Array.isArray(directory)) { directory = path.join(...directory); }
 
-		if(!toLangCode) { // default value
-			toLangCode = (fileName) => basename(extname(fileName));
-		}
+		let fileNames = await this.recursiveReadDirectory(directory);
+		if(filter) { fileNames = typeof filter === "string" || Array.isArray(filter) ? micromatch(fileNames, filter) : filter(fileNames); }
+
+		if(!toLangCode) { toLangCode = (fileName) => path.basename(path.extname(fileName)); }
 
 		const tree: IHashMap<IStringsMap> = Object.create(null);
 
 		for(const fileName in fileNames) {
 			let stringsMap: IStringsMap;
 			try {
-				stringsMap = await this.loadStringsMap(pathJoin(directory, fileName));
+				stringsMap = await this.loadStringsMap(path.join(directory, fileName));
 			} catch(err) {
 				if(throwOnError) { throw err; }
 				this._log("err", `[Load Strings Map by Tree] Failed to load ${fileName}`);
@@ -274,6 +385,36 @@ export class Localizer {
 		}
 
 		return tree;
+	}
+
+	/**
+	 * Recursively browses folder and returns all files from it and subdirectories
+	 * @param dirName Directory path to browse in
+	 * @param recursiveCall Is this recursive call? If you set this to true, you'll get `dirName` included
+	 */
+	private async recursiveReadDirectory(dirName: string | string[], recursiveCall = false): Promise<string[]> {
+		if(Array.isArray(dirName)) { dirName = path.join(...dirName); }
+
+		const result: string[] = [];
+
+		const files = await fs.readdir(dirName);
+
+		for(const rawFilePath of files) {
+			const filePath = path.join(dirName, rawFilePath);
+			const stat = await fs.stat(filePath);
+			if(stat.isFile()) {
+				result.push(recursiveCall ? filePath : this._sliceWithSeparator(filePath, dirName));
+			} else if(stat.isDirectory()) {
+				const files = await this.recursiveReadDirectory(filePath, true);
+				for(const file of files) { result.push(recursiveCall ? file : this._sliceWithSeparator(file, dirName)); }
+			}
+		}
+
+		return result;
+	}
+
+	private _sliceWithSeparator(filePath: string, dirName: string) {
+		return filePath.slice(dirName.length + path.sep.length);
 	}
 
 	/**
@@ -376,3 +517,4 @@ export class Localizer {
 }
 
 type LangFileToCodeFunction = (filename: string, map: IStringsMap) => string;
+type FilterType = ((filenames: string[]) => string[]) | string | string[];
