@@ -241,6 +241,9 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotCo
 		log("ok", "[Run] Localizer prepared, preparing module loader...");
 		await snowball.prepareModLoader();
 
+		log("ok", "[Run] Recalculating language coverages after modules loading...");
+		await $localizer.calculateCoverages(undefined, true);
+
 		log("ok", "[Run] ====== DONE ======");
 		loadComplete = true;
 	} catch(err) {
