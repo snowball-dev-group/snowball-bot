@@ -276,6 +276,8 @@ export class Localizer {
 	public async extendLanguage(langName: string, langFile: string | string[] | IStringsMap) {
 		const importedKeys: string[] = [];
 		const langMap = this._loadedLanguages[langName];
+		const sourceLanguage = langName !== this._sourceLang ? this._langMaps[this._sourceLang] : undefined;
+
 		if(!langMap) { throw new Error(`Language "${langName}" is not loaded yet`); }
 
 		if(typeof langFile === "string" || Array.isArray(langFile)) {
@@ -293,6 +295,10 @@ export class Localizer {
 					this._log("info", `Invalid type of "${key}" - "${valueType}"`);
 					continue;
 				}
+			}
+
+			if(sourceLanguage && !sourceLanguage[key]) {
+				this._log("warn", `"${key}" is not found in source language yet.`);
 			}
 
 			if(langMap[key] && !this._opts.extendOverride) {
@@ -318,12 +324,23 @@ export class Localizer {
 	public async extendLanguages(languagesTree: IHashMap<IStringsMap | string> | string, toLangCode?: LangFileToCodeFunction, filter?: FilterType, throwOnError = false) {
 		if(typeof languagesTree !== "object") { languagesTree = await this.directoryToLanguagesTree(languagesTree, toLangCode, filter, throwOnError); }
 		const importedKeys: string[] = [];
+
+		const sourceLangInTree = languagesTree[this._sourceLang];
+		if(sourceLangInTree) {
+			// if we have source language, loading it right before others
+			for(const key of await this.extendLanguage(this._sourceLang, sourceLangInTree)) {
+				if(!importedKeys.includes(key)) { importedKeys.push(key); }
+			}
+		}
+
 		for(const langName in languagesTree) {
+			if(langName === this._sourceLang) { continue; } // ↖ we extended it already
 			const langFile = languagesTree[langName];
 			for(const key of await this.extendLanguage(langName, langFile)) {
 				if(!importedKeys.includes(key)) { importedKeys.push(key); }
 			}
 		}
+
 		return importedKeys;
 	}
 
