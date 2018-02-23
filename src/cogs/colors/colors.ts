@@ -404,7 +404,7 @@ class Colors extends Plugin implements IModule {
 		let requiredRoles: Role[] | Role | undefined = undefined;
 		if(namedArgs.required_role) {
 			if(namedArgs.required_role.indexOf("|") === -1) {
-				requiredRoles = resolveGuildRole(namedArgs.required_role, msg.guild);
+				requiredRoles = resolveGuildRole(namedArgs.required_role, msg.guild, false, false);
 				if(!requiredRoles) {
 					return msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "COLORS_ADD_REQUIREDROLENOTFOUND")
