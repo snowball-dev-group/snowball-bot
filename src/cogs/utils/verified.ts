@@ -167,8 +167,8 @@ export async function isVerified(member: GuildMember) {
 		throw new Error("Initialization wasn't complete. You should enable `verifiedHandler` in order to use this util");
 	}
 
-	if(member.roles.size > 0) { return true; } // members with roles bypass verification anyway
 	if(member.guild.verificationLevel === 0) { return true; }
+	if(member.roles.filter(r => r.id !== member.guild.id).size > 0) { return true; } // members with roles (except '@everyone') bypass verification anyway
 
 	const storedVerification = await getStoredVerification(member);
 
