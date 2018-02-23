@@ -275,14 +275,14 @@ export class Localizer {
 	 */
 	public async extendLanguage(langName: string, langFile: string | string[] | IStringsMap) {
 		const importedKeys: string[] = [];
-		const langMap = this._loadedLanguages[langName];
+		const langMap = this._langMaps[langName];
 		const sourceLanguage = langName !== this._sourceLang ? this._langMaps[this._sourceLang] : undefined;
 
 		if(!langMap) { throw new Error(`Language "${langName}" is not loaded yet`); }
 
-		if(typeof langFile === "string" || Array.isArray(langFile)) {
+		if(typeof langFile !== "object" || Array.isArray(langFile)) {
 			langFile = await this.loadStringsMap(langFile);
-		} else { throw new Error("Invalid type of strings map"); }
+		}
 
 		for(const key in langFile) {
 			let value = langFile[key];
@@ -384,11 +384,11 @@ export class Localizer {
 		let fileNames = await this.recursiveReadDirectory(directory);
 		if(filter) { fileNames = typeof filter === "string" || Array.isArray(filter) ? micromatch(fileNames, filter) : filter(fileNames); }
 
-		if(!toLangCode) { toLangCode = (fileName) => path.basename(path.extname(fileName)); }
+		if(!toLangCode) { toLangCode = filename => path.basename(filename, path.extname(filename)); }
 
 		const tree: IHashMap<IStringsMap> = Object.create(null);
 
-		for(const fileName in fileNames) {
+		for(const fileName of fileNames) {
 			let stringsMap: IStringsMap;
 			try {
 				stringsMap = await this.loadStringsMap(path.join(directory, fileName));
