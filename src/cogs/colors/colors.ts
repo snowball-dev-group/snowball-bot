@@ -755,6 +755,15 @@ class Colors extends Plugin implements IModule {
 
 		fields.push({
 			inline: true,
+			name: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_ROLE"),
+			value: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_ROLE_VALUE", {
+				roleName: colorRole.name,
+				roleId: colorRole.id
+			})
+		});
+
+		fields.push({
+			inline: true,
 			name: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_AVAILABLE"),
 			value: isAvailable ? await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_AVAILABLE_YES") : await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_AVAILABLE_NO")
 		});
@@ -766,15 +775,6 @@ class Colors extends Plugin implements IModule {
 				value: requiredRolesToObtain.join("\n")
 			});
 		}
-
-		fields.push({
-			inline: true,
-			name: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_ROLE"),
-			value: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_ROLE_VALUE", {
-				roleName: colorRole.name,
-				roleId: colorRole.id
-			})
-		});
 
 		return msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_GETINFO_DESCRIPTION", {
