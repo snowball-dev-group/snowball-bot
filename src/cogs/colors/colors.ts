@@ -720,30 +720,52 @@ class Colors extends Plugin implements IModule {
 			});
 		}
 
-		let isAvailable = true;
-		const requiredRoles:string[] = [];
+		const fields: IEmbedOptionsField[] = [] as IEmbedOptionsField[];
+		let isAvailable = false;
+		let requiredRolesToObtain: undefined | string[] = undefined;
 
 		if(colorInfo.required_role) {
-			isAvailable = false;
-			if(colorInfo.required_role instanceof Array) {
-				isAvailable = !!colorInfo.required_role.find(roleId => {
-					const hasRole = msg.member.roles.has(roleId);
-					if(!hasRole) { requiredRoles.push(roleId); }
-					return hasRole;
-				});
-			} else {
-				isAvailable = msg.member.roles.has(colorInfo.required_role);
-				if(!isAvailable) { requiredRoles.push(colorInfo.required_role); }
-			}
-		}
+			const resolvedRequiredRoles: Array<{
+				roleName: string; has: boolean;
+			}> = [];
 
-		const fields: IEmbedOptionsField[] = [] as IEmbedOptionsField[];
+			for(const requiredRoleId of colorInfo.required_role!) {
+				const role = msg.guild.roles.get(requiredRoleId);
+				if(role) {
+					const obj = {
+						roleName: role.name,
+						has: msg.member.roles.has(requiredRoleId)
+					};
+					if(!isAvailable && obj.has) { isAvailable = true; }
+					resolvedRequiredRoles.push(obj);
+				}
+			}
+
+			if(resolvedRequiredRoles.length > 0) {
+				requiredRolesToObtain = [];
+
+				for(const role of resolvedRequiredRoles) {
+					requiredRolesToObtain.push(await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_REQUIREDROLES_ITEM", {
+						name: escapeDiscordMarkdown(role.roleName),
+						emoji: role.has ? "✅" : "❌"
+					}));
+				}
+			}
+		} else { isAvailable = true; }
 
 		fields.push({
 			inline: true,
 			name: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_AVAILABLE"),
 			value: isAvailable ? await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_AVAILABLE_YES") : await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_AVAILABLE_NO")
 		});
+
+		if(requiredRolesToObtain) {
+			fields.push({
+				inline: false,
+				name: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_REQUIREDROLES"),
+				value: requiredRolesToObtain.join("\n")
+			});
+		}
 
 		fields.push({
 			inline: true,
@@ -753,25 +775,6 @@ class Colors extends Plugin implements IModule {
 				roleId: colorRole.id
 			})
 		});
-
-		if(colorInfo.required_role && !isAvailable && requiredRoles.length > 0) {
-			// constucting "good" array of names
-			const requiredRolesToObtain = (() => {
-				const arr: string[] = [];
-				for(const requiredRoleId of requiredRoles) {
-					const role = msg.guild.roles.get(requiredRoleId);
-					if(role) { arr.push(role.name); }
-				}
-				arr.map(roleName => `- ${roleName}`);
-				return arr;
-			})();
-
-			fields.push({
-				inline: false,
-				name: await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_REQUIREDROLES"),
-				value: requiredRolesToObtain.join("\n")
-			});
-		}
 
 		return msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_GETINFO_DESCRIPTION", {
