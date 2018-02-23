@@ -414,7 +414,7 @@ class Colors extends Plugin implements IModule {
 				const requiredRolesNames = namedArgs.required_role.split("|").map(arg => arg.trim());
 				requiredRoles = [];
 				for(const nameToResolve of requiredRolesNames) {
-					const resolvedRole = resolveGuildRole(nameToResolve, msg.guild);
+					const resolvedRole = resolveGuildRole(nameToResolve, msg.guild, false, false);
 					if(!resolvedRole) {
 						return msg.channel.send("", {
 							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
