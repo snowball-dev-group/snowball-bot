@@ -747,7 +747,7 @@ class Colors extends Plugin implements IModule {
 				for(const role of resolvedRequiredRoles) {
 					requiredRolesToObtain.push(await localizeForUser(msg.member, "COLORS_GETINFO_FIELD_REQUIREDROLES_ITEM", {
 						name: escapeDiscordMarkdown(role.roleName),
-						emoji: role.has ? "✅" : "❌"
+						status: await localizeForUser(msg.member, role.has ? "COLORS_GETINFO_FIELD_REQUIREDROLES_ITEM_STATUS_YES" : "COLORS_GETINFO_FIELD_REQUIREDROLES_ITEM_STATUS_NO")
 					}));
 				}
 			}
