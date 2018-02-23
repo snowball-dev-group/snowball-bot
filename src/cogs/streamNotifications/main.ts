@@ -1133,7 +1133,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	async notificationsCleanup() {
 		const notifications = await this.getAllNotifications();
-		let resolveFunction: undefined | Function = undefined;
+		let resolveFunction: undefined | (() => void) = undefined;
 		this.cleanupPromise = new Promise((r) => {
 			resolveFunction = r;
 		});
@@ -1146,7 +1146,7 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 
 		if(resolveFunction) {
-			resolveFunction();
+			resolveFunction!(); // why the hell it's NEVER???
 			this.cleanupPromise = undefined;
 		}
 	}
