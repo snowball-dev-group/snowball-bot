@@ -487,7 +487,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 						id: createdPayload.id,
 						streamer,
 						status: "online",
-						payload: createdPayload
+						payload: createdPayload,
+						noEveryone: createdPayload.type === "vodcast"
 					});
 				} else if(activePayload) {
 					// check if stream is updated
@@ -536,7 +537,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 							oldId: activePayload.id,
 							payload: createdPayload,
 							status: "online",
-							streamer
+							streamer,
+							noEveryone: createdPayload.type === "vodcast"
 						});
 					}
 				}
