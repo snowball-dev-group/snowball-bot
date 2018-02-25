@@ -104,6 +104,11 @@ export interface IStreamStatus {
 	* Working in clusters means communication
 	*/
 	payload: object;
+
+	/**
+	 * Force Steam Notifications module to disable everyone
+	 */
+	noEveryone?: boolean;
 }
 
 export interface IStreamingServiceStreamer {

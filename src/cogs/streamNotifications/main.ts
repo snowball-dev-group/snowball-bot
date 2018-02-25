@@ -1387,11 +1387,10 @@ class StreamNotifications extends Plugin implements IModule {
 
 			try {
 				const escapedUsername = escapeDiscordMarkdown(subscription.username, true);
-				await msg.edit(shouldMentionEveryone ?
+				await msg.edit(shouldMentionEveryone && !result.noEveryone ?
 					(result.status === "offline" ? "~~@everyone~~ " : "@everyone ") + $localizer.getFormattedString(embedLanguage, result.status === "offline" ? LOCALIZED("NOTIFICATION_EVERYONE_OFFLINE") : LOCALIZED("NOTIFICATION_EVERYONE_UPDATED"), {
 						username: escapedUsername
-					})
-					: (
+					}) : (
 						isUser ? $localizer.getFormattedString(
 							embedLanguage,
 							result.status === "offline" ? LOCALIZED("NOTIFICATION_DM_OFFLINE") : LOCALIZED("NOTIFICATION_DM_UPDATED"), {
@@ -1400,7 +1399,8 @@ class StreamNotifications extends Plugin implements IModule {
 									username: escapedUsername
 								}),
 								command: `${PREFIX} unsubscribe ${providerName}, ${subscription.uid}`
-							}) : ""), {
+							}) : ""
+					), {
 						embed: embed as any
 					});
 			} catch(err) {
