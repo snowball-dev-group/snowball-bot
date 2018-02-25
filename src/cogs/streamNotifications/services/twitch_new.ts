@@ -492,46 +492,44 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				} else if(activePayload) {
 					// check if stream is updated
 
-					let _updated: string | undefined = undefined;
-					const isUpdated = !!(_updated = (() => {
+					const isUpdated = (() => {
 						if(createdPayload.title !== activePayload.title) {
-							return "title";
+							return true;
 						}
 
 						if(createdPayload.id !== activePayload.id) {
-							return "id";
+							return true;
 						}
 
 						if(createdPayload.type !== activePayload.type) {
-							return "type";
+							return true;
 						}
 
 						if(createdPayload.game && activePayload.game) {
 							if(createdPayload.game.id !== activePayload.game.id) {
-								return "game:id";
+								return true;
 							}
 						}
 
 						for(const prop in createdPayload.streamer) {
 							if(EXLUDED_USER_PROPS_OFUPD.includes(prop)) { continue; }
 							if(createdPayload.streamer[prop] !== activePayload.streamer[prop]) {
-								return `streamer:${prop}`;
+								return true;
 							}
 						}
 
 						if(createdPayload.metadata && !activePayload.metadata) {
-							return "metadata#created";
+							return true;
 						} if(!createdPayload.metadata && activePayload.metadata) {
-							return "metadata#removed";
+							return true;
 						} else if((createdPayload.metadata && activePayload.metadata) && !this._isMetadataEqual(createdPayload.metadata, activePayload.metadata)) {
-							return "metadata#updated";
+							return true;
 						}
 
-						return undefined;
-					})());
+						return false;
+					})();
 
 					if(isUpdated) {
-						this.log("info", `Pushing update for streamer ${streamer.uid}: ${_updated}`);
 						this.emit("updated", {
 							updated: true,
 							id: createdPayload.id,
