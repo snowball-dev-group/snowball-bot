@@ -1441,8 +1441,25 @@ class StreamNotifications extends Plugin implements IModule {
 				$snowball.captureException(err, {
 					extra: { subscription, embedLanguage, result, channelId: channel.id }
 				});
-				this.log("err", "Failed to send notification for stream of", `${subscription.provider}[${subscription.uid}]`, "to channel", `${channel.id}.`, "Error ocurred", err);
-				return;
+
+				const subId = `${subscription.provider}[${subscription.uid}]`;
+
+				this.log("err", `Failed to send notification for stream of "${subId}" to channel "${channel.id}". Error occured`, err);
+
+				if(err instanceof DiscordAPIError) {
+					if(err.code === 50007) {
+						// can't send messages to this user 👍
+						this.log("info", `Unsubscribing "${channel.id}" from "${subId}": user blocked us`);
+						await this.unsubscribe(subscription, isUser ? {
+							guildId: this.getUserSubscriberID(<User> scope)
+						} : {
+							guildId: scope.id,
+							channelId: alternativeChannel ? alternativeChannel.id : undefined
+						});
+					}
+
+					return;
+				}
 			}
 
 			notification = {
