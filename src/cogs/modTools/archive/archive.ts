@@ -157,7 +157,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			return;
 		}
 
-		const channel = await this._resolveGuildChannel(message.channelId, msg.guild);
+		const channel = <TextChannel> await this._resolveGuildChannel(message.channelId, msg.guild);
 
 		if(!channel) {
 			return msg.channel.send({
@@ -172,12 +172,12 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 
 		const originalMessage = await (async () => {
-			try { return await (<TextChannel>channel).messages.fetch(message.messageId); } catch(err) { return undefined; }
+			try { return await channel.messages.fetch(message.messageId); } catch(err) { return undefined; }
 		})();
 
-		if(!originalMessage && msg.member.permissions.has("MANAGE_MESSAGES")) {
+		if(!originalMessage && !msg.member.permissions.has("MANAGE_MESSAGES", true) && !channel.permissionsFor(msg.member).has("MANAGE_MESSAGES", true)) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "NO_PERMISSION")
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOPERMISSIONS@REMOVED")
 			});
 		}
 
