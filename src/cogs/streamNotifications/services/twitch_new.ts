@@ -655,13 +655,17 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			inline: gameName.length < 25,
 			name: $localizer.getString(lang, "STREAMING_GAME_NAME"),
 			value: (gameEmoji ? `${gameEmoji} ` : "") + gameName
-		}, {
-			inline: true,
-			name: $localizer.getString(lang, "STREAMING_MATURE_NAME"),
-			value: $localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
-				mature: isMature
-			})
 		}];
+
+		if(isMature) {
+			fields.push({
+				inline: true,
+				name: $localizer.getString(lang, "STREAMING_MATURE_NAME"),
+				value: $localizer.getFormattedString(lang, "STREAMING_MATURE_VALUE_TWITCH", {
+					mature: isMature
+				})
+			});
+		}
 
 		const gameMetadata = payload.game ? payload.metadata : undefined;
 		if(gameMetadata) { // not showing metadata if don't have game
