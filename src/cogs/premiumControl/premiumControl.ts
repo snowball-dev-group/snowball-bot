@@ -4,7 +4,7 @@ import { Message, Guild, DiscordAPIError } from "discord.js";
 import { command } from "../utils/help";
 import { init, checkPremium, givePremium, deletePremium, getPremium } from "../utils/premium";
 import { EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
-import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser } from "../utils/ez-i18n";
+import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser, localizeForGuild } from "../utils/ez-i18n";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "../utils/guildPrefs";
 import { createConfirmationMessage } from "../utils/interactive";
 import { messageToExtra } from "../utils/failToDetail";
@@ -687,7 +687,7 @@ class PremiumControl extends Plugin implements IModule {
 			if(premiumResponse.result && !member.roles.has(guildPremiumRole)) {
 				try {
 					if(!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has no premium role, adding...`); }
-					await member.roles.add(premiumRole);
+					await member.roles.add(premiumRole, await localizeForGuild(member.guild, "PREMIUMCTL_AUDITLOG_PREMIUM"));
 				} catch(err) {
 					if(err instanceof DiscordAPIError) {
 						let breakSync = false;
@@ -707,7 +707,7 @@ class PremiumControl extends Plugin implements IModule {
 			} else if(!premiumResponse.result && member.roles.has(guildPremiumRole)) {
 				try {
 					if(!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has premium role without premium, removing...`); }
-					await member.roles.remove(premiumRole);
+					await member.roles.remove(premiumRole, await localizeForGuild(member.guild, "PREMIUMCTL_AUDITLOG_NOTPREMIUM"));
 					done++;
 				} catch(err) {
 					this.log("err", logPrefix, `Failed to unassign premium role from member "${member.displayName}"...`);
