@@ -1277,7 +1277,19 @@ class Guilds extends Plugin implements IModule {
 			await this.updateGuildRow(dbRow);
 		}
 
-		await _msg.edit({
+		if(cz.rules) {
+			await msg.author.send({
+				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
+					key: "GUILDS_JOIN_JOINED_RULES_DM",
+					formatOptions: {
+						guildName: escapeDiscordMarkdown(dbRow.name, true),
+						serverName: escapeDiscordMarkdown(msg.guild.name, true)
+					}
+				}, { universalTitle: await localizeForUser(msg.member, "GUILDS_JOIN_JOINED_RULES_DM_TITLE") })
+			});
+		}
+
+		return _msg.edit({
 			embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, {
 				key: "GUILDS_JOIN_DONE",
 				formatOptions: {
@@ -1289,16 +1301,6 @@ class Guilds extends Plugin implements IModule {
 					name: msg.member.displayName
 				}
 			})
-		});
-
-		return msg.author.send({
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
-				key: "GUILDS_JOIN_JOINED_RULES_DM",
-				formatOptions: {
-					guildName: escapeDiscordMarkdown(dbRow.name, true),
-					serverName: escapeDiscordMarkdown(msg.guild.name, true)
-				}
-			}, { universalTitle: await localizeForUser(msg.member, "GUILDS_JOIN_JOINED_RULES_DM_TITLE") })
 		});
 	}
 
