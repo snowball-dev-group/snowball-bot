@@ -1,7 +1,7 @@
 import { generateLocalizedEmbed, localizeForGuild, localizeForUser } from "../utils/ez-i18n";
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
-import { Message, Guild, Role, GuildMember, VoiceChannel } from "discord.js";
+import { Message, Guild, Role, GuildMember, VoiceChannel, Collection } from "discord.js";
 import { getDB } from "../utils/db";
 import { EmbedType, resolveGuildRole, resolveGuildChannel } from "../utils/utils";
 import { isVerified, isInitializated as isVerifiedEnabled } from "../utils/verified";
@@ -334,7 +334,16 @@ class VoiceRole extends Plugin implements IModule {
 			allSpecificRows = await this.getAllSpecificRowsOfGuild(guild, "role");
 		}
 
-		for(const member of guild.members.values()) {
+		let members : Collection<string, GuildMember>;
+
+		try {
+			members = await guild.members.fetch();
+		} catch (err) {
+			this.log("err", "Could not fetch guild members", err);
+			return;
+		}
+
+		for(const member of members.values()) {
 			let voiceChannelOfMember: VoiceChannel | undefined = member.voiceChannel;
 			if(voiceChannelOfMember && voiceChannelOfMember.guild.id !== guild.id) {
 				voiceChannelOfMember = undefined;
