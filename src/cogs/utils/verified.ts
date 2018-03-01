@@ -95,7 +95,7 @@ export async function guildMemberRemoveEvent(member: GuildMember) {
 }
 
 export async function messageEvent(msg: Message) {
-	if(msg.channel.type !== "text" || msg.guild.verificationLevel === 0) { return; }
+	if(msg.channel.type !== "text" || msg.webhookID || msg.guild.verificationLevel === 0) { return; }
 
 	let member = msg.member;
 
@@ -108,17 +108,14 @@ export async function messageEvent(msg: Message) {
 				if(err instanceof DiscordAPIError) {
 					switch(err.code) {
 						case 10007: { LOG("err", `User with ID "${msg.author.id}" is not member of the server`); } return;
-						case 10013: { LOG("err", `User with ID "${msg.author.id}" is not real member of Discord`); } return;
+						case 10013: { LOG("err", `User with ID "${msg.author.id}" is not real Discord user`); } return;
 					}
 				}
 				LOG("err", "Unknown error while fetching", err);
 				return;
 			}
 			LOG("ok", `Found member with ID "${msg.author.id}"`);
-		} else {
-			LOG("err", "Message by unknown member. Is that a webhook one?");
-			return;
-		}
+		} else { return; }
 	}
 
 	if(member.roles.size > 0) { return; }
