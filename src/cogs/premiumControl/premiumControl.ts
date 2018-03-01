@@ -656,7 +656,7 @@ class PremiumControl extends Plugin implements IModule {
 		}
 
 		if(!guild.me.permissions.has("MANAGE_ROLES")) {
-			this.log("warn", logPrefix, "Bot doesn't has permission to manage roles on guild", guild.id);
+			this.log("warn", logPrefix, "Bot has no permission to manage roles on guild", guild.id);
 			return delGuildPref(guild, "premiumctl:role");
 		}
 
