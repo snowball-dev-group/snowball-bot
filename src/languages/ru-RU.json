@@ -28,7 +28,7 @@
     "ARCHIVE_MESSAGE_NOTFOUND": "Невозможно найти сообщения по указанному ID.",
     "ARCHIVE_MESSAGE_CHANNELNOTFOUND": "Сообщение найдено, но канал, в который оно было отправлено, удалён или недоступен.",
     "ARCHIVE_MESSAGE_NOPERMISSIONS": "Сообщение найдено, но Вы не имеете доступа к каналу, в который оно было отправлено.",
-    "ARCHIVE_MESSAGE_NOPERMISSIONS@REMOVED": "Сообщение найдено, но Вы не имеете права \"Управлять сообщениями\"",
+    "ARCHIVE_MESSAGE_NOPERMISSIONS@REMOVED": "Сообщение найдено, но Вы не имеете права \"Управлять сообщениями\".",
     "ARCHIVE_MESSAGE_TITLE": "Сообщение (ID: {id})",
     "ARCHIVE_MESSAGE_FIELD_EMBEDS_TITLE": "Встраиваемые объекты",
     "ARCHIVE_MESSAGE_FIELD_EMBEDS_VALUE": "Сообщение содержало {count, plural, one {# встраиваемый объект} few {# встраиваемых объекта} other {# встраиваемых объектов}}. Они будут отправлены в следующих сообщениях.",
