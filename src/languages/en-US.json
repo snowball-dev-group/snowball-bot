@@ -28,6 +28,7 @@
     "ARCHIVE_MESSAGE_NOTFOUND": "Unable to find messages on specified ID.",
     "ARCHIVE_MESSAGE_CHANNELNOTFOUND": "Message found, but the channel in which it was sent, is either deleted or unavailable.",
     "ARCHIVE_MESSAGE_NOPERMISSIONS": "Message found, but you don't have access to the channel in which it was sent.",
+    "ARCHIVE_MESSAGE_NOPERMISSIONS@REMOVED": "Message found, but you have no \"Manage Messages\" permission.",
     "ARCHIVE_MESSAGE_TITLE": "Message (ID: {id})",
     "ARCHIVE_MESSAGE_FIELD_EMBEDS_TITLE": "Embeds",
     "ARCHIVE_MESSAGE_FIELD_EMBEDS_VALUE": "Message contained {count, plural, one {# embed} other {# embeds}}. They will be sent in the following messages.",
