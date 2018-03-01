@@ -11,14 +11,14 @@
 ### Snowball Core
 
 - [ ] Add support for NPM modules
-- [x] Add possibility to extend localizations file 🏃‍
+- [x] Add possibility to extend localizations file 🚀
 
 ### Snowball Modules
 
 #### Cores
 
 - [ ] IconsCore ❄
-- [ ] Users Manager (+ plugin) ❄
+- [ ] Users Manager (+ plugin) 🏃‍
 - [ ] PermissionsCore ❄
 - [x] MessagesFlows ✈
 - [x] PrefixAll ✈
