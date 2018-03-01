@@ -516,6 +516,8 @@
     "PREFIXALL_PREFIX_NOPREFIXES": "The server does not have prefixes. Removal is impossible.",
     "PREFIXALL_PREFIX_LIST_NONE": "The list of prefixes for this of this server is empty.",
     "PREFIXALL_WRONGCHANNELTYPE": "This command works only on the server.",
+    "PREMIUMCTL_AUDITLOG_PREMIUM": "Snowball Premium subscriber",
+    "PREMIUMCTL_AUDITLOG_NOTPREMIUM": "Is not Snowball Premium subscriber",
     "PREMIUMCTL_CHECKOUT_ERR_MENTIONS": "You should mention the member whose subscription you would like to check or do not mention any member if you would like to check the status of your subscription.",
     "PREMIUMCTL_CHECKOUT_ERR_NOTADM": "You do not have enough permissions to check other subscriptions",
     "PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER": "This user is not a premium subscriber",

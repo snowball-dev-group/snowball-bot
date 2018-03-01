@@ -516,6 +516,8 @@
     "PREFIXALL_PREFIX_NOPREFIXES": "Сервер не мае прэфіксаў. Выдаленне немагчыма.",
     "PREFIXALL_PREFIX_LIST_NONE": "Спіс прэфіксаў гэтага сервера пусты.",
     "PREFIXALL_WRONGCHANNELTYPE": "Дадзеная каманда працуе толькі на серверы.",
+    "PREMIUMCTL_AUDITLOG_PREMIUM": "",
+    "PREMIUMCTL_AUDITLOG_NOTPREMIUM": "",
     "PREMIUMCTL_CHECKOUT_ERR_MENTIONS": "Вы павінны памянуць аднаго карыстача, чыю падпіску Вы хочаце праверыць, або не згадваць нікога, калі хочаце праверыць статус сваёй падпіскі.",
     "PREMIUMCTL_CHECKOUT_ERR_NOTADM": "У Вас няма права правяраць чужыя падпіскі",
     "PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER": "Дадзены карыстач не з'яўляецца прэміяльным падпісантам",

@@ -516,6 +516,8 @@
     "PREFIXALL_PREFIX_NOPREFIXES": "",
     "PREFIXALL_PREFIX_LIST_NONE": "",
     "PREFIXALL_WRONGCHANNELTYPE": "",
+    "PREMIUMCTL_AUDITLOG_PREMIUM": "",
+    "PREMIUMCTL_AUDITLOG_NOTPREMIUM": "",
     "PREMIUMCTL_CHECKOUT_ERR_MENTIONS": "Vous devriez mentionner un membre si vous voudriez vérifier son abonnement et n'en mentionner aucun si vous voudriez vérifier le vôtre.",
     "PREMIUMCTL_CHECKOUT_ERR_NOTADM": "Vous n'avez pas assez de permission pour voir les abonnements des autres membres",
     "PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER": "Cet utilisateur n'est pas un abonné Premium",
