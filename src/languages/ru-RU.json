@@ -516,6 +516,8 @@
     "PREFIXALL_PREFIX_NOPREFIXES": "Сервер не имеет префиксов. Удаление невозможно.",
     "PREFIXALL_PREFIX_LIST_NONE": "Список префиксов этого сервера пуст.",
     "PREFIXALL_WRONGCHANNELTYPE": "Данная команда работает только на сервере.",
+    "PREMIUMCTL_AUDITLOG_PREMIUM": "Премиальный подписчик Snowball",
+    "PREMIUMCTL_AUDITLOG_NOTPREMIUM": "Не является премиальным подписчиком Snowball",
     "PREMIUMCTL_CHECKOUT_ERR_MENTIONS": "Вы должны упомянуть одного пользователя, чью подписку Вы хотите проверить, либо не упомянать никого, если хотите проверить статус своей подписки.",
     "PREMIUMCTL_CHECKOUT_ERR_NOTADM": "У Вас нет права проверять чужие подписки",
     "PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER": "Данный пользователь не является премиальным подписчиком",
