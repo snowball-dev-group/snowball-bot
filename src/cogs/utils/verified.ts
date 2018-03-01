@@ -1,5 +1,5 @@
 import { getDB } from "./db";
-import { GuildMember, Message } from "discord.js";
+import { GuildMember, Message, DiscordAPIError } from "discord.js";
 import * as getLogger from "loggy";
 import { INullableHashMap } from "../../types/Types";
 
@@ -95,15 +95,39 @@ export async function guildMemberRemoveEvent(member: GuildMember) {
 }
 
 export async function messageEvent(msg: Message) {
-	if(msg.channel.type !== "text" || !msg.member || msg.guild.verificationLevel === 0 || msg.member.roles.size > 0) {
-		return; // all the cases in one if
+	if(msg.channel.type !== "text" || msg.guild.verificationLevel === 0) { return; }
+
+	let member = msg.member;
+
+	if(!member) {
+		if(msg.author) {
+			LOG("warn", `Detected uncached member with ID "${msg.author.id}", trying to fetch them...`);
+			try {
+				member = await msg.guild.members.fetch(msg.author);
+			} catch (err) {
+				if(err instanceof DiscordAPIError) {
+					switch(err.code) {
+						case 10007: { LOG("err", `User with ID "${msg.author.id}" is not member of the server`); } return;
+						case 10013: { LOG("err", `User with ID "${msg.author.id}" is not real member of Discord`); } return;
+					}
+				}
+				LOG("err", "Unknown error while fetching", err);
+				return;
+			}
+			LOG("ok", `Found member with ID "${msg.author.id}"`);
+		} else {
+			LOG("err", "Message by unknown member. Is that a webhook one?");
+			return;
+		}
 	}
 
+	if(member.roles.size > 0) { return; }
+
 	try {
-		let storedVerification = await getStoredVerification(msg.member);
+		let storedVerification = await getStoredVerification(member);
 		if(!storedVerification) {
-			await storeNewVerification(msg.member);
-			storedVerification = await getStoredVerification(msg.member);
+			await storeNewVerification(member);
+			storedVerification = await getStoredVerification(member);
 			if(!storedVerification) {
 				LOG("err", "Bad times, row not found after creation");
 				return;
