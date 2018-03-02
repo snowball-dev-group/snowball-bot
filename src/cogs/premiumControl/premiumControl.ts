@@ -4,12 +4,12 @@ import { Message, Guild, DiscordAPIError } from "discord.js";
 import { command } from "../utils/help";
 import { init, checkPremium, givePremium, deletePremium, getPremium } from "../utils/premium";
 import { EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
-import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser, localizeForGuild } from "../utils/ez-i18n";
+import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser, localizeForGuild, getUserTimezone, toUserLocaleString } from "../utils/ez-i18n";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "../utils/guildPrefs";
 import { createConfirmationMessage } from "../utils/interactive";
 import { messageToExtra } from "../utils/failToDetail";
+import { DateTime } from "luxon";
 import * as timestring from "timestring";
-import * as moment from "moment-timezone";
 import * as getLogger from "loggy";
 
 const PREMIUMCTRL_PREFIX = `!premiumctl`;
@@ -283,6 +283,7 @@ class PremiumControl extends Plugin implements IModule {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_PERMS")
 			});
 		}
+
 		// args: ["<#12345678901234>,", "1mth"]
 		if(!internalCall) {
 			args = args.join(" ").split(",").map(arg => arg.trim()); // args: ["<#12345678901234>", "1mth"]
@@ -306,7 +307,7 @@ class PremiumControl extends Plugin implements IModule {
 		const subscriber = msg.mentions.users.first();
 		let currentPremium = await checkPremium(subscriber);
 		if(currentPremium) {
-			const dtString = moment(currentPremium.due_to, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+			const dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
 			const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 				key: "PREMIUMCTL_GIVE_CONFIRMATION",
 				formatOptions: {
@@ -322,8 +323,11 @@ class PremiumControl extends Plugin implements IModule {
 			}
 		}
 
-		const cDate = new Date(Date.now() + (timestring(args[1]) * 1000));
-		let dtString = moment(cDate, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const cDate = DateTime.local().plus({
+			seconds: timestring(args[1])
+		});
+
+		let dtString = await toUserLocaleString(msg.member, cDate, DateTime.DATETIME_FULL);
 		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			key: "PREMIUMCTL_GIVE_CONFIRMATION1",
 			formatOptions: {
@@ -343,7 +347,7 @@ class PremiumControl extends Plugin implements IModule {
 			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_PLSWAIT")
 		});
 
-		const complete = await givePremium(subscriber, cDate, true);
+		const complete = await givePremium(subscriber, cDate.toJSDate(), true);
 
 		if(!complete) {
 			return _cMsg.edit("", {
@@ -363,8 +367,8 @@ class PremiumControl extends Plugin implements IModule {
 			});
 		}
 
-		dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
+		const dtSubString = await toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
 
 		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
 		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
@@ -429,8 +433,12 @@ class PremiumControl extends Plugin implements IModule {
 			return this.cmd_give(msg, args, true);
 		}
 
-		const cDate = new Date(currentPremium.due_to.getTime() + (timestring(args[1]) * 1000));
-		let dtString = moment(cDate, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const cDate = DateTime.fromMillis(Date.now()).plus({
+			seconds: timestring(args[1])
+		});
+
+		let dtString = await toUserLocaleString(msg.member, cDate, DateTime.DATETIME_FULL);
+
 		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 			key: "PREMIUMCTL_RENEW_CONFIRMATION",
 			formatOptions: {
@@ -438,6 +446,7 @@ class PremiumControl extends Plugin implements IModule {
 				untilDate: dtString
 			}
 		});
+
 		let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 		if(!confirmation) {
 			return msg.channel.send("", {
@@ -447,7 +456,7 @@ class PremiumControl extends Plugin implements IModule {
 
 		let complete = false;
 		try {
-			complete = await givePremium(subscriber, cDate, false);
+			complete = await givePremium(subscriber, cDate.toJSDate(), false);
 		} catch(err) {
 			if((err as Error).name === "ERR_PREMIUM_DIFFLOW") {
 				return msg.channel.send("", {
@@ -479,8 +488,8 @@ class PremiumControl extends Plugin implements IModule {
 			});
 		}
 
-		dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
+		const dtSubString = await toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
 
 		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
 		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
@@ -530,8 +539,8 @@ class PremiumControl extends Plugin implements IModule {
 			});
 		}
 
-		const dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
+		const dtSubString = await toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
 		const durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
 		let msgStr = "";
@@ -574,8 +583,8 @@ class PremiumControl extends Plugin implements IModule {
 			});
 		}
 
-		const dtString = moment(currentPremium.due_to).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
-		const dtSubString = moment(currentPremium.subscribed_at).tz("Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+		const dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
+		const dtSubString = await toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
 		const durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
 		const sep = "----------------";
