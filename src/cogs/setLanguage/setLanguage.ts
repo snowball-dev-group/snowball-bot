@@ -460,7 +460,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				location: `${selectedAddress.geometry.location.lat},${selectedAddress.geometry.location.lng}`
 			});
 
-			if(timezoneResp.status !== "OK" || intlAcceptsTimezone(timezoneResp.timeZoneId)) {
+			if(timezoneResp.status !== "OK" || !intlAcceptsTimezone(timezoneResp.timeZoneId)) {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_APIERR@TIMEZONE_RESOLVE", {
 						universalTitle: await localizeForUser(msgAuthor, "LANGUAGE_TIMEZONE_CANCELED_TITLE")
