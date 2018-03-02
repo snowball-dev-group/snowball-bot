@@ -373,6 +373,12 @@ class SetLanguageCommand extends Plugin implements IModule {
 		const msgMember = await getMessageMember(msg);
 		if(!msgMember) { return; }
 
+		if(!SetLanguageCommand._isAdmin(msgMember)) {
+			return msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "LANGUAGE_GUILD_NOPERMISSIONS")
+			});
+		}
+
 		const guildTimezone = await getGuildTimezone(msgMember.guild);
 
 		if(msg.content === CMD.TIMEZONE) {
