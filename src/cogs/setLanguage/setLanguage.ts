@@ -23,7 +23,7 @@ const CMD = {
 	TIMEZONE: `${BASE_PREFIX} timezone`,
 	CODES: `${BASE_PREFIX} codes`,
 	GUILDS_SWITCH: `${BASE_PREFIX} guild switch`,
-	GUILDS_TIMEZONE: `${BASE_PREFIX} guilds timezone`,
+	GUILDS_TIMEZONE: `${BASE_PREFIX} guild timezone`,
 	GUILDS_ENFORCE: `${BASE_PREFIX} guild enforce`
 };
 const HELP_CATEGORY = "LANGUAGE";
