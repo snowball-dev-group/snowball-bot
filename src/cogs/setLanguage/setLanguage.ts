@@ -473,6 +473,8 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 			newTZ = timezoneResp.timeZoneId;
 		} else { newTZ = cached; }
+
+		return newTZ;
 	}
 
 	private static async _sendGoogleMapsReq<T>(apiType: string, apiKey: string, query: { [key: string]: string }) : Promise<T> {
