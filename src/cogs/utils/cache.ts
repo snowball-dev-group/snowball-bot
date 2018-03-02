@@ -144,7 +144,7 @@ function parseArrayElements<T>(arr: any[]) {
 }
 
 function stripUnnecessaryChars(str: string) {
-	return str.replace(/[^A-Z0-9\-\.\_\ \:]/ig, "").trim();
+	return str.replace(/[^A-ZА-Я0-9\-\.\_\ \:]/ig, "").trim();
 }
 
 function lengthCheck(key: string, val: string) {
@@ -154,7 +154,7 @@ function lengthCheck(key: string, val: string) {
 
 function buildCacheKey(owner: string, key: string) {
 	owner = lengthCheck("owner", stripUnnecessaryChars(owner));
-	key = lengthCheck("key", stripUnnecessaryChars(key));
+	key = lengthCheck("key", key);
 
 	return `sb_cache:${owner}[${key}]`;
 }
