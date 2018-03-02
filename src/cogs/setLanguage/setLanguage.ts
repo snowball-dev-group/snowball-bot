@@ -491,7 +491,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 	private static async _timezoneCurrentTime(str: string, msgAuthor: GuildMember | User, timezone: string) {
 		str += `\n\n${await localizeForUser(msgAuthor, "LANGUAGE_TIMEZONE_TIME", {
-			currentTime: DateTime.local().setZone(timezone).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
+			currentTime: DateTime.local().setLocale(await getUserLanguage(msgAuthor)).setZone(timezone).toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)
 		})}`;
 		return str;
 	}
