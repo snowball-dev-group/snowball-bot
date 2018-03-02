@@ -145,12 +145,12 @@ export async function forceUserTimezoneUpdate(user: UserIdentify): Promise<strin
 		if(user instanceof GuildMember) {
 			const guildTimezone = await getGuildTimezone(user.guild);
 			await setUserPreferenceValue(user, PREFERENCE_USER_TIMEZONE, guildTimezone);
-			return usersCache[user.id] = guildTimezone;
+			return usersTimezonesCache[user.id] = guildTimezone;
 		}
 		await setUserPreferenceValue(user, PREFERENCE_USER_TIMEZONE, DEFAULT_TIMEZONE);
-		return usersCache[user.id] = DEFAULT_TIMEZONE;
+		return usersTimezonesCache[user.id] = DEFAULT_TIMEZONE;
 	}
-	return usersCache[user.id] = preferredTimezone;
+	return usersTimezonesCache[user.id] = preferredTimezone;
 }
 
 // #endregion
