@@ -70,10 +70,15 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	public async init() {
+		if(!$modLoader.isPendingInitialization(this.signature)) {
+			throw new Error("This module is not pending initialization");
+		}
+
 		if(!this.noLazy) {
 			this.log("warn", "Lazy loading enabled, not going to do anything");
 			return;
 		}
+
 		this.log("info", "Syncing...");
 		for(const g of $discordBot.guilds.values()) {
 			this.log("info", `Updating language for guild "${g.name}"`);
@@ -157,6 +162,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				})
 			});
 		}
+
 		if(msg.channel.type !== "dm") {
 			const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
 			if(enforcingEnabled) {
@@ -309,6 +315,9 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	public async unload() {
+		if(!$modLoader.isPendingUnload(this.signature)) {
+			throw new Error("This module is not pending unload");
+		}
 		this.unhandleEvents();
 		return true;
 	}
