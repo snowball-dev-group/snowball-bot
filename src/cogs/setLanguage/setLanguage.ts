@@ -362,7 +362,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				custom: true,
 				string: await SetLanguageCommand._timezoneCurrentTime(
 					await localizeForUser(msgAuthor, "LANGUAGE_TIMEZONE_DONE@USER", {
-						newTimzone: newTZ
+						newTimezone: newTZ
 					}
 				), msgAuthor, newTZ)
 			})
@@ -403,7 +403,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				custom: true,
 				string: await SetLanguageCommand._timezoneCurrentTime(
 					await localizeForUser(msgMember, "LANGUAGE_TIMEZONE_DONE@GUILD", {
-						newTimzone: newTZ
+						newTimezone: newTZ
 					}
 				), msgMember, newTZ)
 			})
