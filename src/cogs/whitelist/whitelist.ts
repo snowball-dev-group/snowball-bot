@@ -2,14 +2,14 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, TextChannel, GuildMember } from "discord.js";
 import { command } from "../utils/help";
-import { localizeForUser, generateLocalizedEmbed } from "../utils/ez-i18n";
+import { localizeForUser, generateLocalizedEmbed, toUserLocaleString } from "../utils/ez-i18n";
 import { simpleCmdParse, canBeSnowflake } from "../utils/text";
 import { EmbedType, escapeDiscordMarkdown } from "../utils/utils";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "../utils/guildPrefs";
 import * as parseTime from "timestring";
-import * as moment from "moment-timezone";
 import * as getLogger from "loggy";
 import { createConfirmationMessage } from "../utils/interactive";
+import { DateTime } from "luxon";
 
 const POSSIBLE_CHAT_ROOMS = ["admins", "admin-channel", "admin_channel", "admins-chat", "admins_chat", "admin", "mod-channel", "mods-channel", "mods", "mods-chat", "mod_chat", "chat", "general"];
 const HELP_CATEGORY = "WHITELIST";
@@ -383,9 +383,9 @@ export class Whitelist extends Plugin implements IModule {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BYPASS");
 				}
 			}
-			if(whitelistInfo.state === WHITELIST_STATE.LIMITED || whitelistInfo.state === WHITELIST_STATE.TRIAL) {
+			if((whitelistInfo.state === WHITELIST_STATE.LIMITED || whitelistInfo.state === WHITELIST_STATE.TRIAL) && whitelistInfo.until) {
 				str += "\n";
-				const endString = moment(whitelistInfo.state, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+				const endString = await toUserLocaleString(msg.member, whitelistInfo.until, DateTime.DATETIME_FULL);
 				str += await localizeForUser(msg.member, "WHITELIST_INFO_UNTIL", {
 					endDate: endString
 				});
@@ -430,7 +430,7 @@ export class Whitelist extends Plugin implements IModule {
 					const time = parseTime(cmd.args[1], "ms");
 					const endTime = new Date(Date.now() + time);
 
-					const endString = moment(endTime, "Europe/Moscow").format("D.MM.YYYY HH:mm:ss (UTCZ)");
+					const endString = await toUserLocaleString(msg.member, endTime, DateTime.DATETIME_FULL);
 
 					const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 						key: "WHITELIST_ACTIVATE_CONFIRM_LIMITED",
