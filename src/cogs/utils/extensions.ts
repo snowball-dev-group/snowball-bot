@@ -2,7 +2,7 @@
 // created-by: sindresorhus
 // license-type: mit
 // source: https://github.com/sindresorhus/negative-array/blob/master/index.js
-export function negativeArray<T>(input: T[]) : T[] {
+export function negativeArray<T>(input: T[]): T[] {
 	if(!Array.isArray(input)) {
 		throw new TypeError("Expected an array");
 	}
@@ -40,6 +40,23 @@ export function negativeArray<T>(input: T[]) : T[] {
 }
 
 // created-by: dafri
-export function isPromise<T>(obj: any) : obj is PromiseLike<T> {
+export function isPromise<T>(obj: any): obj is PromiseLike<T> {
 	return obj != null && typeof obj === "object" && typeof obj.then === "function";
+}
+
+// created-by: matt-johnson
+// license-type: unknown
+// source: https://stackoverflow.com/a/44118363/3762381
+export function intlAcceptsTimezone(timezone: string): boolean {
+	if(!Intl || !Intl.DateTimeFormat().resolvedOptions().timeZone) {
+		throw new Error("Time zones are not available in this environment");
+	}
+
+	try {
+		Intl.DateTimeFormat(undefined, { timeZone: timezone });
+		return true;
+	} catch(err) {
+		// intl doesn't accept our timezone
+		return false;
+	}
 }
