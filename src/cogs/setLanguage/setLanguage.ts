@@ -123,17 +123,20 @@ class SetLanguageCommand extends Plugin implements IModule {
 	private async getCurrentLang(msg: Message) {
 		const u = msg.member || msg.author;
 		const langCode = await getUserLanguage(u);
+
 		let str = $localizer.getFormattedString(langCode, "LANGUAGE_CURRENTLANG", {
 			lang: `${$localizer.getString(langCode, "+NAME")} (${$localizer.getString(langCode, "+COUNTRY")})`,
 			coverage: $localizer.getString(langCode, "+COVERAGE")
 		});
+
 		if(!($localizer.getString(langCode, "+COMMUNITY_MANAGED") === "false")) {
 			str += "\n\n";
 			str += $localizer.getFormattedString(langCode, "LANGUAGE_COMMUNITYMANAGED", {
 				crowdinLink: `${this.crowdinLink}/${$localizer.getString(langCode, "+CROWDIN_CODE")}`
 			});
 		}
-		await msg.channel.send({
+
+		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 				custom: true,
 				string: str
@@ -203,17 +206,13 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	private async guildSwitch(msg: Message) {
-	isAdmin(member: GuildMember) {
-		return member.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"], true);
-	}
-
 		if(msg.channel.type !== "text") {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
 			});
 		}
 
-		if(!this.isAdmin(msg.member)) {
+		if(!SetLanguageCommand._isAdmin(msg.member)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_NOPERMISSIONS")
 			});
@@ -259,7 +258,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 		}
 
-		if(!this.isAdmin(msg.member)) {
+		if(!SetLanguageCommand._isAdmin(msg.member)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_NOPERMISSIONS")
 			});
@@ -303,6 +302,10 @@ class SetLanguageCommand extends Plugin implements IModule {
 				}
 			})
 		});
+	}
+
+	private static _isAdmin(member: GuildMember) {
+		return member.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"], true);
 	}
 
 	public async unload() {
