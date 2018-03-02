@@ -17,7 +17,7 @@ const PREFERENCE_GUILD_ENFORCE = ":enforce_lang";
 const DEFAULT_LANGUAGE = $localizer.defaultLanguage;
 const DEFAULT_TIMEZONE = (() => {
 	// ! You might want to override this
-	const DEFAULT_TZ = "Europe/Moscow";
+	const DEFAULT_TZ = "UTC";
 
 	// TODO: make property in localizer
 
