@@ -339,7 +339,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 					custom: true,
 					string: await SetLanguageCommand._timezoneCurrentTime(
-						await localizeForUser(msgAuthor, "LANGUAGE_TIMEZONE_CURRENT@GUILD", {
+						await localizeForUser(msgAuthor, "LANGUAGE_TIMEZONE_CURRENT@USER", {
 							timezone: userTimezone
 						}
 					), msgAuthor, userTimezone)
