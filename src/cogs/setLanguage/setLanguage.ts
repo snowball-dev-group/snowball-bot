@@ -9,6 +9,7 @@ import { setPreferenceValue as setUserPref } from "../utils/userPrefs";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref } from "../utils/guildPrefs";
 import { IHashMap, createHashMap } from "../../types/Types";
 import * as getLogger from "loggy";
+import { messageToExtra } from "../utils/failToDetail";
 
 const BASE_PREFIX = "!sb_lang";
 const CMD = {
@@ -90,27 +91,32 @@ class SetLanguageCommand extends Plugin implements IModule {
 	async onMessage(msg: Message) {
 		if(msg.channel.type !== "dm" && msg.channel.type !== "text") { return; }
 		if(!startsWith(msg.content, BASE_PREFIX)) { return; }
-		if(msg.content === BASE_PREFIX) {
-			return this.getCurrentLang(msg);
-		} else if(startsWith(msg.content, CMD.SWITCH)) {
-			await this.switchLanguage(msg);
-		} else if(startsWith(msg.content, CMD.GUILDS_SWITCH)) {
-			return this.guildSwitch(msg);
-		} else if(startsWith(msg.content, CMD.GUILDS_ENFORCE)) {
-			return this.guildEnforce(msg);
-		} else if(startsWith(msg.content, CMD.CODES)) {
-			await this.getCodes(msg);
-		} else {
-			await msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member || msg.author, {
-					key: "LANGUAGE_UNKNOWNCOMMAND",
-					formatOptions: {
-						cmd_switch: CMD.SWITCH,
-						cmd_codes: CMD.CODES,
-						resolved_category: await localizeForUser(msg.member || msg.author, categoryLocalizedName(HELP_CATEGORY))
-					}
-				})
-			});
+		try {
+			if(msg.content === BASE_PREFIX) {
+				return await this.getCurrentLang(msg);
+			} else if(startsWith(msg.content, CMD.SWITCH)) {
+				return await this.switchLanguage(msg);
+			} else if(startsWith(msg.content, CMD.GUILDS_SWITCH)) {
+				return await this.guildSwitch(msg);
+			} else if(startsWith(msg.content, CMD.GUILDS_ENFORCE)) {
+				return await this.guildEnforce(msg);
+			} else if(startsWith(msg.content, CMD.CODES)) {
+				return await this.getCodes(msg);
+			} else {
+				return await msg.channel.send({
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member || msg.author, {
+						key: "LANGUAGE_UNKNOWNCOMMAND",
+						formatOptions: {
+							cmd_switch: CMD.SWITCH,
+							cmd_codes: CMD.CODES,
+							resolved_category: await localizeForUser(msg.member || msg.author, categoryLocalizedName(HELP_CATEGORY))
+						}
+					})
+				});
+			}
+		} catch (err) {
+			this.log("err", `Error running command "${msg.content}"`, err);
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 		}
 	}
 
