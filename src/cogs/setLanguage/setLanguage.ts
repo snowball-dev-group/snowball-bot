@@ -52,11 +52,11 @@ class SetLanguageCommand extends Plugin implements IModule {
 		return "snowball.core_features.setlanguage";
 	}
 
-	prefs = getPrefsNames();
-	log = getLogger("SetLanguage");
-	noLazy = false;
-	flags: IHashMap<string> = Object.create(null);
-	crowdinLink: string;
+	private readonly prefs = getPreferencesNames();
+	private readonly log = getLogger("SetLanguage");
+	private readonly flags: IHashMap<string> = Object.create(null);
+	private readonly noLazy: boolean;
+	private readonly crowdinLink: string;
 
 	constructor(options: ISetLanguageCommandOptions) {
 		super({
@@ -69,7 +69,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		} else { throw new Error("No options found"); }
 	}
 
-	async init() {
+	public async init() {
 		if(!this.noLazy) {
 			this.log("warn", "Lazy loading enabled, not going to do anything");
 			return;
@@ -88,7 +88,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		this.log("ok", "Sync done, poor DB");
 	}
 
-	async onMessage(msg: Message) {
+	private async onMessage(msg: Message) {
 		if(msg.channel.type !== "dm" && msg.channel.type !== "text") { return; }
 		if(!startsWith(msg.content, BASE_PREFIX)) { return; }
 		try {
@@ -120,7 +120,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 	}
 
-	async getCurrentLang(msg: Message) {
+	private async getCurrentLang(msg: Message) {
 		const u = msg.member || msg.author;
 		const langCode = await getUserLanguage(u);
 		let str = $localizer.getFormattedString(langCode, "LANGUAGE_CURRENTLANG", {
@@ -141,7 +141,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	async switchLanguage(msg: Message) {
+	private async switchLanguage(msg: Message) {
 		const u = msg.member || msg.author;
 		if(msg.content === CMD.SWITCH) {
 			return msg.channel.send({
@@ -183,7 +183,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	async getCodes(msg: Message) {
+	private async getCodes(msg: Message) {
 		const u = msg.member || msg.author;
 		let str = `# ${await localizeForUser(u, "LANGUAGE_CODES_HEADER")}\n\n`;
 
@@ -202,11 +202,11 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
+	private async guildSwitch(msg: Message) {
 	isAdmin(member: GuildMember) {
 		return member.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"], true);
 	}
 
-	async guildSwitch(msg: Message) {
 		if(msg.channel.type !== "text") {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
@@ -252,7 +252,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	async guildEnforce(msg: Message) {
+	private async guildEnforce(msg: Message) {
 		if(msg.channel.type !== "text") {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
@@ -305,7 +305,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
 		return true;
 	}
