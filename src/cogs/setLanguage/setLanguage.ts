@@ -388,7 +388,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 		}
 
-		let newTZ = msg.content.slice(CMD.TIMEZONE.length);
+		let newTZ = msg.content.slice(CMD.GUILDS_TIMEZONE.length);
 
 		if(!intlAcceptsTimezone(newTZ)) {
 			const result = await SetLanguageCommand._timezoneFallback(msg, msgMember, newTZ, this.googleMapsApiKey);
