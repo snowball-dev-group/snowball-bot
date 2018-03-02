@@ -4,7 +4,7 @@ import { Message, Guild, DiscordAPIError } from "discord.js";
 import { command } from "../utils/help";
 import { init, checkPremium, givePremium, deletePremium, getPremium } from "../utils/premium";
 import { EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
-import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser, localizeForGuild, getUserTimezone, toUserLocaleString } from "../utils/ez-i18n";
+import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser, localizeForGuild, toUserLocaleString } from "../utils/ez-i18n";
 import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "../utils/guildPrefs";
 import { createConfirmationMessage } from "../utils/interactive";
 import { messageToExtra } from "../utils/failToDetail";
