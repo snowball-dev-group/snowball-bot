@@ -55,10 +55,6 @@ export interface IModuleLoaderConfig {
 	 * @example MyCoolModuleLoader
 	 */
 	name: string;
-	/**
-	 * Will be all modules loaded as queue or they should be loaded in parallel
-	 */
-	queueModuleLoading?: boolean;
 }
 
 export interface IModule {
