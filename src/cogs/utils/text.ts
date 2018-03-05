@@ -17,11 +17,11 @@ export function replaceAll(str: string, search: string, replacement: string) {
 
 export function simpleCmdParse(str: string) : ISimpleCmdParseResult {
 	let args = str.split(" ");
-	const cmd = args.shift(); // !cmd
+	const cmd = args.shift();
 	const subCmd = args.shift(); // subcmd / undefined
 	args = args.join(" ").split(",").map(arg => arg.trim()).filter(arg => arg.trim() !== "");
 	return {
-		command: cmd,
+		command: cmd!, // command can't be empty
 		subCommand: subCmd,
 		args: args.length > 0 ? args : undefined
 	};
@@ -34,7 +34,7 @@ export function reverseString(str: string) {
 }
 
 export interface ISimpleCmdParseResult {
-    command?: string;
+    command: string;
     subCommand?: string;
     args?: string[];
 }
