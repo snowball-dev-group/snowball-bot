@@ -60,3 +60,32 @@ export function intlAcceptsTimezone(timezone: string): boolean {
 		return false;
 	}
 }
+
+// created-by: dafri
+export function createPropertyIterable<T>(arr: T[], prop: keyof (T)): Iterable<T[keyof (T)]> {
+	return {
+		[Symbol.iterator]: () => {
+			const arrIterator = arr[Symbol.iterator]();
+			return {
+				next: () => {
+					const arrVal = arrIterator.next();
+					return {
+						done: arrVal.done,
+						value: <any>(arrVal.value === undefined ? undefined : arrVal.value[prop])
+					};
+				}
+			};
+		}
+	};
+}
+
+// created-by: dafri
+export function getArrayPropertyValues<T>(arr: T[], prop: keyof(T)): Array<T[keyof(T)]> {
+	const rArr: Array<T[keyof(T)]> = [];
+
+	for(const val of createPropertyIterable(arr, prop)) {
+		rArr.push(val);
+	}
+
+	return rArr;
+}
