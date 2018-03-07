@@ -203,8 +203,7 @@ export class SnowballBot extends EventEmitter {
 			basePath: "./cogs/",
 			name: `${this._config.name}:ModLoader`,
 			defaultSet: this._config.autoLoad,
-			registry: convertToModulesMap(this._config.modules),
-			queueModuleLoading: !!this._config.queueModuleLoading
+			registry: convertToModulesMap(this._config.modules)
 		});
 
 		// Public module loader
