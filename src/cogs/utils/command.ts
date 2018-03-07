@@ -13,7 +13,8 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 
 	if(parts.length > 0) {
 		args = [];
-		const argsStr = str.substring(`${cmd}${subCmd ? ` ${subCmd.length}` : ""}`.length);
+		const cmdStr = `${cmd}${subCmd != null ? ` ${subCmd} ` : " "}`;
+		const argsStr = str.substring(cmdStr.length);
 
 		for(const arg of argumentSplit(argsStr, argsSeparator)) {
 			args.push({
