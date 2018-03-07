@@ -1,6 +1,5 @@
 import { messageToExtra } from "../../utils/failToDetail";
 import { IHashMap } from "../../../types/Types";
-import { ISimpleCmdParseResult, replaceAll, simpleCmdParse } from "../../utils/text";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
 import { Message, Guild, SnowflakeUtil, TextChannel, User } from "discord.js";
@@ -9,7 +8,9 @@ import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "../../
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
 import { getPreferenceValue, setPreferenceValue } from "../../utils/guildPrefs";
 import { createConfirmationMessage } from "../../utils/interactive";
+import { parse as parseCmd, ICommandParseResult } from "../../utils/command";
 import * as getLogger from "loggy";
+import { replaceAll } from "../../utils/text";
 
 const PREFIX = "!archive";
 const MSG_PREFIX = "!message";
@@ -117,7 +118,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		const prefix = PREFIXES.find(prefix => msg.content.startsWith(prefix));
 		if(!prefix) { return; }
 
-		const parsed = simpleCmdParse(msg.content);
+		const parsed = parseCmd(msg.content);
 
 		switch(prefix) {
 			case PREFIX: return msg.member.permissions.has("MANAGE_MESSAGES") && this.subcmd_archive(msg, parsed);
@@ -126,7 +127,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 	}
 
-	private async subcmd_message(msg: Message, parsed: ISimpleCmdParseResult) {
+	private async subcmd_message(msg: Message, parsed: ICommandParseResult) {
 		const msgId = parsed.subCommand;
 		if(msg.content === PREFIX || !msgId) {
 			return msg.channel.send({
@@ -251,7 +252,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 	}
 
-	private async subcmd_archive(msg: Message, parsed: ISimpleCmdParseResult) {
+	private async subcmd_archive(msg: Message, parsed: ICommandParseResult) {
 		if(msg.content === PREFIX) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
@@ -283,24 +284,28 @@ class ModToolsArchive extends Plugin implements IModule {
 		let lines = DEFAULT_LENGTH;
 		let offset = 0;
 
-		if(parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(parsed.args[parsed.args.length - 1])) {
-			lines = parseInt(parsed.args[parsed.args.length - 1], 10);
-			parsed.args.splice(-1, 1);
-			if(lines > MESSAGES_LIMIT) {
-				return msg.channel.send({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
-						key: "ARCHIVE_INVALID_LENGTH",
-						formatOptions: {
-							limit: MESSAGES_LIMIT
-						}
-					})
-				});
-			}
-		}
+		if(parsed.args) {
+			const latestArg = parsed.args[parsed.args.length - 1].value;
 
-		if(parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(parsed.args[parsed.args.length - 1])) {
-			offset = parseInt(parsed.args[parsed.args.length - 1], 10);
-			parsed.args.splice(-1, 1);
+			if(parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(latestArg)) {
+				lines = parseInt(latestArg, 10);
+				parsed.args.splice(-1, 1);
+				if(lines > MESSAGES_LIMIT) {
+					return msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+							key: "ARCHIVE_INVALID_LENGTH",
+							formatOptions: {
+								limit: MESSAGES_LIMIT
+							}
+						})
+					});
+				}
+			}
+	
+			if(parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(latestArg)) {
+				offset = parseInt(latestArg, 10);
+				parsed.args.splice(-1, 1);
+			}
 		}
 
 		const caches: {
@@ -342,7 +347,7 @@ class ModToolsArchive extends Plugin implements IModule {
 						}
 					}
 					return resolved;
-				})(parsed.args);
+				})(parsed.args.only("raw"));
 
 				if(!resolvedTargets) {
 					return;
@@ -364,9 +369,9 @@ class ModToolsArchive extends Plugin implements IModule {
 
 				if(parsed.args && parsed.args.length > 0) {
 					for(const target of parsed.args) {
-						if(target.startsWith("u:")) {
+						if(target.value.startsWith("u:")) {
 							try {
-								const user = await this._resolveUserTarget(target.slice("u:".length).trim(), msg.guild);
+								const user = await this._resolveUserTarget(target.value.slice("u:".length).trim(), msg.guild);
 								caches.users[user.id] = user;
 								users.push(user.id);
 							} catch(err) {
@@ -374,14 +379,14 @@ class ModToolsArchive extends Plugin implements IModule {
 									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 										key: "ARCHIVE_ERR_RESOLVING_USER",
 										formatOptions: {
-											search: replaceAll(target, "``", "''")
+											search: replaceAll(target.value, "``", "''")
 										}
 									})
 								});
 							}
 						} else {
 							try {
-								const channel = await this._resolveGuildChannel(target, msg.guild);
+								const channel = await this._resolveGuildChannel(target.value, msg.guild);
 								if(!channel) {
 									throw new Error("No channel returned");
 								} else if(!(channel instanceof TextChannel)) {
@@ -389,7 +394,7 @@ class ModToolsArchive extends Plugin implements IModule {
 										embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 											key: "ARCHIVE_ERR_RESOLVING_CHANNEL_TYPEINVALID",
 											formatOptions: {
-												argument: replaceAll(target, "``", "''")
+												argument: replaceAll(target.value, "``", "''")
 											}
 										})
 									});
@@ -401,7 +406,7 @@ class ModToolsArchive extends Plugin implements IModule {
 									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 										key: "ARCHIVE_ERR_RESOLVING_CHANNEL",
 										formatOptions: {
-											search: replaceAll(target, "``", "''")
+											search: replaceAll(target.value, "``", "''")
 										}
 									})
 								});
@@ -543,7 +548,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		return str;
 	}
 
-	private async subcmd_archiveStatus(msg: Message, parsed: ISimpleCmdParseResult) {
+	private async subcmd_archiveStatus(msg: Message, parsed: ICommandParseResult) {
 		const isEnabledAlready = await this._isEnabledAt(msg.guild);
 		let newStatus = false;
 		switch(parsed.subCommand) {

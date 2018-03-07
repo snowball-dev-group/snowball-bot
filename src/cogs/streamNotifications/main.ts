@@ -4,7 +4,7 @@ import { Plugin } from "../plugin";
 import { Message, Guild, TextChannel, GuildMember, DiscordAPIError, User, DMChannel, GuildChannel } from "discord.js";
 import { escapeDiscordMarkdown, resolveGuildChannel } from "../utils/utils";
 import { getDB, createTableBySchema } from "../utils/db";
-import { simpleCmdParse } from "../utils/text";
+import { parse as parseCmd } from "../utils/command";
 import { generateLocalizedEmbed, getGuildLanguage, getUserLanguage, localizeForUser } from "../utils/ez-i18n";
 import { EmbedType, sleep, IEmbedOptionsField, IEmbed } from "../utils/utils";
 import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IStreamStatus, StreamStatusChangedHandler, StreamStatusChangedAction } from "./baseService";
@@ -262,16 +262,17 @@ class StreamNotifications extends Plugin implements IModule {
 
 	async onMessage(msg: Message) {
 		if(!msg.content.startsWith(PREFIX)) { return; }
-		const cmd = simpleCmdParse(msg.content);
+		const cmd = parseCmd(msg.content);
+		const args = cmd.args ? cmd.args.only("value") : null;
 		try {
 			switch(cmd.subCommand) {
-				case "edit": await this.subcmd_edit(msg, cmd.args); break;
-				case "add": await this.subcmd_add(msg, cmd.args, "guild"); break;
-				case "remove": await this.subcmd_remove(msg, cmd.args, "guild"); break;
-				case "set_channel": await this.subcmd_setChannel(msg, cmd.args); break;
-				case "subscribe": await this.subcmd_add(msg, cmd.args, "user"); break;
-				case "unsubscribe": await this.subcmd_remove(msg, cmd.args, "user"); break;
-				default: await this.subcmd_list(msg, cmd.subCommand, cmd.args); break;
+				case "edit": await this.subcmd_edit(msg, args); break;
+				case "add": await this.subcmd_add(msg, args, "guild"); break;
+				case "remove": await this.subcmd_remove(msg, args, "guild"); break;
+				case "set_channel": await this.subcmd_setChannel(msg, args); break;
+				case "subscribe": await this.subcmd_add(msg, args, "user"); break;
+				case "unsubscribe": await this.subcmd_remove(msg, args, "user"); break;
+				default: await this.subcmd_list(msg, cmd.subCommand, args); break;
 			}
 		} catch(err) {
 			await msg.channel.send("", {
@@ -289,7 +290,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	// #region Subcommands
 
-	private async subcmd_setChannel(msg: Message, args: string[] | undefined) {
+	private async subcmd_setChannel(msg: Message, args: string[] | null) {
 		// !streams set_channel <#228174260307230721>
 		// args at this point: ["<#228174260307230721>"]
 
@@ -355,7 +356,7 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 	}
 
-	private async subcmd_edit(msg: Message, args: string[] | undefined) {
+	private async subcmd_edit(msg: Message, args: string[] | null) {
 		// !streams edit YouTube, ID, mention_everyone, true
 		// args at this point: ["YouTube", "ID", "mention_everyone", "true"]
 
@@ -474,7 +475,7 @@ class StreamNotifications extends Plugin implements IModule {
 	 * @param args Arguments array
 	 * @param scope Scope of calling. "user" if called to subscribe for user, or "user" if for guiild
 	 */
-	private async subcmd_add(msg: Message, args: string[] | undefined, scope: "user" | "guild") {
+	private async subcmd_add(msg: Message, args: string[] | null, scope: "user" | "guild") {
 		// !streams add YouTube, BlackSilverUfa
 		// args at this point: ["YouTube", "BlackSilverUfa"]
 
@@ -637,7 +638,7 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 	}
 
-	private async subcmd_remove(msg: Message, args: string[] | undefined, scope: "guild" | "user") {
+	private async subcmd_remove(msg: Message, args: string[] | null, scope: "guild" | "user") {
 		// !streams remove YouTube, ID
 		// args at this point: ["YouTube", "ID"]
 
@@ -760,7 +761,7 @@ class StreamNotifications extends Plugin implements IModule {
 		};
 	}
 
-	private async subcmd_list(msg: Message, calledAs: string | undefined, args: string[] | undefined) {
+	private async subcmd_list(msg: Message, calledAs: string | null, args: string[] | null) {
 		// !streams 2
 		// !streams YouTube 2
 
@@ -775,7 +776,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		if(!calledAs) {
 			calledAs = "1";
-			args = undefined;
+			args = null;
 		}
 
 		let page = 1;

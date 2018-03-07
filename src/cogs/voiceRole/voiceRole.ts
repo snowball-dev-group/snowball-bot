@@ -541,7 +541,7 @@ class VoiceRole extends Plugin implements IModule {
 				});
 			}
 
-			const resolvedRole = resolveGuildRole(parsed.args[0], msg.guild, false);
+			const resolvedRole = resolveGuildRole(parsed.args[0].raw, msg.guild, false);
 			if(!resolvedRole) {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")

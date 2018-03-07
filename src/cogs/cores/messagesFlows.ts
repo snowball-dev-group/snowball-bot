@@ -4,7 +4,7 @@ import { setTimeout } from "timers";
 import PrefixAll from "./prefixAll/prefixAll";
 import { IModule, ModuleBase, ModuleLoadState } from "../../types/ModuleLoader";
 import { Message } from "discord.js";
-import { ISimpleCmdParseResult, simpleCmdParse } from "../utils/text";
+import { parse as parseCmd, ICommandParseResult } from "../utils/command";
 import * as getLogger from "loggy";
 import * as Bluebird from "bluebird";
 
@@ -20,7 +20,7 @@ export default class MessagesFlows implements IModule {
 		return MESSAGEFLOWS_SIGNATURE;
 	}
 
-	private readonly _flowUnits: IFlowUnit[] = [];
+	private readonly _flowUnits: Array<IFlowUnit<any>> = [];
 
 	// kinda flow optimizations
 	private _anyWith = {
@@ -106,7 +106,7 @@ export default class MessagesFlows implements IModule {
 	 * @param check Command checking function
 	 * @param options Options for watcher
 	 */
-	public watchForMessages(handler: Handler, check: IFlowCheckArgument|string|string[], options: IWatcherCreationOptions = {
+	public watchForMessages<T = ICommandParseResult>(handler: Handler<T>, check: IFlowCheckArgument<T>|string|string[], options: IWatcherCreationOptions<T> = {
 		followsTheFlow: true,
 		checkPrefix: true,
 		timeoutCheck: this._timings.timeoutCheck,
@@ -116,10 +116,11 @@ export default class MessagesFlows implements IModule {
 
 		const normalCheck = (() => {
 			if(Array.isArray(check)) {
-				return (ctx: IMessageFlowContext) => ctx.parsed && ctx.parsed.command ? check.includes(ctx.parsed.command) : false;
+				return (ctx: IMessageFlowContext<ICommandParseResult>) => ctx.parsed && ctx.parsed.command ? check.includes(ctx.parsed.command) : false;
 			} else if(typeof check === "string") {
-				return (ctx: IMessageFlowContext) => ctx.parsed && ctx.parsed.command ? check === ctx.parsed.command : false;
+				return (ctx: IMessageFlowContext<ICommandParseResult>) => ctx.parsed && ctx.parsed.command ? check === ctx.parsed.command : false;
 			}
+
 			return check;
 		})();
 
@@ -148,7 +149,7 @@ export default class MessagesFlows implements IModule {
 
 	private async _parseCommand(msg: Message, prefix?: string | false) {
 		if(typeof prefix !== "boolean") { prefix = await this._getPrefix(msg); }
-		return simpleCmdParse(prefix ? msg.content.slice(prefix.length) : msg.content);
+		return parseCmd(prefix ? msg.content.slice(prefix.length) : msg.content);
 	}
 
 	private async _getPrefix(msg: Message) {
@@ -280,12 +281,12 @@ export default class MessagesFlows implements IModule {
 	}
 }
 
-interface IFlowUnit {
-	check: IFlowCheckArgument;
-	handler: Handler;
+interface IFlowUnit<T> {
+	check: IFlowCheckArgument<T>;
+	handler: Handler<T>;
 	followsTheFlow: boolean;
 	checkPrefix?: boolean;
-	parser?: CustomParser;
+	parser?: CustomParser<T>;
 	timeoutCheck: number;
 	timeoutHandler: number;
 	_id: string;
@@ -296,11 +297,11 @@ export interface IPublicFlowUnit {
 	id: string;
 }
 
-export interface IWatcherCreationOptions {
+export interface IWatcherCreationOptions<T> {
 	/**
 	 * Custom parser
 	 */
-	customParser?: CustomParser;
+	customParser?: CustomParser<T>;
 	/**
 	 * Does unit follows the flow.
 	 * This means, should flow stop while executing this unit's function or not.
@@ -315,7 +316,7 @@ export interface IWatcherCreationOptions {
 	timeoutHandler?: boolean | number;
 }
 
-export interface IMessageFlowContext {
+export interface IMessageFlowContext<T = ICommandParseResult> {
 	/**
 	 * The message bot has just received and that passed the check
 	 */
@@ -325,7 +326,7 @@ export interface IMessageFlowContext {
 	 * If it was set to `true`, then returns result of simple calling `simpleCmdParse` from `utils:text`.
 	 * If `parseCommand` was set to `false` - it'll be null.
 	 */
-	parsed?: ISimpleCmdParseResult;
+	parsed?: ICommandParseResult | T;
 	/**
 	 * The prefix of the message
 	 * This will be undefined if your `prefixCheck` is set to `false`
@@ -334,22 +335,22 @@ export interface IMessageFlowContext {
 }
 
 /**
- * The command parser. Should parse command and return `ISimpleCmdParseResult`
+ * The command parser. Should parse command and return `ICommandParseResult`
  */
-export type CustomParser = (msg: Message) => Promise<ISimpleCmdParseResult>;
+export type CustomParser<T> = (msg: Message) => Promise<T>;
 /**
  * Argument of command checking.
  * Calls the functions and awaits for it's result (`true`/`false`).
  */
-export interface IFlowCheckArgument {
-	(ctx: IMessageFlowContext): Promise<boolean> | boolean;
+export interface IFlowCheckArgument<T> {
+	(ctx: IMessageFlowContext<T>): Promise<boolean> | boolean;
 }
 /**
  * If the check passed. Calls this function, if it returns Promise and `followTheFlow` set to `true`, then waits until Promise resolves.
  * Be aware! Promise must resolve in set timeout, this can be configured by option `flowTimings.handlerTimeout`, by default this value is set to constant `HANDLER_TIMEOUT` which you can get by improrting from this file. If promise will not resolve in set timeout, the flow continues.
  * Be also aware that you can break flow if you need to: if promise resolves with {FlowControl}, then checks the argument and does required stuff with Flow.
  */
-export type Handler = ((ctx: IMessageFlowContext) => Promise<any>|any);
+export type Handler<T> = ((ctx: IMessageFlowContext<T>) => Promise<any>|any);
 /**
  * Possible Promise resolved result of the {Handler}.
  */

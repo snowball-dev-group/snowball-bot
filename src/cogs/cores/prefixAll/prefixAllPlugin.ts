@@ -1,7 +1,8 @@
 import { Whitelist } from "../../whitelist/whitelist";
 import { EmbedType } from "../../utils/utils";
 import { generateLocalizedEmbed, localizeForUser } from "../../utils/ez-i18n";
-import { ISimpleCmdParseResult, simpleCmdParse, stripSpaces } from "../../utils/text";
+import { stripSpaces } from "../../utils/text";
+import { parse as parseCommand, ICommandParseResult } from "../../utils/command";
 import { Plugin } from "../../plugin";
 import { IModule, ModuleBase } from "../../../types/ModuleLoader";
 import { Message } from "discord.js";
@@ -80,7 +81,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		const prefix = await prefixAllInstance.checkPrefix(msg);
 		if(!prefix) { return undefined; } // prefix not found, returning
 
-		const parsed = simpleCmdParse(msg.content.slice(prefix.length));
+		const parsed = parseCommand(msg.content.slice(prefix.length));
 		if(parsed.command !== "prefix") { return undefined; } // checking if there's no command call
 
 		if(!parsed.subCommand) { // if there's no subcommand then sending helpful message
@@ -113,7 +114,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		return false;
 	}
 
-	private async subcmd_add(msg: Message, parsed: ISimpleCmdParseResult, prefix: string, prefixAllInstance: PrefixAll) {
+	private async subcmd_add(msg: Message, parsed: ICommandParseResult, prefix: string, prefixAllInstance: PrefixAll) {
 		if(await this._isNotServer(msg)) { return; }
 		const cmd = `${prefix}${parsed.command}`;
 
@@ -192,7 +193,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		});
 	}
 
-	private async subcmd_remove(msg: Message, parsed: ISimpleCmdParseResult, prefix: string, prefixAllInstance: PrefixAll) {
+	private async subcmd_remove(msg: Message, parsed: ICommandParseResult, prefix: string, prefixAllInstance: PrefixAll) {
 		if(await this._isNotServer(msg)) { return; }
 		const cmd = `${prefix}${parsed.command}`;
 
@@ -265,7 +266,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		});
 	}
 
-	private async subcmd_list(msg: Message, parsed: ISimpleCmdParseResult, prefix: string, prefixAllInstance: PrefixAll) {
+	private async subcmd_list(msg: Message, parsed: ICommandParseResult, prefix: string, prefixAllInstance: PrefixAll) {
 		const cmd = `${prefix}${parsed.command}`;
 		const msgAuthor = msg.member || msg.author;
 
