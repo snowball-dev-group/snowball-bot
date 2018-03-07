@@ -15,28 +15,10 @@ export function replaceAll(str: string, search: string, replacement: string) {
 	return str.replace(new RegExp(search, "g"), replacement);
 }
 
-export function simpleCmdParse(str: string) : ISimpleCmdParseResult {
-	let args = str.split(" ");
-	const cmd = args.shift();
-	const subCmd = args.shift(); // subcmd / undefined
-	args = args.join(" ").split(",").map(arg => arg.trim()).filter(arg => arg.trim() !== "");
-	return {
-		command: cmd!, // command can't be empty
-		subCommand: subCmd,
-		args: args.length > 0 ? args : undefined
-	};
-}
-
 export function reverseString(str: string) {
 	let o = "";
 	for(let i = str.length; i > -1; i--) { o += str[i]; }
 	return o;
-}
-
-export interface ISimpleCmdParseResult {
-    command: string;
-    subCommand?: string;
-    args?: string[];
 }
 
 export function canBeSnowflake(str: string) {
