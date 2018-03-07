@@ -428,7 +428,7 @@ export class Whitelist extends Plugin implements IModule {
 					}
 					await setGuildPref(cmd.args[0].value, "whitelist:status", WHITELIST_STATE.UNLIMITED);
 				} else {
-					const time = parseTime(cmd.args[1], "ms");
+					const time = parseTime(cmd.args[1].value, "ms");
 					const endTime = new Date(Date.now() + time);
 
 					const endString = await toUserLocaleString(msg.member, endTime, DateTime.DATETIME_FULL);
