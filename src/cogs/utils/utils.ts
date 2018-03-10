@@ -232,7 +232,7 @@ export const COLORS = {
 	WARNING: 0xFFCC4D
 };
 
-export function generateEmbed(type: EmbedType, description: string, options?: IEmbedOptions) {
+export function generateEmbed(type: EmbedType, description: string | undefined, options?: IEmbedOptions) {
 	const embed: any = {};
 	// embed pre-fill 
 	embed.author = {};
