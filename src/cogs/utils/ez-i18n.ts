@@ -255,7 +255,7 @@ function isCustomString(obj: any): obj is ICustomEmbedString {
 	return "custom" in obj && obj["custom"] === true && "string" in obj && !("formattingOptions" in obj) && !("key" in obj);
 }
 
-export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify, descriptionKey: string | ILocalizedEmbedString | ICustomEmbedString, options: IEmbedOptions = {}) {
+export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify, descriptionKey: string | ILocalizedEmbedString | ICustomEmbedString | undefined, options: IEmbedOptions = {}) {
 	switch(type) {
 		case EmbedType.Error: {
 			if(options.errorTitle) { break; }
@@ -286,20 +286,25 @@ export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify
 			options.warningTitle = await localizeForUser(user, "EMBED_WARNING");
 		} break;
 	}
-	if(typeof descriptionKey === "string" && descriptionKey.startsWith("custom:")) {
-		descriptionKey = descriptionKey.slice("custom:".length);
-		return generateEmbed(type, descriptionKey, options);
-	} else {
-		if(typeof descriptionKey === "string") {
-			return generateEmbed(type, await localizeForUser(user, descriptionKey), options);
+
+	if(!descriptionKey) {
+		return generateEmbed(type, undefined, options);
+	}
+
+	if(typeof descriptionKey === "string") {
+		if(descriptionKey.startsWith("custom:")) {
+			descriptionKey = descriptionKey.slice("custom:".length);
+			return generateEmbed(type, descriptionKey, options);
 		} else {
-			if(isCustomString(descriptionKey)) {
-				return generateEmbed(type, descriptionKey.string, options);
-			} else {
-				return generateEmbed(type, await localizeForUser(user, descriptionKey.key, descriptionKey.formatOptions), options);
-			}
+			return generateEmbed(type, await localizeForUser(user, descriptionKey), options);
 		}
 	}
+
+	if(isCustomString(descriptionKey)) {
+		return generateEmbed(type, descriptionKey.string, options);
+	}
+
+	return generateEmbed(type, await localizeForUser(user, descriptionKey.key, descriptionKey.formatOptions), options);
 }
 
 // #region Interfaces
