@@ -51,8 +51,8 @@ const SHARD_TIMEOUT = 30000; // ms
 				return;
 			}
 
-			const shardId = parseInt(process.env.SHARD_ID as string, 10);
-			const shardsCount = parseInt(process.env.SHARDS_COUNT as string, 10);
+			const shardId = parseInt(process.env.SHARD_ID, 10);
+			const shardsCount = parseInt(process.env.SHARDS_COUNT, 10);
 
 			log("info", `[Sharding:Shard~${shardId}] Started as shard ${shardId + 1} / ${process.env.SHARDS_COUNT}`);
 
