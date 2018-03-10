@@ -64,7 +64,7 @@ export async function createCustomizeConfirmationMessage(embed, channel: TextCha
 	}) as Message;
 
 	try {
-		for(let i = 0; i < rules.variants.length; i++) {
+		for(let i = 0, rl = rules.variants.length; i < rl; i++) {
 			await _confirmationMessage.react(rules.variants[i]);
 		}
 	} catch(err) {
@@ -87,12 +87,14 @@ interface ICustomWaitMessageOptions {
 }
 
 export async function waitForMessages(channel: TextChannel | DMChannel, rules: ICustomWaitMessageOptions) {
-	return channel.awaitMessages((msg: Message) => {
-		return rules.authors.includes(msg.author.id) && rules.variants.includes(msg.content);
-	}, {
+	return channel.awaitMessages(
+		(msg: Message) => {
+			return rules.authors.includes(msg.author.id) && rules.variants.includes(msg.content);
+		}, {
 			errors: ["time"],
 			maxProcessed: rules.maxMatches,
 			time: rules.time,
 			max: rules.max
-		});
+		}
+	);
 }
