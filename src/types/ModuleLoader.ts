@@ -323,7 +323,7 @@ export class ModuleLoader {
 	 * @param info Information about module
 	 */
 	public register(info: IModuleInfo) {
-		this.log("info", "Registered new module", process.env["NODE_ENV"] === "development" ? info : `"${info.name}" - "${info.path}"`);
+		this.log("info", "Registered new module", process.env.NODE_ENV === "development" ? info : `"${info.name}" - "${info.path}"`);
 		this.registry[info.name] = info;
 		return this;
 	}

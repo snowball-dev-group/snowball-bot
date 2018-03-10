@@ -17,7 +17,7 @@ const SHARD_TIMEOUT = 30000; // ms
 	try {
 		log("info", "[Config] Loading config...");
 
-		const env = (process.env["NODE_ENV"] || "development");
+		const env = (process.env.NODE_ENV || "development");
 
 		try {
 			config = require(`./config/configuration.${env}.json`);
@@ -41,7 +41,7 @@ const SHARD_TIMEOUT = 30000; // ms
 
 	if(config.shardingOptions && config.shardingOptions.enabled) {
 		log("warn", "[Sharding] WARNING: Entering sharding mode!");
-		if(cluster.isWorker || (process.env["NODE_ENV"] === "development" && process.env["DEBUG_SHARDS"] === "yes")) {
+		if(cluster.isWorker || (process.env.NODE_ENV === "development" && process.env.DEBUG_SHARDS === "yes")) {
 			if(typeof process.env.SHARD_ID !== "string" || typeof process.env.SHARDS_COUNT !== "string") {
 				log("err", "[Sharding] Invalid environment variables!", {
 					id: process.env.SHARD_ID || "not set",
