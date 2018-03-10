@@ -33,7 +33,7 @@ export interface IColorfulGuildInfo {
 }
 
 export interface IColorfulMigration {
-	perform(db: knex, tableName: string) : Promise<boolean>;
+	perform(db: knex, tableName: string): Promise<boolean>;
 	description: string;
 	name: string;
 }
@@ -100,7 +100,7 @@ const isChatAndHasPermissions = (msg: Message) => (isChat(msg) && checkPerms(msg
 	}
 }, isChatAndHasPermissions)
 class Colors extends Plugin implements IModule {
-	public get signature () {
+	public get signature() {
 		return "snowball.features.colors";
 	}
 
@@ -109,7 +109,7 @@ class Colors extends Plugin implements IModule {
 	// ===========================================
 	private readonly log = getLogger("ColorsJS");
 	private readonly db = getDB();
-	private whitelistModule : ModuleBase<Whitelist>|undefined = undefined;
+	private whitelistModule: ModuleBase<Whitelist> | undefined = undefined;
 
 	constructor() {
 		super({
@@ -161,7 +161,7 @@ class Colors extends Plugin implements IModule {
 		}
 	}
 
-	private async onMemberJoin(member:GuildMember) {
+	private async onMemberJoin(member: GuildMember) {
 		if(isVerifiedEnabled() && !(await isVerified(member))) {
 			return;
 		}
@@ -276,7 +276,7 @@ class Colors extends Plugin implements IModule {
 			});
 		}
 
-		const toUnassign: Role[] = [] as Role[];
+		const toUnassign: Role[] = [];
 		for(const info of Object.values(colorfulInfo.rolePrefixes)) {
 			const role = msg.member.roles.get(info.role);
 			if(role) { toUnassign.push(role); }
@@ -721,7 +721,7 @@ class Colors extends Plugin implements IModule {
 			});
 		}
 
-		const fields: IEmbedOptionsField[] = [] as IEmbedOptionsField[];
+		const fields: IEmbedOptionsField[] = [];
 		let isAvailable = false;
 		let requiredRolesToObtain: undefined | string[] = undefined;
 
@@ -1074,7 +1074,7 @@ class Colors extends Plugin implements IModule {
 			this.whitelistModule = whitelistModule;
 		}
 
-		let currentDBVersion = await getPreferenceValue("global", "colors:dbversion", true) as number|null;
+		let currentDBVersion = <number | null> await getPreferenceValue("global", "colors:dbversion", true);
 		if(!currentDBVersion || currentDBVersion < DB_VERSION) {
 			this.log("info", "Outdated DB detected. Performing migrations...");
 
@@ -1083,14 +1083,14 @@ class Colors extends Plugin implements IModule {
 			for(let nextVersion = currentDBVersion; nextVersion < DB_VERSION; nextVersion++) {
 				const migrationVersion = nextVersion + 1;
 				const migrationClass = require(pathJoin(__dirname, "migrations", `migration-${migrationVersion}.js`));
-				const migration = new migrationClass() as IColorfulMigration;
+				const migration = <IColorfulMigration> new migrationClass();
 				const result = await migration.perform(this.db, TABLE_NAME);
 				if(!result) { throw new Error(`Unsuccessful migration - ${currentDBVersion} to ${migrationVersion}`); }
 				this.log("ok", `Migration complete to version ${migrationVersion}`);
 				await setPreferenceValue("global", "colors:dbversion", migrationVersion);
 			}
 
-			currentDBVersion = await getPreferenceValue("global", "colors:dbversion", true) as null|number;
+			currentDBVersion = <null | number> await getPreferenceValue("global", "colors:dbversion", true);
 			if(!currentDBVersion) { throw new Error("Version unknown after migrations. Unexpected behavior"); }
 
 			this.log("ok", `Migrations are complete, new version - ${currentDBVersion}`);
@@ -1108,7 +1108,7 @@ class Colors extends Plugin implements IModule {
 	 * @param info Colorful information
 	 */
 	private async updateInfo(info: IColorfulGuildInfo) {
-		const inf = info as any;
+		const inf = <any> info;
 		inf.rolePrefixes = JSON.stringify(info.rolePrefixes);
 		await this.db(TABLE_NAME).where({
 			guildId: info.guildId
@@ -1133,7 +1133,7 @@ class Colors extends Plugin implements IModule {
 			return this.getInfo(guildId, true);
 		}
 		prefixes.rolePrefixes = createHashMap<IColorfulGuildColorInfo>(JSON.parse(prefixes.rolePrefixes));
-		return prefixes as IColorfulGuildInfo;
+		return <IColorfulGuildInfo> prefixes;
 	}
 
 	// ===========================================
