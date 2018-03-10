@@ -119,7 +119,7 @@ export class Whitelist extends Plugin implements IModule {
 		});
 		if(options) {
 			{
-				const alwaysWhitelisted = options["always_whitelisted"];
+				const alwaysWhitelisted = options.always_whitelisted;
 				if(alwaysWhitelisted && alwaysWhitelisted instanceof Array) {
 					for(const g of alwaysWhitelisted as string[]) {
 						this.alwaysWhitelisted.push(g);
@@ -127,39 +127,39 @@ export class Whitelist extends Plugin implements IModule {
 				}
 			}
 			{
-				const minMembers = options["min_members"];
+				const minMembers = options.min_members;
 				if(minMembers !== undefined && typeof minMembers === "number") {
 					this.minMembersRequired = Math.max(0, minMembers);
 				}
 			}
 			{
-				const maxMembers = options["max_members"];
+				const maxMembers = options.max_members;
 				if(maxMembers !== undefined && typeof maxMembers === "number") {
 					this.maxMembersAllowed = Math.max(0, maxMembers);
 				}
 			}
 			{
-				const botsThreshold = options["bots_threshold"];
+				const botsThreshold = options.bots_threshold;
 				if(botsThreshold !== undefined && typeof botsThreshold === "number") {
 					this.botsThreshold = Math.max(0, Math.min(100, botsThreshold));
 				}
 			}
 			{
-				const defaultMode = options["default_mode"];
+				const defaultMode = options.default_mode;
 				if(defaultMode !== undefined && typeof defaultMode === "number") {
 					this.defaultMode = defaultMode;
 				}
 			}
 			{
-				const url = options["signup_url"];
+				const url = options.signup_url;
 				if(url !== undefined && typeof url === "string") {
 					this.signupUrl = url;
 				} else { throw new Error("No sign up link provided"); }
 			}
 			{
-				const trialTime = options["trial_time"];
+				const trialTime = options.trial_time;
 				if(trialTime !== undefined && typeof trialTime === "number") {
-					this.trialTime = options["trial_time"];
+					this.trialTime = options.trial_time;
 				}
 			}
 		} else { throw new Error("Setup required"); }
