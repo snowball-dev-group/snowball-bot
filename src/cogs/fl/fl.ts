@@ -28,7 +28,7 @@ class ReverseLayout extends Plugin implements IModule {
 		let result = "";
 		const lineFrom = firstLine + secondLine;
 		const lineTo = secondLine + firstLine;
-		for(let i = 0; i < content.length; i++) {
+		for(let i = 0, cl = content.length; i < cl; i++) {
 			const pos = lineFrom.indexOf(content[i]);
 			result = result + ((pos < 0) ? content[i] : lineTo[pos]);
 		}
