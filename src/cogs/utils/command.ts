@@ -1,6 +1,5 @@
 import { stripEmptyChars, escapeRegExp } from "./text";
 
-// do you like long names? 😉
 export const CMDPARSER_ARGUMENTS_SEPARATOR = ",";
 
 export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR): ICommandParseResult {
@@ -44,9 +43,7 @@ export function argsGenerator(args: ICommandParseResultArg[]): ICommandParseResu
 
 	// tslint:disable-next-line:prefer-object-spread
 	return Object.assign(args, {
-		only: (type: "value" | "raw") => {
-			return (type === "value" ? normal : raw).slice();
-		}
+		only: (type: "value" | "raw") => (type === "value" ? normal : raw).slice()
 	});
 }
 
@@ -94,5 +91,4 @@ export interface ICommandParseResultArg {
 	value: string;
 	raw: string;
 }
-
 
