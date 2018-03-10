@@ -103,7 +103,7 @@
     "COLORS_GETINFO_NOTFOUND": "Such color has not been found. Examine this server's color list with typing `{prefix} list`",
     "COLORS_GETINFO_ROLEREMOVED": "The role of this color has been removed. Information is not available. Ask an administrator to remove the color.",
     "COLORS_INVALIDBOTPERMS": "The bot cannot manage roles. This means that the bot won't be able to issue roles. Please, grant the necessary permission.",
-    "COLORS_LIST_INSTALL_TIP": ":information_source: Learn more about each of them using `{prefix} info [color name]`",
+    "COLORS_LIST_INSTALL_TIP": "Learn more about each of them by using `{prefix} info [color name]`",
     "COLORS_LIST_TITLE": "List of colors available to obtain",
     "COLORS_LIST_FIELDS_AVAILABLE": "Available for obtaining:",
     "COLORS_LIST_FIELDS_NOROLE": "No required role:",
