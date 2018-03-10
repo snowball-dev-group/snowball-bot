@@ -265,7 +265,7 @@ class Colors extends Plugin implements IModule {
 		}
 
 		const _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_ASSIGN_CONFIRMATION", {
-			thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
+			thumbUrl: Colors._toColorImage(colorRole.hexColor.slice(1))
 		});
 
 		const confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
@@ -463,7 +463,7 @@ class Colors extends Plugin implements IModule {
 			custom: true,
 			string: _confirmationString
 		}, {
-				thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
+				thumbUrl: Colors._toColorImage(colorRole.hexColor.slice(1))
 			});
 
 		const confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
@@ -655,7 +655,7 @@ class Colors extends Plugin implements IModule {
 
 		const confirmed = await createConfirmationMessage(
 			await generateLocalizedEmbed(EmbedType.Question, msg.member, "COLORS_DELETE_CONFIRMATION", {
-				thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`
+				thumbUrl: Colors._toColorImage(colorRole.hexColor.slice(1))
 			}),
 			msg
 		);
@@ -779,7 +779,7 @@ class Colors extends Plugin implements IModule {
 
 		return msg.channel.send("", {
 			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_GETINFO_DESCRIPTION", {
-				thumbUrl: `http://www.colorhexa.com/${colorRole.hexColor.slice(1)}.png`,
+				thumbUrl: Colors._toColorImage(colorRole.hexColor.slice(1)),
 				fields
 			})
 		});
