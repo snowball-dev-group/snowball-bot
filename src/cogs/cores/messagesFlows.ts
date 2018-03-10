@@ -239,7 +239,7 @@ export default class MessagesFlows implements IModule {
 				}
 
 				if(Array.isArray(handlerResult) && handlerResult.length > 1 && handlerResult[0] === "flow") {
-					switch(<FlowControlArgument>handlerResult[1]) {
+					switch(handlerResult[1]) {
 						case FlowControlArgument.BREAK: {
 							if(!flowUnit.followsTheFlow) {
 								this.log("warn", `Unit#${flowUnit._id}'s handler requested to break the flow, but the unit doesn't follow the flow. This argument has no sense to return. Consider removing this argument or make a unit to follow the flow by passing special argument once creation. Skipped.`);

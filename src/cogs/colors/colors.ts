@@ -689,7 +689,8 @@ class Colors extends Plugin implements IModule {
 	private async cmd_info(msg: Message, args: string[]) {
 		// info Синий
 		args.shift();
-		const colorName = (args as string[]).join(" ").trim();
+
+		const colorName = args.join(" ").trim();
 
 		// Синий
 		if(colorName.length === 0) {
@@ -729,7 +730,7 @@ class Colors extends Plugin implements IModule {
 				roleName: string; has: boolean;
 			}> = [];
 
-			for(const requiredRoleId of colorInfo.required_role!) {
+			for(const requiredRoleId of colorInfo.required_role) {
 				const role = msg.guild.roles.get(requiredRoleId);
 				if(role) {
 					const obj = {

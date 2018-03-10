@@ -33,7 +33,7 @@ class Ping extends Plugin implements IModule {
 
 	async onMessage(ctx: IMessageFlowContext) {
 		if(!ctx.parsed) { return; }
-		if(!ALLOWED_CMDS.includes(ctx.parsed.command!)) { return; }
+		if(!ALLOWED_CMDS.includes(ctx.parsed.command)) { return; }
 
 		const userLang = await getUserLanguage(ctx.message.member || ctx.message.member);
 

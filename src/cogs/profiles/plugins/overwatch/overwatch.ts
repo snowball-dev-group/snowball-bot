@@ -54,7 +54,7 @@ export async function fetchBlobProfile(battletag: string, platform?: string): Pr
 		const _delayedResp = <IBlobResponse>await new Promise((res, rej) => {
 			setTimeout(() => {
 				fetchBlobProfile(battletag, platform).then(res, rej);
-			}, parsed!.retry! * 1000);
+			}, parsed.retry! * 1000);
 		});
 
 		if(contextFunction.resolve) { contextFunction.resolve(_delayedResp); }
