@@ -77,13 +77,19 @@ export default class MessagesFlows implements IModule {
 			prefixCheck: false
 		};
 
-		for(const handler of this._flowUnits) {
+		const units = this._flowUnits;
+
+		for(let i = 0, uc = units.length; i < uc; i++) {
+			const handler = units[i];
+
 			if(typeof handler.parser !== "function") {
 				this._anyWith.defaultParsing = true;
 			}
+
 			if(typeof handler.checkPrefix === "boolean" && handler.checkPrefix) {
 				this._anyWith.prefixCheck = true;
 			}
+
 			if(this._anyWith.defaultParsing && this._anyWith.prefixCheck) {
 				break;
 			}
@@ -164,7 +170,8 @@ export default class MessagesFlows implements IModule {
 		const prefix = this._anyWith.prefixCheck ? await this._getPrefix(msg) : undefined;
 		const simpleParserResult = this._anyWith.defaultParsing ? await this._parseCommand(msg, prefix) : undefined;
 
-		for(const flowUnit of flowUnits) {
+		for(let i = 0, l = flowUnits.length; i < l; i++) {
+			const flowUnit = flowUnits[i];
 			let _shouldBreak = false;
 			const unitExecution = (async () => {
 				// parser -> check -> handler
