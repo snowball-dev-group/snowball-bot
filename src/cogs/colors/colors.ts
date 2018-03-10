@@ -125,7 +125,7 @@ class Colors extends Plugin implements IModule {
 	private async onMessage(msg: Message) {
 		if(msg.channel.type !== "text") { return; }
 		if(!msg.content || !msg.content.startsWith(COLORFUL_PREFIX)) { return; }
-		
+
 		const args = msg.content.split(" ");
 
 		if(args.length === 1 && args[0] === COLORFUL_PREFIX) { return; }
@@ -778,10 +778,15 @@ class Colors extends Plugin implements IModule {
 		}
 
 		return msg.channel.send("", {
-			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "COLORS_GETINFO_DESCRIPTION", {
-				thumbUrl: Colors._toColorImage(colorRole.hexColor.slice(1)),
-				fields
-			})
+			embed: await generateLocalizedEmbed(
+				EmbedType.Information,
+				msg.member,
+				undefined, {
+					universalTitle: await localizeForUser(msg.member, "COLORS_GETINFO_DESCRIPTION"),
+					thumbUrl: Colors._toColorImage(colorRole.hexColor.slice(1)),
+					fields
+				}
+			)
 		});
 	}
 
@@ -927,12 +932,18 @@ class Colors extends Plugin implements IModule {
 		// }
 
 		return msg.channel.send("", {
-			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-				key: "COLORS_LIST_DESCRIPTION",
-				formatOptions: {
-					prefix: COLORFUL_PREFIX
+			embed: await generateLocalizedEmbed(
+				EmbedType.Information,
+				msg.member, {
+					key: "COLORS_LIST_INSTALL_TIP",
+					formatOptions: {
+						prefix: COLORFUL_PREFIX
+					}
+				}, {
+					fields,
+					universalTitle: await localizeForUser(msg.member, "COLORS_LIST_TITLE")
 				}
-			}, { fields })
+			)
 		});
 	}
 
