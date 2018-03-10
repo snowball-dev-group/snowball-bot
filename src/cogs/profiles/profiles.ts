@@ -429,7 +429,7 @@ export default class Profiles extends Plugin implements IModule {
 			if(["image"].indexOf(param) !== -1) {
 				if(param === "image") {
 					doneStr = await localizeForUser(msg.member, "PROFILES_PROFILE_IMAGE_REMOVED");
-					delete customize["image_url"];
+					delete customize.image_url;
 				}
 			} else {
 				if(!this.pluginsLoader.loadedModulesRegistry[param]) {
@@ -438,7 +438,7 @@ export default class Profiles extends Plugin implements IModule {
 					});
 					return;
 				}
-				delete customize["plugins"][param];
+				delete customize.plugins[param];
 				doneStr = await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_REMOVED", {
 					pluginName: param
 				});
@@ -686,12 +686,12 @@ export default class Profiles extends Plugin implements IModule {
 		if(dbProfile.customize !== "{}") {
 			const customize = JSON.parse(dbProfile.customize);
 
-			if(customize["image_url"]) {
-				embed.image = { url: customize["image_url"] };
+			if(customize.image_url) {
+				embed.image = { url: customize.image_url };
 			}
 
-			if(customize["video_url"]) {
-				embed.video = { url: customize["video_url"] };
+			if(customize.video_url) {
+				embed.video = { url: customize.video_url };
 			}
 
 			if(customize.plugins) {
