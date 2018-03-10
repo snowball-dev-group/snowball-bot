@@ -1027,6 +1027,14 @@ class Colors extends Plugin implements IModule {
 	}
 
 	// ===========================================
+	// CONVERT FUNCTIONS
+	// ===========================================
+
+	private static _toColorImage(hex: string, size: number = 128) {
+		return `https://via.placeholder.com/${size}/${hex}/000000?text=+`;
+	}
+
+	// ===========================================
 	// DATABASE FUNCTIONS
 	// ===========================================
 
