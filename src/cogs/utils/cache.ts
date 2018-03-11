@@ -55,7 +55,7 @@ export async function storeValue<T>(owner: string, key: string, value: AllowedTy
 				val = JSON.stringify(val);
 				stringifyTriggeredAt.push(i);
 			}
-			pipeline = pipeline.rpush(builtKey, );
+			pipeline = pipeline.rpush(builtKey, val);
 		}
 		pipeline = pipeline.expire(builtKey, ttl);
 
