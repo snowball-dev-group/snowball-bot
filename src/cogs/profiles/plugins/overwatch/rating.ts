@@ -35,14 +35,14 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 	config: IOWStatsPluginConfig;
 
 	constructor(config: IOWStatsPluginConfig) {
-		if(!config) {
+		if (!config) {
 			throw new Error("No config passed");
 		}
 
-		for(const emojiName of Object.keys(config.emojis)) {
+		for (const emojiName of Object.keys(config.emojis)) {
 			const emojiId = config.emojis[emojiName];
 			const emoji = $discordBot.emojis.get(emojiId);
-			if(!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
+			if (!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
 			config.emojis[emojiName] = emoji.toString();
 		}
 
@@ -68,7 +68,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		const args = str.split(";").map(arg => arg.trim());
 
-		if(args.length === 0) {
+		if (args.length === 0) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_ARGS"))
 			});
@@ -82,7 +82,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			verifed: false
 		};
 
-		if(ACCEPTED_REGIONS.indexOf(info.region) === -1) {
+		if (ACCEPTED_REGIONS.indexOf(info.region) === -1) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGREGION"), {
 					fields: [{
@@ -95,7 +95,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentation");
 		}
 
-		if(ACCEPTED_PLATFORMS.indexOf(info.platform)) {
+		if (ACCEPTED_PLATFORMS.indexOf(info.platform)) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGPLATFORM"), {
 					fields: [{
@@ -108,7 +108,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentantion");
 		}
 
-		if(!info.battletag) {
+		if (!info.battletag) {
 			throw new Error("Invalid argumentation");
 		}
 
@@ -116,9 +116,9 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 		postStatus();
 		try {
 			await getProfile(info.battletag, info.region, info.platform);
-		} catch(err) {
-			if(err instanceof DetailedError) {
-				switch(err.code) {
+		} catch (err) {
+			if (err instanceof DetailedError) {
+				switch (err.code) {
 					case "OWAPI_FETCH_ERR_PROFILE_NOTFOUND": {
 						await statusMsg.edit("", {
 							embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED"))
@@ -145,19 +145,19 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 	}
 
 	async getEmbed(info: string | IOverwatchProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
-		if(typeof info !== "object") {
+		if (typeof info !== "object") {
 			info = JSON.parse(info) as IOverwatchProfilePluginInfo;
 		}
 
 		let profile: IRegionalProfile | undefined = undefined;
 		try {
 			profile = await getProfile(info.battletag, info.region, info.platform);
-		} catch(err) {
+		} catch (err) {
 			LOG("err", "Error during getting profile", err, info);
 			throw new Error("Can't get profile");
 		}
 
-		if(!profile) {
+		if (!profile) {
 			LOG("err", "Can't get profile: ", info);
 			throw new Error("Exception not catched, but value not present.");
 		}
@@ -176,7 +176,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		str += `${this.config.emojis.norating} __**${await localizeForUser(caller, "OWPROFILEPLUGIN_COMPETITIVE")}**__\n`;
 
-		if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
+		if (!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
 			str += this.getTierEmoji(null);
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
 		} else {
@@ -197,7 +197,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		str += `\n${this.config.emojis.quickplay} __**${await localizeForUser(caller, "OWPROFILEPLUGIN_QUICKPLAY")}**__\n`;
 
-		if(!profile.stats.quickplay) {
+		if (!profile.stats.quickplay) {
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
 		} else {
 			const qpOveral = profile.stats.quickplay.overall_stats;
@@ -226,7 +226,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 	}
 
 	getTierEmoji(tier: "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master" | "grandmaster" | null) {
-		if(!tier) { return this.config.emojis.norating; }
+		if (!tier) { return this.config.emojis.norating; }
 		return this.config.emojis[tier];
 	}
 

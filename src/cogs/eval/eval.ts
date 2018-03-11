@@ -44,24 +44,24 @@ class EvalJS extends Plugin implements IModule {
 		return () => {
 			try {
 				cb();
-			} catch(err) {
+			} catch (err) {
 				this.log("err", "Safe function calling thrown an error", err);
 			}
 		};
 	}
 
 	async onMessage(message: Message) {
-		if(!message.author) { return; }
-		if(message.author.id !== $botConfig.botOwner) { return; }
-		if(!message.content) { return; }
+		if (!message.author) { return; }
+		if (message.author.id !== $botConfig.botOwner) { return; }
+		if (!message.content) { return; }
 
 		const i18nTarget = message.member || message.author;
 
 		const usedPrefix = ["!eval", "!e", "!ev"].find(prefix => message.content.startsWith(prefix));
-		if(!usedPrefix) { return; }
+		if (!usedPrefix) { return; }
 
 		const afterCmd = message.content.slice(`${usedPrefix} `.length).trim();
-		if(!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
+		if (!afterCmd.startsWith(PREFIX) || !afterCmd.endsWith(PREFIX)) { return; }
 
 		// Parsing our script
 		const script = afterCmd.substring(PREFIX_LENGTH, afterCmd.length - PREFIX_LENGTH);
@@ -75,7 +75,7 @@ class EvalJS extends Plugin implements IModule {
 						informationTitle: await localizeForUser(i18nTarget, "EVAL_EXECUTION_PROGRESS_TITLE")
 				})
 			}) as Message;
-		} catch(err) {
+		} catch (err) {
 			this.log("err", "Can't send message with output:", err);
 			return;
 		}
@@ -100,7 +100,7 @@ class EvalJS extends Plugin implements IModule {
 
 			totalExecutionTime += Date.now() - startTime;
 
-			if(isPromise(output)) {
+			if (isPromise(output)) {
 				await this._outputEdit(resultMsg, user, totalExecutionTime, output, await localizeForUser(i18nTarget, "EVAL_PROMISE_WAITING"), EmbedType.Progress, i18nTarget);
 				try {
 					startTime = Date.now();
@@ -112,7 +112,7 @@ class EvalJS extends Plugin implements IModule {
 					totalExecutionTime += Date.now() - startTime;
 
 					this._outputEdit(resultMsg, user, totalExecutionTime, resolvedValue, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE"), EmbedType.OK, i18nTarget);
-				} catch(err) {
+				} catch (err) {
 					totalExecutionTime += Date.now() - startTime;
 
 					this._outputEdit(resultMsg, user, totalExecutionTime, err, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE_ERR"), EmbedType.Warning, i18nTarget);
@@ -120,7 +120,7 @@ class EvalJS extends Plugin implements IModule {
 			} else {
 				this._outputEdit(resultMsg, user, totalExecutionTime, output, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE"), EmbedType.OK, i18nTarget);
 			}
-		} catch(err) {
+		} catch (err) {
 			totalExecutionTime += Date.now() - startTime;
 			this._outputEdit(resultMsg, user, totalExecutionTime, err, await localizeForUser(i18nTarget, "EVAL_EXECUTION_FAILED"), EmbedType.Error, i18nTarget);
 		}
@@ -145,7 +145,7 @@ class EvalJS extends Plugin implements IModule {
 					universalTitle: text
 				})
 			});
-		} catch(err) {
+		} catch (err) {
 			await resultMsg.edit(undefined, {
 				embed: await generateLocalizedEmbed(EmbedType.Error, member, "EVAL_EXECUTION_LONGTEXT_DESC", { errorTitle: await localizeForUser(i18nTarget, "EVAL_EXECUTION_LONGTEXT_TITLE") })
 			});
@@ -156,10 +156,10 @@ class EvalJS extends Plugin implements IModule {
 	outputToString(output: any) {
 		let depth = 5;
 		let outputInsp: string = replaceAll(util.inspect(output, false, depth), "`", "'");
-		while(outputInsp.length > 2000 && depth > 0) {
+		while (outputInsp.length > 2000 && depth > 0) {
 			outputInsp = replaceAll(util.inspect(output, false, --depth), "`", "'");
 		}
-		if(outputInsp.length > 2000) {
+		if (outputInsp.length > 2000) {
 			throw new Error("Large output");
 		}
 		return outputInsp;

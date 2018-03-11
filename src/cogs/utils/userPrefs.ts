@@ -34,7 +34,7 @@ type userIndx = GuildMember | User;
 /// ======================================
 
 async function createPreference(member: userIndx, preference: string, value: string) {
-	if(!initDone) { await init(); }
+	if (!initDone) { await init(); }
 	return DB(TABLE_NAME).insert({
 		gid: member instanceof GuildMember ? member.guild.id : "global",
 		uid: member.id,
@@ -43,7 +43,7 @@ async function createPreference(member: userIndx, preference: string, value: str
 }
 
 export async function getPreferenceRow(member: userIndx, preference: string): Promise<IUserPreference> {
-	if(!initDone) { await init(); }
+	if (!initDone) { await init(); }
 	return DB(TABLE_NAME).where({
 		gid: member instanceof GuildMember ? member.guild.id : "global",
 		uid: member.id,
@@ -52,7 +52,7 @@ export async function getPreferenceRow(member: userIndx, preference: string): Pr
 }
 
 async function updatePreferenceRow(row: IUserPreference) {
-	if(!initDone) { await init(); }
+	if (!initDone) { await init(); }
 	return DB(TABLE_NAME).where({
 		gid: row.gid,
 		uid: row.uid,
@@ -65,9 +65,9 @@ async function updatePreferenceRow(row: IUserPreference) {
 /// ======================================
 
 export async function init(): Promise<boolean> {
-	if(initDone) { return true; }
+	if (initDone) { return true; }
 	try {
-		if(!(await DB.schema.hasTable(TABLE_NAME))) {
+		if (!(await DB.schema.hasTable(TABLE_NAME))) {
 			try {
 				LOG("info", "Creating table");
 				await DB.schema.createTable(TABLE_NAME, (tb) => {
@@ -76,12 +76,12 @@ export async function init(): Promise<boolean> {
 					tb.string("preference").notNullable();
 					tb.string("value").notNullable().defaultTo("{}");
 				});
-			} catch(err) {
+			} catch (err) {
 				LOG("err", "Can't create table", err);
 				return false;
 			}
 		}
-	} catch(err) {
+	} catch (err) {
 		LOG("err", "Can't check table status", err);
 		return false;
 	}
@@ -91,7 +91,7 @@ export async function init(): Promise<boolean> {
 }
 
 export async function removePreference(u: userIndx, preference: string) {
-	if(!initDone) { await init(); }
+	if (!initDone) { await init(); }
 	await DB(TABLE_NAME).where({
 		gid: u instanceof GuildMember ? u.guild.id : "global",
 		uid: u.id,
@@ -100,17 +100,17 @@ export async function removePreference(u: userIndx, preference: string) {
 }
 
 export async function getPreferenceValue(u: userIndx, preference: string, json = false) {
-	if(!initDone) { await init(); }
+	if (!initDone) { await init(); }
 	const r = (await getPreferenceRow(u, preference));
 	const v = r ? r.value : undefined;
 	return json && v ? JSON.parse(v) : v;
 }
 
 export async function setPreferenceValue(u: userIndx, preference: string, value: any) {
-	if(!initDone) { await init(); }
+	if (!initDone) { await init(); }
 	const cr = await getPreferenceRow(u, preference);
 	const twv = typeof value === "string" ? value : JSON.stringify(value);
-	if(!cr) {
+	if (!cr) {
 		await createPreference(u, preference, twv);
 	} else {
 		cr.value = twv;

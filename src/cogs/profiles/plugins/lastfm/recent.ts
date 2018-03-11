@@ -45,7 +45,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 
 		try {
 			await getOrFetchRecents(info.username, this.config.apiKey);
-		} catch(err) {
+		} catch (err) {
 			LOG("err", `setup(${info.username}): Failed to get recent tracks`, err);
 			throw new Error(`Failed to fetch recent tracks of "${info.username}"`);
 		}
@@ -57,19 +57,19 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 	}
 
 	public async getEmbed(info: ILastFMInfo | string, caller: GuildMember, profilesModule: ProfilesModule): Promise<IEmbedOptionsField> {
-		if(typeof info !== "object") { info = JSON.parse(info) as ILastFMInfo; }
+		if (typeof info !== "object") { info = JSON.parse(info) as ILastFMInfo; }
 
 		const logPrefix = `getEmbed(${info.username}):`;
 		let profile: IRecentTracksResponse | undefined = undefined;
 		try {
 			LOG("info", logPrefix, "Getting recent tracks...");
 			profile = await getOrFetchRecents(info.username, this.config.apiKey);
-		} catch(err) {
+		} catch (err) {
 			LOG("err", logPrefix, "Failed to get recent tracks", err);
 
 			let errKey = "LASTFMPROFILEPLUGIN_ERR_UNKNOWN@NOERROR";
-			if(err instanceof DetailedError) {
-				switch(err.code) {
+			if (err instanceof DetailedError) {
+				switch (err.code) {
 					case "LASTFM_GETRECENTS_ERR_NOTFOUND": {
 						errKey = "LASTFMPROFILEPLUGIN_ERR_NOTFOUND";
 					} break;
@@ -89,7 +89,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 			};
 		}
 
-		if(!profile) {
+		if (!profile) {
 			LOG("err", logPrefix, "No 'profile' variable!");
 			return {
 				inline: true,
@@ -101,8 +101,8 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 		try {
 			let str = profile.recenttracks.track.length === 0 ? `${this.config.emojis.ghost} ${await localizeForUser(caller, "")}` : "";
 			let tracksCount = 0;
-			for(const track of profile.recenttracks.track) {
-				if(++tracksCount > 3) { break; }
+			for (const track of profile.recenttracks.track) {
+				if (++tracksCount > 3) { break; }
 				const fixedUrl = replaceAll(replaceAll(track.url, "(", "%28"), ")", "%29");
 
 				let trackStr = await localizeForUser(caller, "LASTFMPROFILEPLUGIN_TRACK", {
@@ -115,9 +115,9 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 				// just typescript and "wtf":
 				//  see I checked `track["@attr"]` and now in second check of now playing
 				//  it tells me that `"@attr"` IS POSSIBLE TO BE UNDEFINED WOOOOOOOAH DUDEEEEE
-				if(track["@attr"] && track["@attr"]!.nowplaying) {
+				if (track["@attr"] && track["@attr"]!.nowplaying) {
 					trackStr = `🎵 ${trackStr}`;
-				} else if(track.date) {
+				} else if (track.date) {
 					const playedAt = Number(track.date.uts) * 1000;
 					const sincePlayed = profilesModule.serverTimeHumanize(Date.now() - playedAt, 1, false, await getUserLanguage(caller));
 					trackStr = ` ${trackStr} \`${await localizeForUser(caller, "LASTFMPROFILEPLUGIN_SINCEPLAYED", {
@@ -133,7 +133,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 				name: `${this.config.emojis.logo} Last.fm`,
 				value: str
 			};
-		} catch(err) {
+		} catch (err) {
 			LOG("err", logPrefix, "Failed to generate embed", err);
 			throw new Error("Failed to generate embed");
 		}

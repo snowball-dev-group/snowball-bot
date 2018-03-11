@@ -28,7 +28,7 @@ export class ArchiveDBController {
 	 */
 	public async init() {
 		const tbStatus = await this._db.schema.hasTable(this._tableName);
-		if(!tbStatus) {
+		if (!tbStatus) {
 			this._log("info", "[init] Table not found, creating started");
 
 			await this._db.schema.createTable(this._tableName, (tb) => {
@@ -52,7 +52,7 @@ export class ArchiveDBController {
 	 * @param msg Message to insert into the database
 	 */
 	public async insertMessage(msg: IDBMessage): Promise<IDBMessage> {
-		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
+		if (!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		return this._db(this._tableName).insert(msg, "*");
 	}
 
@@ -65,30 +65,30 @@ export class ArchiveDBController {
 	 * @param filter.messageId Selector by Message ID(s)
 	 */
 	public async search(filter: IDBSearchFilter, limit = 50, offset = 0): Promise<IDBMessage[]> {
-		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
-		if(!FILTER_PROPERTIES.find(prop => !isNullOrEmptyArray(filter[prop]))) {
+		if (!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
+		if (!FILTER_PROPERTIES.find(prop => !isNullOrEmptyArray(filter[prop]))) {
 			throw ERRORS.EMPTY_FILTER;
 		}
-		if(limit < 1) {
+		if (limit < 1) {
 			throw ERRORS.INVALID_LIMIT_PASSED;
-		} else if(offset < 0) {
+		} else if (offset < 0) {
 			throw ERRORS.INVALID_OFFSET_PASSED;
 		}
 		let req = this._db(this._tableName).select("*");
-		if(filter.messageId) {
+		if (filter.messageId) {
 			req = Array.isArray(filter.messageId) ? req.where("messageId", "in", filter.messageId) : req.where("messageId", filter.messageId);
 		}
-		if(filter.guildId) {
+		if (filter.guildId) {
 			req = Array.isArray(filter.guildId) ? req.where("guildId", "in", filter.guildId) : req.where("guildId", filter.guildId);
 		}
-		if(filter.channelId) {
+		if (filter.channelId) {
 			req = Array.isArray(filter.channelId) ? req.where("channelId", "in", filter.channelId) : req.where("channelId", filter.channelId);
 		}
-		if(filter.authorId) {
+		if (filter.authorId) {
 			req = Array.isArray(filter.authorId) ? req.where("authorId", "in", filter.authorId) : req.where("authorId", filter.authorId);
 		}
 		req = req.limit(limit).orderBy("messageId", "desc");
-		if(offset > 0) {
+		if (offset > 0) {
 			req = req.offset(offset);
 		}
 		return req;
@@ -169,7 +169,7 @@ export function convertToDBMessage(msg: Message): IDBMessage {
 		messageId: msg.id,
 		authorId: msg.author ? msg.author.id : msg.system ? "system" : msg.member ? msg.member.id : "unknown",
 		content: msg.content,
-		other: (msg.attachments.size > 0 || msg.embeds.length > 0) ? JSON.stringify(<IEmulatedContents>{
+		other: (msg.attachments.size > 0 || msg.embeds.length > 0) ? JSON.stringify(<IEmulatedContents> {
 			attachments: msg.attachments.size > 0 ? msg.attachments.map(convertAttachment) : undefined,
 			embeds: msg.embeds.length > 0 ? msg.embeds.filter(e => e.type === "rich").map(convertEmbed) : undefined
 		}) : null
@@ -205,7 +205,7 @@ export interface IDBSearchFilter {
 }
 
 // filter extension
-const FILTER_PROPERTIES = (<Array<"guildId" | "authorId" | "channelId" | "messageId">>["guildId", "authorId", "channelId", "messageId"]);
+const FILTER_PROPERTIES = (<Array<"guildId" | "authorId" | "channelId" | "messageId">> ["guildId", "authorId", "channelId", "messageId"]);
 
 export interface IEmulatedAttachment {
     id: string;

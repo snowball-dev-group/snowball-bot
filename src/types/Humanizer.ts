@@ -214,19 +214,19 @@ export class Humanizer {
 	defaultOptions: IHumanizerDefaultOptions;
 
 	constructor(locale: IHumanizerLanguage, options?: IHumanizerDefaultOptions) {
-		if(!locale) {
+		if (!locale) {
 			throw new Error("Humanizer locale is not specified");
 		}
 
 		this.locale = locale;
-		if(options) {
+		if (options) {
 			this.defaultOptions = options;
 		} else {
 			this.defaultOptions = Humanizer.DEFAULT_OPTIONS;
 		}
 	}
 
-	humanize(milliseconds:number, optionsOverrides?: IHumanizerOptionsOverrides) {
+	humanize(milliseconds: number, optionsOverrides?: IHumanizerOptionsOverrides) {
 		let ms = Math.abs(milliseconds);
 
 		const dictionary = this.locale;
@@ -238,18 +238,18 @@ export class Humanizer {
 			unitName: Unit;
 		}> = [];
 
-		for(let i = 0; i < options.units.length; i++) {
+		for (let i = 0; i < options.units.length; i++) {
 			const unitName = options.units[i];
 			const unitMS = options.unitMeasures[unitName];
 
-			if(!unitMS) {
+			if (!unitMS) {
 				continue; // unit always SHOULD BE assigned
 			}
 
 			let unitCount: number;
 
 			// What's the number of full units we can fit?
-			if(i + 1 === options.units.length) {
+			if (i + 1 === options.units.length) {
 				unitCount = ms / unitMS;
 			} else {
 				unitCount = Math.floor(ms / unitMS);
@@ -267,22 +267,22 @@ export class Humanizer {
 
 		let firstOccupiedUnitIndex = 0;
 		pieces.some((piece, i) => {
-			if(piece.unitCount) {
+			if (piece.unitCount) {
 				firstOccupiedUnitIndex = i;
 			}
 
 			return !!piece.unitCount;
 		});
 
-		if(options.round) {
+		if (options.round) {
 			let previousPiece;
 			let i = pieces.length - 1;
 
-			while(i >= 0) {
+			while (i >= 0) {
 				const piece = pieces[i];
 				piece.unitCount = Math.round(piece.unitCount);
 
-				if(i === 0) {
+				if (i === 0) {
 					break;
 				}
 
@@ -292,7 +292,7 @@ export class Humanizer {
 				const currentUnitMeasures = options.unitMeasures[piece.unitName] || Humanizer.DEFAULT_OPTIONS.unitMeasures[piece.unitName];
 				const ratioToLargerUnit = prevUnitMeasures / currentUnitMeasures;
 
-				if(
+				if (
 					((piece.unitCount % ratioToLargerUnit) === 0) ||
 					(options.largest && ((options.largest - 1) < (i - firstOccupiedUnitIndex)))
 				) {
@@ -304,22 +304,22 @@ export class Humanizer {
 			}
 		}
 
-		const result:string[] = [];
+		const result: string[] = [];
 		pieces.some((piece) => {
-			if(piece.unitCount) {
+			if (piece.unitCount) {
 				result.push(Humanizer.render(piece.unitCount, piece.unitName, dictionary));
 			}
 
 			return (result.length === options.largest);
 		});
 
-		let renderedResult:string = "";
-		if(result.length) {
-			if(!options.conjunction || result.length === 1) {
+		let renderedResult: string = "";
+		if (result.length) {
+			if (!options.conjunction || result.length === 1) {
 				renderedResult = result.join(options.delimiter);
-			} else if(result.length === 2) {
+			} else if (result.length === 2) {
 				renderedResult = result.join(options.conjunction);
-			} else if(result.length > 2) {
+			} else if (result.length > 2) {
 				renderedResult = result.slice(0, -1).join(options.delimiter) +
 					(options.serialComma ? "," : "") + options.conjunction + result.slice(-1);
 			}
@@ -333,7 +333,7 @@ export class Humanizer {
 
 	static render(count: number, type: Unit, dictionary: IHumanizerLanguage) {
 		const dictionaryValue = dictionary[type];
-		if(!dictionaryValue) {
+		if (!dictionaryValue) {
 			throw new Error("Humanizer locale formatter is not specified");
 		}
 

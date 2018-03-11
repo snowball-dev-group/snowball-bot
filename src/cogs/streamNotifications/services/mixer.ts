@@ -40,7 +40,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 			}).on("error", (err) => {
 				this.log("err", "Carina error", err);
 			});
-		} catch(err) {
+		} catch (err) {
 			this.log("err", "Failed to run plugin", err);
 		}
 	}
@@ -62,16 +62,16 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 			* Cached data to check updates
 			*/
 			let currentData = this.currentData[streamer.uid];
-			if(data.online === true) {
+			if (data.online === true) {
 				// stream goes online
 				const channel = await this.fetchChannel(streamer.uid);
-				if(!channel.online) {
+				if (!channel.online) {
 					this.log("warn", "We were notified about starting stream of", streamer.uid, "but channel is offline");
 					return;
 				}
 				// start time
 				const startedAt = await this.getStreamStartTime(streamer.uid);
-				if(!startedAt) {
+				if (!startedAt) {
 					this.log("err", "Unknown error with streamer", streamer.uid);
 					return;
 				}
@@ -85,8 +85,8 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 					id: this.generateID(currentData),
 					payload: currentData
 				});
-			} else if(currentData) {
-				if(data.online === false) {
+			} else if (currentData) {
+				if (data.online === false) {
 					// stream goes offline
 					this.emit("offline", {
 						streamer,
@@ -98,12 +98,12 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 					delete this.currentData[streamer.uid];
 				} else {
 					const updated = !!data.name || !!data.audience || data.type !== undefined || (data.user && data.user.avatarUrl);
-					if(updated) {
+					if (updated) {
 						// getting old id
 						const oldId = this.generateID(currentData);
 
 						// updating props
-						for(const updated in data) {
+						for (const updated in data) {
 							this.currentData[streamer.uid][updated] = data[updated];
 						}
 
@@ -139,7 +139,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	public addSubscription(streamer: IStreamingServiceStreamer) {
-		if(this.isSubscribed(streamer.uid)) {
+		if (this.isSubscribed(streamer.uid)) {
 			throw new StreamingServiceError("ALREADY_SUBSCRIBED", "Already subscribed to this streamer");
 		}
 		this.subscribeTo(streamer);
@@ -147,7 +147,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 
 	public removeSubscription(uid: string) {
 		const listener = this._carinaListeners[uid];
-		if(listener) {
+		if (listener) {
 			this.ca.unsubscribe(`channel:${uid}:update`);
 			delete this._carinaListeners[uid];
 		}
@@ -187,12 +187,12 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 
 	private async makeRequest(uri: string, attempt: number = 0): Promise<any> {
 		const resp = await fetch(uri);
-		if(resp.status === 429) {
+		if (resp.status === 429) {
 			const delay = parseInt(resp.headers.get("retry-after"), 10);
 			this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 			await sleep(delay);
 			return this.makeRequest(uri, attempt + 1);
-		} else if(resp.status === 404) {
+		} else if (resp.status === 404) {
 			throw new StreamingServiceError("MIXER_NOTFOUND", "Resource not found");
 		}
 		return (resp.json());
@@ -204,7 +204,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 
 	public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
 		const cache = stream.payload as ICacheItem;
-		if(!cache) {
+		if (!cache) {
 			throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure: payload not found");
 		}
 		const gameName = cache.channel.type ? cache.channel.type.name : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
@@ -262,7 +262,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	async unload() {
-		for(const uid in this._carinaListeners) {
+		for (const uid in this._carinaListeners) {
 			this.removeSubscription(uid);
 		}
 		return true;

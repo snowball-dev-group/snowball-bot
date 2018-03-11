@@ -35,7 +35,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 
 		const args = str.split(";").map(arg => arg.trim());
 
-		if(args.length === 0) {
+		if (args.length === 0) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_ARGS"))
 			});
@@ -48,7 +48,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 			battletag: args[0].replace(/\#/i, () => "-")
 		};
 
-		if(!ACCEPTED_REGIONS.includes(info.region)) {
+		if (!ACCEPTED_REGIONS.includes(info.region)) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGREGION"), {
 					fields: [{
@@ -61,7 +61,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentation");
 		}
 
-		if(!ACCEPTED_PLATFORMS.includes(info.platform)) {
+		if (!ACCEPTED_PLATFORMS.includes(info.platform)) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGPLATFORM"), {
 					fields: [{
@@ -74,7 +74,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentantion");
 		}
 
-		if(!info.battletag) {
+		if (!info.battletag) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_NOBTAG"))
 			});
@@ -85,9 +85,9 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 		postStatus();
 		try {
 			await getProfile(info.battletag, info.region, info.platform);
-		} catch(err) {
-			if(err instanceof DetailedError) {
-				switch(err.code) {
+		} catch (err) {
+			if (err instanceof DetailedError) {
+				switch (err.code) {
 					case "OWAPI_FETCH_ERR_PROFILE_NOTFOUND": {
 						await statusMsg.edit("", {
 							embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED"))
@@ -114,18 +114,18 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 	}
 
 	async getCustoms(info: string | IOverwatchProfilePluginInfo) {
-		if(typeof info === "string") {
+		if (typeof info === "string") {
 			info = JSON.parse(info) as IOverwatchProfilePluginInfo;
 		}
 		let profile: IRegionalProfile | undefined = undefined;
 		try {
 			profile = await getProfile(info.battletag, info.region, info.platform);
-		} catch(err) {
+		} catch (err) {
 			LOG("err", "Error during getting profile", err, info);
 			throw new Error("Can't get profile");
 		}
 
-		if(!profile) {
+		if (!profile) {
 			LOG("err", "Can't get profile: ", info);
 			throw new Error("Exception not catched, but value not present.");
 		}

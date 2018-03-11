@@ -3,32 +3,32 @@
 // license-type: mit
 // source: https://github.com/sindresorhus/negative-array/blob/master/index.js
 export function negativeArray<T>(input: T[]): T[] {
-	if(!Array.isArray(input)) {
+	if (!Array.isArray(input)) {
 		throw new TypeError("Expected an array");
 	}
 
 	return new Proxy<T[]>(input, {
 		get(target, name, receiver) {
-			if(typeof name !== "string") {
+			if (typeof name !== "string") {
 				return Reflect.get(target, name, receiver);
 			}
 
 			const index = Number(name);
 
-			if(Number.isNaN(index)) {
+			if (Number.isNaN(index)) {
 				return Reflect.get(target, name, receiver);
 			}
 
 			return target[index < 0 ? target.length + index : index];
 		},
 		set(target, name, value, receiver) {
-			if(typeof name !== "string") {
+			if (typeof name !== "string") {
 				return Reflect.set(target, name, value, receiver);
 			}
 
 			const index = Number(name);
 
-			if(Number.isNaN(index)) {
+			if (Number.isNaN(index)) {
 				return Reflect.set(target, name, value, receiver);
 			}
 
@@ -48,14 +48,14 @@ export function isPromise<T>(obj: any): obj is PromiseLike<T> {
 // license-type: unknown
 // source: https://stackoverflow.com/a/44118363/3762381
 export function intlAcceptsTimezone(timezone: string): boolean {
-	if(!Intl || !Intl.DateTimeFormat().resolvedOptions().timeZone) {
+	if (!Intl || !Intl.DateTimeFormat().resolvedOptions().timeZone) {
 		throw new Error("Time zones are not available in this environment");
 	}
 
 	try {
 		Intl.DateTimeFormat(undefined, { timeZone: timezone });
 		return true;
-	} catch(err) {
+	} catch (err) {
 		// intl doesn't accept our timezone
 		return false;
 	}
@@ -71,7 +71,7 @@ export function createPropertyIterable<T>(arr: T[], prop: keyof (T)): Iterable<T
 					const arrVal = arrIterator.next();
 					return {
 						done: arrVal.done,
-						value: <any>(arrVal.value === undefined ? undefined : arrVal.value[prop])
+						value: <any> (arrVal.value === undefined ? undefined : arrVal.value[prop])
 					};
 				}
 			};
@@ -83,7 +83,7 @@ export function createPropertyIterable<T>(arr: T[], prop: keyof (T)): Iterable<T
 export function getArrayPropertyValues<T>(arr: T[], prop: keyof(T)): Array<T[keyof(T)]> {
 	const rArr: Array<T[keyof(T)]> = [];
 
-	for(const val of createPropertyIterable(arr, prop)) {
+	for (const val of createPropertyIterable(arr, prop)) {
 		rArr.push(val);
 	}
 

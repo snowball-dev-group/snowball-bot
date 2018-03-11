@@ -69,7 +69,7 @@ export default class DiscordSemaphore {
 					let taskResult: any = task();
 					isPromise(taskResult) && (taskResult = await taskResult);
 					return res([leaver(), taskResult]);
-				} catch(err) {
+				} catch (err) {
 					return rej(err);
 				}
 			});
@@ -90,8 +90,8 @@ export default class DiscordSemaphore {
 	}
 
 	private _normalizeTarget(target: PossibleTargets) {
-		if(typeof target === "string") { return target; }
-		if(target instanceof Guild) { return `g[${target.id}]`; }
+		if (typeof target === "string") { return target; }
+		if (target instanceof Guild) { return `g[${target.id}]`; }
 		return `${target.type}[${target.id}]`;
 	}
 
@@ -101,14 +101,14 @@ export default class DiscordSemaphore {
 
 	private _getWorkersCount(targetId: string) {
 		const workersCount = this._currentWorkers[targetId];
-		if(workersCount == null) { return this._currentWorkers[targetId] = 0; }
+		if (workersCount == null) { return this._currentWorkers[targetId] = 0; }
 		return workersCount;
 	}
 
 	private _incrementWorkersCount(targetId: string, invert = false) {
 		let currentWorkers = this._currentWorkers[targetId] || 0;
-		if(invert) {
-			if(currentWorkers === 0) { return currentWorkers; } // can go lower than 0
+		if (invert) {
+			if (currentWorkers === 0) { return currentWorkers; } // can go lower than 0
 			return this._currentWorkers[targetId] = currentWorkers--;
 		}
 		return this._currentWorkers[targetId] = currentWorkers++;
@@ -118,7 +118,7 @@ export default class DiscordSemaphore {
 		let isUsed = false;
 		return () => {
 			// anti-smartness: storing usage and throwing an error if used
-			if(isUsed) { throw new Error("You already marked that this worker stopped working"); }
+			if (isUsed) { throw new Error("You already marked that this worker stopped working"); }
 			return (isUsed = true) && this.leave(targetId);
 		};
 	}
@@ -127,14 +127,14 @@ export default class DiscordSemaphore {
 		const activeWorkers = this._getWorkersCount(targetId);
 
 		// are we working or overworking?
-		if(activeWorkers >= this._capacity) { return; }
+		if (activeWorkers >= this._capacity) { return; }
 
 		const queue = this._getQueue(targetId);
 
 		const runner = queue.shift();
 
 		// do we need to run it?
-		if(typeof runner !== "function") { return; }
+		if (typeof runner !== "function") { return; }
 
 		this._incrementWorkersCount(targetId);
 

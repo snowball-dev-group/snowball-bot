@@ -10,12 +10,12 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 
 	let args: ICommandParseResultArg[] | null = null;
 
-	if(parts.length > 0) {
+	if (parts.length > 0) {
 		args = [];
 		const cmdStr = `${cmd}${subCmd != null ? ` ${subCmd} ` : " "}`;
 		const argsStr = str.substring(cmdStr.length);
 
-		for(const arg of argumentSplit(argsStr, argsSeparator)) {
+		for (const arg of argumentSplit(argsStr, argsSeparator)) {
 			args.push({
 				raw: arg,
 				value: stripEmptyChars(arg).trim()
@@ -34,8 +34,8 @@ export function argsGenerator(args: ICommandParseResultArg[]): ICommandParseResu
 	const normal: string[] = [];
 	const raw: string[] = [];
 
-	for(const arg of args) {
-		if(arg.value.length > 0) {
+	for (const arg of args) {
+		if (arg.value.length > 0) {
 			normal.push(arg.value);
 		}
 		raw.push(arg.raw);
@@ -48,7 +48,7 @@ export function argsGenerator(args: ICommandParseResultArg[]): ICommandParseResu
 }
 
 export function argumentSplit(argStr: string, separator = ",") {
-	if(separator.length === 0) {
+	if (separator.length === 0) {
 		throw new Error("`separator` can't be empty string");
 	}
 
@@ -60,13 +60,13 @@ export function argumentSplit(argStr: string, separator = ",") {
 	const separatorRegexp = RegExp(`(?<=(^|[^\\\\]))${separator}`);
 
 	let nPos = 0;
-	while(nPos !== -1) {
+	while (nPos !== -1) {
 		argStr = argStr.substr(nPos);
 
 		const separatorMatch = separatorRegexp.exec(argStr);
 
 		let curArgEndPos: null | number = null;
-		if(separatorMatch) {
+		if (separatorMatch) {
 			nPos = separatorMatch.index + separatorMatch[0].length;
 			curArgEndPos = separatorMatch.index;
 		} else { nPos = -1; }

@@ -75,8 +75,8 @@ class PremiumControl extends Plugin implements IModule {
 			"message": (msg: Message) => this.onMessage(msg)
 		}, true);
 
-		if(cfg) {
-			for(const w of cfg.whoCanGive) {
+		if (cfg) {
+			for (const w of cfg.whoCanGive) {
 				!ALLOWED_TO_CONTROL.includes(w) && ALLOWED_TO_CONTROL.push(w);
 			}
 		}
@@ -89,16 +89,16 @@ class PremiumControl extends Plugin implements IModule {
 	// ================================
 
 	private async onMessage(msg: Message) {
-		if(msg.channel.type !== "text") { return; }
-		if(!msg.content || !msg.content.startsWith(PREMIUMCTRL_PREFIX)) { return; }
+		if (msg.channel.type !== "text") { return; }
+		if (!msg.content || !msg.content.startsWith(PREMIUMCTRL_PREFIX)) { return; }
 
 		const args = msg.content.split(" ");
-		if(args.length === 1 && args[0] === PREMIUMCTRL_PREFIX) { return; }
+		if (args.length === 1 && args[0] === PREMIUMCTRL_PREFIX) { return; }
 
 		args.shift();
 
 		try {
-			switch(args.shift()) {
+			switch (args.shift()) {
 				// give <#12345678901234>, 1mth
 				case "give": return this.cmd_give(msg, args);
 				// remove <#12345678901234>
@@ -112,7 +112,7 @@ class PremiumControl extends Plugin implements IModule {
 				// role
 				case "role": return this.cmd_role(msg, args);
 			}
-		} catch(err) {
+		} catch (err) {
 			this.log("err", `Error due running command \`${msg.content}\`:`, err);
 			
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
@@ -128,25 +128,25 @@ class PremiumControl extends Plugin implements IModule {
 	// ================================
 
 	private async cmd_role(msg: Message, args: string[]) {
-		if(!serverAdminCheck(msg)) {
+		if (!serverAdminCheck(msg)) {
 			// NO PERMISSIONS
 			return;
 		}
 
 		const botMember = msg.guild.members.get($discordBot.user.id);
 
-		if(!botMember) {
+		if (!botMember) {
 			throw new Error("Unexpected behaviour, should have botMember set as GuildMember but got nothing");
 		}
 
-		if(!botMember.permissions.has("MANAGE_ROLES")) {
+		if (!botMember.permissions.has("MANAGE_ROLES")) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOPERMS")
 			});
 			return;
 		}
 
-		if(args.length === 0) {
+		if (args.length === 0) {
 			msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "PREMIUMCTL_SETROLE_DESC",
@@ -159,23 +159,23 @@ class PremiumControl extends Plugin implements IModule {
 		}
 
 		// premiumctl:role
-		if(args[0].toLowerCase() !== "none") {
+		if (args[0].toLowerCase() !== "none") {
 			const role = resolveGuildRole(args[0], msg.guild, false);
-			if(!role) {
+			if (!role) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOTFOUND")
 				});
 				return;
 			}
 
-			if(role.managed) {
+			if (role.managed) {
 				msg.channel.send("" , {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_MANAGED")
 				});
 				return;
 			}
 
-			if(role.position > botMember.roles.highest.position) {
+			if (role.position > botMember.roles.highest.position) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_ROLEHIGHER")
 				});
@@ -190,7 +190,7 @@ class PremiumControl extends Plugin implements IModule {
 			});
 			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 
-			if(!confirmation) {
+			if (!confirmation) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
 				});
@@ -198,16 +198,16 @@ class PremiumControl extends Plugin implements IModule {
 			}
 
 			const currentPremiumRole = await getGuildPref(msg.guild, "premiumctl:role");
-			if(currentPremiumRole) {
+			if (currentPremiumRole) {
 				const premiumRole = msg.guild.roles.get(currentPremiumRole);
-				if(premiumRole) {
+				if (premiumRole) {
 					const progMsg = (await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_SETROLE_NONEREMOVING")
 					})) as Message;
-					for(const member of msg.guild.members.values()) {
+					for (const member of msg.guild.members.values()) {
 						try {
 							await member.roles.remove(premiumRole);
-						} catch(err) {
+						} catch (err) {
 							this.log("err", `Failed to unassign current premium role from user "${member.displayName}" on guild "${msg.guild.name}"`);
 						}
 					}
@@ -224,14 +224,14 @@ class PremiumControl extends Plugin implements IModule {
 			return this.performGuildSync(msg.guild);
 		} else {
 			const currentPremiumRole = await getGuildPref(msg.guild, "premiumctl:role");
-			if(!currentPremiumRole) {
+			if (!currentPremiumRole) {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_SETROLE_ERR_NOTSET")
 				});
 			}
 
 			const premiumRole = msg.guild.roles.get(currentPremiumRole);
-			if(premiumRole) {
+			if (premiumRole) {
 				const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 					key: "PREMIUMCTL_SETROLE_SETCONFIRMATION",
 					formatOptions: {
@@ -240,7 +240,7 @@ class PremiumControl extends Plugin implements IModule {
 				});
 
 				const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-				if(!confirmation) {
+				if (!confirmation) {
 					return msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
 					});
@@ -250,10 +250,10 @@ class PremiumControl extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_SETROLE_NONEREMOVING")
 				})) as Message;
 
-				for(const member of msg.guild.members.values()) {
+				for (const member of msg.guild.members.values()) {
 					try {
 						await member.roles.remove(premiumRole);
-					} catch(err) {
+					} catch (err) {
 						this.log("err", `Failed to unassign premium role from user "${member.displayName}" on guild "${msg.guild.name}"`);
 					}
 				}
@@ -278,16 +278,16 @@ class PremiumControl extends Plugin implements IModule {
 	}
 
 	private async cmd_give(msg: Message, args: string[], internalCall = false) {
-		if(!isPluginAdmin(msg)) {
+		if (!isPluginAdmin(msg)) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_PERMS")
 			});
 		}
 
 		// args: ["<#12345678901234>,", "1mth"]
-		if(!internalCall) {
+		if (!internalCall) {
 			args = args.join(" ").split(",").map(arg => arg.trim()); // args: ["<#12345678901234>", "1mth"]
-			if(args.length !== 2) {
+			if (args.length !== 2) {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 						key: "PREMIUMCTL_GIVE_USAGE",
@@ -297,7 +297,7 @@ class PremiumControl extends Plugin implements IModule {
 					})
 				});
 			}
-			if(msg.mentions.users.size !== 1) {
+			if (msg.mentions.users.size !== 1) {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_MENTIONS")
 				});
@@ -306,7 +306,7 @@ class PremiumControl extends Plugin implements IModule {
 
 		const subscriber = msg.mentions.users.first();
 		let currentPremium = await checkPremium(subscriber);
-		if(currentPremium) {
+		if (currentPremium) {
 			const dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
 			const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
 				key: "PREMIUMCTL_GIVE_CONFIRMATION",
@@ -316,7 +316,7 @@ class PremiumControl extends Plugin implements IModule {
 				}
 			});
 			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-			if(!confirmation) {
+			if (!confirmation) {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
 				});
@@ -337,7 +337,7 @@ class PremiumControl extends Plugin implements IModule {
 		});
 
 		let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-		if(!confirmation) {
+		if (!confirmation) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
 			});
@@ -349,7 +349,7 @@ class PremiumControl extends Plugin implements IModule {
 
 		const complete = await givePremium(subscriber, cDate.toJSDate(), true);
 
-		if(!complete) {
+		if (!complete) {
 			return _cMsg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_GIVE_ERR_CONSOLE")
 			});
@@ -361,7 +361,7 @@ class PremiumControl extends Plugin implements IModule {
 
 		currentPremium = await checkPremium(subscriber);
 
-		if(!currentPremium) {
+		if (!currentPremium) {
 			return _cMsg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_GIVE_ERR_INTERNAL")
 			});
@@ -387,7 +387,7 @@ class PremiumControl extends Plugin implements IModule {
 			string: msgStr
 		});
 		confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-		if(!confirmation) {
+		if (!confirmation) {
 			return _cMsg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_SMTNGWNTWRNG")
 			});
@@ -399,14 +399,14 @@ class PremiumControl extends Plugin implements IModule {
 	}
 
 	private async cmd_renew(msg: Message, args: string[]) {
-		if(!isPluginAdmin(msg)) {
+		if (!isPluginAdmin(msg)) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_PERMS")
 			});
 		}
 		// args: ["<#12345678901234>,", "1mth"]
 		args = args.join(" ").split(",").map(arg => arg.trim()); // args: ["<#12345678901234>", "1mth"]
-		if(args.length !== 2) {
+		if (args.length !== 2) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "PREMIUMCTL_RENEW_USAGE",
@@ -416,7 +416,7 @@ class PremiumControl extends Plugin implements IModule {
 				})
 			});
 		}
-		if(msg.mentions.users.size !== 1) {
+		if (msg.mentions.users.size !== 1) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_MENTIONS")
 			});
@@ -425,7 +425,7 @@ class PremiumControl extends Plugin implements IModule {
 		const subscriber = msg.mentions.users.first();
 		let currentPremium = await checkPremium(subscriber);
 
-		if(!currentPremium) {
+		if (!currentPremium) {
 			const _redirectMsg = await (msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_GIVE_REDIRECT")
 			})) as Message;
@@ -448,7 +448,7 @@ class PremiumControl extends Plugin implements IModule {
 		});
 
 		let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-		if(!confirmation) {
+		if (!confirmation) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
 			});
@@ -457,8 +457,8 @@ class PremiumControl extends Plugin implements IModule {
 		let complete = false;
 		try {
 			complete = await givePremium(subscriber, cDate.toJSDate(), false);
-		} catch(err) {
-			if((err as Error).name === "ERR_PREMIUM_DIFFLOW") {
+		} catch (err) {
+			if ((err as Error).name === "ERR_PREMIUM_DIFFLOW") {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_TIMEDIFF0")
 				});
@@ -470,7 +470,7 @@ class PremiumControl extends Plugin implements IModule {
 			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_RENEW_PROGRESS_STARTED")
 		})) as Message;
 
-		if(!complete) {
+		if (!complete) {
 			return _cMsg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_CONSOLE")
 			});
@@ -482,7 +482,7 @@ class PremiumControl extends Plugin implements IModule {
 
 		currentPremium = await checkPremium(subscriber);
 
-		if(!currentPremium) {
+		if (!currentPremium) {
 			return _cMsg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_UNKNOWN")
 			});
@@ -507,7 +507,7 @@ class PremiumControl extends Plugin implements IModule {
 			string: msgStr
 		});
 		confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-		if(!confirmation) {
+		if (!confirmation) {
 			return _cMsg.edit("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_SMTNGWNTWRNG")
 			});
@@ -519,11 +519,11 @@ class PremiumControl extends Plugin implements IModule {
 	}
 
 	private async cmd_checkout(msg: Message) {
-		if(isPluginAdmin(msg) && msg.mentions.users.size > 1) {
+		if (isPluginAdmin(msg) && msg.mentions.users.size > 1) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_CHECKOUT_ERR_MENTIONS")
 			});
-		} else if(!isPluginAdmin(msg) && msg.mentions.users.size !== 0) {
+		} else if (!isPluginAdmin(msg) && msg.mentions.users.size !== 0) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_CHECKOUT_ERR_NOTADM")
 			});
@@ -533,7 +533,7 @@ class PremiumControl extends Plugin implements IModule {
 
 		const currentPremium = await checkPremium(subscriber);
 
-		if(!currentPremium) {
+		if (!currentPremium) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER")
 			});
@@ -563,12 +563,12 @@ class PremiumControl extends Plugin implements IModule {
 	}
 
 	private async cmd_remove(msg: Message) {
-		if(!isPluginAdmin(msg)) {
+		if (!isPluginAdmin(msg)) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_PERMS")
 			});
 		}
-		if(msg.mentions.users.size !== 1) {
+		if (msg.mentions.users.size !== 1) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_MENTION")
 			});
@@ -577,7 +577,7 @@ class PremiumControl extends Plugin implements IModule {
 		const subscriber = msg.mentions.users.first();
 
 		const currentPremium = await checkPremium(subscriber);
-		if(!currentPremium) {
+		if (!currentPremium) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_NOTPREMIUMUSER")
 			});
@@ -607,7 +607,7 @@ class PremiumControl extends Plugin implements IModule {
 		});
 		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 
-		if(!confirmation) {
+		if (!confirmation) {
 			return msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
 			});
@@ -615,8 +615,8 @@ class PremiumControl extends Plugin implements IModule {
 
 		try {
 			await deletePremium(subscriber);
-		} catch(err) {
-			if((err as Error).name === "PREMIUM_ALRDYNTSUB") {
+		} catch (err) {
+			if ((err as Error).name === "PREMIUM_ALRDYNTSUB") {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_ALREADYUNSUBBED")
 				});
@@ -636,20 +636,20 @@ class PremiumControl extends Plugin implements IModule {
 	public async performGuildSync(guild: Guild, noLog = false) {
 		const logPrefix = `Sync (${guild.id}):`;
 
-		if(!guild.available) {
+		if (!guild.available) {
 			this.log("warn", logPrefix, `Guild "${guild.name}" is unavailable`);
 			return;
 		}
 
 		const guildPremiumRole = await getGuildPref(guild, "premiumctl:role");
-		if(!guildPremiumRole) {
+		if (!guildPremiumRole) {
 			return {
 				done: false,
 				err: "noPremiumRole"
 			};
 		}
 
-		if(!noLog) { this.log("info", logPrefix, `Started role sync on "${guild.name}"`); }
+		if (!noLog) { this.log("info", logPrefix, `Started role sync on "${guild.name}"`); }
 
 		let done = 0;
 		let reused = 0;
@@ -659,30 +659,30 @@ class PremiumControl extends Plugin implements IModule {
 
 		// checks
 
-		if(!premiumRole) {
+		if (!premiumRole) {
 			this.log("warn", logPrefix, "Premium role was deleted on guild", guild.id);
 			return delGuildPref(guild, "premiumctl:role");
 		}
 
-		if(!guild.me.permissions.has("MANAGE_ROLES")) {
+		if (!guild.me.permissions.has("MANAGE_ROLES")) {
 			this.log("warn", logPrefix, "Bot has no permission to manage roles on guild", guild.id);
 			return delGuildPref(guild, "premiumctl:role");
 		}
 
-		if(premiumRole.managed) {
+		if (premiumRole.managed) {
 			this.log("warn", logPrefix, "Premium role is managed, means controlled by integration", guild.id);
 			return delGuildPref(guild, "premiumctl:role");
 		}
 
-		if(premiumRole.position >= guild.me.roles.highest.position) {
+		if (premiumRole.position >= guild.me.roles.highest.position) {
 			this.log("warn", logPrefix, "Premium role is above bot's one, so bot can't give it");
 			return delGuildPref(guild, "premiumctl:role");
 		}
 
 		// sync
 
-		for(const member of guild.members.values()) {
-			if(member.roles.highest.position >= guild.me.roles.highest.position) {
+		for (const member of guild.members.values()) {
+			if (member.roles.highest.position >= guild.me.roles.highest.position) {
 				// we can't give role to member because this member has role highness that ours
 				done++;
 				continue;
@@ -691,16 +691,16 @@ class PremiumControl extends Plugin implements IModule {
 			const premiumResponse = await getPremium(member);
 
 			// counting
-			if(premiumResponse.source === "db") { fetched++; } else { reused++; }
+			if (premiumResponse.source === "db") { fetched++; } else { reused++; }
 
-			if(premiumResponse.result && !member.roles.has(guildPremiumRole)) {
+			if (premiumResponse.result && !member.roles.has(guildPremiumRole)) {
 				try {
-					if(!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has no premium role, adding...`); }
+					if (!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has no premium role, adding...`); }
 					await member.roles.add(premiumRole, await localizeForGuild(member.guild, "PREMIUMCTL_AUDITLOG_PREMIUM"));
-				} catch(err) {
-					if(err instanceof DiscordAPIError) {
+				} catch (err) {
+					if (err instanceof DiscordAPIError) {
 						let breakSync = false;
-						switch(err.code) {
+						switch (err.code) {
 							case 10011: {
 								// role was deleted, deleting ctl pref
 								await delGuildPref(guild, "permiumctl:role");
@@ -708,17 +708,17 @@ class PremiumControl extends Plugin implements IModule {
 							} break;
 						}
 
-						if(breakSync) { break; }
+						if (breakSync) { break; }
 					}
 					this.log("err", logPrefix, `Failed to assign premium role to member "${member.displayName}"...`);
 				}
 				done++;
-			} else if(!premiumResponse.result && member.roles.has(guildPremiumRole)) {
+			} else if (!premiumResponse.result && member.roles.has(guildPremiumRole)) {
 				try {
-					if(!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has premium role without premium, removing...`); }
+					if (!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has premium role without premium, removing...`); }
 					await member.roles.remove(premiumRole, await localizeForGuild(member.guild, "PREMIUMCTL_AUDITLOG_NOTPREMIUM"));
 					done++;
-				} catch(err) {
+				} catch (err) {
 					this.log("err", logPrefix, `Failed to unassign premium role from member "${member.displayName}"...`);
 				}
 			} else {
@@ -727,15 +727,15 @@ class PremiumControl extends Plugin implements IModule {
 		}
 
 		const donePerc = (done / guild.members.size) * 100;
-		if(donePerc < 50) {
-			if(!noLog) { this.log("warn", logPrefix, "Errors due syncing for more than 50% members of guild"); }
+		if (donePerc < 50) {
+			if (!noLog) { this.log("warn", logPrefix, "Errors due syncing for more than 50% members of guild"); }
 			return {
 				done: false,
 				err: "moreThan50PercFailed"
 			};
 		}
 
-		if(!noLog) { this.log("ok", logPrefix, `Sync complete without errors: ${fetched} fetched, ${reused} reused`); }
+		if (!noLog) { this.log("ok", logPrefix, `Sync complete without errors: ${fetched} fetched, ${reused} reused`); }
 		return {
 			done: true,
 			err: undefined
@@ -743,16 +743,16 @@ class PremiumControl extends Plugin implements IModule {
 	}
 
 	public async performGuildsSync(noLog = false) {
-		if(!noLog) { this.log("info", "Performing role sync in guilds..."); }
+		if (!noLog) { this.log("info", "Performing role sync in guilds..."); }
 
 		const guilds = Array.from($discordBot.guilds.values()).sort((g1, g2) => {
 			return g1.memberCount - g2.memberCount;
 		});
 
-		for(const guild of guilds) {
+		for (const guild of guilds) {
 			try {
 				await this.performGuildSync(guild, noLog);
-			} catch(err) {
+			} catch (err) {
 				this.log("err", `Role sync failed at guild "${guild.name}"`, err);
 				$snowball.captureException(err, { extra: { guildId: guild.id } });
 			}
@@ -767,7 +767,7 @@ class PremiumControl extends Plugin implements IModule {
 
 	public async init() {
 		const subpluginInit = await init();
-		if(!subpluginInit) {
+		if (!subpluginInit) {
 			this.log("err", "Subplugin initalization failed");
 			return;
 		}

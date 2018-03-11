@@ -73,7 +73,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		});
-		if(options) {
+		if (options) {
 			this.noLazy = !!options["no_lazy"];
 			this.crowdinLink = options.crowdinLink;
 			this.googleMapsApiKey = options.googleApiKey;
@@ -82,46 +82,46 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	public async init() {
-		if(!$modLoader.isPendingInitialization(this.signature)) {
+		if (!$modLoader.isPendingInitialization(this.signature)) {
 			throw new Error("This module is not pending initialization");
 		}
 
-		if(!this.noLazy) {
+		if (!this.noLazy) {
 			this.log("warn", "Lazy loading enabled, not going to do anything");
 			return;
 		}
 
 		this.log("info", "Syncing...");
-		for(const g of $discordBot.guilds.values()) {
+		for (const g of $discordBot.guilds.values()) {
 			this.log("info", `Updating language for guild "${g.name}"`);
 			await forceGuildLanguageUpdate(g);
 			this.log("info", `Updating enforcing status for guild "${g.name}"`);
 			await forceGuildEnforceUpdate(g);
 			this.log("info", `-- Started language update for ${g.members.size} members`);
-			for(const m of g.members.values()) { await getUserLanguage(m); }
+			for (const m of g.members.values()) { await getUserLanguage(m); }
 		}
 		this.log("info", `Started language update for ${$discordBot.users.size} users`);
-		for(const m of $discordBot.users.values()) { await getUserLanguage(m); }
+		for (const m of $discordBot.users.values()) { await getUserLanguage(m); }
 		this.log("ok", "Sync done, poor DB");
 	}
 
 	private async onMessage(msg: Message) {
-		if(msg.channel.type !== "dm" && msg.channel.type !== "text") { return; }
-		if(!startsWith(msg.content, BASE_PREFIX)) { return; }
+		if (msg.channel.type !== "dm" && msg.channel.type !== "text") { return; }
+		if (!startsWith(msg.content, BASE_PREFIX)) { return; }
 		try {
-			if(msg.content === BASE_PREFIX) {
+			if (msg.content === BASE_PREFIX) {
 				return await this.getCurrentLang(msg);
-			} else if(startsWith(msg.content, CMD.SWITCH)) {
+			} else if (startsWith(msg.content, CMD.SWITCH)) {
 				return await this.switchLanguage(msg);
-			} else if(startsWith(msg.content, CMD.TIMEZONE)) {
+			} else if (startsWith(msg.content, CMD.TIMEZONE)) {
 				return await this.timezone(msg);
-			} else if(startsWith(msg.content, CMD.GUILDS_SWITCH)) {
+			} else if (startsWith(msg.content, CMD.GUILDS_SWITCH)) {
 				return await this.guildSwitch(msg);
-			} else if(startsWith(msg.content, CMD.GUILDS_TIMEZONE)) {
+			} else if (startsWith(msg.content, CMD.GUILDS_TIMEZONE)) {
 				return await this.guildTimezone(msg);
-			} else if(startsWith(msg.content, CMD.GUILDS_ENFORCE)) {
+			} else if (startsWith(msg.content, CMD.GUILDS_ENFORCE)) {
 				return await this.guildEnforce(msg);
-			} else if(startsWith(msg.content, CMD.CODES)) {
+			} else if (startsWith(msg.content, CMD.CODES)) {
 				return await this.getCodes(msg);
 			} else {
 				return await msg.channel.send({
@@ -150,7 +150,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			coverage: $localizer.getString(langCode, "+COVERAGE")
 		});
 
-		if(!($localizer.getString(langCode, "+COMMUNITY_MANAGED") === "false")) {
+		if (!($localizer.getString(langCode, "+COMMUNITY_MANAGED") === "false")) {
 			str += "\n\n";
 			str += $localizer.getFormattedString(langCode, "LANGUAGE_COMMUNITYMANAGED", {
 				crowdinLink: `${this.crowdinLink}/${$localizer.getString(langCode, "+CROWDIN_CODE")}`
@@ -167,7 +167,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 	private async switchLanguage(msg: Message) {
 		const u = msg.member || msg.author;
-		if(msg.content === CMD.SWITCH) {
+		if (msg.content === CMD.SWITCH) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 					key: "LANGUAGE_SWITCH_USAGE",
@@ -179,9 +179,9 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 		}
 
-		if(msg.channel.type !== "dm") {
+		if (msg.channel.type !== "dm") {
 			const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
-			if(enforcingEnabled) {
+			if (enforcingEnabled) {
 				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ENFORCEDLANG")
 				});
@@ -189,7 +189,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 
 		const lang = msg.content.slice(CMD.SWITCH.length).trim();
-		if(!$localizer.languageExists(lang)) {
+		if (!$localizer.languageExists(lang)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, u, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
 			});
@@ -213,7 +213,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		let str = `# ${await localizeForUser(u, "LANGUAGE_CODES_HEADER")}\n\n`;
 
 		const langs = $localizer.loadedLanguages;
-		for(const lang of langs) {
+		for (const lang of langs) {
 			str += `* ${lang}: `;
 			str += $localizer.getString(lang, "+NAME");
 			str += ` (${$localizer.getString(lang, "+COUNTRY")})`;
@@ -228,19 +228,19 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	private async guildSwitch(msg: Message) {
-		if(msg.channel.type !== "text") {
+		if (msg.channel.type !== "text") {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
 			});
 		}
 
-		if(!SetLanguageCommand._isAdmin(msg.member)) {
+		if (!SetLanguageCommand._isAdmin(msg.member)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_NOPERMISSIONS")
 			});
 		}
 
-		if(msg.content === CMD.GUILDS_SWITCH) {
+		if (msg.content === CMD.GUILDS_SWITCH) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "LANGUAGE_GUILD_SWITCH_USAGE",
@@ -253,7 +253,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 
 		const lang = msg.content.slice(CMD.GUILDS_SWITCH.length).trim();
-		if(!$localizer.languageExists(lang)) {
+		if (!$localizer.languageExists(lang)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_SWITCH_ERRLANGNOTFOUND")
 			});
@@ -274,26 +274,26 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	private async guildEnforce(msg: Message) {
-		if(msg.channel.type !== "text") {
+		if (msg.channel.type !== "text") {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
 			});
 		}
 
-		if(!SetLanguageCommand._isAdmin(msg.member)) {
+		if (!SetLanguageCommand._isAdmin(msg.member)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_NOPERMISSIONS")
 			});
 		}
 
-		if(msg.content === CMD.GUILDS_ENFORCE) {
+		if (msg.content === CMD.GUILDS_ENFORCE) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "LANGUAGE_GUILD_ENFORCE_USAGE")
 			});
 		}
 
 		const arg = msg.content.slice(CMD.GUILDS_ENFORCE.length).trim();
-		if(!["true", "false"].includes(arg)) {
+		if (!["true", "false"].includes(arg)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ENFORCE_ARGERR")
 			});
@@ -302,7 +302,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		const enforcingState = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
 		const newEnforcingState = arg === "true";
 
-		if(enforcingState === newEnforcingState) {
+		if (enforcingState === newEnforcingState) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "LANGUAGE_GUILD_ENFORCE_ALREADY",
@@ -330,11 +330,11 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 	private async timezone(msg: Message) {
 		const msgAuthor = await getMessageMemberOrAuthor(msg);
-		if(!msgAuthor) { return; }
+		if (!msgAuthor) { return; }
 
 		const userTimezone = await getUserTimezone(msgAuthor);
 
-		if(msg.content === CMD.TIMEZONE) {
+		if (msg.content === CMD.TIMEZONE) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 					custom: true,
@@ -349,9 +349,9 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 		let newTZ = msg.content.slice(CMD.TIMEZONE.length);
 
-		if(!intlAcceptsTimezone(newTZ)) {
+		if (!intlAcceptsTimezone(newTZ)) {
 			const result = await SetLanguageCommand._timezoneFallback(msg, msgAuthor, newTZ, this.googleMapsApiKey);
-			if(!result) { return; }
+			if (!result) { return; }
 			newTZ = result;
 		}
 
@@ -371,9 +371,9 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 	private async guildTimezone(msg: Message) {
 		const msgMember = await getMessageMember(msg);
-		if(!msgMember) { return; }
+		if (!msgMember) { return; }
 
-		if(!SetLanguageCommand._isAdmin(msgMember)) {
+		if (!SetLanguageCommand._isAdmin(msgMember)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "LANGUAGE_GUILD_NOPERMISSIONS")
 			});
@@ -381,7 +381,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 		const guildTimezone = await getGuildTimezone(msgMember.guild);
 
-		if(msg.content === CMD.TIMEZONE) {
+		if (msg.content === CMD.TIMEZONE) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, {
 					custom: true,
@@ -396,9 +396,9 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 		let newTZ = msg.content.slice(CMD.GUILDS_TIMEZONE.length);
 
-		if(!intlAcceptsTimezone(newTZ)) {
+		if (!intlAcceptsTimezone(newTZ)) {
 			const result = await SetLanguageCommand._timezoneFallback(msg, msgMember, newTZ, this.googleMapsApiKey);
-			if(!result) { return; }
+			if (!result) { return; }
 			newTZ = result;
 		}
 
@@ -416,8 +416,8 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	private static async _timezoneFallback(msg: Message, msgAuthor: GuildMember | User, newTZ: string, apiKey?: string) : Promise<string|undefined> {
-		if(!apiKey) {
+	private static async _timezoneFallback(msg: Message, msgAuthor: GuildMember | User, newTZ: string, apiKey?: string) : Promise<string | undefined> {
+		if (!apiKey) {
 			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_INVALID")
 			});
@@ -428,7 +428,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 		const cached = await get<string>(CACHE_OWNER, newTZ.toLowerCase());
 
-		if(cached == null) {
+		if (cached == null) {
 			// resolving address with google maps
 
 			const findResp = await SetLanguageCommand._sendGoogleMapsReq<IGoogleGeocodingResponse>("geocode", apiKey, {
@@ -436,7 +436,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				language: await localizeForUser(msgAuthor, "+SHORT_CODE")
 			});
 
-			if(findResp.status !== "OK" || findResp.results.length === 0) {
+			if (findResp.status !== "OK" || findResp.results.length === 0) {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_NOT_FOUND")
 				});
@@ -452,7 +452,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 
-			if(!confirmation) {
+			if (!confirmation) {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_CANCELED@FOUND_ADDRESS")
 				});
@@ -466,7 +466,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 				location: `${selectedAddress.geometry.location.lat},${selectedAddress.geometry.location.lng}`
 			});
 
-			if(timezoneResp.status !== "OK" || !intlAcceptsTimezone(timezoneResp.timeZoneId)) {
+			if (timezoneResp.status !== "OK" || !intlAcceptsTimezone(timezoneResp.timeZoneId)) {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_APIERR@TIMEZONE_RESOLVE", {
 						universalTitle: await localizeForUser(msgAuthor, "LANGUAGE_TIMEZONE_CANCELED_TITLE")
@@ -486,13 +486,13 @@ class SetLanguageCommand extends Plugin implements IModule {
 	private static async _sendGoogleMapsReq<T>(apiType: string, apiKey: string, query: { [key: string]: string }) : Promise<T> {
 		const uri = new URL(`https://maps.googleapis.com/maps/api/${apiType}/json`);
 		
-		for(const key in query) { uri.searchParams.set(key, query[key]); }
+		for (const key in query) { uri.searchParams.set(key, query[key]); }
 
 		uri.searchParams.set("key", apiKey);
 
 		const resp = await fetch(uri.toString());
 
-		if(resp.status !== 200) { throw new Error(`Invalid response code`); }
+		if (resp.status !== 200) { throw new Error(`Invalid response code`); }
 
 		return resp.json();
 	}
@@ -511,7 +511,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 	}
 
 	public async unload() {
-		if(!$modLoader.isPendingUnload(this.signature)) {
+		if (!$modLoader.isPendingUnload(this.signature)) {
 			throw new Error("This module is not pending unload");
 		}
 		this.unhandleEvents();

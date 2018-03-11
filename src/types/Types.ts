@@ -14,7 +14,7 @@ export interface IHashMap<T> {
  * As example this could be used to identify if object from your map was checked (`null`) and not (`undefined`).
  * Imrprovise while checking, never do such thing as `map["prop"] === undefined`
  */
-export type INullableHashMap<T> = IHashMap<T|undefined|null>;
+export type INullableHashMap<T> = IHashMap<T | undefined | null>;
 
 export interface ISnowballIPCMessage<T> {
 	type: string;
@@ -28,16 +28,16 @@ export interface ISnowballIPCMessage<T> {
  */
 export function createHashMap<T>(entries?: Array<[string, T]> | IHashMap<T>) : IHashMap<T> {
 	const hashMap = Object.create(null);
-	if(entries) {
-		if(Array.isArray(entries)) {
-			for(const entry of entries) {
-				if(!Array.isArray(entry)) {
+	if (entries) {
+		if (Array.isArray(entries)) {
+			for (const entry of entries) {
+				if (!Array.isArray(entry)) {
 					throw new Error("Invalid entry");
 				}
 				hashMap[entry[0]] = entry[1];
 			}
-		} else if(typeof entries === "object") {
-			for(const property of Object.getOwnPropertyNames(entries)) {
+		} else if (typeof entries === "object") {
+			for (const property of Object.getOwnPropertyNames(entries)) {
 				hashMap[property] = entries[property];
 			}
 		} else {

@@ -41,12 +41,22 @@
         "quotemark": [ true, "double" ],
         "radix": true,
         "semicolon": [ true, "always" ],
+        "space-before-function-paren": [ true, {
+                "anonymous": "always",
+                "named": "never",
+                "asyncArrow": "always",
+                "method": "never",
+                "constructor": "never"
+            }
+        ],
+        "space-within-parens": true,
         "switch-final-break": false,
         "ter-prefer-arrow-callback": true,
         "triple-equals": [ true, "allow-null-check" ],
         "unified-signatures": true,
         "use-isnan": true,
-        "variable-name": [ true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case" ]
+        "variable-name": [ true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case" ],
+        "whitespace": [ true, "check-branch", "check-module", "check-separator", "check-type", "check-typecast", "check-type-operator", "check-preblock", "check-operator", "check-decl", "check-branch" ]
     },
     "extends": [
         "tslint-eslint-rules"

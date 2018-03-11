@@ -17,7 +17,7 @@ export function replaceAll(str: string, search: string, replacement: string) {
 
 export function reverseString(str: string) {
 	let o = "";
-	for(let i = str.length; i > -1; i--) { o += str[i]; }
+	for (let i = str.length; i > -1; i--) { o += str[i]; }
 	return o;
 }
 
@@ -39,12 +39,12 @@ function _getHex(str: string, key: number, maxlen: number): string {
 	// In turn, the js rounds everything that comes after the 16th sign among
 	maxlen = Math.min(maxlen || 14, 14);
 	// tslint:disable-next-line:no-constant-condition
-	for(; true; i++) {
-		if(count++ >= str.length && n.toString(16).length >= maxlen) { break; }
-		if(str[i] === undefined) { i = 0; }
+	for (; true; i++) {
+		if (count++ >= str.length && n.toString(16).length >= maxlen) { break; }
+		if (str[i] === undefined) { i = 0; }
 		n *= (str.charCodeAt(i) + (i * str.length)) * key;
 		n = Number(String(n).replace(/0+$/g, ""));
-		while(n.toString(16).length > maxlen) { n = Math.floor(n / 10); }
+		while (n.toString(16).length > maxlen) { n = Math.floor(n / 10); }
 	}
 	return n.toString(16);
 }

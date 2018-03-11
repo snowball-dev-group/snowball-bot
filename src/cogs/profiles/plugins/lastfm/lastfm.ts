@@ -12,8 +12,8 @@ export async function getRecents(username: string, apiKey: string): Promise<IRec
 	const uri = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${username}&api_key=${apiKey}&limit=3&format=json`;
 	const resp = await fetch(uri);
 
-	if(resp.status !== 200) {
-		switch(resp.status) {
+	if (resp.status !== 200) {
+		switch (resp.status) {
 			case 404: throw new DetailedError("LASTFM_GETRECENTS_ERR_NOTFOUND");
 			case 500: throw new DetailedError("LASTFM_GETRECENTS_ERR_SERVERERROR");
 			default: throw new DetailedError("LASTFM_GETRECENTS_ERR_UNKNOWN");
@@ -29,7 +29,7 @@ export async function getRecents(username: string, apiKey: string): Promise<IRec
 		}
 	})();
 
-	if(!parsedRecents) { throw new DetailedError("LASTFM_GETRECENTS_ERR_PARSING"); }
+	if (!parsedRecents) { throw new DetailedError("LASTFM_GETRECENTS_ERR_PARSING"); }
 
 	return parsedRecents;
 }
@@ -37,27 +37,27 @@ export async function getRecents(username: string, apiKey: string): Promise<IRec
 export async function getOrFetchRecents(username: string, apiKey: string): Promise<IRecentTracksResponse> {
 	const logPrefix = `getOrFetchRecents(${username}):`;
 
-	let cached : IRecentTracksResponse|null = null;
+	let cached : IRecentTracksResponse | null = null;
 
 	try {
 		cached = await get<IRecentTracksResponse>(CACHE_OWNER, username, true);
-	} catch(err) {
+	} catch (err) {
 		LOG("warn", logPrefix, "Cache failed", err);
 	}
 
-	if(cached) { return cached; }
+	if (cached) { return cached; }
 
 	let recents: IRecentTracksResponse | undefined = undefined;
 	try {
 		recents = await getRecents(username, apiKey);
-	} catch(err) {
+	} catch (err) {
 		LOG("err", logPrefix, "Fetching failed", err);
 		throw new DetailedError("LASTFM_GETORFETCH_ERR", undefined, err);
 	}
 
 	try {
 		await storeValue(CACHE_OWNER, username, recents, 60);
-	} catch(err) {
+	} catch (err) {
 		LOG("err", logPrefix, "Caching failed");
 	}
 

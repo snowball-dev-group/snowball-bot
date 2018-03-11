@@ -20,8 +20,8 @@ class OwnerCommands extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
-		if(!msg.author) { return; }
-		if(msg.author.id !== $botConfig.botOwner) { return; }
+		if (!msg.author) { return; }
+		if (msg.author.id !== $botConfig.botOwner) { return; }
 		const u = msg.member || msg.author;
 		commandRedirect(msg.content, objectToMap<Function>({
 			"!change_name": async (username) => {
@@ -38,7 +38,7 @@ class OwnerCommands extends Plugin implements IModule {
 							}
 						})
 					});
-				} catch(err) {
+				} catch (err) {
 					msg.react("🚫");
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, u, {
@@ -53,7 +53,7 @@ class OwnerCommands extends Plugin implements IModule {
 			"!change_avy": async () => {
 				try {
 					const resp = await fetch(msg.attachments.first().url);
-					if(resp.status !== 200) {
+					if (resp.status !== 200) {
 						msg.channel.send("", {
 							embed: await generateLocalizedEmbed(EmbedType.Progress, u, "OWNERCMDS_CHANGEAVY_FAULT_RESPERR")
 						});
@@ -66,7 +66,7 @@ class OwnerCommands extends Plugin implements IModule {
 								imageUrl: newUser.displayAvatarURL({ format: "png", size: 1024 })
 							})
 						});
-					} catch(err) {
+					} catch (err) {
 						msg.channel.send("", {
 							embed: await generateLocalizedEmbed(EmbedType.Error, u, {
 								key: "OWNERCMDS_CHANGEAVY_FAULT_SETFAILED",
@@ -76,7 +76,7 @@ class OwnerCommands extends Plugin implements IModule {
 							})
 						});
 					}
-				} catch(err) {
+				} catch (err) {
 					this.log("err", "Error downloading avy");
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, u, {

@@ -73,14 +73,14 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	config: IOWHeroesPluginConfig;
 
 	constructor(config: IOWHeroesPluginConfig) {
-		if(!config) {
+		if (!config) {
 			throw new Error("No config passed");
 		}
 
-		for(const emojiName of Object.keys(config.emojis)) {
+		for (const emojiName of Object.keys(config.emojis)) {
 			const emojiId = config.emojis[emojiName];
 			const emoji = $discordBot.emojis.get(emojiId);
-			if(!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
+			if (!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
 			config.emojis[emojiName] = emoji.toString();
 		}
 
@@ -106,7 +106,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		const args = str.split(";").map(arg => arg.trim());
 
-		if(args.length === 0) {
+		if (args.length === 0) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_ARGS"))
 			});
@@ -120,7 +120,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			battletag: args[0].replace(/\#/i, () => "-")
 		};
 
-		if(!ACCEPTED_REGIONS.includes(info.region)) {
+		if (!ACCEPTED_REGIONS.includes(info.region)) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGREGION"), {
 					fields: [{
@@ -133,7 +133,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentation");
 		}
 
-		if(!ACCEPTED_PLATFORMS.includes(info.platform)) {
+		if (!ACCEPTED_PLATFORMS.includes(info.platform)) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGPLATFORM"), {
 					fields: [{
@@ -146,7 +146,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentantion");
 		}
 
-		if(!ACCEPTED_SORTS.includes(info.sortBy)) {
+		if (!ACCEPTED_SORTS.includes(info.sortBy)) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGSORTMETHOD"), {
 					fields: [{
@@ -159,7 +159,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			throw new Error("Invalid argumentation");
 		}
 
-		if(!info.battletag) {
+		if (!info.battletag) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_NOBTAG"))
 			});
@@ -170,9 +170,9 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		postStatus();
 		try {
 			await getProfile(info.battletag, info.region, info.platform);
-		} catch(err) {
-			if(err instanceof DetailedError) {
-				switch(err.code) {
+		} catch (err) {
+			if (err instanceof DetailedError) {
+				switch (err.code) {
 					case "OWAPI_FETCH_ERR_PROFILE_NOTFOUND": {
 						await statusMsg.edit("", {
 							embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED"))
@@ -199,19 +199,19 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	}
 
 	async getEmbed(info: string | IOverwatchHeroesProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
-		if(typeof info !== "object") {
+		if (typeof info !== "object") {
 			info = JSON.parse(info) as IOverwatchHeroesProfilePluginInfo;
 		}
 
 		let profile: IRegionalProfile | undefined = undefined;
 		try {
 			profile = await getProfile(info.battletag, info.region, info.platform);
-		} catch(err) {
+		} catch (err) {
 			LOG("err", "Error during getting profile", err, info);
 			throw new Error("Can't get profile");
 		}
 
-		if(!profile) {
+		if (!profile) {
 			LOG("err", "Can't get profile: ", info);
 			throw new Error("Exception not catched, but value not present.");
 		}
@@ -224,14 +224,14 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			title: await localizeForUser(caller, "OWPROFILEPLUGIN_HEROES_EMBED_TITLE")
 		};
 
-		if(!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
+		if (!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
 			str += `${this.config.emojis.competitive} __**${tStrs.competitive}**__\n`;
 			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")}\n`;
 		} else {
 			const compOveral = profile.stats.competitive.overall_stats;
 			str += `${this.getTierEmoji(compOveral.tier)} __**${tStrs.competitive}**__\n`;
 			const stats: HeroStats = [];
-			if(info.sortBy === "playtime") {
+			if (info.sortBy === "playtime") {
 				const heroesStats = profile.heroes.stats.competitive;
 				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
 					return {
@@ -241,15 +241,15 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 				}).sort((a, b) => {
 					return b.playtime - a.playtime;
 				});
-				for(const heroPlaytime of sorted) {
-					if(heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
+				for (const heroPlaytime of sorted) {
+					if (heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroPlaytime.hero,
 							stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
 						});
 					}
 				}
-			} else if(info.sortBy === "winrate") {
+			} else if (info.sortBy === "winrate") {
 				const heroesStats = profile.heroes.stats.competitive;
 				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
 					return {
@@ -259,8 +259,8 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 				}).sort((a, b) => {
 					return b.games_won - a.games_won;
 				});
-				for(const heroWins of sorted) {
-					if(heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
+				for (const heroWins of sorted) {
+					if (heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroWins.hero,
 							stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
@@ -275,12 +275,12 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 		str += `\n${this.config.emojis.quickplay} __**${tStrs.quickplay}**__\n`;
 
-		if(!profile.stats.quickplay) {
+		if (!profile.stats.quickplay) {
 			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")}\n`;
 		} else {
 			const stats: HeroStats = [];
 			const heroesStats = profile.heroes.stats.quickplay;
-			if(info.sortBy === "playtime") {
+			if (info.sortBy === "playtime") {
 				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
 					return {
 						hero: heroName,
@@ -289,15 +289,15 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 				}).sort((a, b) => {
 					return b.playtime - a.playtime;
 				});
-				for(const heroPlaytime of sorted) {
-					if(heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
+				for (const heroPlaytime of sorted) {
+					if (heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroPlaytime.hero,
 							stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
 						});
 					}
 				}
-			} else if(info.sortBy === "winrate") {
+			} else if (info.sortBy === "winrate") {
 				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
 					return {
 						hero: heroName,
@@ -306,8 +306,8 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 				}).sort((a, b) => {
 					return b.games_won - a.games_won;
 				});
-				for(const heroWins of sorted) {
-					if(heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
+				for (const heroWins of sorted) {
+					if (heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
 						stats.push({
 							hero: heroWins.hero,
 							stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
@@ -328,7 +328,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	}
 
 	getTierEmoji(tier: Tier) {
-		switch(tier) {
+		switch (tier) {
 			case null: return this.config.emojis.bronze;
 			default: return this.config.emojis[tier];
 		}
@@ -336,7 +336,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 	async getString(heroesStats: HeroStats, caller: GuildMember) {
 		let str = "";
-		for(const stat of heroesStats) {
+		for (const stat of heroesStats) {
 			str += `${this.getHeroIcon(stat.hero)} `;
 			str += await this.getHeroString(stat.hero, caller);
 			str += ` - ${stat.stat}\n`;
@@ -360,13 +360,13 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	async getHeroString(hero: Hero, caller: GuildMember) {
 		try {
 			return await localizeForUser(caller, `OVERWATCH_HERO_${hero}`.toUpperCase());
-		} catch(err) {
+		} catch (err) {
 			return this.getFallbackHeroString(hero);
 		}
 	}
 
 	getFallbackHeroString(hero: Hero) {
-		switch(hero) {
+		switch (hero) {
 			default: return hero.charAt(0).toUpperCase() + hero.slice(1);
 			case "lucio": return "Lúcio";
 			case "torbjorn": return "Torbjörn";

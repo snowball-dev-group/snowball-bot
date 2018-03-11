@@ -122,13 +122,13 @@ export class Typer {
      */
     static checkValueBySchema(schema: ISchemaObject, val: any, path: string) {
         // preparing
-        if(Typer.isUndefined(schema.optional)) {
+        if (Typer.isUndefined(schema.optional)) {
             schema.optional = false;
         }
 
-        if(schema.type !== "any") {
-            if(Typer.isUndefined(val)) {
-                if(!schema.optional) {
+        if (schema.type !== "any") {
+            if (Typer.isUndefined(val)) {
+                if (!schema.optional) {
                     // -> Not optional, throw
                     throw new TyperError("Value not provided, when required by schema", path, {
                         optional: false,
@@ -142,7 +142,7 @@ export class Typer {
 
             const valType = typeof val;
 
-            if(valType !== schema.type) {
+            if (valType !== schema.type) {
                 throw new TyperError("Invalid type of object", path, {
                     expectedType: schema.type,
                     actualType: valType,
@@ -151,20 +151,20 @@ export class Typer {
             }
 
             // => Arrays
-            if(Typer.isUndefined(schema.isArray)) {
-                if(!Typer.isUndefined(schema.instanceOf) && schema.instanceOf === Array) {
+            if (Typer.isUndefined(schema.isArray)) {
+                if (!Typer.isUndefined(schema.instanceOf) && schema.instanceOf === Array) {
                     schema.isArray = true;
                 }
             }
 
             // => => `isArray`: `isObject` auto-set
-            if(schema.isArray) {
+            if (schema.isArray) {
                 schema.isObject = true;
             }
 
             // => Objects
-            if(Typer.isUndefined(schema.isObject)) {
-                if(!Typer.isUndefined(schema.instanceOf) && schema.instanceOf === Object) {
+            if (Typer.isUndefined(schema.isObject)) {
+                if (!Typer.isUndefined(schema.instanceOf) && schema.instanceOf === Object) {
                     schema.isObject = true;
                 } else {
                     schema.isObject = schema.type === "object";
@@ -172,12 +172,12 @@ export class Typer {
             }
 
             // => => `isObject`: `isNumber` auto-set
-            if(schema.isObject) {
+            if (schema.isObject) {
                 schema.isNumber = false;
             }
 
             // => => Checking if `isObject` but `val` is not Object
-            if(schema.isObject && !Typer.isObject(val)) {
+            if (schema.isObject && !Typer.isObject(val)) {
                 throw new TyperError("Value is not object, when required to be by schema", path, {
                     isNotObject: true,
                     schemaRef: schema
@@ -185,7 +185,7 @@ export class Typer {
             }
 
             // => => Checking if `isArray` but `val` is not Array
-            if(schema.isArray && !Array.isArray(val)) {
+            if (schema.isArray && !Array.isArray(val)) {
                 throw new TyperError("Value is not array, when required to be by schema", path, {
                     isNotArray: true,
                     schemaRef: schema
@@ -193,7 +193,7 @@ export class Typer {
             }
 
             // => => Checking if `instanceOf` but `val` is not `instanceof schemaInfo.instanceOf`
-            if(schema.instanceOf && !(val instanceof schema.instanceOf)) {
+            if (schema.instanceOf && !(val instanceof schema.instanceOf)) {
                 throw new TyperError("Invalid instance of object", path, {
                     expectedInstance: schema.instanceOf,
                     actualInstance: val.constructor,
@@ -202,7 +202,7 @@ export class Typer {
             }
 
             // => => Checking if `val` is not NaN (if it's number ofc)
-            if(valType === "number" && schema.notNaN && isNaN(val)) {
+            if (valType === "number" && schema.notNaN && isNaN(val)) {
                 throw new TyperError("Value is NaN when required to be number by schema", path, {
                     isNaN: true,
                     schemaRef: schema
@@ -210,7 +210,7 @@ export class Typer {
             }
 
             // => => Checking if `val` is fails at `regexp` test
-            if(valType === "string" && schema.regexp && !schema.regexp.test(val)) {
+            if (valType === "string" && schema.regexp && !schema.regexp.test(val)) {
                 throw new TyperError("Value failed at RegExp test", path, {
                     isRegExpFailed: true,
                     schemaRef: schema
@@ -218,18 +218,18 @@ export class Typer {
             }
 
             // => => Checking if `isArray && schemaInfo.elementSchema` but `obj[*]` is not matches `schemaInfo.elementSchema`
-            if(schema.isArray && schema.elementSchema) {
-                for(const o in val) {
+            if (schema.isArray && schema.elementSchema) {
+                for (const o in val) {
                     Typer.checkValueBySchema(schema.elementSchema, val[o], `${path}[${o}]`);
                 }
-            } else if(schema.isObject && schema.schema) {
+            } else if (schema.isObject && schema.schema) {
                 Typer.checkObjectBySchema(schema.schema, val, `${path}`);
             }
         }
     }
 
     static checkObjectBySchema(schema: ISchema, obj: object, deepPath: string = "obj") {
-        for(const property in schema) {
+        for (const property in schema) {
             const propSchema = schema[property];
             Typer.checkValueBySchema(propSchema, obj[property], `${deepPath}.${property}`);
         }

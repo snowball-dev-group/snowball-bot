@@ -24,7 +24,7 @@ class Ping extends Plugin implements IModule {
 
 	public async init() {
 		const messagesFlowsKeeper = $snowball.modLoader.findKeeper<MessagesFlows>("snowball.core_features.messageflows");
-		if(!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
+		if (!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
 
 		messagesFlowsKeeper.onInit((flowsMan: MessagesFlows) => {
 			return this.flowHandler = flowsMan.watchForMessages((ctx) => this.onMessage(ctx), ALLOWED_CMDS);
@@ -32,8 +32,8 @@ class Ping extends Plugin implements IModule {
 	}
 
 	async onMessage(ctx: IMessageFlowContext) {
-		if(!ctx.parsed) { return; }
-		if(!ALLOWED_CMDS.includes(ctx.parsed.command)) { return; }
+		if (!ctx.parsed) { return; }
+		if (!ALLOWED_CMDS.includes(ctx.parsed.command)) { return; }
 
 		const userLang = await getUserLanguage(ctx.message.member || ctx.message.member);
 
@@ -62,7 +62,7 @@ class Ping extends Plugin implements IModule {
 	}
 
 	async unload() {
-		if(this.flowHandler) {
+		if (this.flowHandler) {
 			this.flowHandler.unhandle();
 		}
 		this.unhandleEvents();

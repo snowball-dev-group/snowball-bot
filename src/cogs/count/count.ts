@@ -23,7 +23,7 @@ class Count extends Plugin implements IModule {
 		this.dbClient = getDB();
 
 		this.dbClient.schema.hasTable("count").then(itHas => {
-			if(itHas) {
+			if (itHas) {
 				this.log("ok", "DB: we have table `count`, can safely continue work...");
 				this.dbInitialized = true;
 				return;
@@ -45,18 +45,18 @@ class Count extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
-		if(msg.channel.id !== "295643316610007050") { return; }
-		if(!msg.author) { return; }
-		if(!this.dbInitialized) { return; }
-		if(msg.channel.type === "dm") { return; }
-		if(!msg.content) { msg.delete(); return; }
+		if (msg.channel.id !== "295643316610007050") { return; }
+		if (!msg.author) { return; }
+		if (!this.dbInitialized) { return; }
+		if (msg.channel.type === "dm") { return; }
+		if (!msg.content) { msg.delete(); return; }
 		const override = msg.content.startsWith("!");
-		if(!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
+		if (!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
 
-		if(override) {
-			if(msg.author.id === $botConfig.botOwner) {
+		if (override) {
+			if (msg.author.id === $botConfig.botOwner) {
 				const mNumber = parseInt(msg.content.slice(1), 10);
-				if(isNaN(mNumber)) { msg.delete(); return; }
+				if (isNaN(mNumber)) { msg.delete(); return; }
 				await this.dbClient("count").insert({
 					author: msg.author.id,
 					count: mNumber,
@@ -71,16 +71,16 @@ class Count extends Plugin implements IModule {
 
 		const row = await this.dbClient("count").orderBy("count", "DESC").first("count", "author", "date");
 
-		if(!row) { this.log("err", "Not found element"); return; }
+		if (!row) { this.log("err", "Not found element"); return; }
 
 		const rowDate = parseInt(row.date, 10);
 
-		if(row.author === msg.author.id && ((Date.now() - rowDate) / 1000) < 180) { msg.delete(); return; }
+		if (row.author === msg.author.id && ((Date.now() - rowDate) / 1000) < 180) { msg.delete(); return; }
 
 		const mNumber = parseInt(msg.content, 10);
-		if(isNaN(mNumber)) { msg.delete(); return; }
+		if (isNaN(mNumber)) { msg.delete(); return; }
 
-		if((row.count + 1) !== mNumber) {
+		if ((row.count + 1) !== mNumber) {
 			msg.delete();
 			return;
 		}
@@ -91,7 +91,7 @@ class Count extends Plugin implements IModule {
 				count: mNumber,
 				date: `${Date.now()}`
 			});
-		} catch(err) {
+		} catch (err) {
 			this.log("err", "Can't push number to DB", err);
 			try {
 				await msg.react("❌");
@@ -99,7 +99,7 @@ class Count extends Plugin implements IModule {
 					topic: ":warning: База данных не отвечает..."
 				});
 				this.log("ok", "Successfully written error message to description and reacted to message");
-			} catch(err) {
+			} catch (err) {
 				this.log("err", "Cannot react to message or edit description of channel: ", err);
 			}
 		}
@@ -108,11 +108,11 @@ class Count extends Plugin implements IModule {
 			await (msg.channel as TextChannel).edit({
 				topic: `:v: Последнее число: ${convertNumbers(mNumber)}`
 			});
-		} catch(err) {
+		} catch (err) {
 			this.log("err", "Can't change description of channel", err);
 		}
 
-		if(Math.floor(Math.random() * 6) > 4 && row.author !== msg.client.user.id) {
+		if (Math.floor(Math.random() * 6) > 4 && row.author !== msg.client.user.id) {
 			msg.channel.send((mNumber + 1).toString());
 		}
 	}

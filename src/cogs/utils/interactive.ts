@@ -6,26 +6,26 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 		_confirmationMessage = await originalMsg.channel.send("", {
 			embed
 		}) as Message;
-	} catch(err) {
+	} catch (err) {
 		return false;
 	}
 
-	if(!_confirmationMessage) {
+	if (!_confirmationMessage) {
 		return false;
 	}
 
 	try {
 		await _confirmationMessage.react("✅");
 		await _confirmationMessage.react("❌");
-	} catch(err) {
+	} catch (err) {
 		return false;
 	}
 
 	let reaction: MessageReaction | undefined = undefined;
 	try {
 		reaction = (await _confirmationMessage.awaitReactions((reaction: MessageReaction, user: User) => {
-			if(user.id !== originalMsg.author.id) { return false; }
-			if(reaction.emoji.name !== "✅" && reaction.emoji.name !== "❌") {
+			if (user.id !== originalMsg.author.id) { return false; }
+			if (reaction.emoji.name !== "✅" && reaction.emoji.name !== "❌") {
 				return false;
 			}
 			return true;
@@ -36,13 +36,13 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 				errors: ["time"],
 				time: 60000
 			})).first();
-	} catch(err) {
+	} catch (err) {
 		reaction = undefined;
 	}
 
 	_confirmationMessage.delete();
 
-	if(!reaction || reaction.emoji.name !== "✅") {
+	if (!reaction || reaction.emoji.name !== "✅") {
 		return false;
 	}
 
@@ -64,17 +64,17 @@ export async function createCustomizeConfirmationMessage(embed, channel: TextCha
 	}) as Message;
 
 	try {
-		for(let i = 0, rl = rules.variants.length; i < rl; i++) {
+		for (let i = 0, rl = rules.variants.length; i < rl; i++) {
 			await _confirmationMessage.react(rules.variants[i]);
 		}
-	} catch(err) {
+	} catch (err) {
 		_confirmationMessage.delete();
 		throw new Error("Cannot react!");
 	}
 
 	return _confirmationMessage.awaitReactions((reaction: MessageReaction, user: User) => {
-		if(!rules.variants.includes(reaction.emoji.name)) { return false; }
-		if(rules.whoCanReact) {
+		if (!rules.variants.includes(reaction.emoji.name)) { return false; }
+		if (rules.whoCanReact) {
 			return !!rules.whoCanReact.find(u => u.id === user.id);
 		}
 		return true;

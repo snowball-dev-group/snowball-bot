@@ -24,11 +24,11 @@ class ReverseLayout extends Plugin implements IModule {
 	}
 
 	reverse(content: string, firstLine: string, secondLine: string): string {
-		if(!content) { return ""; }
+		if (!content) { return ""; }
 		let result = "";
 		const lineFrom = firstLine + secondLine;
 		const lineTo = secondLine + firstLine;
-		for(let i = 0, cl = content.length; i < cl; i++) {
+		for (let i = 0, cl = content.length; i < cl; i++) {
 			const pos = lineFrom.indexOf(content[i]);
 			result = result + ((pos < 0) ? content[i] : lineTo[pos]);
 		}
@@ -36,19 +36,19 @@ class ReverseLayout extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
-		if(!msg.content) { return; }
-		if(msg.content !== "!fl") { return; }
+		if (!msg.content) { return; }
+		if (msg.content !== "!fl") { return; }
 		const user = msg.member || msg.author;
 
 		// delete msg with command
-		if(!(msg.channel instanceof TextChannel)) { return; }
+		if (!(msg.channel instanceof TextChannel)) { return; }
 		try {
 			await msg.delete();
-		} catch(err) {
+		} catch (err) {
 			this.log("err", "Can't delete message with command...", err);
 		}
 
-		if(await localizeForUser(user, "+FL_SUPPORTED") === "false") {
+		if (await localizeForUser(user, "+FL_SUPPORTED") === "false") {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_NOTSUPPORTED")
 			});
@@ -57,7 +57,7 @@ class ReverseLayout extends Plugin implements IModule {
 
 		// fetch last messages in channel
 		const messages = await msg.channel.messages.fetch();
-		if(!messages) {
+		if (!messages) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_CANTFETCH")
 			});
@@ -66,13 +66,13 @@ class ReverseLayout extends Plugin implements IModule {
 
 		// find last message by this author
 		const originalMessage = messages.find(x => (x.member || x.author).id === user.id);
-		if(!originalMessage) {
+		if (!originalMessage) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_NOMESSAGES")
 			});
 			return;
 		}
-		if(!originalMessage.content) {
+		if (!originalMessage.content) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_EMPTYMESSAGE")
 			});
@@ -83,7 +83,7 @@ class ReverseLayout extends Plugin implements IModule {
 		// fetch replace lines
 		let lineLanguage = await localizeForUser(user, "+FL_REPLACELINE_LOCALIZED");
 		let lineEnglish = await localizeForUser(user, "+FL_REPLACELINE_ENGLISH");
-		if(lineLanguage.length !== lineEnglish.length) {
+		if (lineLanguage.length !== lineEnglish.length) {
 			const newLength = Math.min(lineLanguage.length, lineEnglish.length);
 			lineLanguage = lineLanguage.substring(0, newLength);
 			lineEnglish = lineEnglish.substring(0, newLength);
@@ -116,14 +116,14 @@ class ReverseLayout extends Plugin implements IModule {
 					ts: msg.createdAt
 				})
 			});
-		} catch(err) {
+		} catch (err) {
 			this.log("err", "Damn! FL can't send message", err);
 			return;
 		}
 
 		try {
 			await originalMessage.delete();
-		} catch(err) {
+		} catch (err) {
 			this.log("err", "Can't delete original message...", err);
 		}
 	}

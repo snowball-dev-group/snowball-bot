@@ -70,21 +70,21 @@ export class Localizer {
 	constructor(name: string, opts: ILocalizerOptions) {
 		this._log = getLogger(name);
 
-		if(!opts.default_language) {
+		if (!opts.default_language) {
 			opts.default_language = this._sourceLang;
-		} else if(opts.default_language !== opts.source_language) {
+		} else if (opts.default_language !== opts.source_language) {
 			this._fallbackQueue.push(opts.default_language);
 		}
 
 		{
 			const covgLogDisabledType = typeof opts.disable_coverage_log;
-			switch(covgLogDisabledType) {
+			switch (covgLogDisabledType) {
 				case "object": {
-					if(!Array.isArray(opts.disable_coverage_log)) {
+					if (!Array.isArray(opts.disable_coverage_log)) {
 						throw new Error("`disable_coverage_log` should be either array or boolean");
 					}
 					const possibleLanguages = [opts.source_language];
-					if(opts.default_language && opts.default_language !== opts.source_language) {
+					if (opts.default_language && opts.default_language !== opts.source_language) {
 						possibleLanguages.push(opts.default_language);
 					}
 					opts.disable_coverage_log = opts.disable_coverage_log.filter(possibleLanguages.includes);
@@ -105,32 +105,32 @@ export class Localizer {
 	 * Initiates all loading and checks
 	 */
 	public async init() {
-		if(this._initDone) { return; }
+		if (this._initDone) { return; }
 		try {
 			this._langMaps = Object.create(null);
 
 			this._log("info", "Started loading of language files");
 
-			for(const lang of this._opts.languages) {
-				if(this._langMaps[lang]) { throw new Error(`Language "${lang}" is already registered`); }
+			for (const lang of this._opts.languages) {
+				if (this._langMaps[lang]) { throw new Error(`Language "${lang}" is already registered`); }
 
 				let stringsMap: IStringsMap = Object.create(null);
 				try {
 					stringsMap = await this.loadStringsMap(path.join(this._opts.directory, `${lang}.json`));
-				} catch(err) {
+				} catch (err) {
 					this._log("err", "Could not read", lang, "language file");
 					continue;
 				}
 
 				let rejectLoading = false, requiredMetaKey = "";
-				for(requiredMetaKey of META_KEYS) {
-					if(!stringsMap[requiredMetaKey]) {
+				for (requiredMetaKey of META_KEYS) {
+					if (!stringsMap[requiredMetaKey]) {
 						rejectLoading = true;
 						break;
 					}
 				}
 
-				if(rejectLoading) {
+				if (rejectLoading) {
 					this._log("err", "Could not load", lang, " language file. It misses", requiredMetaKey, "meta key, which is required");
 					continue;
 				}
@@ -143,18 +143,18 @@ export class Localizer {
 
 			this._log("info", "Requesting source language");
 			const defaultLanguage = this._langMaps[this._opts.source_language];
-			if(!defaultLanguage) {
+			if (!defaultLanguage) {
 				throw new Error("Source language not found");
 			}
 
 			this._log("info", "Calculating language files coverages");
 			await this.calculateCoverages();
-		} catch(err) {
+		} catch (err) {
 			this._log("err", "Error at initializing localizer", err);
 			return;
 		}
 
-		if(!this._langMaps[this._opts.source_language]) {
+		if (!this._langMaps[this._opts.source_language]) {
 			const errorStr = "Could not find source (fallback) language";
 			this._log("err", errorStr);
 			throw new Error(errorStr);
@@ -178,16 +178,16 @@ export class Localizer {
 
 		const keys = (langNames || this._langMaps);
 
-		for(const langName in keys) {
+		for (const langName in keys) {
 			const langFile = this._langMaps[langName]!;
 
-			if(langName === this._sourceLang) {
+			if (langName === this._sourceLang) {
 				langFile["+COVERAGE"] = "100";
 				results[langName] = 100;
 				continue;
 			}
 
-			if(!langFile) { continue; }
+			if (!langFile) { continue; }
 
 			results[langName] = await this.calculateCoverage(langFile, sourceLanguage, log);
 		}
@@ -199,9 +199,9 @@ export class Localizer {
 		let isSourceLanguage = false;
 		let knownName: string | undefined;
 
-		if(typeof langFile === "string") {
-			if(_langName) {
-				if(_langName !== langFile) {
+		if (typeof langFile === "string") {
+			if (_langName) {
+				if (_langName !== langFile) {
 					// someone is trying to fool us?
 					throw new Error("Wrong language specified");
 				}
@@ -211,14 +211,14 @@ export class Localizer {
 			isSourceLanguage = langFile === this.sourceLanguage;
 			langFile = this._langMaps[langFile]!;
 
-			if(!langFile) { throw new Error("Language name with this name is not found"); }
+			if (!langFile) { throw new Error("Language name with this name is not found"); }
 		}
 
-		if(!isSourceLanguage && sourceLanguage) {
+		if (!isSourceLanguage && sourceLanguage) {
 			isSourceLanguage = langFile === sourceLanguage;
 		}
 
-		if(isSourceLanguage) {
+		if (isSourceLanguage) {
 			langFile["+COVERAGE"] = "100";
 			return 100;
 		}
@@ -226,9 +226,9 @@ export class Localizer {
 		const coverage = await this.testCoverage(langFile, (sourceLanguage || this._langMaps[this.sourceLanguage]), knownName);
 
 		langFile["+COVERAGE"] = `${coverage}`;
-		if(langFile["+COMMUNITY_MANAGED"] !== "true") { langFile["+COMMUNITY_MANAGED"] = "false"; }
+		if (langFile["+COMMUNITY_MANAGED"] !== "true") { langFile["+COMMUNITY_MANAGED"] = "false"; }
 
-		if(log) { this._log("ok", `- ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${coverage}`); }
+		if (log) { this._log("ok", `- ${langFile["+NAME"]} (${langFile["+COUNTRY"]}) - ${coverage}`); }
 
 		return coverage;
 	}
@@ -240,13 +240,13 @@ export class Localizer {
 	 */
 	private async testCoverage(langFile: IStringsMap, defaultLanguage = this._langMaps[this._opts.source_language]!, _langName?: string) {
 		let unique = 0;
-		for(const key in defaultLanguage) {
+		for (const key in defaultLanguage) {
 			// ignored keys
-			if(DYNAMIC_META_KEYS.includes(key)) { unique += 1; continue; }
+			if (DYNAMIC_META_KEYS.includes(key)) { unique += 1; continue; }
 			// "" for empty crowdin translations
-			if(typeof langFile[key] === "string" && langFile[key] !== "") {
+			if (typeof langFile[key] === "string" && langFile[key] !== "") {
 				unique += +1;
-			} else if(!this._isCoverageDisabledFor(_langName)) {
+			} else if (!this._isCoverageDisabledFor(_langName)) {
 				this._log("warn", `String "${key}" not translated in lang ${langFile["+NAME"]}`);
 			}
 		}
@@ -258,11 +258,11 @@ export class Localizer {
 	private readonly _coverageDisablingSet;
 
 	private _isCoverageDisabledFor(langName?: string) {
-		return this._coverageDisabledGlobally || (this._coverageDisablingSet ? ( // is set?
-			langName ? ( // do we at all have lang name?
+		return this._coverageDisabledGlobally || (this._coverageDisablingSet ? (// is set?
+			langName ? (// do we at all have lang name?
 				this._opts.disable_coverage_log && // it may be set as false here
 				// if not false - searching in array
-				((<string[]>this._opts.disable_coverage_log).includes(langName))
+				((<string[]> this._opts.disable_coverage_log).includes(langName))
 			) : false // if not - we don't need to log it
 		) : false); // if not set - false
 	}
@@ -278,18 +278,18 @@ export class Localizer {
 		const langMap = this._langMaps[langName];
 		const sourceLanguage = langName !== this._sourceLang ? this._langMaps[this._sourceLang] : undefined;
 
-		if(!langMap) { throw new Error(`Language "${langName}" is not loaded yet`); }
+		if (!langMap) { throw new Error(`Language "${langName}" is not loaded yet`); }
 
-		if(typeof langFile !== "object" || Array.isArray(langFile)) {
+		if (typeof langFile !== "object" || Array.isArray(langFile)) {
 			langFile = await this.loadStringsMap(langFile);
 		}
 
-		for(const key in langFile) {
+		for (const key in langFile) {
 			let value = langFile[key];
 			const valueType = typeof value;
 
-			if(valueType !== "string") {
-				if(valueType === "number" || valueType === "boolean") {
+			if (valueType !== "string") {
+				if (valueType === "number" || valueType === "boolean") {
 					value = String(value);
 				} else {
 					this._log("info", `Invalid type of "${key}" - "${valueType}"`);
@@ -297,11 +297,11 @@ export class Localizer {
 				}
 			}
 
-			if(sourceLanguage && !sourceLanguage[key]) {
+			if (sourceLanguage && !sourceLanguage[key]) {
 				this._log("warn", `"${key}" is not found in source language yet.`);
 			}
 
-			if(langMap[key] && !this._opts.extendOverride) {
+			if (langMap[key] && !this._opts.extendOverride) {
 				this._log("info", `Don't override "${key}" in "${langName}" as override is set to \`false\``);
 				continue;
 			}
@@ -322,22 +322,22 @@ export class Localizer {
 	 * @returns List of all imported keys to all languages
 	 */
 	public async extendLanguages(languagesTree: IHashMap<IStringsMap | string> | string, toLangCode?: LangFileToCodeFunction, filter?: FilterType, throwOnError = false) {
-		if(typeof languagesTree !== "object") { languagesTree = await this.directoryToLanguagesTree(languagesTree, toLangCode, filter, throwOnError); }
+		if (typeof languagesTree !== "object") { languagesTree = await this.directoryToLanguagesTree(languagesTree, toLangCode, filter, throwOnError); }
 		const importedKeys: string[] = [];
 
 		const sourceLangInTree = languagesTree[this._sourceLang];
-		if(sourceLangInTree) {
+		if (sourceLangInTree) {
 			// if we have source language, loading it right before others
-			for(const key of await this.extendLanguage(this._sourceLang, sourceLangInTree)) {
-				if(!importedKeys.includes(key)) { importedKeys.push(key); }
+			for (const key of await this.extendLanguage(this._sourceLang, sourceLangInTree)) {
+				if (!importedKeys.includes(key)) { importedKeys.push(key); }
 			}
 		}
 
-		for(const langName in languagesTree) {
-			if(langName === this._sourceLang) { continue; } // ↖ we extended it already
+		for (const langName in languagesTree) {
+			if (langName === this._sourceLang) { continue; } // ↖ we extended it already
 			const langFile = languagesTree[langName];
-			for(const key of await this.extendLanguage(langName, langFile)) {
-				if(!importedKeys.includes(key)) { importedKeys.push(key); }
+			for (const key of await this.extendLanguage(langName, langFile)) {
+				if (!importedKeys.includes(key)) { importedKeys.push(key); }
 			}
 		}
 
@@ -351,10 +351,10 @@ export class Localizer {
 	 */
 	public async pruneLanguages(keys: string[]) {
 		keys = keys.filter(key => !PRUNE_BANNED_KEYS.includes(key));
-		for(const langName in this._langMaps) {
+		for (const langName in this._langMaps) {
 			const langFile = this._langMaps[langName];
-			if(!langFile) { continue; }
-			for(const key of keys) { langFile[key] = undefined; }
+			if (!langFile) { continue; }
+			for (const key of keys) { langFile[key] = undefined; }
 		}
 	}
 
@@ -364,11 +364,11 @@ export class Localizer {
 	 * @returns Strings map
 	 */
 	public async loadStringsMap(fileName: string | string[]) {
-		if(Array.isArray(fileName)) { fileName = path.join(...fileName); }
+		if (Array.isArray(fileName)) { fileName = path.join(...fileName); }
 		const content = await fs.readFile(fileName, { "encoding": "utf8" });
 		const parsed = JSON.parse(content);
-		if(typeof parsed !== "object") { throw new Error(`Invalid type for strings map in file "${fileName}"`); }
-		return <IStringsMap>parsed;
+		if (typeof parsed !== "object") { throw new Error(`Invalid type for strings map in file "${fileName}"`); }
+		return <IStringsMap> parsed;
 	}
 
 	/**
@@ -379,21 +379,21 @@ export class Localizer {
 	 * @param throwOnError Throw error if reading of file in directory fails
 	 */
 	public async directoryToLanguagesTree(directory: string | string[], toLangCode?: LangFileToCodeFunction, filter?: FilterType, throwOnError = false) {
-		if(Array.isArray(directory)) { directory = path.join(...directory); }
+		if (Array.isArray(directory)) { directory = path.join(...directory); }
 
 		let fileNames = await this.recursiveReadDirectory(directory);
-		if(filter) { fileNames = typeof filter === "string" || Array.isArray(filter) ? micromatch(fileNames, filter) : filter(fileNames); }
+		if (filter) { fileNames = typeof filter === "string" || Array.isArray(filter) ? micromatch(fileNames, filter) : filter(fileNames); }
 
-		if(!toLangCode) { toLangCode = filename => path.basename(filename, path.extname(filename)); }
+		if (!toLangCode) { toLangCode = filename => path.basename(filename, path.extname(filename)); }
 
 		const tree: IHashMap<IStringsMap> = Object.create(null);
 
-		for(const fileName of fileNames) {
+		for (const fileName of fileNames) {
 			let stringsMap: IStringsMap;
 			try {
 				stringsMap = await this.loadStringsMap(path.join(directory, fileName));
-			} catch(err) {
-				if(throwOnError) { throw err; }
+			} catch (err) {
+				if (throwOnError) { throw err; }
 				this._log("err", `[Load Strings Map by Tree] Failed to load ${fileName}`);
 				continue;
 			}
@@ -410,20 +410,20 @@ export class Localizer {
 	 * @param recursiveCall Is this recursive call? If you set this to true, you'll get `dirName` included
 	 */
 	private async recursiveReadDirectory(dirName: string | string[], recursiveCall = false): Promise<string[]> {
-		if(Array.isArray(dirName)) { dirName = path.join(...dirName); }
+		if (Array.isArray(dirName)) { dirName = path.join(...dirName); }
 
 		const result: string[] = [];
 
 		const files = await fs.readdir(dirName);
 
-		for(const rawFilePath of files) {
+		for (const rawFilePath of files) {
 			const filePath = path.join(dirName, rawFilePath);
 			const stat = await fs.stat(filePath);
-			if(stat.isFile()) {
+			if (stat.isFile()) {
 				result.push(recursiveCall ? filePath : this._sliceWithSeparator(filePath, dirName));
-			} else if(stat.isDirectory()) {
+			} else if (stat.isDirectory()) {
 				const files = await this.recursiveReadDirectory(filePath, true);
-				for(const file of files) { result.push(recursiveCall ? file : this._sliceWithSeparator(file, dirName)); }
+				for (const file of files) { result.push(recursiveCall ? file : this._sliceWithSeparator(file, dirName)); }
 			}
 		}
 
@@ -453,11 +453,11 @@ export class Localizer {
 	 */
 	public getString(preferedLang: string = this._opts.source_language, key: string, fallback: boolean = true): string {
 		const queue = fallback ? [preferedLang].concat(this._fallbackQueue) : [preferedLang];
-		for(const lang of queue) {
+		for (const lang of queue) {
 			const langMap = this._langMaps[lang];
-			if(!langMap) { throw new Error(`Language "${lang}" not found`); }
+			if (!langMap) { throw new Error(`Language "${lang}" not found`); }
 			const foundStr = langMap[key];
-			if(foundStr && foundStr !== "") { return foundStr; }
+			if (foundStr && foundStr !== "") { return foundStr; }
 		}
 		const errStr = fallback ? `String "${key}" not found nor in "${preferedLang}", nor in default & source languages` : `String "${key}" not found in "${preferedLang}"`;
 		this._log("err", errStr);
@@ -473,7 +473,7 @@ export class Localizer {
 	 */
 	public getFormattedString(lang: string = this.sourceLanguage, key: string, variables: IFormatMessageVariables, fallback: boolean = true) {
 		const str = this.getString(lang, key, fallback);
-		return <string>formatMessage(str, variables, lang);
+		return <string> formatMessage(str, variables, lang);
 	}
 
 	/**
@@ -484,10 +484,10 @@ export class Localizer {
 	 */
 	public humanizeDuration(lang: string = this.sourceLanguage, time: number, unit: HumanizerUnitToConvert = "ms", options?: IHumanizerOptionsOverrides) {
 		const humanizer = this._humanizersMap[lang];
-		if(!humanizer) { throw new Error("Could not find humanizer in selected language"); }
+		if (!humanizer) { throw new Error("Could not find humanizer in selected language"); }
 
-		if(unit !== "ms") {
-			switch(unit) {
+		if (unit !== "ms") {
+			switch (unit) {
 				// these only units convertable
 				// others are dynamic
 				case "s": { time *= 1000; } break;
@@ -528,7 +528,7 @@ export class Localizer {
 			s: (seconds: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:SECONDS", { seconds }),
 			ms: (milliseconds: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:MILLISECONDS", { milliseconds })
 		};
-		if(languageOverride) { defaultDefinition = { ...defaultDefinition, ...languageOverride }; }
+		if (languageOverride) { defaultDefinition = { ...defaultDefinition, ...languageOverride }; }
 		return new Humanizer(defaultDefinition, defaultOptions);
 	}
 }

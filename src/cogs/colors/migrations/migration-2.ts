@@ -18,14 +18,14 @@ class NoES6Maps implements IColorfulMigration {
 
         this.log("info", "Converting old values to new table performing convertation");
         const elements = await db(oldName).select() as Array<{ guildId: string; rolePrefixes: string; }>;
-        for(const element of elements) {
+        for (const element of elements) {
             const parsedElem = {
                 guildId: element.guildId,
                 rolePrefixes: new Map<string, IColorfulGuildColorInfo>(JSON.parse(element.rolePrefixes))
             };
 
             const hashMap: IHashMap<IColorfulGuildColorInfo> = Object.create(null);
-            for(const [colorName, colorfulInfo] of parsedElem.rolePrefixes) {
+            for (const [colorName, colorfulInfo] of parsedElem.rolePrefixes) {
                 hashMap[colorName] = colorfulInfo;
             }
 

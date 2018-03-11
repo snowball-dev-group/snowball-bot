@@ -88,27 +88,27 @@ class ModToolsArchive extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
-		if(this._options.bots !== undefined && !this._options.bots && msg.author.bot) { return; }
+		if (this._options.bots !== undefined && !this._options.bots && msg.author.bot) { return; }
 
-		if(this._options.banned) {
-			if(this._options.banned.authors && this._options.banned.authors.includes(msg.author.id)) {
+		if (this._options.banned) {
+			if (this._options.banned.authors && this._options.banned.authors.includes(msg.author.id)) {
 				return;
-			} else if(this._options.banned.channels && this._options.banned.channels.includes(msg.channel.id)) {
+			} else if (this._options.banned.channels && this._options.banned.channels.includes(msg.channel.id)) {
 				return;
-			} else if(this._options.banned.guilds && !!msg.guild && this._options.banned.guilds.includes(msg.guild.id)) {
+			} else if (this._options.banned.guilds && !!msg.guild && this._options.banned.guilds.includes(msg.guild.id)) {
 				return;
 			}
 		}
 
 		try {
 			await this._recordMessage(msg);
-		} catch(err) {
+		} catch (err) {
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			this._log("err", "Failed to push message", err);
 		}
 		try {
 			await this.handleCommand(msg);
-		} catch(err) {
+		} catch (err) {
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			this._log("err", "Handling commands failure", err);
 		}
@@ -116,11 +116,11 @@ class ModToolsArchive extends Plugin implements IModule {
 
 	private async handleCommand(msg: Message) {
 		const prefix = PREFIXES.find(prefix => msg.content.startsWith(prefix));
-		if(!prefix) { return; }
+		if (!prefix) { return; }
 
 		const parsed = parseCmd(msg.content);
 
-		switch(prefix) {
+		switch (prefix) {
 			case PREFIX: return msg.member.permissions.has("MANAGE_MESSAGES") && this.subcmd_archive(msg, parsed);
 			case MSG_PREFIX: return this.subcmd_message(msg, parsed);
 			case ARCHIVE_ENABLING_PREFIX: return msg.member.permissions.has(["MANAGE_GUILD", "MANAGE_MESSAGES"]) && this.subcmd_archiveStatus(msg, parsed);
@@ -129,7 +129,7 @@ class ModToolsArchive extends Plugin implements IModule {
 
 	private async subcmd_message(msg: Message, parsed: ICommandParseResult) {
 		const msgId = parsed.subCommand;
-		if(msg.content === PREFIX || !msgId) {
+		if (msg.content === PREFIX || !msgId) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "ARCHIVE_MESSAGE_HELP",
@@ -140,7 +140,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		if(!SNOWFLAKE_REGEXP.test(msgId)) {
+		if (!SNOWFLAKE_REGEXP.test(msgId)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_INVALID_ID")
 			});
@@ -148,35 +148,35 @@ class ModToolsArchive extends Plugin implements IModule {
 
 		const message = await this._controller.getMessage(msgId);
 
-		if(!message) {
+		if (!message) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOTFOUND")
 			});
 		}
 
-		if(message.guildId !== msg.guild.id) {
+		if (message.guildId !== msg.guild.id) {
 			return;
 		}
 
 		const channel = <TextChannel> await this._resolveGuildChannel(message.channelId, msg.guild);
 
-		if(!channel) {
+		if (!channel) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_CHANNELNOTFOUND")
 			});
 		}
 
-		if(!channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"])) {
+		if (!channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"])) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOPERMISSIONS")
 			});
 		}
 
 		const originalMessage = await (async () => {
-			try { return await channel.messages.fetch(message.messageId); } catch(err) { return undefined; }
+			try { return await channel.messages.fetch(message.messageId); } catch (err) { return undefined; }
 		})();
 
-		if(!originalMessage && !msg.member.permissions.has("MANAGE_MESSAGES", true) && !channel.permissionsFor(msg.member).has("MANAGE_MESSAGES", true)) {
+		if (!originalMessage && !msg.member.permissions.has("MANAGE_MESSAGES", true) && !channel.permissionsFor(msg.member).has("MANAGE_MESSAGES", true)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOPERMISSIONS@REMOVED")
 			});
@@ -184,11 +184,11 @@ class ModToolsArchive extends Plugin implements IModule {
 
 		const author = (originalMessage && originalMessage.author) || await this._resolveUserTarget(message.authorId, msg.guild);
 		const member = (originalMessage && originalMessage.member) || msg.guild.member(author);
-		const other = message.other ? <IEmulatedContents>JSON.parse(message.other) : undefined;
+		const other = message.other ? <IEmulatedContents> JSON.parse(message.other) : undefined;
 		const date = originalMessage ? originalMessage.createdAt.toISOString() : SnowflakeUtil.deconstruct(message.messageId).date.toISOString();
 
 		await msg.channel.send({
-			embed: <IEmbed>{
+			embed: <IEmbed> {
 				author: {
 					icon_url: author ? author.displayAvatarURL({ format: "webp", size: 128 }) : undefined,
 					name: author ? `${author.tag}${member && member.nickname ? ` (${member.displayName})` : ""}` : message.authorId
@@ -204,7 +204,7 @@ class ModToolsArchive extends Plugin implements IModule {
 				fields: other && ((other.attachments && other.attachments.length > 1) || (other.embeds && other.embeds.length > 0)) ? await (async () => {
 					const fields: IEmbedOptionsField[] = [];
 
-					if(other.embeds && other.embeds.length > 0) {
+					if (other.embeds && other.embeds.length > 0) {
 						fields.push({
 							inline: true,
 							name: await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_EMBEDS_TITLE"),
@@ -214,13 +214,13 @@ class ModToolsArchive extends Plugin implements IModule {
 						});
 					}
 
-					if(other.attachments && other.attachments.length > 1) {
+					if (other.attachments && other.attachments.length > 1) {
 						fields.push({
 							inline: true,
 							name: await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_TITLE"),
 							value: await (async () => {
 								let str = "";
-								for(const attachment of other.attachments) {
+								for (const attachment of other.attachments) {
 									str += `${await localizeForUser(msg.member, "ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE", {
 										link: attachment.file.url,
 										fileName: attachment.file.name
@@ -241,19 +241,19 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 		});
 
-		if(other && other.embeds && other.embeds.length > 0) {
-			for(const embed of other.embeds) {
+		if (other && other.embeds && other.embeds.length > 0) {
+			for (const embed of other.embeds) {
 				await msg.channel.send(await localizeForUser(msg.member, "ARCHIVE_MESSAGE_EMBEDMESSAGE_DESCRIPTION", {
 					id: message.messageId
 				}), {
-						embed: <any>embed
+						embed: <any> embed
 					});
 			}
 		}
 	}
 
 	private async subcmd_archive(msg: Message, parsed: ICommandParseResult) {
-		if(msg.content === PREFIX) {
+		if (msg.content === PREFIX) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "ARCHIVE_HELP",
@@ -267,9 +267,9 @@ class ModToolsArchive extends Plugin implements IModule {
 
 		const target = parsed.subCommand;
 
-		if(!target) { return; } // ???
+		if (!target) { return; } // ???
 
-		if(!POSSIBLE_TARGETS.includes(target.toLowerCase())) {
+		if (!POSSIBLE_TARGETS.includes(target.toLowerCase())) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 					key: "ARCHIVE_UNKNOWN_TARGET",
@@ -284,13 +284,13 @@ class ModToolsArchive extends Plugin implements IModule {
 		let lines = DEFAULT_LENGTH;
 		let offset = 0;
 
-		if(parsed.args) {
+		if (parsed.args) {
 			const latestArg = parsed.args[parsed.args.length - 1].value;
 
-			if(parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(latestArg)) {
+			if (parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(latestArg)) {
 				lines = parseInt(latestArg, 10);
 				parsed.args.splice(-1, 1);
-				if(lines > MESSAGES_LIMIT) {
+				if (lines > MESSAGES_LIMIT) {
 					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 							key: "ARCHIVE_INVALID_LENGTH",
@@ -302,7 +302,7 @@ class ModToolsArchive extends Plugin implements IModule {
 				}
 			}
 	
-			if(parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(latestArg)) {
+			if (parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(latestArg)) {
 				offset = parseInt(latestArg, 10);
 				parsed.args.splice(-1, 1);
 			}
@@ -315,9 +315,9 @@ class ModToolsArchive extends Plugin implements IModule {
 				users: Object.create(null), channels: Object.create(null)
 			};
 
-		switch(target) {
+		switch (target) {
 			case "user": {
-				if(!parsed.args || parsed.args.length === 0) {
+				if (!parsed.args || parsed.args.length === 0) {
 					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 							key: "ARCHIVE_REQUIRES_ARGS_USER",
@@ -330,11 +330,11 @@ class ModToolsArchive extends Plugin implements IModule {
 
 				const resolvedTargets = await (async (toResolve: string[]) => {
 					const resolved: string[] = [];
-					for(const target of toResolve) {
+					for (const target of toResolve) {
 						try {
 							const resolvedTarget = (await this._resolveUserTarget(target, msg.guild)).id;
 							resolved.push(resolvedTarget);
-						} catch(err) {
+						} catch (err) {
 							await msg.channel.send({
 								embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 									key: "ARCHIVE_ERR_RESOLVING_USER",
@@ -349,7 +349,7 @@ class ModToolsArchive extends Plugin implements IModule {
 					return resolved;
 				})(parsed.args.only("raw"));
 
-				if(!resolvedTargets) {
+				if (!resolvedTargets) {
 					return;
 				}
 
@@ -367,14 +367,14 @@ class ModToolsArchive extends Plugin implements IModule {
 				const channels: string[] = [];
 				const users: string[] = [];
 
-				if(parsed.args && parsed.args.length > 0) {
-					for(const target of parsed.args) {
-						if(target.value.startsWith("u:")) {
+				if (parsed.args && parsed.args.length > 0) {
+					for (const target of parsed.args) {
+						if (target.value.startsWith("u:")) {
 							try {
 								const user = await this._resolveUserTarget(target.value.slice("u:".length).trim(), msg.guild);
 								caches.users[user.id] = user;
 								users.push(user.id);
-							} catch(err) {
+							} catch (err) {
 								return msg.channel.send({
 									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 										key: "ARCHIVE_ERR_RESOLVING_USER",
@@ -387,9 +387,9 @@ class ModToolsArchive extends Plugin implements IModule {
 						} else {
 							try {
 								const channel = await this._resolveGuildChannel(target.value, msg.guild);
-								if(!channel) {
+								if (!channel) {
 									throw new Error("No channel returned");
-								} else if(!(channel instanceof TextChannel)) {
+								} else if (!(channel instanceof TextChannel)) {
 									return await msg.channel.send({
 										embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 											key: "ARCHIVE_ERR_RESOLVING_CHANNEL_TYPEINVALID",
@@ -401,7 +401,7 @@ class ModToolsArchive extends Plugin implements IModule {
 								}
 								caches.channels[channel.id] = channel;
 								channels.push(channel.id);
-							} catch(err) {
+							} catch (err) {
 								return msg.channel.send({
 									embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 										key: "ARCHIVE_ERR_RESOLVING_CHANNEL",
@@ -427,11 +427,11 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 		}
 
-		if(foundMessages && foundMessages.length > 0) { // easy filtering from sniffing other channels
+		if (foundMessages && foundMessages.length > 0) { // easy filtering from sniffing other channels
 			foundMessages = foundMessages.filter((m) => {
 				const cachedChannel = (caches.channels[m.channelId] !== undefined ? caches.channels[m.channelId] : undefined);
-				const channel = cachedChannel === undefined ? (caches.channels[m.channelId] = <TextChannel>msg.guild.channels.get(m.channelId) || null) : undefined;
-				if(channel === null || channel === undefined) {
+				const channel = cachedChannel === undefined ? (caches.channels[m.channelId] = <TextChannel> msg.guild.channels.get(m.channelId) || null) : undefined;
+				if (channel === null || channel === undefined) {
 					return true;
 				} else {
 					return channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
@@ -457,7 +457,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	private async _resolveUserTarget(resolvableUser: string, guild: Guild) {
 		{
 			const res = TARGETTING.RESOLVABLE_USER.MENTION.exec(resolvableUser);
-			if(res && res.length === 2) {
+			if (res && res.length === 2) {
 				resolvableUser = res[1];
 				// i removed returning as we really need to check if this user is exists
 				// next stages will check if this user in the guild and then checks if it at least exists in discord api
@@ -466,9 +466,9 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 
 		const resolvedMember = await resolveGuildMember(resolvableUser, guild, false, false);
-		if(resolvedMember) { return resolvedMember.user; }
+		if (resolvedMember) { return resolvedMember.user; }
 
-		if(!SNOWFLAKE_REGEXP.test(resolvableUser)) {
+		if (!SNOWFLAKE_REGEXP.test(resolvableUser)) {
 			throw new Error("Bad ID");
 		}
 
@@ -478,26 +478,26 @@ class ModToolsArchive extends Plugin implements IModule {
 	private async _resolveGuildChannel(resolvableChannel: string, guild: Guild) {
 		{
 			const res = TARGETTING.RESOLVABLE_CHANNEL.MENTION.exec(resolvableChannel);
-			if(res && res.length === 2) {
+			if (res && res.length === 2) {
 				resolvableChannel = res[1];
 			}
 		}
 
 		const resolvedChannel = resolveGuildChannel(resolvableChannel, guild, false);
-		if(resolvableChannel) { return resolvedChannel; }
+		if (resolvableChannel) { return resolvedChannel; }
 
 		throw new Error("Channel not found");
 	}
 
 	private async _messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = Object.create(null), language: string) {
 		let str = "";
-		for(const messageEntry of messages) {
+		for (const messageEntry of messages) {
 			const parsedDate = (SnowflakeUtil.deconstruct(messageEntry.messageId)).date;
 
 			let author = cache[messageEntry.authorId];
-			if(!author && author !== null) {
+			if (!author && author !== null) {
 				author = cache[messageEntry.authorId] = await (async () => {
-					try { return await $discordBot.users.fetch(messageEntry.authorId); } catch(err) { return null; }
+					try { return await $discordBot.users.fetch(messageEntry.authorId); } catch (err) { return null; }
 				})();
 			}
 
@@ -511,13 +511,13 @@ class ModToolsArchive extends Plugin implements IModule {
 				content: messageEntry.content
 			});
 
-			if(messageEntry.other) {
-				const parsedContent = <IEmulatedContents>JSON.parse(messageEntry.other);
+			if (messageEntry.other) {
+				const parsedContent = <IEmulatedContents> JSON.parse(messageEntry.other);
 
-				if(parsedContent.attachments) {
+				if (parsedContent.attachments) {
 					str += "\r\n";
 					const entryTypeStr = `[${$localizer.getString(language, "ARCHIVE_ITEM_ENTRY_TYPE:ATTACHMENT")}]`;
-					for(const attachment of parsedContent.attachments) {
+					for (const attachment of parsedContent.attachments) {
 						str += "  ";
 						str += $localizer.getFormattedString(language, "ARCHIVE_ITEM_ENTRY:ATTACHMENT", {
 							"file.name": attachment.file.name,
@@ -529,10 +529,10 @@ class ModToolsArchive extends Plugin implements IModule {
 					}
 				}
 
-				if(parsedContent.embeds) {
+				if (parsedContent.embeds) {
 					str += "\r\n";
 					const entryTypeStr = `[${$localizer.getString(language, "ARCHIVE_ITEM_ENTRY_TYPE:EMBED")}]`;
-					for(const embed of parsedContent.embeds) {
+					for (const embed of parsedContent.embeds) {
 						str += "  ";
 						str += $localizer.getFormattedString(language, "ARCHIVE_ITEM_ENTRY:EMBED", {
 							type: entryTypeStr,
@@ -551,7 +551,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	private async subcmd_archiveStatus(msg: Message, parsed: ICommandParseResult) {
 		const isEnabledAlready = await this._isEnabledAt(msg.guild);
 		let newStatus = false;
-		switch(parsed.subCommand) {
+		switch (parsed.subCommand) {
 			case "true": { newStatus = true; } break;
 			case "false": { newStatus = false; } break;
 			default: {
@@ -566,7 +566,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 		}
 
-		if(isEnabledAlready === newStatus) {
+		if (isEnabledAlready === newStatus) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "ARCHIVE_STATUS_ALREADY",
@@ -579,7 +579,7 @@ class ModToolsArchive extends Plugin implements IModule {
 
 		const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Warning, msg.member, `ARCHIVE_STATUS_CONFIRMATION_${newStatus ? "ENABLING" : "DISABLING"}`), msg);
 
-		if(!confirmation) {
+		if (!confirmation) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "ARCHIVE_STATUS_NOTCONFIRMED")
 			});
@@ -599,20 +599,20 @@ class ModToolsArchive extends Plugin implements IModule {
 	}
 
 	private async _isEnabledAt(guild: Guild | "dm"): Promise<boolean> {
-		if(!guild) { return false; }
-		if(guild === "dm") { return this._options.dms; }
+		if (!guild) { return false; }
+		if (guild === "dm") { return this._options.dms; }
 
 		const cachedStatus = this._enabledAt[guild.id];
-		if(typeof cachedStatus === "boolean") { return cachedStatus; }
+		if (typeof cachedStatus === "boolean") { return cachedStatus; }
 
-		const dbStatus = <boolean | undefined>await getPreferenceValue(guild, ENABLED_PROP, true);
-		if(typeof dbStatus === "boolean") { return this._enabledAt[guild.id] = dbStatus; }
+		const dbStatus = <boolean | undefined> await getPreferenceValue(guild, ENABLED_PROP, true);
+		if (typeof dbStatus === "boolean") { return this._enabledAt[guild.id] = dbStatus; }
 
 		return this._enabledAt[guild.id] = DEFAULT_ENABLED_STATE;
 	}
 
 	private async _recordMessage(msg: Message) {
-		if(!(await this._isEnabledAt(msg.channel.type === "dm" ? "dm" : msg.guild))) { return; }
+		if (!(await this._isEnabledAt(msg.channel.type === "dm" ? "dm" : msg.guild))) { return; }
 		const payload = convertToDBMessage(msg);
 		return this._controller.insertMessage(payload);
 	}

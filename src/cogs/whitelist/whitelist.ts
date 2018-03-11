@@ -117,48 +117,48 @@ export class Whitelist extends Plugin implements IModule {
 			"message": (msg: Message) => this.onMessage(msg),
 			"guildCreate": (guild: Guild) => this.joinedGuild(guild)
 		});
-		if(options) {
+		if (options) {
 			{
 				const alwaysWhitelisted = options.always_whitelisted;
-				if(alwaysWhitelisted && alwaysWhitelisted instanceof Array) {
-					for(const g of alwaysWhitelisted as string[]) {
+				if (alwaysWhitelisted && alwaysWhitelisted instanceof Array) {
+					for (const g of alwaysWhitelisted as string[]) {
 						this.alwaysWhitelisted.push(g);
 					}
 				}
 			}
 			{
 				const minMembers = options.min_members;
-				if(minMembers !== undefined && typeof minMembers === "number") {
+				if (minMembers !== undefined && typeof minMembers === "number") {
 					this.minMembersRequired = Math.max(0, minMembers);
 				}
 			}
 			{
 				const maxMembers = options.max_members;
-				if(maxMembers !== undefined && typeof maxMembers === "number") {
+				if (maxMembers !== undefined && typeof maxMembers === "number") {
 					this.maxMembersAllowed = Math.max(0, maxMembers);
 				}
 			}
 			{
 				const botsThreshold = options.bots_threshold;
-				if(botsThreshold !== undefined && typeof botsThreshold === "number") {
+				if (botsThreshold !== undefined && typeof botsThreshold === "number") {
 					this.botsThreshold = Math.max(0, Math.min(100, botsThreshold));
 				}
 			}
 			{
 				const defaultMode = options.default_mode;
-				if(defaultMode !== undefined && typeof defaultMode === "number") {
+				if (defaultMode !== undefined && typeof defaultMode === "number") {
 					this.defaultMode = defaultMode;
 				}
 			}
 			{
 				const url = options.signup_url;
-				if(url !== undefined && typeof url === "string") {
+				if (url !== undefined && typeof url === "string") {
 					this.signupUrl = url;
 				} else { throw new Error("No sign up link provided"); }
 			}
 			{
 				const trialTime = options.trial_time;
-				if(trialTime !== undefined && typeof trialTime === "number") {
+				if (trialTime !== undefined && typeof trialTime === "number") {
 					this.trialTime = options.trial_time;
 				}
 			}
@@ -167,7 +167,7 @@ export class Whitelist extends Plugin implements IModule {
 		this.log("info", "Whitelist module is here to protect your mod");
 		this.log("info", " Required members to stay:", this.minMembersRequired, "-", this.maxMembersAllowed);
 		this.log("info", " Always whitelisted servers:");
-		for(const whitelistedId of this.alwaysWhitelisted) {
+		for (const whitelistedId of this.alwaysWhitelisted) {
 			const found = !!$discordBot.guilds.get(whitelistedId);
 			this.log(found ? "ok" : "warn", "  -", whitelistedId, found ? "(found)" : "(not found)");
 		}
@@ -175,7 +175,7 @@ export class Whitelist extends Plugin implements IModule {
 
 	async fetchCurrentMode() {
 		let mode = await getGuildPref("global", "whitelist:mode", true) as number | undefined;
-		if(typeof mode !== "number") { mode = this.defaultMode; }
+		if (typeof mode !== "number") { mode = this.defaultMode; }
 		this.currentMode = this.parseMode(mode);
 		return this.currentMode;
 	}
@@ -183,15 +183,15 @@ export class Whitelist extends Plugin implements IModule {
 	async joinedGuild(guild: Guild) {
 		this.log("info", `Joined guild "${guild.name}" (${guild.members.size} members)`);
 		const whitelistStatus = await this.getWhitelistStatus(guild);
-		if(whitelistStatus.state === WHITELIST_STATE.UNKNOWN || whitelistStatus.state === WHITELIST_STATE.BYPASS) {
+		if (whitelistStatus.state === WHITELIST_STATE.UNKNOWN || whitelistStatus.state === WHITELIST_STATE.BYPASS) {
 			// how about to give guild limited time?
 			// or check if it full of boooooooootz
 			await this.tryToGiveTrial(guild);
-		} else if(whitelistStatus.state === WHITELIST_STATE.TRIAL_EXPIRED) {
+		} else if (whitelistStatus.state === WHITELIST_STATE.TRIAL_EXPIRED) {
 			this.leaveGuild(guild, "WHITELIST_LEAVE_TRIALEXPIRED1");
-		} else if(whitelistStatus.state === WHITELIST_STATE.EXPIRED) {
+		} else if (whitelistStatus.state === WHITELIST_STATE.EXPIRED) {
 			this.leaveGuild(guild, "WHITELIST_LEAVE_EXPIRED1");
-		} else if(whitelistStatus.state === WHITELIST_STATE.BANNED) {
+		} else if (whitelistStatus.state === WHITELIST_STATE.BANNED) {
 			this.leaveGuild(guild);
 		}
 	}
@@ -207,9 +207,9 @@ export class Whitelist extends Plugin implements IModule {
 		until: null | number;
 	}> {
 		let mode = this.currentMode;
-		if(!mode) { mode = await this.fetchCurrentMode(); }
+		if (!mode) { mode = await this.fetchCurrentMode(); }
 
-		if(this.alwaysWhitelisted.includes(guild.id)) {
+		if (this.alwaysWhitelisted.includes(guild.id)) {
 			return {
 				ok: true,
 				state: WHITELIST_STATE.IMMORTAL,
@@ -220,7 +220,7 @@ export class Whitelist extends Plugin implements IModule {
 		const whitelistStatus = <WHITELIST_STATE> await getGuildPref(guild, "whitelist:status", true);
 		const whitelistedUntil = <number | null> await getGuildPref(guild, "whitelist:until", true);
 
-		if(!whitelistStatus) {
+		if (!whitelistStatus) {
 			return {
 				ok: false,
 				state: WHITELIST_STATE.UNKNOWN,
@@ -228,26 +228,26 @@ export class Whitelist extends Plugin implements IModule {
 			};
 		}
 
-		if(whitelistStatus === WHITELIST_STATE.BANNED) {
+		if (whitelistStatus === WHITELIST_STATE.BANNED) {
 			return {
 				ok: false,
 				state: WHITELIST_STATE.BANNED,
 				until: null
 			};
-		} else if(!mode.whitelist) {
+		} else if (!mode.whitelist) {
 			return {
 				ok: true,
 				state: WHITELIST_STATE.BYPASS,
 				until: null
 			};
-		} else if(whitelistStatus === WHITELIST_STATE.UNLIMITED) {
+		} else if (whitelistStatus === WHITELIST_STATE.UNLIMITED) {
 			return {
 				ok: true,
 				state: WHITELIST_STATE.UNLIMITED,
 				until: null
 			};
 		} 
-		if(whitelistedUntil && whitelistedUntil < Date.now()) {
+		if (whitelistedUntil && whitelistedUntil < Date.now()) {
 			return {
 				ok: false,
 				state: whitelistStatus === WHITELIST_STATE.TRIAL ? WHITELIST_STATE.TRIAL_EXPIRED : WHITELIST_STATE.EXPIRED,
@@ -270,15 +270,15 @@ export class Whitelist extends Plugin implements IModule {
 	}
 
 	async checkGuilds() {
-		for(const g of $discordBot.guilds.values()) {
+		for (const g of $discordBot.guilds.values()) {
 			const whitelistStatus = await this.getWhitelistStatus(g);
-			if(whitelistStatus.state === WHITELIST_STATE.EXPIRED) {
+			if (whitelistStatus.state === WHITELIST_STATE.EXPIRED) {
 				await this.leaveGuild(g, "WHITELIST_LEAVE_EXPIRED");
-			} else if(whitelistStatus.state === WHITELIST_STATE.TRIAL_EXPIRED) {
+			} else if (whitelistStatus.state === WHITELIST_STATE.TRIAL_EXPIRED) {
 				await this.leaveGuild(g, "WHITELIST_LEAVE_TRIALEXPIRED");
-			} else if(whitelistStatus.state === WHITELIST_STATE.BANNED) {
+			} else if (whitelistStatus.state === WHITELIST_STATE.BANNED) {
 				await this.leaveGuild(g);
-			} else if(whitelistStatus.state === WHITELIST_STATE.UNKNOWN) {
+			} else if (whitelistStatus.state === WHITELIST_STATE.UNKNOWN) {
 				await this.tryToGiveTrial(g);
 			}
 		}
@@ -287,8 +287,8 @@ export class Whitelist extends Plugin implements IModule {
 	calculateBotsPercentage(guild: Guild) {
 		let bots = 0;
 
-		for(const member of guild.members.values()) {
-			if(member.user.bot) { bots++; }
+		for (const member of guild.members.values()) {
+			if (member.user.bot) { bots++; }
 		}
 
 		return Math.round((bots / guild.members.size) * 100);
@@ -296,18 +296,18 @@ export class Whitelist extends Plugin implements IModule {
 
 	async tryToGiveTrial(guild: Guild) {
 		let mode = this.currentMode;
-		if(!mode) { mode = await this.fetchCurrentMode(); }
-		if(mode.noBotFarms && this.calculateBotsPercentage(guild) > this.botsThreshold) {
+		if (!mode) { mode = await this.fetchCurrentMode(); }
+		if (mode.noBotFarms && this.calculateBotsPercentage(guild) > this.botsThreshold) {
 			await this.leaveGuild(guild, "WHITELIST_LEAVE_BOTFARM");
 			return;
-		} else if(mode.noLowMembers && guild.members.size < this.minMembersRequired) {
+		} else if (mode.noLowMembers && guild.members.size < this.minMembersRequired) {
 			await this.leaveGuild(guild, "WHITELIST_LEAVE_NOMEMBERS");
 			return;
-		} else if(mode.noMaxMembers && guild.members.size > this.maxMembersAllowed) {
+		} else if (mode.noMaxMembers && guild.members.size > this.maxMembersAllowed) {
 			await this.leaveGuild(guild, "WHITELIST_LEAVE_MANYMEMBERS");
 			return;
 		}
-		if(mode.whitelist) {
+		if (mode.whitelist) {
 			await setGuildPref(guild, "whitelist:status", WHITELIST_STATE.TRIAL);
 			const endDate = Date.now() + this.trialTime;
 			await setGuildPref(guild, "whitelist:until", endDate);
@@ -318,17 +318,17 @@ export class Whitelist extends Plugin implements IModule {
 	async notify(guild: Guild, embed: any) {
 		let notificationChannel: TextChannel | undefined = undefined;
 
-		for(const possibleChannel of POSSIBLE_CHAT_ROOMS) {
+		for (const possibleChannel of POSSIBLE_CHAT_ROOMS) {
 			notificationChannel = <TextChannel> guild.channels.find((ch) => {
 				return ch.name.includes(possibleChannel) && ch.type === "text";
 			});
-			if(notificationChannel) { break; }
+			if (notificationChannel) { break; }
 		}
 
-		if(notificationChannel) {
+		if (notificationChannel) {
 			try {
 				await notificationChannel.send("", { embed });
-			} catch(err) {
+			} catch (err) {
 				$snowball.captureException(err, {
 					level: "warning",
 					extra: { guildId: guild, embed }
@@ -339,7 +339,7 @@ export class Whitelist extends Plugin implements IModule {
 	}
 
 	async leaveGuild(guild: Guild, reason?: string) {
-		if(reason) {
+		if (reason) {
 			await this.notify(guild, await generateLocalizedEmbed(EmbedType.Warning, guild.owner, {
 				key: reason,
 				formatOptions: {
@@ -358,13 +358,13 @@ export class Whitelist extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
-		if(msg.content === "!sb_pstatus" && this.isAdmin(msg.member)) {
+		if (msg.content === "!sb_pstatus" && this.isAdmin(msg.member)) {
 			const whitelistInfo = await this.getWhitelistStatus(msg.guild);
 			let str = `# ${await localizeForUser(msg.member, "WHITELIST_INFO_HEADER", {
 				guildName: escapeDiscordMarkdown(msg.guild.name, true)
 			})}\n`;
 			str += `${await localizeForUser(msg.member, "WHITELIST_INFO_STATUS")} `;
-			switch(whitelistInfo.state) {
+			switch (whitelistInfo.state) {
 				case WHITELIST_STATE.BANNED: {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BANNED");
 				} break;
@@ -384,7 +384,7 @@ export class Whitelist extends Plugin implements IModule {
 					str += await localizeForUser(msg.member, "WHITELIST_INFO_STATUS_BYPASS");
 				}
 			}
-			if((whitelistInfo.state === WHITELIST_STATE.LIMITED || whitelistInfo.state === WHITELIST_STATE.TRIAL) && whitelistInfo.until) {
+			if ((whitelistInfo.state === WHITELIST_STATE.LIMITED || whitelistInfo.state === WHITELIST_STATE.TRIAL) && whitelistInfo.until) {
 				str += "\n";
 				const endString = await toUserLocaleString(msg.member, whitelistInfo.until, DateTime.DATETIME_FULL);
 				str += await localizeForUser(msg.member, "WHITELIST_INFO_UNTIL", {
@@ -397,30 +397,30 @@ export class Whitelist extends Plugin implements IModule {
 			return;
 		}
 
-		if(msg.author.id !== $botConfig.botOwner) { return; }
+		if (msg.author.id !== $botConfig.botOwner) { return; }
 
 		const cmd = parseCmd(msg.content);
 
-		if(cmd.command !== "!whitelist") { return; }
+		if (cmd.command !== "!whitelist") { return; }
 
 		const u = msg.member || msg.author;
 
-		if(cmd.subCommand === "activate") {
-			if(cmd.args && cmd.args.length === 2) {
-				if(!canBeSnowflake(cmd.args[0].value)) {
+		if (cmd.subCommand === "activate") {
+			if (cmd.args && cmd.args.length === 2) {
+				if (!canBeSnowflake(cmd.args[0].value)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
 					});
 					return;
 				}
-				if(cmd.args[1].value === "forever") {
+				if (cmd.args[1].value === "forever") {
 					const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 						key: "WHITELIST_ACTIVATE_CONFIRM_FOREVER",
 						formatOptions: {
 							serverId: cmd.args[0].value
 						}
 					}), msg);
-					if(!confirmation) {
+					if (!confirmation) {
 						msg.channel.send("", {
 							embed: await generateLocalizedEmbed(EmbedType.OK, u, "WHITELIST_CANCELED")
 						});
@@ -441,7 +441,7 @@ export class Whitelist extends Plugin implements IModule {
 						}
 					}), msg);
 
-					if(!confirmation) {
+					if (!confirmation) {
 						msg.channel.send("", {
 							embed: await generateLocalizedEmbed(EmbedType.OK, u, "WHITELIST_CANCELED")
 						});
@@ -465,9 +465,9 @@ export class Whitelist extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_USAGE")
 				});
 			}
-		} else if(cmd.subCommand === "deactivate") {
-			if(cmd.args && cmd.args.length === 1) {
-				if(!canBeSnowflake(cmd.args[0].value)) {
+		} else if (cmd.subCommand === "deactivate") {
+			if (cmd.args && cmd.args.length === 1) {
+				if (!canBeSnowflake(cmd.args[0].value)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
 					});
@@ -481,7 +481,7 @@ export class Whitelist extends Plugin implements IModule {
 					}
 				}), msg);
 
-				if(!confirmation) {
+				if (!confirmation) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.OK, u, "WHITELIST_CANCELED")
 					});
@@ -504,9 +504,9 @@ export class Whitelist extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_DEACTIVATE_USAGE")
 				});
 			}
-		} else if(cmd.subCommand === "ban") {
-			if(cmd.args && cmd.args.length === 1) {
-				if(!canBeSnowflake(cmd.args[0].value)) {
+		} else if (cmd.subCommand === "ban") {
+			if (cmd.args && cmd.args.length === 1) {
+				if (!canBeSnowflake(cmd.args[0].value)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
 					});
@@ -520,7 +520,7 @@ export class Whitelist extends Plugin implements IModule {
 					}
 				}), msg);
 
-				if(!confirmation) {
+				if (!confirmation) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.OK, u, "WHITELIST_CANCELED")
 					});
@@ -531,7 +531,7 @@ export class Whitelist extends Plugin implements IModule {
 				await setGuildPref(cmd.args[0].value, "whitelist:status", WHITELIST_STATE.BANNED);
 
 				const currentGuild = $discordBot.guilds.get(cmd.args[0].value);
-				if(currentGuild) {
+				if (currentGuild) {
 					await currentGuild.leave();
 				}
 
@@ -548,10 +548,10 @@ export class Whitelist extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_BAN_USAGE")
 				});
 			}
-		} else if(cmd.subCommand === "mode") {
+		} else if (cmd.subCommand === "mode") {
 			const modes = await this.fetchCurrentMode();
-			if(cmd.args && cmd.args.length === 2) {
-				if(!["on", "off"].includes(cmd.args[0].value) || !allowedModes.includes(cmd.args[1].value)) {
+			if (cmd.args && cmd.args.length === 2) {
+				if (!["on", "off"].includes(cmd.args[0].value) || !allowedModes.includes(cmd.args[1].value)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 							key: "WHITELIST_MODE_USAGE",
@@ -565,7 +565,7 @@ export class Whitelist extends Plugin implements IModule {
 
 				const modeVal = cmd.args[0].value === "on";
 				const selectedMode = ((arg: string) => {
-					switch(arg) {
+					switch (arg) {
 						case "nobotfarms": return "noBotFarms";
 						case "trial": return "trialAllowed";
 						case "nolowmembers": return "noLowMembers";
@@ -574,7 +574,7 @@ export class Whitelist extends Plugin implements IModule {
 					}
 				})(cmd.args[1].value);
 
-				if(modeVal && modes[selectedMode]) {
+				if (modeVal && modes[selectedMode]) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Warning, u, {
 							key: "WHITELIST_MODE_ALREADYENABLED",
@@ -584,7 +584,7 @@ export class Whitelist extends Plugin implements IModule {
 						})
 					});
 					return;
-				} else if(!modeVal && !modes[selectedMode]) {
+				} else if (!modeVal && !modes[selectedMode]) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Warning, u, {
 							key: "WHITELIST_MODE_ALREADYDISABLED",
@@ -609,7 +609,7 @@ export class Whitelist extends Plugin implements IModule {
 						}
 					})
 				});
-			} else if(cmd.args && cmd.args.length < 2) {
+			} else if (cmd.args && cmd.args.length < 2) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 						key: "WHITELIST_MODE_USAGE",
@@ -635,16 +635,16 @@ export class Whitelist extends Plugin implements IModule {
 
 	convertToMode(parsedMode: IParsedMode): WhitelistModes {
 		let modeInt = 0;
-		if(parsedMode.whitelist) { modeInt |= WhitelistModes.Whitelist; }
-		if(parsedMode.trialAllowed) { modeInt |= WhitelistModes.TrialAllowed; }
-		if(parsedMode.noBotFarms) { modeInt |= WhitelistModes.NoBotFarms; }
-		if(parsedMode.noLowMembers) { modeInt |= WhitelistModes.NoLowMembers; }
-		if(parsedMode.noMaxMembers) { modeInt |= WhitelistModes.NoMaxMembers; }
+		if (parsedMode.whitelist) { modeInt |= WhitelistModes.Whitelist; }
+		if (parsedMode.trialAllowed) { modeInt |= WhitelistModes.TrialAllowed; }
+		if (parsedMode.noBotFarms) { modeInt |= WhitelistModes.NoBotFarms; }
+		if (parsedMode.noLowMembers) { modeInt |= WhitelistModes.NoLowMembers; }
+		if (parsedMode.noMaxMembers) { modeInt |= WhitelistModes.NoMaxMembers; }
 		return modeInt;
 	}
 
 	async unload() {
-		if(this.checkInterval) {
+		if (this.checkInterval) {
 			clearInterval(this.checkInterval);
 		}
 		this.unhandleEvents();

@@ -32,7 +32,7 @@ interface ICategories {
 let dict: ICategories | undefined = undefined;
 
 function init(): ICategories {
-	if(!dict) { dict = Object.create(null); }
+	if (!dict) { dict = Object.create(null); }
 	return dict!;
 }
 
@@ -48,13 +48,13 @@ export function addCommand(category: string, command: string, description: strin
 	const categoriesMap = init();
 
 	let categoryMap = categoriesMap[category];
-	if(!categoryMap) {
-		categoryMap = categoriesMap[category] = <{}>Object.create(null);
+	if (!categoryMap) {
+		categoryMap = categoriesMap[category] = <{}> Object.create(null);
 	}
 
 	try {
 		$localizer.getString($localizer.sourceLanguage, categoryLocalizedName(category));
-	} catch(err) {
+	} catch (err) {
 		throw new Error(`Could not find localized name for the category "${category}"`);
 	}
 
@@ -77,34 +77,34 @@ export async function generateHelpContent(msg: Message) {
 	const user = msg.channel.type === "text" ? msg.member : msg.author;
 	const categories = init();
 
-	for(const category in categories) {
+	for (const category in categories) {
 		const commands = categories[category];
-		if(!commands) { continue; }
+		if (!commands) { continue; }
 
 		let str = "";
 
-		for(const command in commands) {
+		for (const command in commands) {
 			const target = commands[command];
-			if(!target) { continue; }
+			if (!target) { continue; }
 
-			if(target.specialCheck && !target.specialCheck(msg)) {
+			if (target.specialCheck && !target.specialCheck(msg)) {
 				continue;
 			}
 
 			str += `\n- ${command}`;
-			if(target.arguments) {
-				for(let argName in target.arguments) {
+			if (target.arguments) {
+				for (let argName in target.arguments) {
 					const argInfo = target.arguments[argName];
-					if(argName.startsWith("loc:")) {
+					if (argName.startsWith("loc:")) {
 						argName = await localizeForUser(user, argName.slice("loc:".length));
 					}
-					if(argInfo.specialCheck && !argInfo.specialCheck(msg)) {
+					if (argInfo.specialCheck && !argInfo.specialCheck(msg)) {
 						continue;
 					}
-					if(argInfo.values) {
+					if (argInfo.values) {
 						const fixedValues: string[] = [];
-						for(let val of argInfo.values) {
-							if(val.startsWith("loc:")) {
+						for (let val of argInfo.values) {
+							if (val.startsWith("loc:")) {
 								val = await localizeForUser(user, val.slice("loc:".length));
 							}
 							fixedValues.push(val);
@@ -118,25 +118,25 @@ export async function generateHelpContent(msg: Message) {
 			}
 
 			let desc = target.description;
-			if(desc.startsWith("loc:")) {
+			if (desc.startsWith("loc:")) {
 				desc = await localizeForUser(user, desc.slice("loc:".length));
 			}
 
 			str += `: ${desc}\n`;
-			if(target.arguments) {
-				for(let argName in target.arguments) {
+			if (target.arguments) {
+				for (let argName in target.arguments) {
 					const argInfo = target.arguments[argName];
-					if(argName.startsWith("loc:")) {
+					if (argName.startsWith("loc:")) {
 						argName = await localizeForUser(user, argName.slice("loc:".length));
 					}
-					if(argInfo.specialCheck && !argInfo.specialCheck(msg)) {
+					if (argInfo.specialCheck && !argInfo.specialCheck(msg)) {
 						continue;
 					}
 					str += "  - ";
-					if(argInfo.values) {
+					if (argInfo.values) {
 						const fixedValues: string[] = [];
-						for(let val of argInfo.values) {
-							if(val.startsWith("loc:")) {
+						for (let val of argInfo.values) {
+							if (val.startsWith("loc:")) {
 								val = await localizeForUser(user, val.slice("loc:".length));
 							}
 							fixedValues.push(val);
@@ -148,7 +148,7 @@ export async function generateHelpContent(msg: Message) {
 					}
 
 					let argDesc = argInfo.description;
-					if(argDesc.startsWith("loc:")) {
+					if (argDesc.startsWith("loc:")) {
 						argDesc = await localizeForUser(user, argDesc.slice("loc:".length));
 					}
 					str += `: ${argDesc}\n`;
@@ -156,7 +156,7 @@ export async function generateHelpContent(msg: Message) {
 			}
 		}
 
-		if(str.trim().length > 0) {
+		if (str.trim().length > 0) {
 			const catName = await localizeForUser(user, categoryLocalizedName(category));
 			rStr += `\n# ${catName}\n${str}`;
 		}

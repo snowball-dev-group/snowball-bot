@@ -23,7 +23,7 @@ export class PrefixAllDBController {
 
 	public async init() {
 		const tableStatus = await this._db.schema.hasTable(this._tableName);
-		if(!tableStatus) {
+		if (!tableStatus) {
 			this._log("info", "[init] Table not found, going to create it");
 
 			await this._db.schema.createTable(this._tableName, (tb) => {
@@ -44,9 +44,9 @@ export class PrefixAllDBController {
 	 * @returns Prefixes of the selected guild or, if not found, null
 	 */
 	public async getPrefixes(guild: Guild | string): Promise<string[] | null> {
-		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
+		if (!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		const row = await this._getGuildRow(this._normalizeGuildId(guild));
-		if(!row) { return null; }
+		if (!row) { return null; }
 		return row.prefix ? JSON.parse(row.prefix) : undefined;
 	}
 
@@ -56,12 +56,12 @@ export class PrefixAllDBController {
 	 * @param prefixes Prefixes for the selected guild.
 	 */
 	public async setPrefixes(guild: Guild | string, prefixes: string[] | null) : Promise<void> {
-		if(!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
+		if (!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		const isDelete = prefixes === null;
-		if(!Array.isArray(prefixes) && !isDelete) { throw new Error("The `prefixes` argument must be an array of strings or `null`"); }
+		if (!Array.isArray(prefixes) && !isDelete) { throw new Error("The `prefixes` argument must be an array of strings or `null`"); }
 		const currentRow = await this._getGuildRow(this._normalizeGuildId(guild));
-		if(!currentRow) {
-			await this._db(this._tableName).insert(<IGuildPrefixRawRow>{
+		if (!currentRow) {
+			await this._db(this._tableName).insert(<IGuildPrefixRawRow> {
 				guildId: this._normalizeGuildId(guild),
 				prefix: isDelete ? null : JSON.stringify(prefixes)
 			});
@@ -75,13 +75,13 @@ export class PrefixAllDBController {
 	}
 
 	private async _getGuildRow(guildId: string) {
-		return <IGuildPrefixRawRow | undefined>await this._db(this._tableName).first().where({ guildId });
+		return <IGuildPrefixRawRow | undefined> await this._db(this._tableName).first().where({ guildId });
 	}
 
 	private _normalizeGuildId(guild: Guild | string) {
-		if(typeof guild === "string" && /[0-9]{17,18}/.test(guild)) {
+		if (typeof guild === "string" && /[0-9]{17,18}/.test(guild)) {
 			return guild;
-		} else if(guild instanceof Guild) {
+		} else if (guild instanceof Guild) {
 			return guild.id;
 		}
 		throw new Error("Invalid `guild` argument provided");

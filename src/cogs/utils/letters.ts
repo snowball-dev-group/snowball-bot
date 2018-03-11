@@ -12,21 +12,21 @@ export function toRegionalIndicators(str: string, stances?: Stances, unknownChar
 	let arr = str.split("");
 	let allowCaseSwitching = false;
 	let numbersConversion = true;
-	if(stances && stances > 0) {
+	if (stances && stances > 0) {
 		allowCaseSwitching = !((stances & Stances.NoCaseSwitching) === Stances.NoCaseSwitching);
 		numbersConversion = ((stances & Stances.ConvertNumbers) === Stances.ConvertNumbers);
 	}
 	arr = arr.map((s) => {
 		const oS = s;
-		if(allowCaseSwitching) {
+		if (allowCaseSwitching) {
 			s = s.toLowerCase();
 		}
-		if(/^[a-z]{1}$/.test(s)) {
+		if (/^[a-z]{1}$/.test(s)) {
 			const letPos = s.charCodeAt(0) - 97;
 			return `${REGIONAL_CHAR}${String.fromCharCode(REGIONAL_SUBCHAR_START + letPos)}`;
-		} else if(numbersConversion && /^[0-9]{1}$/.test(s)) {
+		} else if (numbersConversion && /^[0-9]{1}$/.test(s)) {
 			return convertNumbers(s);
-		} else if(unknownCharReplacer) {
+		} else if (unknownCharReplacer) {
 			return unknownCharReplacer(s);
 		}
 		return oS;
@@ -37,9 +37,9 @@ export function toRegionalIndicators(str: string, stances?: Stances, unknownChar
 export function convertNumbers(num: string | number, unknownCharReplacer?: (s: string) => string) {
 	let str = `${num}`;
 	str = str.replace(/([0-9])/ig, (s) => {
-		if(/^[0-9]{1}$/.test(s)) {
+		if (/^[0-9]{1}$/.test(s)) {
 			return `${s}${KEYCAP_SUBCHAR}`;
-		} else if(unknownCharReplacer) {
+		} else if (unknownCharReplacer) {
 			return unknownCharReplacer(s);
 		}
 		return s;

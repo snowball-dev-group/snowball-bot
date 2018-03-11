@@ -66,8 +66,8 @@ export async function fetchTatsuProfile(uid: string, apiKey: string): Promise<IU
 	const resp: Response = await fetch(uri, { headers: { Authorization: apiKey } });
 	const logPrefix = `fetchTatsuProfile(${uid}):`;
 
-	if(resp.status !== 200) {
-		switch(resp.status) {
+	if (resp.status !== 200) {
+		switch (resp.status) {
 			case 404: { throw new DetailedError("TATSUMAKI_FETCH_NOTFOUND"); }
 			case 500: { throw new DetailedError("TATSUMAKI_FETCH_SERVERERROR"); }
 			default: { throw new DetailedError("TATSUMAKI_UNKNOWN_ERROR"); }
@@ -77,13 +77,13 @@ export async function fetchTatsuProfile(uid: string, apiKey: string): Promise<IU
 	const userInfo: IUserInfo | undefined = await (async () => {
 		try {
 			return await resp.json();
-		} catch(err) {
+		} catch (err) {
 			LOG("err", logPrefix, "Could not parse JSON", err);
 			return undefined;
 		}
 	})();
 
-	if(!userInfo) { throw new DetailedError("TATSUMAKI_NO_PROFILE"); }
+	if (!userInfo) { throw new DetailedError("TATSUMAKI_NO_PROFILE"); }
 
 	return userInfo;
 }
@@ -98,12 +98,12 @@ export async function getTatsuProfile(uid: string, apiKey: string): Promise<IUse
 		LOG("warn", logPrefix, "Cache failed", err);
 	}
 
-	if(cached) { return cached; }
+	if (cached) { return cached; }
 
 	let profile: IUserInfo | undefined = undefined;
 	try {
 		profile = await fetchTatsuProfile(uid, apiKey);
-	} catch(err) {
+	} catch (err) {
 		LOG("err", logPrefix, "Fetching failed", err);
 		throw new DetailedError("TATSUMAKI_FETCH_FAILED", undefined, err);
 	}

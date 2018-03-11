@@ -46,7 +46,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	private isTwitchV5Retired() {
-		if(Date.now() > 1546102800000) {
+		if (Date.now() > 1546102800000) {
 			throw new Error("You cannot use this module anymore. Twitch API v5 is retired");
 		}
 		return false;
@@ -60,7 +60,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public addSubscription(streamer: IStreamingServiceStreamer) {
 		this.isTwitchV5Retired();
-		if(this.isSubscribed(streamer.uid)) {
+		if (this.isSubscribed(streamer.uid)) {
 			throw new Error(`Already subscribed to ${streamer.uid}`);
 		}
 		return this.subscriptions.push(streamer);
@@ -68,7 +68,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public removeSubscription(uid: string) {
 		const index = this.findSubscriptionIndex(uid);
-		if(index === -1) {
+		if (index === -1) {
 			throw new Error(`Not subscribed to ${uid}`);
 		}
 		this.subscriptions.splice(index, 1);
@@ -91,14 +91,14 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public async start(delayed: number = 0) {
 		this.isTwitchV5Retired();
-		if(this.pendingStart) {
+		if (this.pendingStart) {
 			throw new Error("There's a pending start delayed");
-		} else if(this.interval) {
+		} else if (this.interval) {
 			throw new Error("There's already started fetch interval");
 		}
-		if(delayed < 0) {
+		if (delayed < 0) {
 			throw new Error("Invalid `delayed` value");
-		} else if(delayed > 0) {
+		} else if (delayed > 0) {
 			this.pendingStart = setTimeout(() => {
 				this.pendingStart = undefined;
 				this.start();
@@ -110,11 +110,11 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public async stop() {
-		if(!this.interval && !this.pendingStart) {
+		if (!this.interval && !this.pendingStart) {
 			throw new Error("There's nor interval nor delayed start");
-		} else if(this.pendingStart) {
+		} else if (this.pendingStart) {
 			clearTimeout(this.pendingStart);
-		} else if(this.interval) {
+		} else if (this.interval) {
 			clearInterval(this.interval);
 		}
 	}
@@ -127,7 +127,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
 		this.isTwitchV5Retired();
-		if(streamers.length > 0) {
+		if (streamers.length > 0) {
 			const processChunk = async (chunk: IStreamingServiceStreamer[]) => {
 				let streamsResp: {
 					streams?: ITwitchStream[]
@@ -135,46 +135,46 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 				try {
 					streamsResp = (await this.makeRequest(this.getAPIURL_Streams(chunk.map(s => s.uid))));
-				} catch(err) {
+				} catch (err) {
 					this.log("err", "Error has been received from Twitch, chunk processing failed", err);
 					return;
 				}
 
-				if(!streamsResp.streams) {
+				if (!streamsResp.streams) {
 					this.log("warn", "Got empty response from Twitch", streamsResp);
 					return;
 				}
 
-				for(const streamer of chunk) {
+				for (const streamer of chunk) {
 					const stream = streamsResp.streams.find((stream) => {
 						return (`${stream.channel._id}`) === streamer.uid;
 					});
 					const cacheItem = this.streamsMap[streamer.uid];
-					if(stream) {
-						if(cacheItem) {
+					if (stream) {
+						if (cacheItem) {
 							const cachedStream = cacheItem.value;
 							let updated = false;
 							// Stream name updated
-							if(stream.channel.status !== cachedStream.channel.status) { updated = true; }
+							if (stream.channel.status !== cachedStream.channel.status) { updated = true; }
 							// or game
-							if(stream.game !== cachedStream.game) { updated = true; }
+							if (stream.game !== cachedStream.game) { updated = true; }
 							// or stream_type (stream -> vodcast)
-							if(stream.stream_type !== cachedStream.stream_type) { updated = true; }
+							if (stream.stream_type !== cachedStream.stream_type) { updated = true; }
 							// or id???
-							if(stream._id !== cachedStream._id) { updated = true; }
+							if (stream._id !== cachedStream._id) { updated = true; }
 							// or username
-							if((stream.channel.name !== cachedStream.channel.name) || (stream.channel.display_name !== cachedStream.channel.display_name)) {
+							if ((stream.channel.name !== cachedStream.channel.name) || (stream.channel.display_name !== cachedStream.channel.display_name)) {
 								// updating username in db too
 								streamer.username = stream.channel.display_name || stream.channel.name;
 								updated = true;
 							}
 							// or logo
-							if(stream.channel.logo !== cachedStream.channel.logo) { updated = true; }
+							if (stream.channel.logo !== cachedStream.channel.logo) { updated = true; }
 							// or probably author changed stream to (/from) 18+
-							if(stream.channel.mature !== cachedStream.channel.mature) { updated = true; }
+							if (stream.channel.mature !== cachedStream.channel.mature) { updated = true; }
 
 							// if yes, we pushing update
-							if(updated) {
+							if (updated) {
 								this.emit("updated", {
 									status: "online",
 									streamer,
@@ -197,7 +197,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 							value: stream
 						};
 					} else {
-						if(cacheItem) {
+						if (cacheItem) {
 							this.emit("offline", {
 								status: "offline",
 								streamer,
@@ -210,10 +210,10 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			};
 
 			const chunks = chunk(streamers, 50);
-			for(const chunk of chunks) {
+			for (const chunk of chunks) {
 				try {
 					await processChunk(chunk);
-				} catch(err) {
+				} catch (err) {
 					this.log("warn", "Failed to fetch chunk", err);
 				}
 			}
@@ -226,7 +226,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public async getEmbed(status: IStreamStatus, lang: string): Promise<IEmbed> {
 		const stream = status.payload as ITwitchStream;
-		if(!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
+		if (!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
 		const gameName = stream.game ? stream.game : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
 		return {
 			footer: {
@@ -285,7 +285,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
 		this.isTwitchV5Retired();
-		if(!TWITCH_USERNAME_REGEXP.test(username)) {
+		if (!TWITCH_USERNAME_REGEXP.test(username)) {
 			throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
 		}
 
@@ -293,9 +293,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			users: ITwitchUser[]
 		}).users;
 
-		if(foundUsers.length === 0) {
+		if (foundUsers.length === 0) {
 			throw new StreamingServiceError("TWITCH_USERNOTFOUND", "User not found.");
-		} else if(foundUsers.length > 1) {
+		} else if (foundUsers.length > 1) {
 			throw new StreamingServiceError("TWITCH_INVALIDRESPONSE", "Invalid response received.");
 		}
 
@@ -311,16 +311,16 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	private async makeRequest(uri: string): Promise<any> {
 		const loop = async (attempt: number = 0) => {
-			if(attempt > 3) {
+			if (attempt > 3) {
 				throw new StreamingServiceError("TWITCH_TOOMANYATTEMPTS", "Too many attempts. Please, try again later.");
 			}
 			const resp = await fetch(uri);
-			if(resp.status === 429) {
+			if (resp.status === 429) {
 				const delay = parseInt(resp.headers.get("retry-after") || "5000", 10);
 				this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 				await sleep(delay);
 				return loop(attempt + 1);
-			} else if(resp.status !== 200) {
+			} else if (resp.status !== 200) {
 				throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch", {
 					status: resp.status,
 					body: (await resp.text())
@@ -340,7 +340,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	async unload() {
-		for(const key in this.streamsMap) {
+		for (const key in this.streamsMap) {
 			delete this.streamsMap[key];
 		}
 		return true;

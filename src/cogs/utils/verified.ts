@@ -37,16 +37,16 @@ async function storeNewVerification(member: GuildMember) {
 		memberId: member.id,
 		level: 0
 	});
-	
+
 	localStorage[getLocalStorageKey(member)] = 0;
 
 	return res;
 }
 
-async function getStoredVerification(member: GuildMember): Promise<IVerificationData|undefined> {
+async function getStoredVerification(member: GuildMember): Promise<IVerificationData | undefined> {
 	const localStorageKey = getLocalStorageKey(member);
 	const localStored = localStorage[localStorageKey];
-	if(typeof localStored === "number") {
+	if (typeof localStored === "number") {
 		return {
 			guildId: member.guild.id,
 			memberId: member.id,
@@ -54,12 +54,12 @@ async function getStoredVerification(member: GuildMember): Promise<IVerification
 		};
 	}
 
-	const res = <IVerificationData|undefined> await DB(TABLE_NAME).where({
+	const res = <IVerificationData | undefined> await DB(TABLE_NAME).where({
 		guildId: member.guild.id,
 		memberId: member.id
 	}).first();
 
-	if(res != null) { localStorage[localStorageKey] = res.level; }
+	if (res != null) { localStorage[localStorageKey] = res.level; }
 
 	return res;
 }
@@ -69,7 +69,7 @@ async function updateStoredVerification(verificationData: IVerificationData) {
 		guildId: verificationData.guildId,
 		memberId: verificationData.memberId
 	}).update(verificationData);
-	
+
 	localStorage[verificationData.memberId] = verificationData.level;
 
 	return res;
@@ -86,43 +86,43 @@ async function deleteStoredVerification(verificationData: IVerificationData) {
 /// ======================================
 
 export async function guildMemberAddEvent(member: GuildMember) {
-	if(member.guild.verificationLevel === 0) { return; }
+	if (member.guild.verificationLevel === 0) { return; }
 	await storeNewVerification(member);
 }
 
 export async function guildMemberRemoveEvent(member: GuildMember) {
 	const dbRow = await getStoredVerification(member);
-	if(dbRow) { await deleteStoredVerification(dbRow); }
+	if (dbRow) { await deleteStoredVerification(dbRow); }
 }
 
 export async function messageEvent(msg: Message) {
-	if(msg.channel.type !== "text" || msg.guild.verificationLevel === 0) { return; }
+	if (msg.channel.type !== "text" || msg.guild.verificationLevel === 0) { return; }
 
 	const member = await getMessageMember(msg);
 
-	if(!member) { return; }
+	if (!member) { return; }
 
-	if(member.roles.size > 0) { return; }
+	if (member.roles.size > 0) { return; }
 
 	try {
 		let storedVerification = await getStoredVerification(member);
-		if(!storedVerification) {
+		if (!storedVerification) {
 			await storeNewVerification(member);
 			storedVerification = await getStoredVerification(member);
-			if(!storedVerification) {
+			if (!storedVerification) {
 				LOG("err", "Bad times, row not found after creation");
 				return;
 			}
 		}
 
-		if(storedVerification.level >= msg.guild.verificationLevel) {
+		if (storedVerification.level >= msg.guild.verificationLevel) {
 			// this means that user is verified at guild verification level
 			return;
 		}
 
 		storedVerification.level = msg.guild.verificationLevel;
 		await updateStoredVerification(storedVerification);
-	} catch(err) {
+	} catch (err) {
 		LOG("err", "Verification failed", err);
 	}
 }
@@ -132,9 +132,9 @@ export async function messageEvent(msg: Message) {
 /// ======================================
 
 export async function init(): Promise<boolean> {
-	if(_isInitializated) { return true; }
+	if (_isInitializated) { return true; }
 	try {
-		if(!(await DB.schema.hasTable(TABLE_NAME))) {
+		if (!(await DB.schema.hasTable(TABLE_NAME))) {
 			try {
 				LOG("info", "Creating table");
 				await DB.schema.createTable(TABLE_NAME, (tb) => {
@@ -143,14 +143,14 @@ export async function init(): Promise<boolean> {
 					tb.boolean("verified").notNullable().defaultTo(false);
 					tb.integer("level").notNullable().defaultTo(0);
 				});
-			} catch(err) {
+			} catch (err) {
 				LOG("err", "Can't create table", err);
 				return false;
 			}
 		} else {
 			LOG("ok", "Table found");
 		}
-	} catch(err) {
+	} catch (err) {
 		LOG("err", "Can't check table status", err);
 		return false;
 	}
@@ -168,16 +168,16 @@ export const isInitializated = () => _isInitializated;
  * @param member Member of guild
  */
 export async function isVerified(member: GuildMember) {
-	if(!_isInitializated) {
+	if (!_isInitializated) {
 		throw new Error("Initialization wasn't complete. You should enable `verifiedHandler` in order to use this util");
 	}
 
-	if(member.guild.verificationLevel === 0) { return true; }
-	if(member.roles.filter(r => r.id !== member.guild.id).size > 0) { return true; } // members with roles (except '@everyone') bypass verification anyway
+	if (member.guild.verificationLevel === 0) { return true; }
+	if (member.roles.filter(r => r.id !== member.guild.id).size > 0) { return true; } // members with roles (except '@everyone') bypass verification anyway
 
 	const storedVerification = await getStoredVerification(member);
 
-	if(!storedVerification) { return false; }
+	if (!storedVerification) { return false; }
 
 	return storedVerification.level >= member.guild.verificationLevel;
 }

@@ -197,7 +197,7 @@ export class SnowballBot extends EventEmitter {
 	 * It will load all modules / plugins
 	 */
 	public async prepareModLoader() {
-		if(this.modLoader) { throw new Error("ModLoader is already prepared"); }
+		if (this.modLoader) { throw new Error("ModLoader is already prepared"); }
 
 		this.modLoader = new ModuleLoader({
 			basePath: "./cogs/",
@@ -219,7 +219,7 @@ export class SnowballBot extends EventEmitter {
 	 * Prepare global client variable and client itself
 	 */
 	public prepareDiscordClient() {
-		if(this._discordClient) { throw new Error("Discord client is already prepared"); }
+		if (this._discordClient) { throw new Error("Discord client is already prepared"); }
 
 		const publicBotConfig: IPublicBotConfig = {
 			name: this._config.name,
@@ -235,9 +235,9 @@ export class SnowballBot extends EventEmitter {
 
 		{ // checking shards count
 			const shardCount = this._internalConfiguration.shardsCount;
-			if(this._config.shardingOptions.enabled) {
+			if (this._config.shardingOptions.enabled) {
 				this._log("warn", "WARNING! Running in sharding mode is still expiremental, please use it with risk!");
-				if(shardCount < 0) {
+				if (shardCount < 0) {
 					this._log("err", "Invalid shards count", shardCount);
 					throw new Error("Invalid shards count");
 				}
@@ -247,9 +247,9 @@ export class SnowballBot extends EventEmitter {
 
 		{ // checking shard id
 			const shardId = this._internalConfiguration.shardId;
-			if(shardId >= 0) {
+			if (shardId >= 0) {
 				this._log("info", "Running as shard with ID", shardId);
-				if(shardId === 0) {
+				if (shardId === 0) {
 					publicBotConfig.mainShard = true;
 				}
 				publicBotConfig.shardId = shardId;
@@ -276,7 +276,7 @@ export class SnowballBot extends EventEmitter {
 
 		this._discordClient.on("disconnect", async (reason) => {
 			this._log("warn", "Disconnected with reason:", reason);
-			if((this._discordClient.status && (this._discordClient.status !== 1 && this._discordClient.status !== 2)) || !this._discordClient.status) {
+			if ((this._discordClient.status && (this._discordClient.status !== 1 && this._discordClient.status !== 2)) || !this._discordClient.status) {
 				this._log("warn", "No reconnect pending, reconnecting...");
 				try {
 					await this.login();
@@ -304,11 +304,11 @@ export class SnowballBot extends EventEmitter {
 	}
 
 	public prepareRaven() {
-		if(this.raven) {
+		if (this.raven) {
 			throw new Error("Raven is already prepared");
 		}
 
-		if(this._config.ravenUrl) {
+		if (this._config.ravenUrl) {
 			this.raven = Raven.config(this._config.ravenUrl).install();
 			this._log("ok", "Raven is configured!");
 		} else {
@@ -322,12 +322,12 @@ export class SnowballBot extends EventEmitter {
 	}
 
 	public captureException(err: Error, options?: Raven.CaptureOptions) {
-		if(!this.raven) { return; }
+		if (!this.raven) { return; }
 		return this.raven.captureException(err, options);
 	}
 
 	public captureMessage(message: string, options?: Raven.CaptureOptions) {
-		if(!this.raven) { return; }
+		if (!this.raven) { return; }
 		return this.raven.captureMessage(message, options);
 	}
 
@@ -336,7 +336,7 @@ export class SnowballBot extends EventEmitter {
 	 * Creates, initializes, defines global variable of localizer
 	 */
 	public async prepareLocalizator() {
-		if(global["$localizer"]) { throw new Error("Localizer is already prepared"); }
+		if (global["$localizer"]) { throw new Error("Localizer is already prepared"); }
 
 		const localizer = new Localizer(`${this._config.name}:Localizer`, this._config.localizerOptions);
 
@@ -353,7 +353,7 @@ export class SnowballBot extends EventEmitter {
 	 */
 	public async login() {
 		this._log("info", "Connecting to Discord...");
-		if(!this._discordClient) {
+		if (!this._discordClient) {
 			throw new Error("Discord client not requires reconnecting");
 		}
 		return this._discordClient.login(this._config.token);

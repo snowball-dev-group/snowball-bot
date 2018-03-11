@@ -19,7 +19,7 @@ class VerifiedUtilHandler extends Plugin implements IModule {
 	}
 
 	async init() {
-		if(await init()) {
+		if (await init()) {
 			this.log("ok", "Initialization done, handling events");
 			this.handleEvents();
 		} else {

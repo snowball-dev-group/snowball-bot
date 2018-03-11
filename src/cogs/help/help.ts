@@ -14,21 +14,21 @@ class HelpfulCommand extends Plugin implements IModule {
 
 	constructor() {
 		super({
-			"message": (msg:Message) => this.onMessage(msg)
+			"message": (msg: Message) => this.onMessage(msg)
 		});
 	}
 
-	async onMessage(msg:Message) {
-		if(msg.content !== "!sb_help") {
+	async onMessage(msg: Message) {
+		if (msg.content !== "!sb_help") {
 			return;
 		}
 
-		if(msg.channel.type !== "text" && msg.channel.type !== "dm") {
+		if (msg.channel.type !== "text" && msg.channel.type !== "dm") {
 			return;
 		}
 
-		let infoMsg:Message|undefined = undefined;
-		if(msg.channel.type !== "dm") {
+		let infoMsg: Message | undefined = undefined;
+		if (msg.channel.type !== "dm") {
 			infoMsg = await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "HELPFULCMD_SENDINGTOPM")
 			}) as Message;
@@ -40,13 +40,13 @@ class HelpfulCommand extends Plugin implements IModule {
 				split: true,
 				code: "md"
 			});
-			if(infoMsg) {
+			if (infoMsg) {
 				infoMsg = await infoMsg.edit("", {
 					embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "HELPFULCMD_SENTTOPM")
 				});
 			}
-		} catch(err) {
-			if(infoMsg) {
+		} catch (err) {
+			if (infoMsg) {
 				infoMsg = await infoMsg.edit("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "HELPFULCMD_ERRSENDING")
 				});

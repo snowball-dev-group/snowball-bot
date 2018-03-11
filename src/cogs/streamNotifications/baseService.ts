@@ -57,7 +57,7 @@ export interface IStreamingService extends IModule, EventEmitter {
 	/**
 	 * Starts fetch cycle
 	 */
-	start?(delayed?:number): Promise<void>;
+	start?(delayed?: number): Promise<void>;
 
 	/**
 	 * Stops fetch cycle

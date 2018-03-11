@@ -24,11 +24,11 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 	private readonly config: ITatsumakiPluginConfig;
 
 	constructor(config: ITatsumakiPluginConfig) {
-		if(!config) {
+		if (!config) {
 			throw new Error("No config passed");
 		}
 		const emoji = $discordBot.emojis.get(config.emojiIconID);
-		if(!emoji) { throw new Error(`Emoji with icon by ID "${config.emojiIconID}" not found`); }
+		if (!emoji) { throw new Error(`Emoji with icon by ID "${config.emojiIconID}" not found`); }
 		config.emojiIconID = emoji.toString();
 		this.config = config;
 	}
@@ -44,7 +44,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 
 		try {
 			await getTatsuProfile(js.uid, this.config.apiKey);
-		} catch(err) {
+		} catch (err) {
 			LOG("err", `${js.uid}: Can't get Tatsumaki profile`, err, "(setup)");
 			throw new Error("Failed to get Tatsumaki profile!");
 		}
@@ -56,7 +56,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 	}
 
 	async getEmbed(info: ITatsumakiInfo | string, caller: GuildMember): Promise<IEmbedOptionsField> {
-		if(typeof info !== "object") {
+		if (typeof info !== "object") {
 			info = JSON.parse(info) as ITatsumakiInfo;
 		}
 
@@ -65,12 +65,12 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 
 		try {
 			profile = await getTatsuProfile(info.uid, this.config.apiKey);
-		} catch(err) {
+		} catch (err) {
 			LOG("err", logPrefix, "Error", err);
 			throw new Error("Failed to get Tatsumaki profile.");
 		}
 
-		if(!profile) {
+		if (!profile) {
 			LOG("err", logPrefix, "No 'profile' variable!");
 			throw new Error("Internal Error");
 		}
@@ -97,7 +97,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 				name: `${this.config.emojiIconID} Tatsumaki`,
 				value: str
 			};
-		} catch(err) {
+		} catch (err) {
 			LOG("err", logPrefix, "Failed to generate embed", err);
 			throw new Error("Failed to generate embed");
 		}

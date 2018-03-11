@@ -22,10 +22,10 @@ const DEFAULT_TIMEZONE = (() => {
 	// TODO: make property in localizer
 
 	const enVal = process.env["I18N_DEFAULT_TIMEZONE"];
-	if(!enVal) { return DEFAULT_TZ; }
+	if (!enVal) { return DEFAULT_TZ; }
 
 	// checking if valid
-	if(!intlAcceptsTimezone(enVal)) {
+	if (!intlAcceptsTimezone(enVal)) {
 		return DEFAULT_TZ;
 	}
 
@@ -37,9 +37,9 @@ const DEFAULT_ENFORCE_STATUS = (() => {
 
 	// trying to get from process env
 	const enVal = process.env["I18N_DEFAULT_ENFORCE"];
-	if(!enVal) { return DEFAULT_ENFORCE; }
+	if (!enVal) { return DEFAULT_ENFORCE; }
 
-	switch(enVal.toLowerCase()) {
+	switch (enVal.toLowerCase()) {
 		case "true": return true;
 		case "false": return false;
 	}
@@ -84,9 +84,9 @@ export async function humanizeDurationForUser(user: UserIdentify, duration: numb
 }
 
 export async function toUserLocaleString(user: UserIdentify, date: Date | DateTime | number, options?: Intl.DateTimeFormatOptions) {
-	if(typeof date === "number") {
+	if (typeof date === "number") {
 		date = DateTime.fromMillis(date);
-	} else if(date instanceof Date) {
+	} else if (date instanceof Date) {
 		date = DateTime.fromJSDate(date);
 	}
 
@@ -101,7 +101,7 @@ export async function toUserLocaleString(user: UserIdentify, date: Date | DateTi
 // #region     Getters
 
 export async function getUserLanguage(user: UserIdentify) {
-	if(user instanceof GuildMember && await isGuildEnforceEnabled(user.guild)) {
+	if (user instanceof GuildMember && await isGuildEnforceEnabled(user.guild)) {
 		// no need in updating cache and checking user caching
 		// as guild enforces their language
 		return getGuildLanguage(user.guild);
@@ -121,10 +121,10 @@ export async function getUserTimezone(user: UserIdentify) {
 
 export async function forceUserLanguageUpdate(user: UserIdentify): Promise<string> {
 	const preferredLanguage: string | undefined = await getUserPreferenceValue(user, PREFERENCE_USER_LANGUAGE);
-	if(!preferredLanguage) {
+	if (!preferredLanguage) {
 		// user has no language set
 		// let set it to the current guilds language
-		if(user instanceof GuildMember) {
+		if (user instanceof GuildMember) {
 			// yeah, we could set guild's language
 			// as user comes from some of the guilds
 			const guildLanguage = await getGuildLanguage(user.guild);
@@ -141,8 +141,8 @@ export async function forceUserLanguageUpdate(user: UserIdentify): Promise<strin
 
 export async function forceUserTimezoneUpdate(user: UserIdentify): Promise<string> {
 	const preferredTimezone: string | undefined = await getUserPreferenceValue(user, PREFERENCE_USER_TIMEZONE);
-	if(!preferredTimezone) {
-		if(user instanceof GuildMember) {
+	if (!preferredTimezone) {
+		if (user instanceof GuildMember) {
 			const guildTimezone = await getGuildTimezone(user.guild);
 			await setUserPreferenceValue(user, PREFERENCE_USER_TIMEZONE, guildTimezone);
 			return usersTimezonesCache[user.id] = guildTimezone;
@@ -175,9 +175,9 @@ export async function humanizeDurationForGuild(guild: Guild, duration: number, u
 }
 
 export async function toGuildLocaleString(guild: Guild, date: Date | DateTime | number, options?: Intl.DateTimeFormatOptions) {
-	if(typeof date === "number") {
+	if (typeof date === "number") {
 		date = DateTime.fromMillis(date);
-	} else if(date instanceof Date) {
+	} else if (date instanceof Date) {
 		date = DateTime.fromJSDate(date);
 	}
 
@@ -218,7 +218,7 @@ export async function isGuildEnforceEnabled(guild: Guild) {
 
 export async function forceGuildLanguageUpdate(guild: Guild): Promise<string> {
 	const guildLanguage = await getGuildPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE);
-	if(!guildLanguage) {
+	if (!guildLanguage) {
 		await setGuildPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE, DEFAULT_LANGUAGE);
 		return guildsCache[guild.id] = DEFAULT_LANGUAGE;
 	}
@@ -227,7 +227,7 @@ export async function forceGuildLanguageUpdate(guild: Guild): Promise<string> {
 
 export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
 	const enforcingStatus = await getGuildPreferenceValue(guild, PREFERENCE_GUILD_ENFORCE, true);
-	if(!enforcingStatus) {
+	if (!enforcingStatus) {
 		// no enforcing status found
 		await setGuildPreferenceValue(guild, PREFERENCE_GUILD_ENFORCE, DEFAULT_ENFORCE_STATUS);
 		return guildEnforceCache[guild.id] = DEFAULT_ENFORCE_STATUS;
@@ -238,7 +238,7 @@ export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
 
 export async function forceGuildTimezoneUpdate(guild: Guild): Promise<string> {
 	const guildTimezone = await getGuildPreferenceValue(guild, PREFERENCE_GUILD_TIMEZONE);
-	if(!guildTimezone) {
+	if (!guildTimezone) {
 		await setGuildPreferenceValue(guild, PREFERENCE_GUILD_TIMEZONE, DEFAULT_TIMEZONE);
 		return guildTimezonesCache[guild.id] = DEFAULT_TIMEZONE;
 	}
@@ -256,43 +256,43 @@ function isCustomString(obj: any): obj is ICustomEmbedString {
 }
 
 export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify, descriptionKey: string | ILocalizedEmbedString | ICustomEmbedString | undefined, options: IEmbedOptions = {}) {
-	switch(type) {
+	switch (type) {
 		case EmbedType.Error: {
-			if(options.errorTitle) { break; }
+			if (options.errorTitle) { break; }
 			options.errorTitle = await localizeForUser(user, "EMBED_ERROR");
 		} break;
 		case EmbedType.Information: {
-			if(options.informationTitle) { break; }
+			if (options.informationTitle) { break; }
 			options.informationTitle = await localizeForUser(user, "EMBED_INFORMATION");
 		} break;
 		case EmbedType.OK: {
-			if(options.okTitle) { break; }
+			if (options.okTitle) { break; }
 			options.okTitle = await localizeForUser(user, "EMBED_SUCCESS");
 		} break;
 		case EmbedType.Tada: {
-			if(options.tadaTitle) { break; }
+			if (options.tadaTitle) { break; }
 			options.tadaTitle = await localizeForUser(user, "EMBED_TADA");
 		} break;
 		case EmbedType.Progress: {
-			if(options.progressTitle) { break; }
+			if (options.progressTitle) { break; }
 			options.progressTitle = await localizeForUser(user, "EMBED_PROGRESS");
 		} break;
 		case EmbedType.Question: {
-			if(options.questionTitle) { break; }
+			if (options.questionTitle) { break; }
 			options.questionTitle = await localizeForUser(user, "EMBED_QUESTION");
 		} break;
 		case EmbedType.Warning: {
-			if(options.warningTitle) { break; }
+			if (options.warningTitle) { break; }
 			options.warningTitle = await localizeForUser(user, "EMBED_WARNING");
 		} break;
 	}
 
-	if(!descriptionKey) {
+	if (!descriptionKey) {
 		return generateEmbed(type, undefined, options);
 	}
 
-	if(typeof descriptionKey === "string") {
-		if(descriptionKey.startsWith("custom:")) {
+	if (typeof descriptionKey === "string") {
+		if (descriptionKey.startsWith("custom:")) {
 			descriptionKey = descriptionKey.slice("custom:".length);
 			return generateEmbed(type, descriptionKey, options);
 		} else {
@@ -300,7 +300,7 @@ export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify
 		}
 	}
 
-	if(isCustomString(descriptionKey)) {
+	if (isCustomString(descriptionKey)) {
 		return generateEmbed(type, descriptionKey.string, options);
 	}
 

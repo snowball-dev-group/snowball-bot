@@ -25,17 +25,20 @@ class EmbedME extends Plugin implements IModule {
 	}
 
 	async onMessage(msg: Message) {
-		if(msg.author && msg.author.bot) { return; }
-		if(!msg.content.startsWith("!embed")) { return; }
-		if(msg.content === "!embed") {
+		if (msg.author && msg.author.bot) { return; }
+		if (!msg.content.startsWith("!embed")) { return; }
+		if (msg.content === "!embed") {
 			const str = await localizeForUser(msg.member, "EMBEDME_INFO");
 			msg.channel.send(`:information_source: ${str}`);
 			return;
 		}
+
 		let mContent = msg.content.slice("!embed ".length);
-		if(mContent.startsWith("`") && mContent.endsWith("`")) {
+
+		if (mContent.startsWith("`") && mContent.endsWith("`")) {
 			mContent = mContent.slice(1).substring(0, mContent.length - 2);
 		}
+
 		await msg.channel.send("", {
 			embed: {
 				author: {
@@ -52,7 +55,8 @@ class EmbedME extends Plugin implements IModule {
 				}
 			},
 		});
-		if(msg.channel.type === "text") { msg.delete(); }
+
+		if (msg.channel.type === "text") { msg.delete(); }
 	}
 
 	async unload() {

@@ -5,7 +5,7 @@ import * as getLogger from "loggy";
 
 export function stringifyError(err: Error, filter = null, space = 2) {
 	const plainObject = {};
-	for(const key of Object.getOwnPropertyNames(err)) {
+	for (const key of Object.getOwnPropertyNames(err)) {
 		plainObject[key] = err[key];
 	}
 	return JSON.stringify(plainObject, filter, space);
@@ -13,23 +13,23 @@ export function stringifyError(err: Error, filter = null, space = 2) {
 
 export function colorNumberToHex(color) {
 	let hex = color.toString(16);
-	while(hex.length < 6) { hex = `0${hex}`; }
+	while (hex.length < 6) { hex = `0${hex}`; }
 	return `${hex}`.toUpperCase();
 }
 
 export function objectToMap<T>(obj) {
 	const map = new Map<string, T>();
-	for(const key of Object.keys(obj)) {
+	for (const key of Object.keys(obj)) {
 		map.set(key, obj[key]);
 	}
 	return map;
 }
 
 export function commandRedirect(content: string, redirects: Map<string, Function>) {
-	for(const [key, val] of redirects) {
+	for (const [key, val] of redirects) {
 		const keySpaced = `${key} `;
 		const itsStarts = content.startsWith(keySpaced);
-		if(itsStarts || content === key) {
+		if (itsStarts || content === key) {
 			val(itsStarts ? content.slice(keySpaced.length) : content);
 		}
 	}
@@ -41,7 +41,7 @@ export function escapeDiscordMarkdown(str: string, usernames: boolean = false) {
 	str = replaceAll(str, "[", "\\[");
 	str = replaceAll(str, "]", "\\]");
 
-	if(usernames) {
+	if (usernames) {
 		str = replaceAll(str, "_", "\\_");
 	} else {
 		str = replaceAll(str, " _", " \\_");
@@ -237,7 +237,7 @@ export function generateEmbed(type: EmbedType, description: string | undefined, 
 	// embed pre-fill 
 	embed.author = {};
 	embed.description = description;
-	switch(type) {
+	switch (type) {
 		case EmbedType.Error: {
 			embed.author.name = "Error";
 			embed.author.icon_url = ICONS.ERROR;
@@ -281,76 +281,76 @@ export function generateEmbed(type: EmbedType, description: string | undefined, 
 		} break;
 		case EmbedType.Empty: break;
 	}
-	if(options) {
-		if(options.title) {
+	if (options) {
+		if (options.title) {
 			embed.title = options.title;
 		}
-		if(options.fields) {
+		if (options.fields) {
 			embed.fields = options.fields;
 		}
 		// that's fine
-		if(type === EmbedType.Error && options.errorTitle) {
+		if (type === EmbedType.Error && options.errorTitle) {
 			embed.author.name = options.errorTitle;
-		} else if(type === EmbedType.Information && options.informationTitle) {
+		} else if (type === EmbedType.Information && options.informationTitle) {
 			embed.author.name = options.informationTitle;
-		} else if(type === EmbedType.OK && options.okTitle) {
+		} else if (type === EmbedType.OK && options.okTitle) {
 			embed.author.name = options.okTitle;
-		} else if(type === EmbedType.Tada && options.tadaTitle) {
+		} else if (type === EmbedType.Tada && options.tadaTitle) {
 			embed.author.name = options.tadaTitle;
-		} else if(type === EmbedType.Progress && options.progressTitle) {
+		} else if (type === EmbedType.Progress && options.progressTitle) {
 			embed.author.name = options.progressTitle;
-		} else if(type === EmbedType.Question && options.questionTitle) {
+		} else if (type === EmbedType.Question && options.questionTitle) {
 			embed.author.name = options.questionTitle;
-		} else if(type === EmbedType.Warning && options.warningTitle) {
+		} else if (type === EmbedType.Warning && options.warningTitle) {
 			embed.author.name = options.warningTitle;
 		}
-		if(options.universalTitle && embed.author) {
+		if (options.universalTitle && embed.author) {
 			embed.author.name = options.universalTitle;
 		}
-		if(options.author) {
+		if (options.author) {
 			// full override
 			embed.author = options.author;
 		}
-		if(options.footer) {
+		if (options.footer) {
 			embed.footer = options.footer;
-			if(options.footerText) {
+			if (options.footerText) {
 				embed.footer.text = options.footerText;
 			}
-		} else if(options.footerText) {
+		} else if (options.footerText) {
 			embed.footer = {
 				text: options.footerText
 			};
 		} else {
-			if(type !== EmbedType.Empty) {
+			if (type !== EmbedType.Empty) {
 				embed.footer = {
 					text: $discordBot.user.username,
 					icon_url: $discordBot.user.displayAvatarURL({ format: "webp", size: 128 })
 				};
 			}
 		}
-		if(options.clearFooter) {
+		if (options.clearFooter) {
 			embed.footer = undefined;
 		}
-		if(options.imageUrl) {
+		if (options.imageUrl) {
 			embed.image = {
 				url: options.imageUrl
 			};
 		}
-		if(options.thumbUrl) {
+		if (options.thumbUrl) {
 			embed.thumbnail = {
 				url: options.thumbUrl
 			};
-			if(options.thumbWidth && options.thumbWidth > 0) {
+			if (options.thumbWidth && options.thumbWidth > 0) {
 				embed.thumbnail.width = options.thumbWidth;
 			}
-			if(options.thumbHeight && options.thumbHeight > 0) {
+			if (options.thumbHeight && options.thumbHeight > 0) {
 				embed.thumbnail.height = options.thumbHeight;
 			}
 		}
-		if(options.color) {
+		if (options.color) {
 			embed.color = options.color;
 		}
-		if(options.ts) {
+		if (options.ts) {
 			embed.timestamp = options.ts.toISOString();
 		}
 	}
@@ -369,25 +369,25 @@ export interface ILogger {
 export const SNOWFLAKE_REGEXP = /^[0-9]{16,20}$/;
 
 export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, caseStrict = false) {
-	if(SNOWFLAKE_REGEXP.test(nameOrID)) {
+	if (SNOWFLAKE_REGEXP.test(nameOrID)) {
 		// it's can be ID
 		const role = guild.roles.get(nameOrID);
-		if(role) { return role; }
+		if (role) { return role; }
 	}
 
-	if(!caseStrict) {
+	if (!caseStrict) {
 		nameOrID = nameOrID.toLowerCase();
 	}
 
 	// going to search
-	for(const role of guild.roles.values()) {
+	for (const role of guild.roles.values()) {
 		const roleName = (caseStrict ? role.name : role.name.toLowerCase());
-		switch(strict) {
+		switch (strict) {
 			case true: {
-				if(roleName === nameOrID) { return role; }
+				if (roleName === nameOrID) { return role; }
 			} break;
 			case false: {
-				if(roleName.includes(nameOrID)) { return role; }
+				if (roleName.includes(nameOrID)) { return role; }
 			} break;
 		}
 	}
@@ -397,33 +397,33 @@ export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, 
 
 const CHANNEL_MENTION_SNOWFLAKE = /^\<\#([0-9]{16,20})\>$/;
 
-export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false, possibleMention = false, types: Array<"text"|"voice"|"category"> = ["text", "voice"]) {
-	if(possibleMention) {
+export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false, possibleMention = false, types: Array<"text" | "voice" | "category"> = ["text", "voice"]) {
+	if (possibleMention) {
 		const res = CHANNEL_MENTION_SNOWFLAKE.exec(nameOrID);
-		if(res && res[1]) {
+		if (res && res[1]) {
 			const channel = guild.channels.get(res[1]);
-			if(channel) { return channel; }
+			if (channel) { return channel; }
 		}
 	}
 
-	if(SNOWFLAKE_REGEXP.test(nameOrID)) {
+	if (SNOWFLAKE_REGEXP.test(nameOrID)) {
 		const ch = guild.channels.get(nameOrID);
-		if(ch) { return ch; }
+		if (ch) { return ch; }
 	}
 
-	if(!caseStrict) {
+	if (!caseStrict) {
 		nameOrID = nameOrID.toLowerCase();
 	}
 
-	for(const channel of guild.channels.values()) {
-		if(!types.includes(<any>channel.type)) { continue; }
+	for (const channel of guild.channels.values()) {
+		if (!types.includes(<any> channel.type)) { continue; }
 		const channelName = caseStrict ? channel.name : channel.name.toLowerCase();
-		switch(strict) {
+		switch (strict) {
 			case true: {
-				if(channelName === nameOrID) { return channel; }
+				if (channelName === nameOrID) { return channel; }
 			} break;
 			case false: {
-				if(channelName.includes(nameOrID)) { return channel; }
+				if (channelName.includes(nameOrID)) { return channel; }
 			} break;
 		}
 	}
@@ -442,27 +442,27 @@ const USER_MENTION_SNOWFLAKE = /^\<\@\!?([0-9]{16,20})\>$/;
 export async function safeMemberFetch(guild: Guild, id: string, errCallback?: (err) => void) {
 	try {
 		return guild.members.get(id) || await guild.members.fetch(id);
-	} catch(err) {
-		if(errCallback) { errCallback(err); }
+	} catch (err) {
+		if (errCallback) { errCallback(err); }
 		return undefined;
 	}
 }
 
 export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false, possibleMention = false): Promise<GuildMember | undefined> {
-	if(possibleMention) {
+	if (possibleMention) {
 		const res = USER_MENTION_SNOWFLAKE.exec(nameOrID);
-		if(res && res[1]) {
+		if (res && res[1]) {
 			const member = await safeMemberFetch(guild, res[1]);
-			if(member) { return member; }
+			if (member) { return member; }
 		}
 	}
 
-	if(SNOWFLAKE_REGEXP.test(nameOrID)) {
+	if (SNOWFLAKE_REGEXP.test(nameOrID)) {
 		const member = safeMemberFetch(guild, nameOrID);
-		if(member) { return member; }
+		if (member) { return member; }
 	}
 
-	if(!caseStrict) {
+	if (!caseStrict) {
 		nameOrID = nameOrID.toLowerCase();
 	}
 
@@ -474,24 +474,24 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 
 	{
 		const hashIndex = nameOrID.lastIndexOf("#");
-		if(hashIndex !== -1) {
+		if (hashIndex !== -1) {
 			const username = nameOrID.slice(0, hashIndex).replace(/\@/g, "");
-			if(username.length > 0) { tagParts_username = username; }
+			if (username.length > 0) { tagParts_username = username; }
 			tagParts_discrim = nameOrID.slice(hashIndex + 1);
 			isTag = true;
 		}
 	}
 
-	for(const member of guild.members.array()) {
+	for (const member of guild.members.array()) {
 		const username = caseStrict ? member.user.username : member.user.username.toLowerCase();
 
-		if(isTag) { // tag strict equality check
-			if(tagParts_discrim !== member.user.discriminator) { continue; }
-			if(tagParts_username) {
-				if(strict) {
-					if(username !== tagParts_username) { continue; }
+		if (isTag) { // tag strict equality check
+			if (tagParts_discrim !== member.user.discriminator) { continue; }
+			if (tagParts_username) {
+				if (strict) {
+					if (username !== tagParts_username) { continue; }
 				} else {
-					if(!username.includes(tagParts_username)) { continue; }
+					if (!username.includes(tagParts_username)) { continue; }
 				}
 			}
 
@@ -500,14 +500,14 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 
 		const nickname = member.nickname ? (caseStrict ? member.nickname : member.nickname.toLowerCase()) : undefined;
 
-		switch(strict) {
+		switch (strict) {
 			case true: {
-				if((nickname && nickname === nameOrID) || username === nameOrID) {
+				if ((nickname && nickname === nameOrID) || username === nameOrID) {
 					return member;
 				}
 			} break;
 			case false: {
-				if((nickname && nickname.includes(nameOrID)) || username.includes(nameOrID)) {
+				if ((nickname && nickname.includes(nameOrID)) || username.includes(nameOrID)) {
 					return member;
 				}
 			} break;
@@ -527,17 +527,17 @@ export function sleep<T>(delay: number = 1000, value?: T): Promise<T> {
 
 export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEmojiStore, strict = true) : INullableHashMap<string> {
 	const resolvedEmojisMap = Object.create(null);
-	for(const emojiKey in emojis) {
+	for (const emojiKey in emojis) {
 		const emojiId = emojis[emojiKey]!;
 
 		// raw cases
-		if(emojiId.startsWith("raw:")) {
+		if (emojiId.startsWith("raw:")) {
 			resolvedEmojisMap[emojiKey] = emojiId.slice(3); // 3 - length
 			continue;
 		}
 
-		if(!SNOWFLAKE_REGEXP.test(emojiId)) {
-			if(strict) {
+		if (!SNOWFLAKE_REGEXP.test(emojiId)) {
+			if (strict) {
 				throw new Error(`Invalid Emoji ID provided by key "${emojiKey}" - "${emojiId}"`);
 			}
 			continue;
@@ -545,7 +545,7 @@ export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEm
 
 		const resolvedEmoji = store.get(emojiId);
 
-		if(strict && !resolvedEmoji) {
+		if (strict && !resolvedEmoji) {
 			throw new Error(`Emoji with ID "${emojiId}" by key "${emojiKey}" not found`);
 		}
 
@@ -557,20 +557,20 @@ export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEm
 
 const MESSAGES_LOG = getLogger("Utils:Utils#getMessageMember");
 
-export async function getMessageMember(msg: Message) : Promise<GuildMember|undefined> {
-	if(msg.channel.type !== "text") { return undefined; }
-	if(msg.webhookID) { return undefined; } // webhooks
+export async function getMessageMember(msg: Message) : Promise<GuildMember | undefined> {
+	if (msg.channel.type !== "text") { return undefined; }
+	if (msg.webhookID) { return undefined; } // webhooks
 
 	let member = msg.member;
 
-	if(!member) {
-		if(msg.author) {
+	if (!member) {
+		if (msg.author) {
 			MESSAGES_LOG("warn", `Detected uncached member with ID "${msg.author.id}", trying to fetch them...`);
 			try {
 				member = await msg.guild.members.fetch(msg.author);
 			} catch (err) {
-				if(err instanceof DiscordAPIError) {
-					switch(err.code) {
+				if (err instanceof DiscordAPIError) {
+					switch (err.code) {
 						case 10007: { MESSAGES_LOG("err", `User with ID "${msg.author.id}" is not member of the server`); } return;
 						case 10013: { MESSAGES_LOG("err", `User with ID "${msg.author.id}" is not real Discord user`); } return;
 					}
@@ -585,9 +585,9 @@ export async function getMessageMember(msg: Message) : Promise<GuildMember|undef
 	return member;
 }
 
-export async function getMessageMemberOrAuthor(msg: Message) : Promise<GuildMember|User|undefined> {
-	if(msg.channel.type !== "text") { return msg.author; }
-	else if(msg.webhookID) { return undefined; }
+export async function getMessageMemberOrAuthor(msg: Message) : Promise<GuildMember | User | undefined> {
+	if (msg.channel.type !== "text") { return msg.author; }
+	else if (msg.webhookID) { return undefined; }
 
 	return getMessageMember(msg);
 }

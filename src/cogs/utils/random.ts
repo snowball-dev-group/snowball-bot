@@ -4,7 +4,7 @@ export function getRandom(seed?: string) {
 	return new Random((() => {
 		let engine = Random.engines.mt19937();
 
-		if(seed) {
+		if (seed) {
 			engine = engine.seedWithArray(seed.split("").map(c => c.charCodeAt(0)));
 		} else { engine = engine.autoSeed(); }
 

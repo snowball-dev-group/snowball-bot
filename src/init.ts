@@ -21,11 +21,11 @@ const SHARD_TIMEOUT = 30000; // ms
 
 		try {
 			config = require(`./config/configuration.${env}.json`);
-		} catch(err) {
+		} catch (err) {
 			log("err", "[Config] Loading config for", env, "failed, attempt to load standard config");
 			config = require("./config/configuration.json");
 		}
-	} catch(err) {
+	} catch (err) {
 		log("err", err);
 		log("err", "[Config] Exiting due we can't start bot without proper config");
 		return process.exit(-1);
@@ -39,10 +39,10 @@ const SHARD_TIMEOUT = 30000; // ms
 	log("info", "[FixConfig] Fixing config...");
 	config.localizerOptions.directory = pathJoin(__dirname, config.localizerOptions.directory);
 
-	if(config.shardingOptions && config.shardingOptions.enabled) {
+	if (config.shardingOptions && config.shardingOptions.enabled) {
 		log("warn", "[Sharding] WARNING: Entering sharding mode!");
-		if(cluster.isWorker || (process.env.NODE_ENV === "development" && process.env.DEBUG_SHARDS === "yes")) {
-			if(typeof process.env.SHARD_ID !== "string" || typeof process.env.SHARDS_COUNT !== "string") {
+		if (cluster.isWorker || (process.env.NODE_ENV === "development" && process.env.DEBUG_SHARDS === "yes")) {
+			if (typeof process.env.SHARD_ID !== "string" || typeof process.env.SHARDS_COUNT !== "string") {
 				log("err", "[Sharding] Invalid environment variables!", {
 					id: process.env.SHARD_ID || "not set",
 					count: process.env.SHARDS_COUNT || "not set"
@@ -61,26 +61,26 @@ const SHARD_TIMEOUT = 30000; // ms
 					shardId,
 					shardsCount
 				});
-			} catch(err) {
+			} catch (err) {
 				log("err", `[Sharding:Shard~${shardId}] Failed to initializate bot`, err);
 				return process.exit(1);
 			}
 
-			if(process.send) {
+			if (process.send) {
 				process.send({
 					type: "online"
 				});
 			}
-		} else if(cluster.isMaster) {
+		} else if (cluster.isMaster) {
 			const shards = config.shardingOptions.shards;
-			if(shards < 0) {
+			if (shards < 0) {
 				log("err", "[Sharding:Master] Invalid number of shards");
 				process.exit(0);
 				return;
 			}
 			try {
 				spawnShards(log, shards);
-			} catch(err) {
+			} catch (err) {
 				log("err", "[Sharding:Master] Could not start some shards", err);
 				process.exit(1);
 			}
@@ -92,29 +92,29 @@ const SHARD_TIMEOUT = 30000; // ms
 				shardId: 0,
 				shardsCount: 1
 			});
-		} catch(err) {
+		} catch (err) {
 			log("err", "[Run] Failed to initalizate bot", err);
 			return process.exit(1);
 		}
 	}
 })();
 
-async function spawnShards(log:any, shardsCount:number) {
-	if(cluster.isWorker) {
+async function spawnShards(log: any, shardsCount: number) {
+	if (cluster.isWorker) {
 		throw new Error("Could not spawn shards inside the worker!");
 	}
 
 	const clusterRegistry: { [id: string]: cluster.Worker } = Object.create(null);
 
 	const forwardMessage = (c: any, msg: any) => {
-		for(const id in clusterRegistry) {
+		for (const id in clusterRegistry) {
 			// no self msg
-			if(id === c.id) { continue; }
+			if (id === c.id) { continue; }
 			clusterRegistry[id].send(msg);
 		}
 	};
 
-	for(let shardId = 0; shardId < shardsCount; shardId++) {
+	for (let shardId = 0; shardId < shardsCount; shardId++) {
 		log("info", "[Sharding] Spawning shard", shardId + 1);
 		// returns shard
 		const c = await spawnShard(log, shardId, shardsCount, forwardMessage);
@@ -122,8 +122,8 @@ async function spawnShards(log:any, shardsCount:number) {
 	}
 }
 
-async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMessage:(c:cluster.Worker, msg:any) => void) : Promise<cluster.Worker> {
-	if(cluster.isWorker) {
+async function spawnShard(log: any, shardId: number, shardsCount: number, forwardMessage: (c: cluster.Worker, msg: any) => void) : Promise<cluster.Worker> {
+	if (cluster.isWorker) {
 		throw new Error("Could not spawn shard inside the worker!");
 	}
 
@@ -139,9 +139,9 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 	const c = cluster.fork(env).on("online", () => {
 		log("info", "[Sharding] Cluster", c.id, "is online");
 	}).on("message", (message) => {
-		if(typeof message === "object") {
-			if(typeof message.type === "string") {
-				switch(message.type) {
+		if (typeof message === "object") {
+			if (typeof message.type === "string") {
+				switch (message.type) {
 					case "online": {
 						shardConnected = true;
 					} break;
@@ -164,13 +164,13 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 
 	await (new Promise((res, rej) => {
 		const id = setInterval(() => {
-			if(shardConnected) { res(); clearInterval(id); }
+			if (shardConnected) { res(); clearInterval(id); }
 			clusterDied = clusterDied || c.isDead();
-			if(clusterDied) {
+			if (clusterDied) {
 				clearInterval(id);
 				rej("Cluster died");
 			}
-			if(((Date.now() - forkedAt) > SHARD_TIMEOUT)) {
+			if (((Date.now() - forkedAt) > SHARD_TIMEOUT)) {
 				clearInterval(id);
 				rej("Timed out");
 				c.kill("SIGTERM");
@@ -186,11 +186,11 @@ async function spawnShard(log:any, shardId:number, shardsCount:number, forwardMe
 let loadComplete = false;
 let exitCalls = 0;
 
-async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotConfig) {
+async function initBot(log: any, config: IBotConfig, internalConfig: IInternalBotConfig) {
 	log("info", "[Run] Initializing bot...");
 	const snowball = new SnowballBot(config, internalConfig);
 
-	if(!config.ravenUrl) {
+	if (!config.ravenUrl) {
 		log("info", "[Sentry] Want beautiful reports for bot errors?");
 		log("info", "[Sentry] Get your Raven API key at https://sentry.io/");
 		log("info", "[Sentry] Put it to `ravenUrl` in your config file");
@@ -201,8 +201,8 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotCo
 
 	log("info", "[Shutdown] Blocking SIGINT");
 	process.on("SIGINT", async () => {
-		if(!loadComplete) {
-			if(++exitCalls < 5) { return false; }
+		if (!loadComplete) {
+			if (++exitCalls < 5) { return false; }
 			return process.exit(130);
 		}
 		logger.setAsync(false);
@@ -246,7 +246,7 @@ async function initBot(log:any, config:IBotConfig, internalConfig:IInternalBotCo
 
 		log("ok", "[Run] ====== DONE ======");
 		loadComplete = true;
-	} catch(err) {
+	} catch (err) {
 		log("err", "[Run] Can't start bot", err);
 		log("err", "[Run] Exiting due we can't work without bot connected to Discord");
 		process.exit(1);

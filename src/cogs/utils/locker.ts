@@ -44,7 +44,7 @@ export default class DiscordLocker {
 	 */
 	public lock(targetId: PossibleTargets, onLock: (unlock: EmptyVoid) => void, lockFailed?: EmptyVoid) {
 		targetId = this._normalizeTarget(targetId);
-		if(this._lockStates[targetId]) {
+		if (this._lockStates[targetId]) {
 			lockFailed && process.nextTick(lockFailed);
 			return false;
 		}
@@ -69,7 +69,7 @@ export default class DiscordLocker {
 				res(onLockResult); unlock();
 			}, lockFailed);
 
-			if(!isLocked) {
+			if (!isLocked) {
 				// `lock` always returns `false` if already locked
 				return rej({
 					code: "LOCK_IN_EFFECT",
@@ -87,7 +87,7 @@ export default class DiscordLocker {
 	 */
 	public waitForUnlock<T>(targetId: PossibleTargets, onUnlock: (...args: T[]) => void, ...args: T[]) {
 		targetId = this._normalizeTarget(targetId);
-		if(!this._lockStates[targetId]) { return process.nextTick(onUnlock, ...args); }
+		if (!this._lockStates[targetId]) { return process.nextTick(onUnlock, ...args); }
 		this._dispatcher.once(`${targetId}:unlock`, () => process.nextTick(onUnlock, ...args));
 	}
 
@@ -109,7 +109,7 @@ export default class DiscordLocker {
 	 */
 	public unlock(targetId: PossibleTargets) {
 		targetId = this._normalizeTarget(targetId);
-		if(!this._lockStates[targetId]) { return false; }
+		if (!this._lockStates[targetId]) { return false; }
 		this._lockStates[targetId] = false;
 		this._dispatcher.emit(`${targetId}:unlock`);
 		return true;
@@ -118,14 +118,14 @@ export default class DiscordLocker {
 	private _createSingletimeUnlocker(targetId: string) {
 		let isUsed = false;
 		return () => {
-			if(isUsed) { throw new Error("This target is already unlocked"); }
+			if (isUsed) { throw new Error("This target is already unlocked"); }
 			return (isUsed = true) && this.unlock(targetId);
 		};
 	}
 
 	private _normalizeTarget(target: PossibleTargets) {
-		if(typeof target === "string") { return target; }
-		if(target instanceof Guild) { return `g[${target.id}]`; }
+		if (typeof target === "string") { return target; }
+		if (target instanceof Guild) { return `g[${target.id}]`; }
 		return `${target.type}[${target.id}]`;
 	}
 }

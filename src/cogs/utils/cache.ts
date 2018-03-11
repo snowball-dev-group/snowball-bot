@@ -42,16 +42,16 @@ export async function storeValue<T>(owner: string, key: string, value: AllowedTy
 
 	const builtKey = buildCacheKey(owner, key);
 
-	if(Array.isArray(value)) {
+	if (Array.isArray(value)) {
 		const stringifyTriggeredAt: number[] = [];
 
 		let pipeline = redisClient.pipeline();
 		// tbh I still unsure if I need to reassign pipeline var
 		// if nope, pls report an issue or make merge request
 		// thanx <3
-		for(let i = 0; i < value.length; i++) {
+		for (let i = 0; i < value.length; i++) {
 			let val = value[i];
-			if(typeof val === "object") {
+			if (typeof val === "object") {
 				val = JSON.stringify(val);
 				stringifyTriggeredAt.push(i);
 			}
@@ -70,7 +70,7 @@ export async function storeValue<T>(owner: string, key: string, value: AllowedTy
 		};
 	} else {
 		let stringifyCalled = false;
-		if(typeof value === "object") {
+		if (typeof value === "object") {
 			stringifyCalled = true;
 			value = JSON.stringify(value);
 		}
@@ -89,7 +89,7 @@ export async function get<T>(owner: string, key: string, isJson = false, pop = f
 
 	const builtKey = buildCacheKey(owner, key);
 	const res = await redisClient.get(builtKey);
-	if(pop) { await redisClient.del(builtKey); }
+	if (pop) { await redisClient.del(builtKey); }
 
 	return isJson && res != null ? JSON.parse(res) : res;
 }
@@ -98,17 +98,17 @@ export async function getArray<T>(owner: string, key: string, jsonParse: boolean
 	const redisClient = await getRedisClient();
 
 	const builtKey = buildCacheKey(owner, key);
-	let res = <any[]>await redisClient.lrange(builtKey, 0, -1);
+	let res = <any[]> await redisClient.lrange(builtKey, 0, -1);
 
-	if(jsonParse) {
-		if(Array.isArray(jsonParse)) {
+	if (jsonParse) {
+		if (Array.isArray(jsonParse)) {
 			res = parseByIndexes<T>(res, jsonParse);
 		} else {
 			res = parseArrayElements<T>(res);
 		}
 	}
 
-	if(pop) { await redisClient.del(builtKey); }
+	if (pop) { await redisClient.del(builtKey); }
 
 	return res;
 }
@@ -116,8 +116,8 @@ export async function getArray<T>(owner: string, key: string, jsonParse: boolean
 export async function deleteKeys(owner: string, keys: string | string[]) {
 	const redisClient = await getRedisClient();
 
-	if(Array.isArray(keys)) {
-		for(let i = 0; i < keys.length; i++) {
+	if (Array.isArray(keys)) {
+		for (let i = 0; i < keys.length; i++) {
 			keys[i] = buildCacheKey(owner, keys[i]);
 		}
 	} else {
@@ -128,19 +128,19 @@ export async function deleteKeys(owner: string, keys: string | string[]) {
 }
 
 function parseByIndexes<T>(arr: any[], parseIndexes: number[]) {
-	for(const index of parseIndexes) {
+	for (const index of parseIndexes) {
 		const elem = arr[index];
-		if(elem == null) { continue; }
+		if (elem == null) { continue; }
 		arr[index] = JSON.parse(elem);
 	}
-	return <T[]>arr;
+	return <T[]> arr;
 }
 
 function parseArrayElements<T>(arr: any[]) {
-	for(let i = 0; i < arr.length; i++) {
+	for (let i = 0; i < arr.length; i++) {
 		arr[i] = JSON.parse(arr[i]);
 	}
-	return <T[]>arr;
+	return <T[]> arr;
 }
 
 function stripUnnecessaryChars(str: string) {
@@ -148,7 +148,7 @@ function stripUnnecessaryChars(str: string) {
 }
 
 function lengthCheck(key: string, val: string) {
-	if(val.length < 1) { throw new Error(`Invalid-Length \`${key}\` provided: '${val}'`); }
+	if (val.length < 1) { throw new Error(`Invalid-Length \`${key}\` provided: '${val}'`); }
 	return val;
 }
 

@@ -27,11 +27,11 @@ export default class PrefixAll implements IModule {
 	private readonly _messagesCacheDestructionTime: number;
 
 	constructor(options?: IPrefixAllOptions) {
-		if(coreInitialized) {
+		if (coreInitialized) {
 			throw new Error("You couldn't initialize this module second time. Please unload currently loaded module and try again");
 		}
 
-		options = <IPrefixAllOptions>{
+		options = <IPrefixAllOptions> {
 			defaultPrefix: DEFAULT_PREFIX,
 			messagesCacheDestructionTime: DEFAULT_MSGCACHE_DESTRUCTTIME,
 			...options
@@ -50,9 +50,9 @@ export default class PrefixAll implements IModule {
 	private _cacheMessage(ctx: Message, result: CheckResult): CheckResult {
 		let cached = this._messagesCache[ctx.id]; // checking if there's cached version
 
-		if(cached) { // by some reason we got call, when it was already cached?
+		if (cached) { // by some reason we got call, when it was already cached?
 			const cachedResult = cached.result;
-			if(!cached.destructTimer) {
+			if (!cached.destructTimer) {
 				// okay, it's borked, let's re-cache it
 				delete this._messagesCache[ctx.id];
 				return this._cacheMessage(ctx, cachedResult);
@@ -63,7 +63,7 @@ export default class PrefixAll implements IModule {
 		// function to execute once timer fires
 		const destructionFunction = (() => {
 			const cached = this._messagesCache[ctx.id];
-			if(cached) {
+			if (cached) {
 				cached.destructTimer = null;
 				delete this._messagesCache[ctx.id];
 			}
@@ -82,11 +82,11 @@ export default class PrefixAll implements IModule {
 	private async _getGuildPrefix(guild: Guild, defaultReplacement = true) {
 		let cachedPrefixes = this._prefixesCache[guild.id];
 
-		if(typeof cachedPrefixes === "undefined") {
+		if (typeof cachedPrefixes === "undefined") {
 			cachedPrefixes = this._prefixesCache[guild.id] = await this._dbController.getPrefixes(guild);
 		}
 
-		if(cachedPrefixes === null) { return defaultReplacement ? [this._defaultPrefix] : null; }
+		if (cachedPrefixes === null) { return defaultReplacement ? [this._defaultPrefix] : null; }
 
 		return cachedPrefixes;
 	}
@@ -97,31 +97,31 @@ export default class PrefixAll implements IModule {
 	 */
 	public async checkPrefix(message: Message) {
 		const cached = this._messagesCache[message.id];
-		if(cached) { // slight optimization
+		if (cached) { // slight optimization
 			return cached.result;
 		}
 		
 		// no cached version
-		if(!message.content || message.content.length === 0) {
+		if (!message.content || message.content.length === 0) {
 			// that's absolutely no-no
 			return this._cacheMessage(message, false);
 		}
 
-		if(!message.guild) {
+		if (!message.guild) {
 			// only default prefix
 			return this._cacheMessage(message, message.content.startsWith(this._defaultPrefix) && this.defaultPrefix);
 		}
 
 		const guildPrefix = await this._getGuildPrefix(message.guild);
 
-		if(!guildPrefix) {
+		if (!guildPrefix) {
 			// rare case, when absolutely no prefixes, even no default one
 			return this._cacheMessage(message, false);
 		}
 
 		const foundPrefix = guildPrefix.find(prefix => message.content.startsWith(prefix));
 
-		if(!foundPrefix) {
+		if (!foundPrefix) {
 			return this._cacheMessage(message, false);
 		}
 
@@ -129,14 +129,14 @@ export default class PrefixAll implements IModule {
 	}
 
 	public async getPrefixes(guild: Guild) {
-		if(!guild) { return [this.defaultPrefix]; }
+		if (!guild) { return [this.defaultPrefix]; }
 		return this._getGuildPrefix(guild);
 	}
 
 	public async setPrefixes(guild: Guild, prefixes: string[] | null) {
 		await this._dbController.setPrefixes(guild, prefixes);
 		const newPrefixes = await this._dbController.getPrefixes(guild);
-		if(!newPrefixes) { return this._prefixesCache[guild.id] = null; }
+		if (!newPrefixes) { return this._prefixesCache[guild.id] = null; }
 		return this._prefixesCache[guild.id] = newPrefixes;
 	}
 

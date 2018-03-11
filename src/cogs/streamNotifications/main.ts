@@ -237,17 +237,17 @@ class StreamNotifications extends Plugin implements IModule {
 			defaultSet: []
 		});
 
-		if(!options.limits) {
+		if (!options.limits) {
 			options.limits = DEFAULT_LIMITS;
 		} else {
-			for(const key of Object.keys(DEFAULT_LIMITS)) {
-				if(typeof options.limits[key] !== "number") {
+			for (const key of Object.keys(DEFAULT_LIMITS)) {
+				if (typeof options.limits[key] !== "number") {
 					options.limits[key] = DEFAULT_LIMITS[key];
 				}
 			}
 		}
 
-		if(options.sss_limit != null) {
+		if (options.sss_limit != null) {
 			options.sss_limit = Math.max(0, Number(options.sss_limit));
 		} else {
 			options.sss_limit = DEFAULT_SSS_LIMIT;
@@ -261,11 +261,11 @@ class StreamNotifications extends Plugin implements IModule {
 	// =======================================
 
 	async onMessage(msg: Message) {
-		if(!msg.content.startsWith(PREFIX)) { return; }
+		if (!msg.content.startsWith(PREFIX)) { return; }
 		const cmd = parseCmd(msg.content);
 		const args = cmd.args ? cmd.args.only("value") : null;
 		try {
-			switch(cmd.subCommand) {
+			switch (cmd.subCommand) {
 				case "edit": await this.subcmd_edit(msg, args); break;
 				case "add": await this.subcmd_add(msg, args, "guild"); break;
 				case "remove": await this.subcmd_remove(msg, args, "guild"); break;
@@ -274,7 +274,7 @@ class StreamNotifications extends Plugin implements IModule {
 				case "unsubscribe": await this.subcmd_remove(msg, args, "user"); break;
 				default: await this.subcmd_list(msg, cmd.subCommand, args); break;
 			}
-		} catch(err) {
+		} catch (err) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.author, LOCALIZED("CMD_ERROR"))
 			});
@@ -294,16 +294,16 @@ class StreamNotifications extends Plugin implements IModule {
 		// !streams set_channel <#228174260307230721>
 		// args at this point: ["<#228174260307230721>"]
 
-		if(msg.channel.type !== "text") { return; }
+		if (msg.channel.type !== "text") { return; }
 
-		if(!rightsCheck(msg.member)) {
+		if (!rightsCheck(msg.member)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
 			return;
 		}
 
-		if(!args || args.length !== 1) {
+		if (!args || args.length !== 1) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: LOCALIZED("SETCHANNEL_USAGE"),
@@ -317,10 +317,10 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const settings = await this.createOrGetSettings(msg.guild);
 
-		if(args[0] !== "NONE") {
+		if (args[0] !== "NONE") {
 			const matches = args[0].match(/[0-9]+/);
 			const channelId = matches ? matches[0] : undefined;
-			if(!channelId) {
+			if (!channelId) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_WRONGIDFORMAT"))
 				});
@@ -330,14 +330,14 @@ class StreamNotifications extends Plugin implements IModule {
 			// trying to find this channel?
 
 			const channel = msg.guild.channels.get(channelId);
-			if(!channel) {
+			if (!channel) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_CHANNELNOTFOUND"))
 				});
 				return;
 			}
 
-			if(channel.type !== "text") {
+			if (channel.type !== "text") {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_WRONGCHANNELTYPE"))
 				});
@@ -360,16 +360,16 @@ class StreamNotifications extends Plugin implements IModule {
 		// !streams edit YouTube, ID, mention_everyone, true
 		// args at this point: ["YouTube", "ID", "mention_everyone", "true"]
 
-		if(msg.channel.type !== "text") { return; }
+		if (msg.channel.type !== "text") { return; }
 
-		if(!rightsCheck(msg.member)) {
+		if (!rightsCheck(msg.member)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
 			return;
 		}
 
-		if(!args || args.length !== 4) {
+		if (!args || args.length !== 4) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: LOCALIZED("EDIT_USAGE"),
@@ -382,9 +382,9 @@ class StreamNotifications extends Plugin implements IModule {
 		}
 
 		// checking arguments
-		switch(args[2]) {
+		switch (args[2]) {
 			case "mention_everyone": {
-				if(!["true", "false"].includes(args[3])) {
+				if (!["true", "false"].includes(args[3])) {
 					await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_INVALIDARG0"))
 					});
@@ -405,7 +405,7 @@ class StreamNotifications extends Plugin implements IModule {
 			uid: args[1]
 		});
 
-		if(!subscription) {
+		if (!subscription) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_SUBNOTFOUND"))
 			});
@@ -424,15 +424,15 @@ class StreamNotifications extends Plugin implements IModule {
 
 		this.guildSettingsCache[settings.guild] = settings;
 
-		if(args[2] === "mention_everyone") {
-			if(args[3] === "true") {
+		if (args[2] === "mention_everyone") {
+			if (args[3] === "true") {
 				// find current one?
 
 				const current = settings.mentionsEveryone.find((s) => {
 					return !!subscription && s.serviceName === subscription.provider && s.uid === subscription.uid && s.username === subscription.username;
 				});
 
-				if(current) {
+				if (current) {
 					await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_ME_ALREADYMENTIONS"))
 					});
@@ -449,7 +449,7 @@ class StreamNotifications extends Plugin implements IModule {
 					return !!subscription && s.serviceName === subscription.provider && s.uid === subscription.uid && s.username === subscription.username;
 				});
 
-				if(index === -1) {
+				if (index === -1) {
 					await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_ME_ALREADYNOTMENTIONS"))
 					});
@@ -479,11 +479,11 @@ class StreamNotifications extends Plugin implements IModule {
 		// !streams add YouTube, BlackSilverUfa
 		// args at this point: ["YouTube", "BlackSilverUfa"]
 
-		if(scope === "guild" && msg.channel.type !== "text") {
+		if (scope === "guild" && msg.channel.type !== "text") {
 			return;
 		}
 
-		if(scope === "guild" && !rightsCheck(msg.member)) {
+		if (scope === "guild" && !rightsCheck(msg.member)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
@@ -492,7 +492,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const i18nSubject = msg.channel.type === "dm" ? msg.author : msg.member;
 
-		if(!args || (args.length !== 2 && args.length !== 3)) {
+		if (!args || (args.length !== 2 && args.length !== 3)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, i18nSubject, {
 					key: LOCALIZED(scope === "guild" ? "ADD_USAGE" : "ADD_USAGE_DM"),
@@ -509,11 +509,11 @@ class StreamNotifications extends Plugin implements IModule {
 		const rawSettings = await this.createOrGetSettings(subscriber);
 		const settings = rawSettings ? this.convertToNormalSettings(rawSettings) : undefined;
 
-		if(!settings) {
+		if (!settings) {
 			throw new Error("Unexpected behavior. No `settings` passed");
 		}
 
-		if(scope === "user" && (this.options.limits.users && settings.subscribedTo.length >= this.options.limits.users) && !isPremium(msg.author)) {
+		if (scope === "user" && (this.options.limits.users && settings.subscribedTo.length >= this.options.limits.users) && !isPremium(msg.author)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, {
 					key: LOCALIZED("ADD_FAULT_NOPREMIUM"),
@@ -523,9 +523,9 @@ class StreamNotifications extends Plugin implements IModule {
 				})
 			});
 			return;
-		} else if((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds && settings.subscribedTo.length >= this.options.limits.users)) {
+		} else if ((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds && settings.subscribedTo.length >= this.options.limits.users)) {
 			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
-			if(!whitelistStatus) {
+			if (!whitelistStatus) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 						key: LOCALIZED("ADD_FAULT_NOPARTNER"),
@@ -541,7 +541,7 @@ class StreamNotifications extends Plugin implements IModule {
 		const providerName = args[0].toLowerCase();
 		const provider = this.servicesLoader.findBase<IStreamingService>(providerName, "name");
 
-		if(!provider) {
+		if (!provider) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_PROVIDERNOTFOUND"))
 			});
@@ -552,8 +552,8 @@ class StreamNotifications extends Plugin implements IModule {
 
 		try {
 			streamer = await provider.getStreamer(args[1]);
-		} catch(err) {
-			if(err instanceof StreamingServiceError) {
+		} catch (err) {
+			if (err instanceof StreamingServiceError) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED(err.stringKey))
 				});
@@ -566,14 +566,14 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
-		if(!streamer) { return; }
+		if (!streamer) { return; }
 
 		let alternativeChannel: Possible<TextChannel> = undefined;
 		{
 			// checking alternative channel usage
 			const usedAlternativeChannelArg = this.usedAlternativeChannelArgument(scope, msg.guild, args[2]);
-			if(usedAlternativeChannelArg.use) {
-				if(!usedAlternativeChannelArg.channel) {
+			if (usedAlternativeChannelArg.use) {
+				if (!usedAlternativeChannelArg.channel) {
 					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, {
 							key: LOCALIZED("ALT_CH_NOTFOUND@+ADDING"),
@@ -585,11 +585,11 @@ class StreamNotifications extends Plugin implements IModule {
 					return;
 				}
 
-				if(this.determineSSSLimitReached(settings, {
+				if (this.determineSSSLimitReached(settings, {
 					provider: providerName,
 					uid: streamer.uid
 				})) {
-					if(isNaN(this.options.sss_limit)) { throw new Error("Unpredicted case happened"); }
+					if (isNaN(this.options.sss_limit)) { throw new Error("Unpredicted case happened"); }
 					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, {
 							key: LOCALIZED("ADD_FAULT_SSSREACHED"),
@@ -614,7 +614,7 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 
 		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-		if(!confirmation) {
+		if (!confirmation) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("CANCELED"))
 			});
@@ -642,11 +642,11 @@ class StreamNotifications extends Plugin implements IModule {
 		// !streams remove YouTube, ID
 		// args at this point: ["YouTube", "ID"]
 
-		if(scope === "guild" && msg.channel.type !== "text") {
+		if (scope === "guild" && msg.channel.type !== "text") {
 			return;
 		}
 
-		if(scope === "guild" && !rightsCheck(msg.member)) {
+		if (scope === "guild" && !rightsCheck(msg.member)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
@@ -655,7 +655,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const i18nSubject = msg.channel.type === "dm" ? msg.author : msg.member;
 
-		if(!args || (args.length !== 2 && args.length !== 3)) {
+		if (!args || (args.length !== 2 && args.length !== 3)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, i18nSubject, {
 					key: LOCALIZED("REMOVE_USAGE"),
@@ -674,8 +674,8 @@ class StreamNotifications extends Plugin implements IModule {
 		{
 			// checking alternative channel usage
 			const usedAlternativeChannelArg = this.usedAlternativeChannelArgument(scope, msg.guild, args[2]);
-			if(usedAlternativeChannelArg.use) {
-				if(!usedAlternativeChannelArg.channel) {
+			if (usedAlternativeChannelArg.use) {
+				if (!usedAlternativeChannelArg.channel) {
 					await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, {
 							key: LOCALIZED("ALT_CH_NOTFOUND@+REMOVAL"),
@@ -698,7 +698,7 @@ class StreamNotifications extends Plugin implements IModule {
 		const subscriber = scope === "guild" ? msg.guild : msg.author;
 
 		await (async () => {
-			if(!rawSubscription) {
+			if (!rawSubscription) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_FAULT_SUBNOTFOUND"))
 				});
@@ -715,7 +715,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 
-			if(!confirmation) {
+			if (!confirmation) {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_CANCELED"))
 				});
@@ -727,7 +727,7 @@ class StreamNotifications extends Plugin implements IModule {
 				uid: streamerUID
 			});
 
-			if(!rawSubscription) {
+			if (!rawSubscription) {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_FAULT_SUBNOTFOUND_REFETCH"))
 				});
@@ -752,12 +752,12 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 	}
 
-	usedAlternativeChannelArgument(scope: "guild"|"user", guild: Guild, arg?: string) : {
+	usedAlternativeChannelArgument(scope: "guild" | "user", guild: Guild, arg?: string) : {
 		use: boolean; channel?: TextChannel;
 	} {
-		if(scope !== "guild" || !arg) { return { use: false }; }
+		if (scope !== "guild" || !arg) { return { use: false }; }
 		return {
-			use: true, channel: <TextChannel>resolveGuildChannel(arg, guild, false, false, true, ["text"])
+			use: true, channel: <TextChannel> resolveGuildChannel(arg, guild, false, false, true, ["text"])
 		};
 	}
 
@@ -765,7 +765,7 @@ class StreamNotifications extends Plugin implements IModule {
 		// !streams 2
 		// !streams YouTube 2
 
-		if(msg.channel.type === "text" && !rightsCheck(msg.member)) {
+		if (msg.channel.type === "text" && !rightsCheck(msg.member)) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
@@ -774,7 +774,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const subject = msg.channel.type === "dm" ? msg.author : msg.member;
 
-		if(!calledAs) {
+		if (!calledAs) {
 			calledAs = "1";
 			args = null;
 		}
@@ -782,7 +782,7 @@ class StreamNotifications extends Plugin implements IModule {
 		let page = 1;
 		let provider = "any";
 
-		if(args && args.length > 1) {
+		if (args && args.length > 1) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: LOCALIZED("LIST_USAGE"),
@@ -792,17 +792,17 @@ class StreamNotifications extends Plugin implements IModule {
 				})
 			});
 			return;
-		} else if(args) {
+		} else if (args) {
 			page = parseInt(args[0], 10);
 			provider = calledAs.toLowerCase();
-			if(isNaN(page) || page < 1) {
+			if (isNaN(page) || page < 1) {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_INVALIDPAGE"))
 				});
 				return;
 			}
-		} else if(!args) {
-			if(/^[0-9]+$/.test(calledAs)) {
+		} else if (!args) {
+			if (/^[0-9]+$/.test(calledAs)) {
 				page = parseInt(calledAs, 10);
 			} else {
 				page = 1;
@@ -815,7 +815,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const rawSettings = await this.getSettings(msg.channel.type === "text" ? msg.guild : msg.author);
 
-		if(!rawSettings) {
+		if (!rawSettings) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_ISEMPTY"))
 			});
@@ -826,7 +826,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		let subscriptions = normalSettings.subscribedTo;
 
-		if(provider !== "any") {
+		if (provider !== "any") {
 			subscriptions = subscriptions.filter(r => {
 				return r.serviceName === provider;
 			});
@@ -834,7 +834,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		subscriptions = subscriptions.slice(offset, end);
 
-		if(subscriptions.length === 0) {
+		if (subscriptions.length === 0) {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_ISEMPTY"))
 			});
@@ -843,7 +843,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		const fields: IEmbedOptionsField[] = [];
 		let c = 0;
-		for(const result of subscriptions) {
+		for (const result of subscriptions) {
 			fields.push({
 				inline: false,
 				name: `${++c}. ${result.username}`,
@@ -873,7 +873,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	async addSubscriber(subscription: ISubscriptionRow, target: string | Guild | User) {
 		target = this.normalizeTarget(target);
-		if(subscription.subscribers.includes(target)) {
+		if (subscription.subscribers.includes(target)) {
 			throw new Error(`Target "${target}" is already subscribed to ${subscription.provider}[${subscription.uid}]`);
 		}
 
@@ -888,7 +888,7 @@ class StreamNotifications extends Plugin implements IModule {
 		target = this.normalizeTarget(target);
 
 		const index = subscription.subscribers.indexOf(target);
-		if(index === -1) {
+		if (index === -1) {
 			throw new Error(`Target "${target}" is not found as a subscriber of ${subscription.provider}[${subscription.uid}]`);
 		}
 
@@ -905,7 +905,7 @@ class StreamNotifications extends Plugin implements IModule {
 			uid: streamer.uid
 		});
 
-		if(!subscription) {
+		if (!subscription) {
 			subscription = await this.createSubscription({
 				provider: streamer.serviceName,
 				uid: streamer.uid,
@@ -923,7 +923,7 @@ class StreamNotifications extends Plugin implements IModule {
 			uid: streamer.uid
 		});
 
-		if(!subscription) { return undefined; }
+		if (!subscription) { return undefined; }
 
 		return this.removeSubscriber(this.convertToNormalSubscription(subscription), target);
 	}
@@ -931,17 +931,17 @@ class StreamNotifications extends Plugin implements IModule {
 	async recordSubscription(target: string | User | Guild, subscription: ISubscriptionRow, altChannel?: string, settings?: ISettingsParsedRow) {
 		target = this.normalizeTarget(target);
 
-		if(!settings) {
+		if (!settings) {
 			settings = this.convertToNormalSettings(await this.createOrGetSettings(target));
 		}
 
-		if(!subscription.subscribers.includes(target)) {
+		if (!subscription.subscribers.includes(target)) {
 			return settings; // doing nothin'!
 		}
 
 		const activeSubscription = settings.subscribedTo.find(s => s.serviceName === subscription.provider && s.uid === subscription.uid && s.alternativeChannel === altChannel);
 
-		if(!activeSubscription) {
+		if (!activeSubscription) {
 			settings.subscribedTo.push({
 				serviceName: subscription.provider,
 				uid: subscription.uid,
@@ -958,7 +958,7 @@ class StreamNotifications extends Plugin implements IModule {
 	async retireSubscription(target: string | User | Guild, subscription: ISubscriptionRow, altChannel?: string, settings?: ISettingsParsedRow) {
 		target = this.normalizeTarget(target);
 
-		if(subscription.subscribers && subscription.subscribers.includes(target)) {
+		if (subscription.subscribers && subscription.subscribers.includes(target)) {
 			return settings;
 		}
 
@@ -968,13 +968,13 @@ class StreamNotifications extends Plugin implements IModule {
 	async retirePseudoSubscription(target: string | User | Guild, pseudoSubsciption: IPseudoSettingsSubscription, settings?: ISettingsParsedRow) {
 		target = this.normalizeTarget(target);
 
-		if(!settings) {
+		if (!settings) {
 			settings = this.convertToNormalSettings(await this.createOrGetSettings(target));
 		}
 
 		const activeSubscriptionIndex = settings.subscribedTo.findIndex(s => s.serviceName === pseudoSubsciption.serviceName && s.uid === pseudoSubsciption.uid && s.alternativeChannel === pseudoSubsciption.alternativeChannel);
 
-		if(activeSubscriptionIndex !== -1) {
+		if (activeSubscriptionIndex !== -1) {
 			settings.subscribedTo.splice(activeSubscriptionIndex, 1);
 			await this.updateSettings(this.convertToRawSettings(settings));
 		}
@@ -983,26 +983,26 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async noFetchingAvoidance(subscription: ISubscriptionRow) {
-		if(subscription.subscribers.length === 0) {
+		if (subscription.subscribers.length === 0) {
 			this.log("warn_trace", `[No Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but no subscriptions found. Consider calling 'uselessFetchingAvoidance' instead. No action taken, returning \`false\` result`);
 			return false;
 		}
 
 		const provider = this.servicesLoader.findBase<IStreamingService>(subscription.provider, "name");
 
-		if(!provider) {
+		if (!provider) {
 			this.log("warn", `[No Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but such provider not found. No action taken, returning \`false\` result`);
 			return false;
 		}
 
-		if($botConfig.mainShard) {
-			if(provider.isSubscribed(subscription.uid)) {
+		if ($botConfig.mainShard) {
+			if (provider.isSubscribed(subscription.uid)) {
 				this.log("warn", `[No Fetching Avoidance] Already subscribed to "${subscription.provider}[${subscription.uid}]". No action taken, returning \`false\` result`);
 				return false;
 			}
 
 			provider.addSubscription(this.convertToStreamer(subscription));
-		} else if(process.send) {
+		} else if (process.send) {
 			this.log("info", `[No Fetching Avoidance] Sending message to other shards to set up fetching of "${subscription.provider}[${subscription.uid}]"`);
 
 			process.send({
@@ -1022,23 +1022,23 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async uselessFetchingAvoidance(subscription: IPseudoSubscription & { subscribers?: string[]; } | ISubscriptionRow) {
-		if(subscription.subscribers && subscription.subscribers.length > 0) { return false; }
+		if (subscription.subscribers && subscription.subscribers.length > 0) { return false; }
 
 		// delete subscription
 		await this.deleteSubscription(subscription);
 
 		const provider = this.servicesLoader.findBase<IStreamingService>(subscription.provider, "name");
 
-		if(!provider) {
+		if (!provider) {
 			this.log("warn", `[Useless Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but such provider not found. No action taken, returning \`false\` result`);
 			return false;
 		}
 
-		if($botConfig.mainShard) {
+		if ($botConfig.mainShard) {
 			this.log("ok", `[Useless Fetching Avoidance] Stopping fetching of "${subscription.provider}[${subscription.uid}]"`);
-			if(!provider.isSubscribed(subscription.uid)) { return true; }
+			if (!provider.isSubscribed(subscription.uid)) { return true; }
 			provider.removeSubscription(subscription.uid);
-		} else if(process.send) {
+		} else if (process.send) {
 			this.log("info", `[Useless Fetching Avoidance] Sending message to other shards asking to remove fetching of "${subscription.provider}[${subscription.uid}]"`);
 			process.send({
 				type: SHARDING_MESSAGE_TYPES.UNSUBSCRIBE,
@@ -1058,10 +1058,10 @@ class StreamNotifications extends Plugin implements IModule {
 
 	determineSSSLimitReached(settings: ISettingsParsedRow, pseudoSubsciption: IPseudoSubscription) {
 		let simultaneousSubscriptions = 0;
-		for(const subscription of settings.subscribedTo) {
-			if(subscription.serviceName !== pseudoSubsciption.provider) { continue; }
-			if(subscription.uid !== pseudoSubsciption.uid) { continue; }
-			if(++simultaneousSubscriptions >= this.options.sss_limit) { return true; }
+		for (const subscription of settings.subscribedTo) {
+			if (subscription.serviceName !== pseudoSubsciption.provider) { continue; }
+			if (subscription.uid !== pseudoSubsciption.uid) { continue; }
+			if (++simultaneousSubscriptions >= this.options.sss_limit) { return true; }
 		}
 		return false;
 	}
@@ -1087,7 +1087,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	recoverUserID(id: string) {
 		const res = USER_SUBSCRIBER_REGEXP.exec(id);
-		if(!res || !res[1]) { return undefined; }
+		if (!res || !res[1]) { return undefined; }
 		return res[1];
 	}
 
@@ -1097,7 +1097,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	recoverGuildID(id: string) {
 		const res = GUILD_SUBSCRIBER_REGEXP.exec(id);
-		if(!res || res.length !== 3) { return undefined; }
+		if (!res || res.length !== 3) { return undefined; }
 		return {
 			guildId: res[1],
 			channelId: res[2] === "" ? undefined : res[2].slice(1)
@@ -1112,10 +1112,10 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	normalizeTarget(target: string | Guild | User) {
-		if(typeof target !== "string") {
-			if(target instanceof Guild) {
+		if (typeof target !== "string") {
+			if (target instanceof Guild) {
 				target = target.id;
-			} else if(target instanceof User) {
+			} else if (target instanceof User) {
 				target = this.getUserSubscriberID(target);
 			}
 		}
@@ -1140,13 +1140,13 @@ class StreamNotifications extends Plugin implements IModule {
 		});
 		await sleep(100);
 
-		for(const notification of notifications) {
-			if((Date.now() - notification.sentAt) > MAX_NOTIFIED_LIFE) {
+		for (const notification of notifications) {
+			if ((Date.now() - notification.sentAt) > MAX_NOTIFIED_LIFE) {
 				await this.deleteNotification(notification);
 			}
 		}
 
-		if(resolveFunction) {
+		if (resolveFunction) {
 			resolveFunction!(); // why the hell it's NEVER???
 			this.cleanupPromise = undefined;
 		}
@@ -1165,29 +1165,29 @@ class StreamNotifications extends Plugin implements IModule {
 	} = { online: Object.create(null), updated: Object.create(null), offline: Object.create(null) };
 
 	async handleNotifications() {
-		for(const providerName in this.servicesLoader.loadedModulesRegistry) {
+		for (const providerName in this.servicesLoader.loadedModulesRegistry) {
 			this.log("info", `Trying to handle notifications of module '${providerName}'`);
 			const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService> | undefined;
 
-			if(!mod || !mod.base) {
+			if (!mod || !mod.base) {
 				this.log("err", `${providerName} is still not loaded (?!)`);
 				continue;
 			}
 
 			const provider = mod.base as IStreamingService;
 
-			for(const action of <StreamStatusChangedAction[]>["online", "updated", "offline"]) {
+			for (const action of <StreamStatusChangedAction[]> ["online", "updated", "offline"]) {
 				const handler = (status) => {
 					try {
 						this.handleNotification(providerName, status);
-					} catch(err) {
+					} catch (err) {
 						this.log("err", "Failed to handle notification", err);
 						$snowball.captureException(err, { extra: { providerName, status } });
 					}
 				};
 				provider.on(action, handler);
 				let handlersCollection = this._handlers[action][providerName];
-				if(!handlersCollection) {
+				if (!handlersCollection) {
 					handlersCollection = this._handlers[action][providerName] = [] as StreamStatusChangedHandler[];
 				}
 				handlersCollection.push(handler);
@@ -1199,8 +1199,8 @@ class StreamNotifications extends Plugin implements IModule {
 				provider: providerName
 			});
 
-			for(const subscription of subscriptions) {
-				if(provider.isSubscribed(subscription.uid)) {
+			for (const subscription of subscriptions) {
+				if (provider.isSubscribed(subscription.uid)) {
 					continue;
 				}
 
@@ -1211,7 +1211,7 @@ class StreamNotifications extends Plugin implements IModule {
 				});
 			}
 
-			if(provider.start) {
+			if (provider.start) {
 				await provider.start();
 			}
 
@@ -1220,7 +1220,7 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async handleNotification(providerName: string, status: IStreamStatus) {
-		if(!$botConfig.mainShard) {
+		if (!$botConfig.mainShard) {
 			throw new Error("This could be called only in main shard!");
 		}
 
@@ -1229,22 +1229,22 @@ class StreamNotifications extends Plugin implements IModule {
 			uid: status.streamer.uid
 		})).map(this.convertToNormalSubscription);
 
-		for(const subscription of subscriptions) {
-			if(subscription.username !== status.streamer.username) {
+		for (const subscription of subscriptions) {
+			if (subscription.username !== status.streamer.username) {
 				// for cases if streamer changed username (Twitch/Mixer)
 				subscription.username = status.streamer.username;
 			}
 
-			for(const subscriberId of subscription.subscribers) {
+			for (const subscriberId of subscription.subscribers) {
 				const notification = await this.findNotification(subscription.provider, subscription.uid, (status.updated && status.oldId ? status.oldId : status.id), subscriberId);
 
 				const userId = this.recoverUserID(subscriberId);
 
-				if(userId) {
+				if (userId) {
 					// user subscriber
 					const user = await $discordBot.users.fetch(userId);
 
-					if(!user) {
+					if (!user) {
 						this.log("warn", `Could not find subscribed user "${userId}"`);
 						continue;
 					}
@@ -1252,25 +1252,25 @@ class StreamNotifications extends Plugin implements IModule {
 					await this.pushNotification(user, status, subscription, notification);
 				} else {
 					const gachIds = this.recoverGuildID(subscriberId); // ( ͡° ͜ʖ ͡°)
-					if(!gachIds) {
+					if (!gachIds) {
 						this.log("warn", `Invalid ID "${subscriberId}" passed for guild, could not parse it`);
 						continue; // not removing atm, just for safety
 					}
 
 					const guild = $discordBot.guilds.get(gachIds.guildId);
 
-					if(guild) {
+					if (guild) {
 						const alternativeChannel: GuildChannel | undefined = gachIds.channelId ? guild.channels.get(gachIds.channelId) : undefined;
-						if(alternativeChannel && alternativeChannel.type !== "text") {
+						if (alternativeChannel && alternativeChannel.type !== "text") {
 							this.log("warn", `Invalid channel passed. Found that channel by ID "${gachIds.channelId}" is "${alternativeChannel.type}"`);
 							await this.unsubscribe(subscription, gachIds);
 							continue;
-						} else if(gachIds.channelId != null && !alternativeChannel) {
+						} else if (gachIds.channelId != null && !alternativeChannel) {
 							this.log("warn", `Alternative channel by ID "${gachIds.channelId}" not found`);
 							await this.unsubscribe(subscription, gachIds);
 						}
-						await this.pushNotification(guild, status, subscription, notification, <TextChannel>alternativeChannel);
-					} else if(!guild && process.send) {
+						await this.pushNotification(guild, status, subscription, notification, <TextChannel> alternativeChannel);
+					} else if (!guild && process.send) {
 						process.send({
 							type: SHARDING_MESSAGE_TYPES.PUSH,
 							payload: {
@@ -1296,12 +1296,12 @@ class StreamNotifications extends Plugin implements IModule {
 		const providerName = subscription.provider;
 		const provider = this.servicesLoader.findBase<IStreamingService>(providerName, "name");
 
-		if(!provider) {
+		if (!provider) {
 			this.log("warn", `[Push] "${providerName}" not found as loaded service`);
 			return;
 		}
 
-		if((!result.updated && result.status !== "offline") && notification) {
+		if ((!result.updated && result.status !== "offline") && notification) {
 			return;
 		}
 
@@ -1311,7 +1311,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		try {
 			embed = await provider.getEmbed(result, embedLanguage);
-		} catch(err) {
+		} catch (err) {
 			$snowball.captureException(err, {
 				extra: {
 					embedLanguage,
@@ -1322,15 +1322,15 @@ class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
-		if(!embed) {
+		if (!embed) {
 			this.log("warn", `[Push] Embed has not returned for stream of "${subscription.provider}[${subscription.uid}]"`);
 			return;
 		}
 
 		let settings = this.guildSettingsCache[scope.id];
-		if(!settings) {
+		if (!settings) {
 			const dbSettings = await this.getSettings(scope);
-			if(!dbSettings) {
+			if (!dbSettings) {
 				this.log("err", `Not found \`dbSettings\` for subscriber "${scope.id}" of subscription "${providerName}[${subscription.uid}]"`);
 				return;
 			}
@@ -1342,22 +1342,22 @@ class StreamNotifications extends Plugin implements IModule {
 
 		let channel: TextChannel | DMChannel | undefined = alternativeChannel;
 
-		if(isUser) {
+		if (isUser) {
 			const user = scope as User;
 			channel = user.dmChannel;
-			if(!channel) {
+			if (!channel) {
 				channel = await user.createDM();
 			}
 		}
 
-		if(!isUser && !channel) {
-			if(!settings.channelId || settings.channelId === "-") { return; }
+		if (!isUser && !channel) {
+			if (!settings.channelId || settings.channelId === "-") { return; }
 
 			const guild = scope as Guild;
 			channel = guild.channels.get(settings.channelId) as TextChannel;
 		}
 
-		if(!channel) {
+		if (!channel) {
 			this.log("err", `Not found channel for subscribed subject ${scope.id} to subscription ${subscription.uid} (${providerName}) (subject-type: ${isUser ? "user" : "guild"})`);
 			return;
 		}
@@ -1366,14 +1366,14 @@ class StreamNotifications extends Plugin implements IModule {
 			return s.serviceName === providerName && (s.uid === subscription.uid || s.username === subscription.username) && (alternativeChannel ? s.alternativeChannel === alternativeChannel.id : true);
 		});
 
-		if((result.updated || result.status === "offline") && (notification && notification.channelId === channel.id)) {
+		if ((result.updated || result.status === "offline") && (notification && notification.channelId === channel.id)) {
 			const msg = await (async () => {
 				try {
 					return (await channel.messages.fetch(notification.messageId));
-				} catch(err) {
+				} catch (err) {
 					this.log("err", "Could not find message with ID", notification.messageId, "to update message", err);
 
-					if(err instanceof DiscordAPIError) {
+					if (err instanceof DiscordAPIError) {
 						// so we probably don't have access or something
 						// we don't need to attempt updating message
 						// so removing this notification :shrug:
@@ -1384,7 +1384,7 @@ class StreamNotifications extends Plugin implements IModule {
 				}
 			})();
 
-			if(!msg) { return; }
+			if (!msg) { return; }
 
 			try {
 				const escapedUsername = escapeDiscordMarkdown(subscription.username, true);
@@ -1404,14 +1404,14 @@ class StreamNotifications extends Plugin implements IModule {
 					), {
 						embed: embed as any
 					});
-			} catch(err) {
+			} catch (err) {
 				this.log("err", "Failed to update message with ID", notification.messageId, err);
 				$snowball.captureException(err, {
 					extra: { subscription, embedLanguage, result, channel: channel }
 				});
 			}
 
-			if(result.status === "offline") {
+			if (result.status === "offline") {
 				await this.deleteNotification(notification);
 				// we don't need it anymore
 			} else {
@@ -1419,7 +1419,7 @@ class StreamNotifications extends Plugin implements IModule {
 				notification.sentAt = Date.now();
 				await this.updateNotification(notification);
 			}
-		} else if(result.status !== "offline") {
+		} else if (result.status !== "offline") {
 			let messageId = "";
 			const escapedUsername = escapeDiscordMarkdown(subscription.username, true);
 			try {
@@ -1438,7 +1438,7 @@ class StreamNotifications extends Plugin implements IModule {
 						embed: embed as any
 					})) as Message;
 				messageId = msg.id;
-			} catch(err) {
+			} catch (err) {
 				$snowball.captureException(err, {
 					extra: { subscription, embedLanguage, result, channelId: channel.id }
 				});
@@ -1447,8 +1447,8 @@ class StreamNotifications extends Plugin implements IModule {
 
 				this.log("err", `Failed to send notification for stream of "${subId}" to channel "${channel.id}". Error occured`, err);
 
-				if(err instanceof DiscordAPIError) {
-					if(err.code === 50007) {
+				if (err instanceof DiscordAPIError) {
+					if (err.code === 50007) {
 						// can't send messages to this user 👍
 						this.log("info", `Unsubscribing "${channel.id}" from "${subId}": user blocked us`);
 						await this.unsubscribe(subscription, isUser ? {
@@ -1487,7 +1487,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	async createOrGetSettings(scope: Guild | User | string) {
 		let settings = await this.getSettings(scope);
-		if(!settings) {
+		if (!settings) {
 			settings = await this.createSettings({
 				channelId: null,
 				guild: typeof scope === "string" ? scope : (scope instanceof User ? `u${scope.id}` : scope.id),
@@ -1526,7 +1526,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 	convertToMap<T>(toConvert: T[], key: string): Map<string, T> {
 		const map = new Map<string, T>();
-		for(const elem of toConvert) {
+		for (const elem of toConvert) {
 			map.set(elem[key], elem);
 		}
 		return map;
@@ -1583,7 +1583,7 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async findSubscription(filter: SubscriptionFilter): Promise<ISubscriptionRawRow | undefined> {
-		if(!filter.uid && !filter.username) {
+		if (!filter.uid && !filter.username) {
 			throw new Error("Nor uid nor username provided");
 		}
 		return await this.db(TABLE.subscriptions).select().where(filter).first() as ISubscriptionRawRow | undefined;
@@ -1643,7 +1643,7 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async findNotification(provider: string, streamerId: string, streamId: string, guild: Guild | string): Promise<INotification | undefined> {
-		return <INotification | undefined>await this.db(TABLE.notifications).where({
+		return <INotification | undefined> await this.db(TABLE.notifications).where({
 			provider,
 			streamerId,
 			streamId,
@@ -1665,7 +1665,7 @@ class StreamNotifications extends Plugin implements IModule {
 		// #region Subscribers table preparation
 
 		const subscriptionsTableCreated = await this.db.schema.hasTable(TABLE.subscriptions);
-		if(!subscriptionsTableCreated) {
+		if (!subscriptionsTableCreated) {
 			this.log("info", "Table of subscriptions not found, going to create it right now");
 			await createTableBySchema(TABLE.subscriptions, {
 				provider: "string",
@@ -1682,7 +1682,7 @@ class StreamNotifications extends Plugin implements IModule {
 		// #region Settings table preparation
 
 		const settingsTableCreated = await this.db.schema.hasTable(TABLE.settings);
-		if(!settingsTableCreated) {
+		if (!settingsTableCreated) {
 			this.log("info", "Table of settings not found, going to create it right now");
 			await createTableBySchema(TABLE.settings, {
 				guild: {
@@ -1709,7 +1709,7 @@ class StreamNotifications extends Plugin implements IModule {
 		// #region Creating notifications table
 
 		const notificationsTableCreated = await this.db.schema.hasTable(TABLE.notifications);
-		if(!notificationsTableCreated) {
+		if (!notificationsTableCreated) {
 			this.log("info", "Table of notifications statuses not found, will be created in momento");
 			await createTableBySchema(TABLE.notifications, {
 				guild: {
@@ -1747,7 +1747,7 @@ class StreamNotifications extends Plugin implements IModule {
 
 		// #region Notifications providers loading
 
-		for(const serviceName in this.servicesList) {
+		for (const serviceName in this.servicesList) {
 			await this.servicesLoader.load(serviceName);
 		}
 
@@ -1756,7 +1756,7 @@ class StreamNotifications extends Plugin implements IModule {
 		// #region Whitelist module checkup
 
 		const whitelistModule = $modLoader.findKeeper<Whitelist>("snowball.core_features.whitelist");
-		if(!whitelistModule) {
+		if (!whitelistModule) {
 			this.log("warn", "Could not find whitelist module.");
 		} else {
 			this.whitelistModule = whitelistModule;
@@ -1766,34 +1766,34 @@ class StreamNotifications extends Plugin implements IModule {
 
 		// #region Sharding messages handling
 
-		if($botConfig.mainShard) {
+		if ($botConfig.mainShard) {
 			this.cleanupInterval = setInterval(() => this.notificationsCleanup(), 86400000);
 			await this.notificationsCleanup();
 			await this.handleNotifications();
 		}
 
-		if($botConfig.sharded) {
+		if ($botConfig.sharded) {
 			const handler = $botConfig.mainShard ? (msg) => {
-				if(typeof msg !== "object") { return; }
-				if(!msg.type || !msg.payload) { return; }
-				if(msg.type !== SHARDING_MESSAGE_TYPES.SUBSCRIBE && msg.type !== SHARDING_MESSAGE_TYPES.UNSUBSCRIBE) { return; }
+				if (typeof msg !== "object") { return; }
+				if (!msg.type || !msg.payload) { return; }
+				if (msg.type !== SHARDING_MESSAGE_TYPES.SUBSCRIBE && msg.type !== SHARDING_MESSAGE_TYPES.UNSUBSCRIBE) { return; }
 
 				this.log("info", "[ShardedMessageHandler] Received message", msg);
 
-				if(msg.type === SHARDING_MESSAGE_TYPES.UNSUBSCRIBE) {
+				if (msg.type === SHARDING_MESSAGE_TYPES.UNSUBSCRIBE) {
 					this.uselessFetchingAvoidance(msg.payload);
-				} else if(msg.type === SHARDING_MESSAGE_TYPES.SUBSCRIBE) {
+				} else if (msg.type === SHARDING_MESSAGE_TYPES.SUBSCRIBE) {
 					this.noFetchingAvoidance(msg.payload);
 				}
 			} : (msg) => {
-				if(typeof msg !== "object") { return; }
-				if(!msg.type || !msg.payload) { return; }
-				if(msg.type !== SHARDING_MESSAGE_TYPES.PUSH) { return; }
+				if (typeof msg !== "object") { return; }
+				if (!msg.type || !msg.payload) { return; }
+				if (msg.type !== SHARDING_MESSAGE_TYPES.PUSH) { return; }
 
 				this.log("info", "[ShardedMessageHandler] Received message", msg);
-				if(msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
+				if (msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
 					const guild = $discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
-					if(guild) {
+					if (guild) {
 						// process
 						const notifyAbout = msg.payload.notifyAbout as {
 							subscription: ISubscriptionRow,
@@ -1816,9 +1816,9 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async unload() {
-		if(this.cleanupInterval) { clearInterval(this.cleanupInterval); }
+		if (this.cleanupInterval) { clearInterval(this.cleanupInterval); }
 
-		if(this.shardingHandler) { process.removeListener("message", this.shardingHandler); }
+		if (this.shardingHandler) { process.removeListener("message", this.shardingHandler); }
 
 		await this.servicesLoader.unload(Object.getOwnPropertyNames(this.servicesLoader.loadedModulesRegistry));
 

@@ -8,7 +8,7 @@ const REDIS_DEFAULT_HOST = "127.0.0.1";
 const LOG = getLogger("Utils:Redis");
 
 export async function getRedisClient() {
-	if(!redisClient) {
+	if (!redisClient) {
 		LOG("info", "[Get Client] Client not found, init cycle start...");
 		redisClient = await init();
 	}
@@ -21,10 +21,10 @@ async function init() {
 	const hostOverride = process.env.REDIS_HOST;
 	const passwordOverride = process.env.REDIS_PASSWD;
 
-	if(!portOverride) {
+	if (!portOverride) {
 		LOG("info", `[Init] Port override is not presented, using '${REDIS_DEFAULT_PORT}'`);
 	}
-	if(!hostOverride) {
+	if (!hostOverride) {
 		LOG("info", `[Init] Host override is not presented, using '${REDIS_DEFAULT_HOST}'`);
 	}
 
@@ -36,7 +36,7 @@ async function init() {
 }
 
 export function createRedisClient(port?: number, host?: string, options?: Redis.RedisOptions) {
-	if(options && !options.password) {
+	if (options && !options.password) {
 		LOG("warn", "[Client Creation] It's highly recommended to have password set.");
 	}
 
