@@ -23,7 +23,11 @@ let localStorage: INullableHashMap<number> = Object.create(null);
 /// ======================================
 
 function getLocalStorageKey(member: GuildMember) {
-	return `${member.guild.id}:${member.id}`; // pretty simple, huh?
+	return getLocalStorageKeyBy(member.guild.id, member.id); // pretty simple, huh?
+}
+
+function getLocalStorageKeyBy(guildId: string, memberId: string) {
+	return `${guildId}:${memberId}`;
 }
 
 export async function flushLocalStorage() {
@@ -70,13 +74,17 @@ async function updateStoredVerification(verificationData: IVerificationData) {
 		memberId: verificationData.memberId
 	}).update(verificationData);
 
-	localStorage[verificationData.memberId] = verificationData.level;
+	const localStorageKey = getLocalStorageKeyBy(verificationData.guildId, verificationData.memberId);
+
+	localStorage[localStorageKey] = verificationData.level;
 
 	return res;
 }
 
 async function deleteStoredVerification(verificationData: IVerificationData) {
-	localStorage[verificationData.memberId] = undefined; // nullying, improves perfo
+	const localStorageKey = getLocalStorageKeyBy(verificationData.guildId, verificationData.memberId);
+
+	localStorage[localStorageKey] = undefined; // nullying, improves perfo
 
 	return DB(TABLE_NAME).where(verificationData).delete().first();
 }
