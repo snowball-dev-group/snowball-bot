@@ -357,6 +357,8 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 		await setUserPref(msgAuthor, this.prefs.userTimezone, newTZ);
 
+		newTZ = await forceUserTimezoneUpdate(msgAuthor);
+
 		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 				custom: true,
@@ -403,6 +405,8 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 
 		await setGuildPref(msgMember.guild, this.prefs.userTimezone, newTZ);
+
+		newTZ = await forceGuildTimezoneUpdate(msgMember.guild);
 
 		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, {
