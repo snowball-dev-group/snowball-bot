@@ -53,7 +53,7 @@ interface ISetLanguageCommandOptions {
 @command(HELP_CATEGORY, CMD.GUILDS_ENFORCE.slice(1), "loc:LANGUAGE_META_GUILDENFORCE", {
 	"loc:LANGUAGE_META_GUILDENFORCE_ARG0": {
 		optional: false,
-		values: ["true", "false"],
+		values: [ "true", "false" ],
 		description: "loc:LANGUAGE_META_GUILDENFORCE_ARG0_DESC"
 	}
 })
@@ -293,7 +293,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 
 		const arg = msg.content.slice(CMD.GUILDS_ENFORCE.length).trim();
-		if (!["true", "false"].includes(arg)) {
+		if (![ "true", "false" ].includes(arg)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ENFORCE_ARGERR")
 			});
@@ -511,7 +511,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 	// #endregion
 
 	private static _isAdmin(member: GuildMember) {
-		return member.permissions.has(["ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES"], true);
+		return member.permissions.has([ "ADMINISTRATOR", "MANAGE_GUILD", "MANAGE_CHANNELS", "MANAGE_ROLES" ], true);
 	}
 
 	public async unload() {

@@ -6,7 +6,7 @@ export interface IArgumentInfo {
 	description: string;
 	optional: boolean;
 	values?: string[];
-	specialCheck?: (msg: Message) => boolean;
+	specialCheck?(msg: Message): boolean;
 }
 
 // Arguments
@@ -14,7 +14,7 @@ export interface IArgumentInfo {
 export interface IHelpfulObject {
 	arguments?: IArgumentsMap;
 	description: string;
-	specialCheck?: (msg: Message) => boolean;
+	specialCheck?(msg: Message): boolean;
 }
 
 interface ICategory {

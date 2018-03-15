@@ -16,8 +16,8 @@ export async function fetchBlobProfile(battletag: string, platform?: string): Pr
 	if (currentPromise) { return currentPromise; }
 
 	const contextFunction: {
-		resolve?: (obj: IBlobResponse) => void;
-		reject?: (obj: any) => void
+		resolve?(obj: IBlobResponse): void;
+		reject?(obj: any): void
 	} = Object.create(null);
 
 	fetchingPromisesStore[context] = new Promise<IBlobResponse>((res, rej) => {
