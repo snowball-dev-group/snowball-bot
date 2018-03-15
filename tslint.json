@@ -1,6 +1,6 @@
 {
     "rules": {
-        "array-bracket-spacing": [true, "always"],
+        "adjacent-overload-signatures": true,
         "array-type": [ true, "array-simple" ],
         "arrow-return-shorthand": true,
         "await-promise": [ true, "Promise", "Bluebird", "PromiseLike" ],
