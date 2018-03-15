@@ -60,7 +60,6 @@
         "switch-final-break": false,
         "ter-computed-property-spacing": true,
         "ter-prefer-arrow-callback": true,
-        "ter-no-mixed-spaces-and-tabs": true,
         "triple-equals": [ true, "allow-null-check" ],
         "unified-signatures": true,
         "use-isnan": true,
