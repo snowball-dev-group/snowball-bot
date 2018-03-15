@@ -2,7 +2,7 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User } from "discord.js";
 import { categoryLocalizedName, command } from "../utils/help";
-import { localizeForUser, getPreferencesNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed, getUserLanguage, getUserTimezone, getGuildTimezone } from "../utils/ez-i18n";
+import { localizeForUser, getPreferencesNames, forceUserLanguageUpdate, forceGuildEnforceUpdate, forceGuildLanguageUpdate, generateLocalizedEmbed, getUserLanguage, getUserTimezone, getGuildTimezone, forceUserTimezoneUpdate, forceGuildTimezoneUpdate } from "../utils/ez-i18n";
 import { startsWith } from "../utils/text";
 import { EmbedType, getMessageMemberOrAuthor, getMessageMember } from "../utils/utils";
 import { setPreferenceValue as setUserPref } from "../utils/userPrefs";
