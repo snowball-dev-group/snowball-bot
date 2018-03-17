@@ -482,7 +482,10 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 		}
 	}
 
-	for (const member of guild.members.array()) {
+	const membersArray = guild.members.array();
+
+	for (let i = 0, l = membersArray.length; i < l; i++) {
+		const member = membersArray[i];
 		const username = caseStrict ? member.user.username : member.user.username.toLowerCase();
 
 		if (isTag) { // tag strict equality check
@@ -491,7 +494,7 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 				if (strict) {
 					if (username !== tagParts_username) { continue; }
 				} else {
-					if (!username.includes(tagParts_username)) { continue; }
+					if (username.indexOf(tagParts_username) === -1) { continue; }
 				}
 			}
 
@@ -507,7 +510,7 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 				}
 			} break;
 			case false: {
-				if ((nickname && nickname.includes(nameOrID)) || username.includes(nameOrID)) {
+				if ((nickname && (nickname.indexOf(nameOrID) !== -1)) || (username.indexOf(nameOrID) !== -1)) {
 					return member;
 				}
 			} break;
