@@ -448,7 +448,7 @@ export async function safeMemberFetch(guild: Guild, id: string, errCallback?: (e
 	}
 }
 
-export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false, possibleMention = false): Promise<GuildMember | undefined> {
+export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false, possibleMention = false, fetch = true): Promise<GuildMember | undefined> {
 	if (possibleMention) {
 		const res = USER_MENTION_SNOWFLAKE.exec(nameOrID);
 		if (res && res[1]) {
@@ -482,7 +482,7 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 		}
 	}
 
-	const membersArray = guild.members.array();
+	const membersArray = fetch ? (await guild.members.fetch()).array() : guild.members.array();
 
 	for (let i = 0, l = membersArray.length; i < l; i++) {
 		const member = membersArray[i];
