@@ -333,7 +333,7 @@ export interface IMessageFlowContext<T = ICommandParseResult> {
 	 * If it was set to `true`, then returns result of simple calling `simpleCmdParse` from `utils:text`.
 	 * If `parseCommand` was set to `false` - it'll be null.
 	 */
-	parsed?: ICommandParseResult | T;
+	parsed: T;
 	/**
 	 * The prefix of the message
 	 * This will be undefined if your `prefixCheck` is set to `false`
