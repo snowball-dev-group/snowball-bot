@@ -139,7 +139,12 @@ export class ModuleBase<T> extends EventEmitter {
 		this.state = ModuleLoadState.Initializing;
 
 		try {
-			const mod = require(this.info.path);
+			let mod = require(this.info.path);
+
+			if (typeof mod === "object" && mod.default) {
+				mod = mod.default;
+			}
+
 			if (!isClass(mod)) {
 				throw new Error("The module has returned value of invalid type and will not be stated as loaded");
 			}
