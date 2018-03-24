@@ -10,12 +10,16 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 
 	let args: ICommandParseResultArg[] | null = null;
 
+	let argsStr: string;
 	if (parts.length > 0) {
 		args = [];
-		const cmdStr = `${cmd}${subCmd != null ? ` ${subCmd} ` : " "}`;
-		const argsStr = str.substring(cmdStr.length);
 
-		for (const arg of argumentSplit(argsStr, argsSeparator)) {
+		const cmdStr = `${cmd}${subCmd != null ? ` ${subCmd} ` : " "}`;
+		argsStr = str.substring(cmdStr.length);
+
+		const argSplitResult = argumentSplit(argsStr, argsSeparator);
+		for (let i = 0, l = argSplitResult.length; i < l; i++) {
+			const arg = argSplitResult[i];
 			args.push({
 				raw: arg,
 				value: stripEmptyChars(arg).trim()
@@ -26,15 +30,16 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 	return {
 		command: cmd!, // command can't be empty
 		subCommand: subCmd,
-		args: args ? argsGenerator(args) : null
+		args: args ? argsGenerator(args, argsStr!) : null
 	};
 }
 
-export function argsGenerator(args: ICommandParseResultArg[]): ICommandParseResultArgs {
+export function argsGenerator(args: ICommandParseResultArg[], original: string): ICommandParseResultArgs {
 	const normal: string[] = [];
 	const raw: string[] = [];
 
-	for (const arg of args) {
+	for (let i = 0, l = args.length; i < l; i++) {
+		const arg = args[i];
 		if (arg.value.length > 0) {
 			normal.push(arg.value);
 		}
@@ -43,7 +48,8 @@ export function argsGenerator(args: ICommandParseResultArg[]): ICommandParseResu
 
 	// tslint:disable-next-line:prefer-object-spread
 	return Object.assign(args, {
-		only: (type: "value" | "raw") => (type === "value" ? normal : raw).slice()
+		only: (type: "value" | "raw") => (type === "value" ? normal : raw).slice(),
+		original
 	});
 }
 
@@ -85,6 +91,7 @@ export interface ICommandParseResult {
 
 export interface ICommandParseResultArgs extends Array<ICommandParseResultArg> {
 	only(type: "value" | "raw"): string[];
+	original: string;
 }
 
 export interface ICommandParseResultArg {
