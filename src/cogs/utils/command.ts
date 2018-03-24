@@ -22,7 +22,7 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 			const arg = argSplitResult[i];
 			args.push({
 				raw: arg,
-				value: stripEmptyChars(arg).trim()
+				value: stripEmptyChars(arg).trim().replace(/\\\,/g, ",")
 			});
 		}
 	}
