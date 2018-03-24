@@ -151,24 +151,24 @@ export class ModuleBase<T> extends EventEmitter {
 
 			const base = new mod(this.info.options);
 
-			if (base) {
-				if (typeof base.unload !== "function") {
-					throw new Error("The module has no `unload` function and will not be stated as loaded");
-				}
-
-				this.base = base;
-				this.signature = base.signature;
-				this.state = ModuleLoadState.Loaded;
-
-				if (!base.init) {
-					this.state = ModuleLoadState.Initialized;
-					this.emit("initialized", base);
-				}
-			} else {
+			if (!base) {
 				throw new Error("The module has not returned any value and will not be stated as loaded");
 			}
 
+			if (typeof base.unload !== "function") {
+				throw new Error("The module has no `unload` function and will not be stated as loaded");
+			}
+
+			this.base = base;
+			this.signature = base.signature;
+			this.state = ModuleLoadState.Loaded;
+
 			this.emit("loaded", this.signature, this.base);
+
+			if (!base.init) {
+				this.state = ModuleLoadState.Initialized;
+				this.emit("initialized", base);
+			}
 		} catch (err) {
 			this.emit("error", {
 				state: "load#initialize",
@@ -254,8 +254,9 @@ export class ModuleBase<T> extends EventEmitter {
 	}
 
 	/**
-	 * Shortcut for checking if module already initialized or you need to wait for it.
-	 * If module already initialized, then immediately calls the callback.
+	 * Shortcut for checking if module is already initialized or you need to wait for it.
+	 * 
+	 * If module is already initialized, then immediately calls the callback.
 	 * Otherwise subscribes you to the `initialized` event
 	 */
 	public onInit(callback: (base: T) => void) {
@@ -263,7 +264,22 @@ export class ModuleBase<T> extends EventEmitter {
 			callback(this.base);
 			return this;
 		}
-		return this.on("initialized", callback);
+		return this.once("initialized", callback);
+	}
+
+	/**
+	 * Shortcut for checking if module is already loaded or you need to wait for it.
+	 * 
+	 * If module is already loaded, then immediately calls the callback.
+	 * Otehrwise subscribes you to the `loaded` event
+	 * @param callback The callback function that will be called with `base`
+	 */
+	public onLoad(callback: (base: T) => void) {
+		if (this.state === ModuleLoadState.Loaded && this.base) {
+			callback(this.base);
+			return this;
+		}
+		return this.once("loaded", (_sig, base) => callback(base));
 	}
 
 	/**
