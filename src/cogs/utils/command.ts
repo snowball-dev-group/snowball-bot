@@ -1,4 +1,5 @@
 import { stripEmptyChars, escapeRegExp } from "./text";
+import { INullableHashMap } from "../../types/Types";
 
 export const CMDPARSER_ARGUMENTS_SEPARATOR = ",";
 
