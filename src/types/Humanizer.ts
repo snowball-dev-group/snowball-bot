@@ -133,7 +133,7 @@ export interface IHumanizerDefaultOptions {
 		 */
 		ms: number;
 	};
-		/**
+	/**
 	 * Array of strings to define which units are used to display the duration (if needed). Can be one, or a combination of any, of the {Unit}
 	 */
 	units: Unit[];
@@ -337,11 +337,9 @@ export class Humanizer {
 			throw new Error("Humanizer locale formatter is not specified");
 		}
 
-		const word = (typeof dictionaryValue === "function")
+		return (typeof dictionaryValue === "function")
 			? dictionaryValue(count)
 			: dictionaryValue;
-
-		return word;
 	}
 }
 
