@@ -46,7 +46,7 @@
     "ARCHIVE_ITEM_ENTRY_TYPE:EMBED": "Аб'ект",
     "ARCHIVE_ITEM_ENTRY:ATTACHMENT": "- [{type}][{file.id}]: {file.name} - {file.url}",
     "ARCHIVE_ITEM_ENTRY:EMBED": "- [{type}]: {json}",
-    "ARCHIVE_ITEM": "{sentAt, date, long} {sentAt, time} ({guildId} / {channelId} / {authorId} / {messageId}) {author}: {content}",
+    "ARCHIVE_ITEM": "",
     "ARCHIVE_ITEM@UNKNOWN_GUILD": "невядома",
     "COLORS_ADD_ALREADYEXISTS": "**Гэты колер ужо дабаўлены.** Удаліце існуючы з дапамогай аргумента 'delete'",
     "COLORS_ADD_ARGSERR": "**Трэба 2-3 аргументы**. `!color add <назва>[, патрэбныя|ролі], <імя ці id ролі>`",

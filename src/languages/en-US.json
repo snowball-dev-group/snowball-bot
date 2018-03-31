@@ -46,7 +46,7 @@
     "ARCHIVE_ITEM_ENTRY_TYPE:EMBED": "Embed",
     "ARCHIVE_ITEM_ENTRY:ATTACHMENT": "- [{type}][{file.id}]: {file.name} - {file.url}",
     "ARCHIVE_ITEM_ENTRY:EMBED": "- [{type}]: {json}",
-    "ARCHIVE_ITEM": "{sentAt, date, long} {sentAt, time} ({guildId} / {channelId} / {authorId} / {messageId}) {author}: {content}",
+    "ARCHIVE_ITEM": "",
     "ARCHIVE_ITEM@UNKNOWN_GUILD": "unknown",
     "COLORS_ADD_ALREADYEXISTS": "**This color already exists.** Remove the existing one using 'delete' argument",
     "COLORS_ADD_ARGSERR": "**2-3 arguments needed**. `!color add <name>[, required|roles], <role name or id>`",
