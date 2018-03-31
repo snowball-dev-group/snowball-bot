@@ -64,10 +64,14 @@
         "unified-signatures": true,
         "use-isnan": true,
         "variable-name": [ true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-snake-case" ],
-        "whitespace": [ true, "check-branch", "check-module", "check-separator", "check-type", "check-typecast", "check-type-operator", "check-preblock", "check-operator", "check-decl", "check-branch" ]
+        "whitespace": [ true, "check-branch", "check-module", "check-separator", "check-type", "check-typecast", "check-type-operator", "check-preblock", "check-operator", "check-decl", "check-branch" ],
+        "no-var-before-return": true,
+        "no-as-type-assertion": true,
+        "early-exit": true
     },
     "extends": [
-        "tslint-eslint-rules"
+        "tslint-eslint-rules",
+        "tslint-consistent-codestyle"
     ],
     "defaultSeverity": "error"
 }
