@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
-import logger = require("loggy");
 import { INullableHashMap } from "./Types";
 import { ISchemaObject } from "./Typer";
 import { isAbsolute } from "path";
+import * as logger from "loggy";
 
 // #region Interfaces and enums
 
