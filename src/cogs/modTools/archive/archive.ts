@@ -291,7 +291,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		let lines = DEFAULT_LENGTH;
 		let offset = 0;
 
-		const args = parsed.args;
+		const args = parsed.arguments;
 
 		if (args) {
 			for (let i = args.length - 1, c = 0; c < 3 && i >= 0; i-- , c++) {
@@ -459,7 +459,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		const result = await this._messagesToString(foundMessages.reverse(), caches.users, msg.member);
+		const result = await this._messagesToString(foundMessages, caches.users, msg.member);
 
 		return msg.channel.send({
 			content: await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }),
