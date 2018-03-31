@@ -453,7 +453,8 @@ export class Localizer {
 	 */
 	public getString(preferedLang: string = this._opts.source_language, key: string, fallback: boolean = true): string {
 		const queue = fallback ? [preferedLang].concat(this._fallbackQueue) : [preferedLang];
-		for (const lang of queue) {
+		for (let i = 0, l = queue.length; i < l; i++) {
+			const lang = queue[i];
 			const langMap = this._langMaps[lang];
 			if (!langMap) { throw new Error(`Language "${lang}" not found`); }
 			const foundStr = langMap[key];
