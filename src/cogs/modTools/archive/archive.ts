@@ -2,15 +2,16 @@ import { messageToExtra } from "../../utils/failToDetail";
 import { IHashMap } from "../../../types/Types";
 import { IModule } from "../../../types/ModuleLoader";
 import { Plugin } from "../../plugin";
-import { Message, Guild, SnowflakeUtil, TextChannel, User } from "discord.js";
+import { Message, Guild, TextChannel, User, GuildMember } from "discord.js";
 import { EmbedType, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
-import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "../../utils/ez-i18n";
+import { generateLocalizedEmbed, getUserLanguage, localizeForUser, getUserTimezone } from "../../utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
 import { getPreferenceValue, setPreferenceValue } from "../../utils/guildPrefs";
 import { createConfirmationMessage } from "../../utils/interactive";
 import { parse as parseCmd, ICommandParseResult } from "../../utils/command";
 import * as getLogger from "loggy";
 import { replaceAll } from "../../utils/text";
+import { DateTime } from "luxon";
 
 const PREFIX = "!archive";
 const MSG_PREFIX = "!message";
@@ -36,6 +37,7 @@ const TARGETTING = Object.freeze({
 const DEFAULT_LENGTH = 50; // lines per file
 const MESSAGES_LIMIT = 5000;
 const DEFAULT_ENABLED_STATE = false; // true = enabled
+const SNOWFLAKE_TO_DATE = (id: string) => (id ? (+id / 4194304) + 1420070400000 : 0);
 
 interface IModToolsArchiveOptions {
 	/**
@@ -106,6 +108,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			this._log("err", "Failed to push message", err);
 		}
+
 		try {
 			await this.handleCommand(msg);
 		} catch (err) {
@@ -154,9 +157,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		if (message.guildId !== msg.guild.id) {
-			return;
-		}
+		if (message.guildId !== msg.guild.id) { return; }
 
 		const channel = <TextChannel> await this._resolveGuildChannel(message.channelId, msg.guild);
 
@@ -185,7 +186,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		const author = (originalMessage && originalMessage.author) || await this._resolveUserTarget(message.authorId, msg.guild);
 		const member = (originalMessage && originalMessage.member) || msg.guild.member(author);
 		const other = message.other ? <IEmulatedContents> JSON.parse(message.other) : undefined;
-		const date = originalMessage ? originalMessage.createdAt.toISOString() : SnowflakeUtil.deconstruct(message.messageId).date.toISOString();
+		const date = originalMessage ? originalMessage.createdAt.toISOString() : new Date(SNOWFLAKE_TO_DATE(message.messageId)).toISOString();
 
 		await msg.channel.send({
 			embed: <IEmbed> {
@@ -241,13 +242,19 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 		});
 
-		if (other && other.embeds && other.embeds.length > 0) {
-			for (const embed of other.embeds) {
+		{
+			let l = 0;
+
+			if (!other || !other.embeds || (l = other.embeds.length) < 1) {
+				return;
+			}
+	
+			for (let i = 0; i < l; i++) {
+				const embed = other.embeds[i];
+
 				await msg.channel.send(await localizeForUser(msg.member, "ARCHIVE_MESSAGE_EMBEDMESSAGE_DESCRIPTION", {
 					id: message.messageId
-				}), {
-						embed: <any> embed
-					});
+				}), { embed: <any> embed });
 			}
 		}
 	}
@@ -284,40 +291,46 @@ class ModToolsArchive extends Plugin implements IModule {
 		let lines = DEFAULT_LENGTH;
 		let offset = 0;
 
-		if (parsed.args) {
-			const latestArg = parsed.args[parsed.args.length - 1].value;
+		const args = parsed.args;
 
-			if (parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(latestArg)) {
-				lines = parseInt(latestArg, 10);
-				parsed.args.splice(-1, 1);
-				if (lines > MESSAGES_LIMIT) {
-					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
-							key: "ARCHIVE_INVALID_LENGTH",
-							formatOptions: {
-								limit: MESSAGES_LIMIT
-							}
-						})
-					});
+		if (args) {
+			for (let i = args.length - 1, c = 0; c < 3 && i >= 0; i-- , c++) {
+				const arg = args[i].value;
+
+				if (!NUMBER_REGEXP.test(arg)) { break; }
+
+				switch (c) {
+					case 0: {
+						lines = parseInt(arg, 10);
+
+						if (lines > MESSAGES_LIMIT) {
+							return msg.channel.send({
+								embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+									key: "ARCHIVE_INVALID_LENGTH",
+									formatOptions: {
+										limit: MESSAGES_LIMIT
+									}
+								})
+							});
+						}
+					} break;
+					case 1: {
+						offset = parseInt(arg, 10);
+					} break;
 				}
-			}
-	
-			if (parsed.args && parsed.args.length >= 1 && NUMBER_REGEXP.test(latestArg)) {
-				offset = parseInt(latestArg, 10);
-				parsed.args.splice(-1, 1);
+
+				args.splice(-1, 1);
 			}
 		}
 
 		const caches: {
 			users: IHashMap<User>,
 			channels: IHashMap<TextChannel>
-		} = {
-				users: Object.create(null), channels: Object.create(null)
-			};
+		} = { users: Object.create(null), channels: Object.create(null) };
 
 		switch (target) {
 			case "user": {
-				if (!parsed.args || parsed.args.length === 0) {
+				if (!args || args.length === 0) {
 					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 							key: "ARCHIVE_REQUIRES_ARGS_USER",
@@ -328,29 +341,29 @@ class ModToolsArchive extends Plugin implements IModule {
 					});
 				}
 
-				const resolvedTargets = await (async (toResolve: string[]) => {
-					const resolved: string[] = [];
-					for (const target of toResolve) {
-						try {
-							const resolvedTarget = (await this._resolveUserTarget(target, msg.guild)).id;
-							resolved.push(resolvedTarget);
-						} catch (err) {
-							await msg.channel.send({
-								embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
+				const resolvedTargets: string[] = [];
+
+				for (let i = 0, l = args.length; i < l; i++) {
+					const target = args[i];
+
+					try {
+						resolvedTargets.push(
+							(await this._resolveUserTarget(
+								target.value, msg.guild
+							)).id
+						);
+					} catch (err) {
+						return msg.channel.send({
+							embed: await generateLocalizedEmbed(
+								EmbedType.Error, msg.member, {
 									key: "ARCHIVE_ERR_RESOLVING_USER",
 									formatOptions: {
-										search: replaceAll(target, "``", "''")
+										search: replaceAll(target.value, "``", "''")
 									}
-								})
-							});
-							return undefined;
-						}
+								}
+							)
+						});
 					}
-					return resolved;
-				})(parsed.args.only("raw"));
-
-				if (!resolvedTargets) {
-					return;
 				}
 
 				foundMessages = await this._controller.search({
@@ -367,8 +380,10 @@ class ModToolsArchive extends Plugin implements IModule {
 				const channels: string[] = [];
 				const users: string[] = [];
 
-				if (parsed.args && parsed.args.length > 0) {
-					for (const target of parsed.args) {
+				if (args && args.length > 0) {
+					for (let i = 0, l = args.length; i < l; i++) {
+						const target = args[i];
+
 						if (target.value.startsWith("u:")) {
 							try {
 								const user = await this._resolveUserTarget(target.value.slice("u:".length).trim(), msg.guild);
@@ -389,7 +404,9 @@ class ModToolsArchive extends Plugin implements IModule {
 								const channel = await this._resolveGuildChannel(target.value, msg.guild);
 								if (!channel) {
 									throw new Error("No channel returned");
-								} else if (!(channel instanceof TextChannel)) {
+								}
+
+								if (!(channel instanceof TextChannel)) {
 									return await msg.channel.send({
 										embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 											key: "ARCHIVE_ERR_RESOLVING_CHANNEL_TYPEINVALID",
@@ -433,9 +450,8 @@ class ModToolsArchive extends Plugin implements IModule {
 				const channel = cachedChannel === undefined ? (caches.channels[m.channelId] = <TextChannel> msg.guild.channels.get(m.channelId) || null) : undefined;
 				if (channel === null || channel === undefined) {
 					return true;
-				} else {
-					return channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
 				}
+					return channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
 			});
 		} else {
 			return msg.channel.send({
@@ -443,7 +459,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		const result = await this._messagesToString(foundMessages.reverse(), caches.users, await getUserLanguage(msg.member));
+		const result = await this._messagesToString(foundMessages.reverse(), caches.users, msg.member);
 
 		return msg.channel.send({
 			content: await localizeForUser(msg.member, "ARCHIVE_DONE", { lines: foundMessages.length }),
@@ -489,21 +505,32 @@ class ModToolsArchive extends Plugin implements IModule {
 		throw new Error("Channel not found");
 	}
 
-	private async _messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = Object.create(null), language: string) {
+	private async _messagesToString(messages: IDBMessage[], cache: IHashMap<User | null> = Object.create(null), caller: GuildMember) {
 		let str = "";
-		for (const messageEntry of messages) {
-			const parsedDate = (SnowflakeUtil.deconstruct(messageEntry.messageId)).date;
+
+		const language = await getUserLanguage(caller);
+
+		const intlFormatter = new Intl.DateTimeFormat(
+			language, {
+				...DateTime.DATETIME_FULL_WITH_SECONDS,
+				timeZone: await getUserTimezone(caller),
+				timeZoneName: "short"
+			}
+		);
+
+		for (let i = 0, l = messages.length; i < l; i++) {
+			const messageEntry = messages[i];
+			const parsedDate = SNOWFLAKE_TO_DATE(messageEntry.messageId);
 
 			let author = cache[messageEntry.authorId];
-			if (!author && author !== null) {
+			if (author === undefined) {
 				author = cache[messageEntry.authorId] = await (async () => {
 					try { return await $discordBot.users.fetch(messageEntry.authorId); } catch (err) { return null; }
 				})();
 			}
 
 			str += $localizer.getFormattedString(language, "ARCHIVE_ITEM", {
-				sentAt: parsedDate,
-				guildId: messageEntry.guildId || ($localizer.getString(language, "ARCHIVE_ITEM@UNKNOWN_GUILD")),
+				sentAt: intlFormatter.format(parsedDate),
 				channelId: messageEntry.channelId,
 				authorId: messageEntry.authorId,
 				messageId: messageEntry.messageId,
