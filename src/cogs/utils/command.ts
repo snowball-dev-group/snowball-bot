@@ -32,7 +32,7 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 	return {
 		command: cmd,
 		subCommand: subCmd,
-		args: args != null ? argsGenerator(args, argsStr!) : null,
+		arguments: args != null ? argsGenerator(args, argsStr!) : null,
 		content: subCmd != null ? `${subCmd}${argsStr ? ` ${argsStr}` : ""}` : ""
 	};
 }
@@ -104,7 +104,7 @@ export function commandRedirect(parsed: ICommandParseResult, redirects: INullabl
 export interface ICommandParseResult {
 	command: string;
 	subCommand: string | null;
-	args: ICommandParseResultArgs | null;
+	arguments: ICommandParseResultArgs | null;
 }
 
 export interface ICommandParseResultArgs extends Array<ICommandParseResultArg> {
