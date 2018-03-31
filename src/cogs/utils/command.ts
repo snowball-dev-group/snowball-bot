@@ -4,6 +4,11 @@ import { slice } from "lodash";
 
 export const CMDPARSER_ARGUMENTS_SEPARATOR = ",";
 
+/**
+ * Parses command into delicious pieces
+ * @param str String to parse
+ * @param argsSeparator Separator for arguments
+ */
 export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR): ICommandParseResult {
 	const parts = str.split(" ");
 
@@ -13,6 +18,7 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 	let args: ICommandParseResultArg[] | null = null;
 
 	let argsStr: string | undefined = undefined;
+
 	if (parts.length > 0) {
 		args = [];
 
@@ -56,6 +62,11 @@ function argsGenerator(args: ICommandParseResultArg[], original: string): IComma
 	});
 }
 
+/**
+ * Works speedy than `String#split()` and has separator escaping
+ * @param argStr Arguments string
+ * @param separator Separator
+ */
 export function argumentSplit(argStr: string, separator = ",") {
 	if (separator.length === 0) {
 		throw new Error("`separator` can't be empty string");
@@ -86,6 +97,13 @@ export function argumentSplit(argStr: string, separator = ",") {
 	return args;
 }
 
+/**
+ * "Redirects" command from message to needed handler
+ * @param parsed Parsed message
+ * @param redirects Handlers for these commands
+ * @example
+ * commandRedirect(parsed, { "ping": () => this._pingHandler(parsed) })
+ */
 export function commandRedirect(parsed: ICommandParseResult, redirects: INullableHashMap<(parsed: ICommandParseResult) => any>) {
 	const commands = Object.keys(redirects);
 	const command = parsed.command;
@@ -102,18 +120,65 @@ export function commandRedirect(parsed: ICommandParseResult, redirects: INullabl
 }
 
 export interface ICommandParseResult {
+	/**
+	 * Command
+	 * 
+	 * May be empty string if original string was empty
+	 * @example
+	 * "!cmd"
+	 */
 	command: string;
+	/**
+	 * Found subcommand
+	 * @example
+	 * "subcmd"
+	 */
 	subCommand: string | null;
+	/**
+	 * An special array of arguments
+	 */
 	arguments: ICommandParseResultArgs | null;
+	/**
+	 * Content of command
+	 * 
+	 * Includes both subcommand and arguments
+	 * @example
+	 * "subcmd arg1, arg2"
+	 */
+	content: string;
 }
 
 export interface ICommandParseResultArgs extends Array<ICommandParseResultArg> {
+	/**
+	 * Returns only specified type of arguments
+	 * @param type Type of returning arguments
+	 */
 	only(type: "value" | "raw"): string[];
+	/**
+	 * Original arguments string
+	 * 
+	 * @example
+	 * "arg1, arg2"
+	 */
 	original: string;
 }
 
 export interface ICommandParseResultArg {
+	/**
+	 * Cleaned value of argument
+	 * 
+	 * - Removed comma-escapes
+	 * - Removed zero-width spaces
+	 * - Trimmed
+	 * @example
+	 * "arg2, still arg2"
+	 */
 	value: string;
+	/**
+	 * Raw value of argument
+	 * @example
+	 * " arg2\\, still arg2"
+	 */
 	raw: string;
 }
 
