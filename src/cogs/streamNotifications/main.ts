@@ -263,7 +263,7 @@ class StreamNotifications extends Plugin implements IModule {
 	async onMessage(msg: Message) {
 		if (!msg.content.startsWith(PREFIX)) { return; }
 		const cmd = parseCmd(msg.content);
-		const args = cmd.args ? cmd.args.only("value") : null;
+		const args = cmd.arguments ? cmd.arguments.only("value") : null;
 		try {
 			switch (cmd.subCommand) {
 				case "edit": await this.subcmd_edit(msg, args); break;
