@@ -10,7 +10,7 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 
 	let args: ICommandParseResultArg[] | null = null;
 
-	let argsStr: string;
+	let argsStr: string | undefined = undefined;
 	if (parts.length > 0) {
 		args = [];
 
