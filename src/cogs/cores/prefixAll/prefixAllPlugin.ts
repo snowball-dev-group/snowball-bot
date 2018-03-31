@@ -118,7 +118,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		if (await this._isNotServer(msg)) { return; }
 		const cmd = `${prefix}${parsed.command}`;
 
-		if (!parsed.args) {
+		if (!parsed.arguments) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "PREFIXALL_INFO_ADD",
@@ -197,7 +197,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		if (await this._isNotServer(msg)) { return; }
 		const cmd = `${prefix}${parsed.command}`;
 
-		if (!parsed.args) {
+		if (!parsed.arguments) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: "PREFIXALL_INFO_REMOVE",
@@ -270,7 +270,7 @@ export default class PrefixAllPlugin extends Plugin implements IModule {
 		const cmd = `${prefix}${parsed.command}`;
 		const msgAuthor = msg.member || msg.author;
 
-		if (parsed.args) {
+		if (parsed.arguments) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msgAuthor, {
 					key: "PREFIXALL_INFO_LIST",
