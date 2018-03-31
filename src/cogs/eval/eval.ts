@@ -70,11 +70,11 @@ class EvalJS extends Plugin implements IModule {
 
 		let resultMsg: Message;
 		try {
-			resultMsg = await message.channel.send("", {
+			resultMsg = <Message> await message.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, user, "EVAL_EXECUTION_PROGRESS_TEXT", {
 						informationTitle: await localizeForUser(i18nTarget, "EVAL_EXECUTION_PROGRESS_TITLE")
 				})
-			}) as Message;
+			});
 		} catch (err) {
 			this.log("err", "Can't send message with output:", err);
 			return;

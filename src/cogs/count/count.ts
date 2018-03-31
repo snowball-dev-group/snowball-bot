@@ -1,10 +1,10 @@
 import { IModule } from "../../types/ModuleLoader";
-import logger = require("loggy");
 import { Plugin } from "../plugin";
 import { Message, TextChannel } from "discord.js";
 import { getDB } from "../utils/db";
-import * as knex from "knex";
 import { convertNumbers } from "../utils/letters";
+import * as knex from "knex";
+import * as logger from "loggy";
 
 class Count extends Plugin implements IModule {
 	public get signature() {
@@ -95,7 +95,7 @@ class Count extends Plugin implements IModule {
 			this.log("err", "Can't push number to DB", err);
 			try {
 				await msg.react("❌");
-				await (msg.channel as TextChannel).edit({
+				await (<TextChannel> msg.channel).edit({
 					topic: ":warning: База данных не отвечает..."
 				});
 				this.log("ok", "Successfully written error message to description and reacted to message");
@@ -105,7 +105,7 @@ class Count extends Plugin implements IModule {
 		}
 
 		try {
-			await (msg.channel as TextChannel).edit({
+			await (<TextChannel> msg.channel).edit({
 				topic: `:v: Последнее число: ${convertNumbers(mNumber)}`
 			});
 		} catch (err) {

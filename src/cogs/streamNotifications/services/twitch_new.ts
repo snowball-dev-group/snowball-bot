@@ -588,10 +588,8 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 			if (this._oneOfThemNull(a.hearthstone.opponent, b.hearthstone.opponent)) {
 				return false;
-			} else {
-				if (!this._areTheseObjectsEqual(a.hearthstone.opponent, b.hearthstone.opponent)) {
-					return false;
-				}
+			} else if (!this._areTheseObjectsEqual(a.hearthstone.opponent, b.hearthstone.opponent)) {
+				return false;
 			}
 		}
 
@@ -864,7 +862,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			}
 			return isJson ? resp.json() : resp.text();
 		};
-		return <T> (await loop());
+		return <T> await loop();
 	}
 
 	// #endregion
@@ -1132,55 +1130,54 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		const whs = this.options.webhooksSettings;
 		const registeredHooksFor: string[] = [];
 		await (async () => {
-			if (this._db && whs) {
-				const dbSettings = whs.database;
-				if (!dbSettings || !dbSettings.use) { return delete this._db; }
+			if (!this._db || !whs) { return; }
+			const dbSettings = whs.database;
+			if (!dbSettings || !dbSettings.use) { return delete this._db; }
 
-				const tableStatus = await this._db.schema.hasTable(dbSettings.tableName);
-				if (!tableStatus) {
-					await this._db.schema.createTable(dbSettings.tableName, (c) => {
-						// UID, WEBHOOK_ID, KEY, CREATED_AT, LEASE_TIME, SAVED_AT
-						c.string("uid").notNullable();
-						c.string("id").notNullable();
-						c.string("key").notNullable();
-						c.bigInteger("registeredAt").notNullable();
-						c.bigInteger("leaseTime").notNullable();
-						c.bigInteger("savedAt").notNullable();
-					});
+			const tableStatus = await this._db.schema.hasTable(dbSettings.tableName);
+			if (!tableStatus) {
+				await this._db.schema.createTable(dbSettings.tableName, (c) => {
+					// UID, WEBHOOK_ID, KEY, CREATED_AT, LEASE_TIME, SAVED_AT
+					c.string("uid").notNullable();
+					c.string("id").notNullable();
+					c.string("key").notNullable();
+					c.bigInteger("registeredAt").notNullable();
+					c.bigInteger("leaseTime").notNullable();
+					c.bigInteger("savedAt").notNullable();
+				});
+			}
+
+			const hooks = <IDBWebhook[]> await this._db(dbSettings.tableName).select("*");
+			this.log("info", `Found ${(hooks || []).length} in database table!`);
+
+			const invalidateHook = async (hook: IDBWebhook) => {
+				await this._db(dbSettings.tableName).where(hook).delete();
+				await this.unregisterWebhook(hook.id, hook.uid);
+			};
+
+			for (const hook of hooks) {
+				if ((Date.now() - hook.savedAt) > TWITCH_DEATH) {
+					this.log("info", `Hook ${hook.id} (${hook.uid}) is already dead for Twitch and will not be recreated`);
+					await invalidateHook(hook);
+					continue;
 				}
 
-				const hooks = <IDBWebhook[]> await this._db(dbSettings.tableName).select("*");
-				this.log("info", `Found ${(hooks || []).length} in database table!`);
+				if ((hook.registeredAt + (hook.leaseTime * 1000)) < Date.now()) {
+					this.log("info", `Hook ${hook.id} (${hook.uid}) is already expired and will not be recreated`);
+					await invalidateHook(hook);
+					continue;
+				}
 
-				const invalidateHook = async (hook: IDBWebhook) => {
-					await this._db(dbSettings.tableName).where(hook).delete();
-					await this.unregisterWebhook(hook.id, hook.uid);
+				this.log("ok", `Recreated hook ${hook.id} (${hook.uid})`);
+				const registered = this._registeredHooks[hook.id] = {
+					key: hook.key,
+					registeredAt: hook.registeredAt,
+					uid: hook.uid,
+					leaseSeconds: hook.leaseTime
 				};
-
-				for (const hook of hooks) {
-					if ((Date.now() - hook.savedAt) > TWITCH_DEATH) {
-						this.log("info", `Hook ${hook.id} (${hook.uid}) is already dead for Twitch and will not be recreated`);
-						await invalidateHook(hook);
-						continue;
-					}
-
-					if ((hook.registeredAt + (hook.leaseTime * 1000)) < Date.now()) {
-						this.log("info", `Hook ${hook.id} (${hook.uid}) is already expired and will not be recreated`);
-						await invalidateHook(hook);
-						continue;
-					}
-
-					this.log("ok", `Recreated hook ${hook.id} (${hook.uid})`);
-					const registered = this._registeredHooks[hook.id] = {
-						key: hook.key,
-						registeredAt: hook.registeredAt,
-						uid: hook.uid,
-						leaseSeconds: hook.leaseTime
-					};
-					this._hooksIDs[hook.uid] = hook.id;
-					this._scheduleWebhookRenew(registered, (hook.registeredAt + (hook.leaseTime * 1000)) - Date.now());
-					registeredHooksFor.push(hook.uid);
-				}
+				this._hooksIDs[hook.uid] = hook.id;
+				this._scheduleWebhookRenew(registered, (hook.registeredAt + (hook.leaseTime * 1000)) - Date.now());
+				registeredHooksFor.push(hook.uid);
 			}
 		})();
 
@@ -1208,12 +1205,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 		try {
 			await (() => new Promise((res, rej) => {
-				if (this.webhooksServer) {
-					this.webhooksServer.close((err) => {
-						if (err) { return rej(err); }
-						return res();
-					});
-				} else { return res(); }
+				if (!this.webhooksServer) { return rej(); }
+
+				return this.webhooksServer.close((err) => {
+					if (err) { return rej(err); }
+					return res();
+				});
 			}))();
 		} catch (err) {
 			this.log("err", "[unload] Could not stop the webhooks server", err);

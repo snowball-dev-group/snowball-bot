@@ -127,95 +127,94 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
 		this.isTwitchV5Retired();
-		if (streamers.length > 0) {
-			const processChunk = async (chunk: IStreamingServiceStreamer[]) => {
-				let streamsResp: {
-					streams?: ITwitchStream[]
-				} = {};
 
-				try {
-					streamsResp = (await this.makeRequest(this.getAPIURL_Streams(chunk.map(s => s.uid))));
-				} catch (err) {
-					this.log("err", "Error has been received from Twitch, chunk processing failed", err);
-					return;
-				}
+		if (streamers.length < 1) { return; }
 
-				if (!streamsResp.streams) {
-					this.log("warn", "Got empty response from Twitch", streamsResp);
-					return;
-				}
+		const processChunk = async (chunk: IStreamingServiceStreamer[]) => {
+			let streamsResp: {
+				streams?: ITwitchStream[]
+			} = {};
 
-				for (const streamer of chunk) {
-					const stream = streamsResp.streams.find((stream) => {
-						return (`${stream.channel._id}`) === streamer.uid;
-					});
-					const cacheItem = this.streamsMap[streamer.uid];
-					if (stream) {
-						if (cacheItem) {
-							const cachedStream = cacheItem.value;
-							let updated = false;
-							// Stream name updated
-							if (stream.channel.status !== cachedStream.channel.status) { updated = true; }
-							// or game
-							if (stream.game !== cachedStream.game) { updated = true; }
-							// or stream_type (stream -> vodcast)
-							if (stream.stream_type !== cachedStream.stream_type) { updated = true; }
-							// or id???
-							if (stream._id !== cachedStream._id) { updated = true; }
-							// or username
-							if ((stream.channel.name !== cachedStream.channel.name) || (stream.channel.display_name !== cachedStream.channel.display_name)) {
-								// updating username in db too
-								streamer.username = stream.channel.display_name || stream.channel.name;
-								updated = true;
-							}
-							// or logo
-							if (stream.channel.logo !== cachedStream.channel.logo) { updated = true; }
-							// or probably author changed stream to (/from) 18+
-							if (stream.channel.mature !== cachedStream.channel.mature) { updated = true; }
+			try {
+				streamsResp = (await this.makeRequest(this.getAPIURL_Streams(chunk.map(s => s.uid))));
+			} catch (err) {
+				this.log("err", "Error has been received from Twitch, chunk processing failed", err);
+				return;
+			}
 
-							// if yes, we pushing update
-							if (updated) {
-								this.emit("updated", {
-									status: "online",
-									streamer,
-									id: `${stream._id}`,
-									oldId: `${cacheItem.value._id}`,
-									updated: true,
-									payload: stream
-								});
-							}
-						} else {
-							this.emit("online", {
+			if (!streamsResp.streams) {
+				this.log("warn", "Got empty response from Twitch", streamsResp);
+				return;
+			}
+
+			for (const streamer of chunk) {
+				const stream = streamsResp.streams.find((stream) => {
+					return (`${stream.channel._id}`) === streamer.uid;
+				});
+				const cacheItem = this.streamsMap[streamer.uid];
+				if (stream) {
+					if (cacheItem) {
+						const cachedStream = cacheItem.value;
+						let updated = false;
+						// Stream name updated
+						if (stream.channel.status !== cachedStream.channel.status) { updated = true; }
+						// or game
+						if (stream.game !== cachedStream.game) { updated = true; }
+						// or stream_type (stream -> vodcast)
+						if (stream.stream_type !== cachedStream.stream_type) { updated = true; }
+						// or id???
+						if (stream._id !== cachedStream._id) { updated = true; }
+						// or username
+						if ((stream.channel.name !== cachedStream.channel.name) || (stream.channel.display_name !== cachedStream.channel.display_name)) {
+							// updating username in db too
+							streamer.username = stream.channel.display_name || stream.channel.name;
+							updated = true;
+						}
+						// or logo
+						if (stream.channel.logo !== cachedStream.channel.logo) { updated = true; }
+						// or probably author changed stream to (/from) 18+
+						if (stream.channel.mature !== cachedStream.channel.mature) { updated = true; }
+
+						// if yes, we pushing update
+						if (updated) {
+							this.emit("updated", {
 								status: "online",
 								streamer,
 								id: `${stream._id}`,
+								oldId: `${cacheItem.value._id}`,
+								updated: true,
 								payload: stream
 							});
 						}
-						this.streamsMap[streamer.uid] = {
-							fetchedAt: Date.now(),
-							value: stream
-						};
 					} else {
-						if (cacheItem) {
-							this.emit("offline", {
-								status: "offline",
-								streamer,
-								id: `${cacheItem.value._id}`,
-								payload: cacheItem.value
-							});
-						}
+						this.emit("online", {
+							status: "online",
+							streamer,
+							id: `${stream._id}`,
+							payload: stream
+						});
 					}
+					this.streamsMap[streamer.uid] = {
+						fetchedAt: Date.now(),
+						value: stream
+					};
+				} else if (cacheItem) {
+					this.emit("offline", {
+						status: "offline",
+						streamer,
+						id: `${cacheItem.value._id}`,
+						payload: cacheItem.value
+					});
 				}
-			};
+			}
+		};
 
-			const chunks = chunk(streamers, 50);
-			for (const chunk of chunks) {
-				try {
-					await processChunk(chunk);
-				} catch (err) {
-					this.log("warn", "Failed to fetch chunk", err);
-				}
+		const chunks = chunk(streamers, 50);
+		for (const chunk of chunks) {
+			try {
+				await processChunk(chunk);
+			} catch (err) {
+				this.log("warn", "Failed to fetch chunk", err);
 			}
 		}
 	}
@@ -225,7 +224,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	public async getEmbed(status: IStreamStatus, lang: string): Promise<IEmbed> {
-		const stream = status.payload as ITwitchStream;
+		const stream = <ITwitchStream> status.payload;
 		if (!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
 		const gameName = stream.game ? stream.game : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
 		return {
@@ -289,9 +288,9 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			throw new StreamingServiceError("TWITCH_INVALIDUSERNAME", "Invalid username.");
 		}
 
-		const foundUsers = (await this.makeRequest(this.getAPIURL_User(username)) as {
+		const foundUsers = (<{
 			users: ITwitchUser[]
-		}).users;
+		}> await this.makeRequest(this.getAPIURL_User(username))).users;
 
 		if (foundUsers.length === 0) {
 			throw new StreamingServiceError("TWITCH_USERNOTFOUND", "User not found.");

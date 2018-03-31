@@ -7,8 +7,8 @@ import { getProfile, IOverwatchProfilePluginInfo } from "./overwatch";
 import { DetailedError } from "../../../../types/Types";
 import * as getLogger from "loggy";
 
-const ACCEPTED_REGIONS = ["eu", "kr", "us"];
-const ACCEPTED_PLATFORMS = ["pc", "xbl", "psn"];
+const ACCEPTED_REGIONS = [ "eu", "kr", "us" ];
+const ACCEPTED_PLATFORMS = [ "pc", "xbl", "psn" ];
 const LOG = getLogger("OWRatingPlugin");
 
 export interface IOWStatsPluginConfig {
@@ -56,9 +56,9 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 	async setup(str: string, member: GuildMember, msg: Message) {
 		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
-		let statusMsg = await msg.channel.send("", {
+		let statusMsg = <Message> await msg.channel.send("", {
 			embed: generateEmbed(EmbedType.Progress, status)
-		}) as Message;
+		});
 
 		const postStatus = async () => {
 			statusMsg = await statusMsg.edit("", {
@@ -85,11 +85,11 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 		if (ACCEPTED_REGIONS.indexOf(info.region) === -1) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGREGION"), {
-					fields: [{
+					fields: [ {
 						inline: false,
 						name: await localizeForUser(member, "OWPROFILEPLUGIN_AVAILABLE_REGIONS"),
 						value: ACCEPTED_REGIONS.join("\n")
-					}]
+					} ]
 				})
 			});
 			throw new Error("Invalid argumentation");
@@ -98,11 +98,11 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 		if (ACCEPTED_PLATFORMS.indexOf(info.platform)) {
 			await statusMsg.edit("", {
 				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGPLATFORM"), {
-					fields: [{
+					fields: [ {
 						inline: false,
 						name: await localizeForUser(member, "OWPROFILEPLUGIN_AVAILABLE_PLATFORMS"),
 						value: ACCEPTED_PLATFORMS.join("\n")
-					}]
+					} ]
 				})
 			});
 			throw new Error("Invalid argumentantion");
@@ -146,7 +146,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 	async getEmbed(info: string | IOverwatchProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
 		if (typeof info !== "object") {
-			info = JSON.parse(info) as IOverwatchProfilePluginInfo;
+			info = <IOverwatchProfilePluginInfo> JSON.parse(info);
 		}
 
 		let profile: IRegionalProfile | undefined = undefined;

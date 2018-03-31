@@ -163,27 +163,38 @@ export class Plugin {
 	}
 
 	public handleEvents() {
-		for (const key in this._eventsMap) {
+		const keys = Object.keys(this._eventsMap);
+
+		for (let i = 0, l = keys.length; i < l; i++) {
+			const key = keys[i];
 			const val = this._eventsMap[key];
-			if (Array.isArray(val)) {
-				for (const handler of val) {
-					$discordBot.on(key, handler);
-				}
-			} else {
+
+			if (!Array.isArray(val)) {
 				$discordBot.on(key, val);
+				continue;
+			}
+
+			for (const handler of val) {
+				$discordBot.on(key, handler);
 			}
 		}
 	}
 
 	unhandleEvents() {
-		for (const key in this._eventsMap) {
+		const keys = Object.keys(this._eventsMap);
+
+		for (let i = 0, l = keys.length; i < l; i++) {
+			const key = keys[i];
 			const val = this._eventsMap[key];
-			if (Array.isArray(val)) {
-				for (const handler of val) {
-					$discordBot.removeListener(key, handler);
-				}
-			} else {
+
+			if (!Array.isArray(val)) {
 				$discordBot.removeListener(key, val);
+				continue;
+				
+			}
+
+			for (const handler of val) {
+				$discordBot.removeListener(key, handler);
 			}
 		}
 	}

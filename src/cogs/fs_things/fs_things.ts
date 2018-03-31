@@ -251,16 +251,19 @@ class FanServerThings extends Plugin implements IModule {
 			}
 		}
 
-		if (!this.nickRegexp.test(member.displayName) && member.displayName !== this.options.wrongNickFallback) {
-			if (oldMember) {
-				if (!this.nickRegexp.test(oldMember.displayName) && oldMember.displayName !== this.options.wrongNickFallback) {
-					member.setNickname(this.options.wrongNickFallback);
-				} else {
-					member.setNickname(oldMember.displayName);
-				}
-			} else {
-				member.setNickname(this.options.wrongNickFallback);
-			}
+		if (this.nickRegexp.test(member.displayName) || member.displayName === this.options.wrongNickFallback) {
+			return;
+		}
+
+		if (!oldMember) {
+			member.setNickname(this.options.wrongNickFallback);
+			return;
+		}
+
+		if (!this.nickRegexp.test(oldMember.displayName) && oldMember.displayName !== this.options.wrongNickFallback) {
+			member.setNickname(this.options.wrongNickFallback);
+		} else {
+			member.setNickname(oldMember.displayName);
 		}
 	}
 
@@ -294,7 +297,7 @@ class FanServerThings extends Plugin implements IModule {
 						if (texts.length === 0) { continue; }
 						const randText: ISubText = random.pick(texts);
 						// as we already know - announceChannel has TextChannel type
-						(announceChannel as TextChannel).send(randText.text.replace("++", newMember.toString()));
+						(<TextChannel> announceChannel).send(randText.text.replace("++", newMember.toString()));
 					}
 				}
 			}

@@ -57,7 +57,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 
 	async getEmbed(info: ITatsumakiInfo | string, caller: GuildMember): Promise<IEmbedOptionsField> {
 		if (typeof info !== "object") {
-			info = JSON.parse(info) as ITatsumakiInfo;
+			info = <ITatsumakiInfo> JSON.parse(info);
 		}
 
 		const logPrefix = `${info.uid}:`;

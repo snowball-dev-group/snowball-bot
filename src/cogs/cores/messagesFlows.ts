@@ -245,6 +245,7 @@ export default class MessagesFlows implements IModule {
 					return;
 				}
 
+				// tslint:disable-next-line:early-exit
 				if (Array.isArray(handlerResult) && handlerResult.length > 1 && handlerResult[0] === "flow") {
 					switch (handlerResult[1]) {
 						case FlowControlArgument.BREAK: {

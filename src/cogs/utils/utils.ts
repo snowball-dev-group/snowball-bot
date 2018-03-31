@@ -234,9 +234,11 @@ export const COLORS = {
 
 export function generateEmbed(type: EmbedType, description: string | undefined, options?: IEmbedOptions) {
 	const embed: any = {};
+
 	// embed pre-fill 
 	embed.author = {};
 	embed.description = description;
+
 	switch (type) {
 		case EmbedType.Error: {
 			embed.author.name = "Error";
@@ -281,14 +283,19 @@ export function generateEmbed(type: EmbedType, description: string | undefined, 
 		} break;
 		case EmbedType.Empty: break;
 	}
+
 	if (options) {
 		if (options.title) {
 			embed.title = options.title;
 		}
+
 		if (options.fields) {
 			embed.fields = options.fields;
 		}
-		// that's fine
+
+		// this is fine
+		// https://media.giphy.com/media/3o6UBpHgaXFDNAuttm/giphy.gif
+
 		if (type === EmbedType.Error && options.errorTitle) {
 			embed.author.name = options.errorTitle;
 		} else if (type === EmbedType.Information && options.informationTitle) {
@@ -304,13 +311,16 @@ export function generateEmbed(type: EmbedType, description: string | undefined, 
 		} else if (type === EmbedType.Warning && options.warningTitle) {
 			embed.author.name = options.warningTitle;
 		}
+
 		if (options.universalTitle && embed.author) {
 			embed.author.name = options.universalTitle;
 		}
+
 		if (options.author) {
 			// full override
 			embed.author = options.author;
 		}
+
 		if (options.footer) {
 			embed.footer = options.footer;
 			if (options.footerText) {
@@ -320,22 +330,23 @@ export function generateEmbed(type: EmbedType, description: string | undefined, 
 			embed.footer = {
 				text: options.footerText
 			};
-		} else {
-			if (type !== EmbedType.Empty) {
-				embed.footer = {
-					text: $discordBot.user.username,
-					icon_url: $discordBot.user.displayAvatarURL({ format: "webp", size: 128 })
-				};
-			}
+		} else if (type !== EmbedType.Empty) {
+			embed.footer = {
+				text: $discordBot.user.username,
+				icon_url: $discordBot.user.displayAvatarURL({ format: "webp", size: 128 })
+			};
 		}
+
 		if (options.clearFooter) {
 			embed.footer = undefined;
 		}
+
 		if (options.imageUrl) {
 			embed.image = {
 				url: options.imageUrl
 			};
 		}
+
 		if (options.thumbUrl) {
 			embed.thumbnail = {
 				url: options.thumbUrl
@@ -347,9 +358,11 @@ export function generateEmbed(type: EmbedType, description: string | undefined, 
 				embed.thumbnail.height = options.thumbHeight;
 			}
 		}
+
 		if (options.color) {
 			embed.color = options.color;
 		}
+
 		if (options.ts) {
 			embed.timestamp = options.ts.toISOString();
 		}
@@ -489,12 +502,15 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 		const username = caseStrict ? member.user.username : member.user.username.toLowerCase();
 
 		if (isTag) { // tag strict equality check
-			if (tagParts_discrim !== member.user.discriminator) { continue; }
+			if (tagParts_discrim !== member.user.discriminator) {
+				continue;
+			}
+
 			if (tagParts_username) {
-				if (strict) {
-					if (username !== tagParts_username) { continue; }
-				} else {
-					if (username.indexOf(tagParts_username) === -1) { continue; }
+				if (strict && username !== tagParts_username) {
+					continue;
+				} else if (username.indexOf(tagParts_username) === -1) {
+					continue;
 				}
 			}
 

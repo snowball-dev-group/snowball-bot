@@ -1167,14 +1167,14 @@ class StreamNotifications extends Plugin implements IModule {
 	async handleNotifications() {
 		for (const providerName in this.servicesLoader.loadedModulesRegistry) {
 			this.log("info", `Trying to handle notifications of module '${providerName}'`);
-			const mod = this.servicesLoader.loadedModulesRegistry[providerName] as ModuleBase<IStreamingService> | undefined;
+			const mod = <ModuleBase<IStreamingService> | undefined> this.servicesLoader.loadedModulesRegistry[providerName];
 
 			if (!mod || !mod.base) {
 				this.log("err", `${providerName} is still not loaded (?!)`);
 				continue;
 			}
 
-			const provider = mod.base as IStreamingService;
+			const provider = <IStreamingService> mod.base;
 
 			for (const action of <StreamStatusChangedAction[]> ["online", "updated", "offline"]) {
 				const handler = (status) => {
@@ -1188,7 +1188,7 @@ class StreamNotifications extends Plugin implements IModule {
 				provider.on(action, handler);
 				let handlersCollection = this._handlers[action][providerName];
 				if (!handlersCollection) {
-					handlersCollection = this._handlers[action][providerName] = [] as StreamStatusChangedHandler[];
+					handlersCollection = this._handlers[action][providerName] = [];
 				}
 				handlersCollection.push(handler);
 			}
@@ -1343,7 +1343,7 @@ class StreamNotifications extends Plugin implements IModule {
 		let channel: TextChannel | DMChannel | undefined = alternativeChannel;
 
 		if (isUser) {
-			const user = scope as User;
+			const user = <User> scope;
 			channel = user.dmChannel;
 			if (!channel) {
 				channel = await user.createDM();
@@ -1353,8 +1353,8 @@ class StreamNotifications extends Plugin implements IModule {
 		if (!isUser && !channel) {
 			if (!settings.channelId || settings.channelId === "-") { return; }
 
-			const guild = scope as Guild;
-			channel = guild.channels.get(settings.channelId) as TextChannel;
+			const guild = <Guild> scope;
+			channel = <TextChannel> guild.channels.get(settings.channelId);
 		}
 
 		if (!channel) {
@@ -1402,7 +1402,7 @@ class StreamNotifications extends Plugin implements IModule {
 								command: `${PREFIX} unsubscribe ${providerName}, ${subscription.uid}`
 							}) : ""
 					), {
-						embed: embed as any
+						embed: <any> embed
 					});
 			} catch (err) {
 				this.log("err", "Failed to update message with ID", notification.messageId, err);
@@ -1423,7 +1423,7 @@ class StreamNotifications extends Plugin implements IModule {
 			let messageId = "";
 			const escapedUsername = escapeDiscordMarkdown(subscription.username, true);
 			try {
-				const msg = (await channel.send(shouldMentionEveryone ?
+				const msg = <Message> await channel.send(shouldMentionEveryone ?
 					`@everyone ${$localizer.getFormattedString(embedLanguage, LOCALIZED("NOTIFICATION_EVERYONE"), {
 						username: escapedUsername
 					})}` : (
@@ -1435,8 +1435,8 @@ class StreamNotifications extends Plugin implements IModule {
 							command: `${PREFIX} unsubscribe ${providerName}, ${subscription.uid}`
 						}) : ""
 					), {
-						embed: embed as any
-					})) as Message;
+						embed: <any> embed
+					});
 				messageId = msg.id;
 			} catch (err) {
 				$snowball.captureException(err, {
@@ -1574,19 +1574,19 @@ class StreamNotifications extends Plugin implements IModule {
 
 	// #region Working with DB
 
-	async getAllNotifications() {
-		return (await this.db(TABLE.notifications).select()) as INotification[];
+	async getAllNotifications() : Promise<INotification[]> {
+		return this.db(TABLE.notifications).select();
 	}
 
 	async findSubscriptionsByFilter(filter: SubscriptionFilter): Promise<ISubscriptionRawRow[]> {
-		return await this.db(TABLE.subscriptions).select().where(filter) as ISubscriptionRawRow[];
+		return this.db(TABLE.subscriptions).select().where(filter);
 	}
 
 	async findSubscription(filter: SubscriptionFilter): Promise<ISubscriptionRawRow | undefined> {
 		if (!filter.uid && !filter.username) {
 			throw new Error("Nor uid nor username provided");
 		}
-		return await this.db(TABLE.subscriptions).select().where(filter).first() as ISubscriptionRawRow | undefined;
+		return this.db(TABLE.subscriptions).select().where(filter).first();
 	}
 
 	async createSubscription(row: ISubscriptionRawRow) {
@@ -1610,9 +1610,9 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async getSettings(scope: Guild | User | string): Promise<ISettingsRow | undefined> {
-		return await this.db(TABLE.settings).where({
+		return this.db(TABLE.settings).where({
 			guild: typeof scope === "string" ? scope : (scope instanceof User ? `u${scope.id}` : scope.id)
-		}).first() as ISettingsRow | undefined;
+		}).first();
 	}
 
 	async createSettings(row: ISettingsRow) {
@@ -1631,11 +1631,11 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async updateNotification(notification: INotification) {
-		return this.db(TABLE.notifications).where({
+		return this.db(TABLE.notifications).where(<INotification> {
 			guild: notification.guild,
 			provider: notification.provider,
 			streamerId: notification.streamerId
-		} as INotification).update(notification);
+		}).update(notification);
 	}
 
 	async deleteNotification(notification: INotification) {
@@ -1643,12 +1643,12 @@ class StreamNotifications extends Plugin implements IModule {
 	}
 
 	async findNotification(provider: string, streamerId: string, streamId: string, guild: Guild | string): Promise<INotification | undefined> {
-		return <INotification | undefined> await this.db(TABLE.notifications).where({
+		return this.db(TABLE.notifications).where(<INotification> {
 			provider,
 			streamerId,
 			streamId,
 			guild: guild instanceof Guild ? guild.id : guild
-		} as INotification).first();
+		}).first();
 	}
 
 	// #endregion
@@ -1791,15 +1791,16 @@ class StreamNotifications extends Plugin implements IModule {
 				if (msg.type !== SHARDING_MESSAGE_TYPES.PUSH) { return; }
 
 				this.log("info", "[ShardedMessageHandler] Received message", msg);
+				// tslint:disable-next-line:early-exit
 				if (msg.payload.ifYouHaveGuild && msg.payload.notifyAbout) {
-					const guild = $discordBot.guilds.get(msg.payload.ifYouHaveGuild as string);
+					const guild = $discordBot.guilds.get(<string> msg.payload.ifYouHaveGuild);
 					if (guild) {
 						// process
-						const notifyAbout = msg.payload.notifyAbout as {
+						const notifyAbout = <{
 							subscription: ISubscriptionRow,
 							notification: INotification,
 							result: IStreamStatus
-						};
+						}> msg.payload.notifyAbout;
 						this.pushNotification(guild, notifyAbout.result, notifyAbout.subscription, notifyAbout.notification);
 					}
 				}

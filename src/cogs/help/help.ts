@@ -29,9 +29,9 @@ class HelpfulCommand extends Plugin implements IModule {
 
 		let infoMsg: Message | undefined = undefined;
 		if (msg.channel.type !== "dm") {
-			infoMsg = await msg.channel.send("", {
+			infoMsg = <Message> await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "HELPFULCMD_SENDINGTOPM")
-			}) as Message;
+			});
 		}
 
 		try {

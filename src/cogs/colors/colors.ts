@@ -732,14 +732,16 @@ class Colors extends Plugin implements IModule {
 
 			for (const requiredRoleId of colorInfo.required_role) {
 				const role = msg.guild.roles.get(requiredRoleId);
-				if (role) {
-					const obj = {
-						roleName: role.name,
-						has: msg.member.roles.has(requiredRoleId)
-					};
-					if (!isAvailable && obj.has) { isAvailable = true; }
-					resolvedRequiredRoles.push(obj);
-				}
+				if (!role) { continue; } 
+
+				const obj = {
+					roleName: role.name,
+					has: msg.member.roles.has(requiredRoleId)
+				};
+
+				if (!isAvailable && obj.has) { isAvailable = true; }
+
+				resolvedRequiredRoles.push(obj);
 			}
 
 			if (resolvedRequiredRoles.length > 0) {

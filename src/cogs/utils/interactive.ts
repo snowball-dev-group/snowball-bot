@@ -3,9 +3,7 @@ import { Message, MessageReaction, User, TextChannel, GuildMember, DMChannel } f
 export async function createConfirmationMessage(embed, originalMsg: Message): Promise<boolean> {
 	let _confirmationMessage: Message | undefined = undefined;
 	try {
-		_confirmationMessage = await originalMsg.channel.send("", {
-			embed
-		}) as Message;
+		_confirmationMessage = <Message> await originalMsg.channel.send("", { embed });
 	} catch (err) {
 		return false;
 	}
@@ -59,9 +57,7 @@ interface ICustomConfirmationRules {
 }
 
 export async function createCustomizeConfirmationMessage(embed, channel: TextChannel, rules: ICustomConfirmationRules) {
-	const _confirmationMessage: Message = await channel.send("", {
-		embed
-	}) as Message;
+	const _confirmationMessage = <Message> await channel.send("", { embed });
 
 	try {
 		for (let i = 0, rl = rules.variants.length; i < rl; i++) {

@@ -113,7 +113,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 		for (const streamer of streamers) {
 			const resp = await fetch(this.getAPIURL_Stream(streamer.uid));
 			if (resp.status !== 200) { continue; }
-			const videos = (await resp.json()) as IYouTubeListResponse<IYouTubeVideo>;
+			const videos = <IYouTubeListResponse<IYouTubeVideo>> await resp.json();
 			if (videos.items.length === 0) {
 				// probably we had stream before
 				const cachedStream = this.streamsCache[streamer.uid];
@@ -173,7 +173,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	// ========================================
 
 	public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-		const cachedStream = stream.payload as IYouTubeVideo;
+		const cachedStream = <IYouTubeVideo> stream.payload;
 		if (!cachedStream) {
 			throw new StreamingServiceError("YOUTUBE_CACHENOTFOUND", `Stream cache for channel with ID "${stream.streamer.uid}" not found`);
 		}
@@ -184,7 +184,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 			if (resp.status !== 200) {
 				throw new StreamingServiceError("YOUTUBE_CHANNELFETCH_FAILED", "Fething failed");
 			}
-			const channels = ((await resp.json()) as IYouTubeListResponse<IYouTubeChannel>).items;
+			const channels = (<IYouTubeListResponse<IYouTubeChannel>> await resp.json()).items;
 			if (channels.length !== 1) {
 				throw new StreamingServiceError("YOUTUBE_CHANNELNOTFOUND", "Channel not found");
 			}
@@ -260,7 +260,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 			throw new StreamingServiceError("YOUTUBE_UNSUCCESSFUL_RESP", "YouTube respond with wrong code, means");
 		}
 
-		const channels = ((await resp.json()) as IYouTubeListResponse<IYouTubeChannel>).items;
+		const channels = (<IYouTubeListResponse<IYouTubeChannel>> await resp.json()).items;
 		if (channels.length !== 1) {
 			throw new StreamingServiceError("YOUTUBE_USERNOTFOUND", "User not found.");
 		}

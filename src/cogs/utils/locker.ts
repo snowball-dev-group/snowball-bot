@@ -69,13 +69,13 @@ export default class DiscordLocker {
 				res(onLockResult); unlock();
 			}, lockFailed);
 
-			if (!isLocked) {
-				// `lock` always returns `false` if already locked
-				return rej({
-					code: "LOCK_IN_EFFECT",
-					message: "The lock is already in effect"
-				});
-			}
+			if (isLocked) { return; }
+			// `lock` always returns `false` if already locked
+
+			return rej({
+				code: "LOCK_IN_EFFECT",
+				message: "The lock is already in effect"
+			});
 		});
 	}
 

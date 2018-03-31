@@ -73,12 +73,13 @@ class SetLanguageCommand extends Plugin implements IModule {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		});
-		if (options) {
-			this.noLazy = !!options["no_lazy"];
-			this.crowdinLink = options.crowdinLink;
-			this.googleMapsApiKey = options.googleApiKey;
-			this.flags = createHashMap(options.flags);
-		} else { throw new Error("No options found"); }
+
+		if (!options) { throw new Error("No options found"); }
+
+		this.noLazy = !!options["no_lazy"];
+		this.crowdinLink = options.crowdinLink;
+		this.googleMapsApiKey = options.googleApiKey;
+		this.flags = createHashMap(options.flags);
 	}
 
 	public async init() {

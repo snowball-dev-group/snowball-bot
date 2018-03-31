@@ -1168,6 +1168,7 @@ class Guilds extends Plugin implements IModule {
 						uid: string
 					}>) => {
 						if (typeof ipcMsg !== "object") { return; }
+						// tslint:disable-next-line:early-exit
 						if ((ipcMsg.type === "guilds:rules:accept" || ipcMsg.type === "guilds:rules:reject") && ipcMsg.payload) {
 							if (ipcMsg.payload.uid && ipcMsg.payload.uid === msg.author.id) {
 								clearTimeout(t);
@@ -1580,13 +1581,11 @@ class Guilds extends Plugin implements IModule {
 							await this.updateGuildRow(dbRow);
 							adminRemoved = true;
 						}
-					} else {
-						if (rightsCheck(member, dbRow, false)) {
-							str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_GUILDADMOROWNR", {
-								username: escapeDiscordMarkdown(mention.username, true)
-							})}\n`;
-							continue;
-						}
+					} else if (rightsCheck(member, dbRow, false)) {
+						str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_GUILDADMOROWNR", {
+							username: escapeDiscordMarkdown(mention.username, true)
+						})}\n`;
+						continue;
 					}
 
 					if (!member.roles.has(dbRow.roleId)) {

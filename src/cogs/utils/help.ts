@@ -32,8 +32,8 @@ interface ICategories {
 let dict: ICategories | undefined = undefined;
 
 function init(): ICategories {
-	if (!dict) { dict = Object.create(null); }
-	return dict!;
+	if (!dict) { dict = <{}> Object.create(null); }
+	return dict;
 }
 
 interface IArgumentsMap {
@@ -95,25 +95,31 @@ export async function generateHelpContent(msg: Message) {
 			if (target.arguments) {
 				for (let argName in target.arguments) {
 					const argInfo = target.arguments[argName];
+
 					if (argName.startsWith("loc:")) {
 						argName = await localizeForUser(user, argName.slice("loc:".length));
 					}
+					
 					if (argInfo.specialCheck && !argInfo.specialCheck(msg)) {
 						continue;
 					}
-					if (argInfo.values) {
-						const fixedValues: string[] = [];
-						for (let val of argInfo.values) {
-							if (val.startsWith("loc:")) {
-								val = await localizeForUser(user, val.slice("loc:".length));
-							}
-							fixedValues.push(val);
-						}
-						const vals = fixedValues.join("/");
-						str += argInfo.optional ? ` [${vals}]` : ` <${vals}>`;
-					} else {
+
+					if (!argInfo.values) {
 						str += argInfo.optional ? ` [${argName}]` : ` <${argName}>`;
+						continue;
 					}
+
+					const fixedValues: string[] = [];
+
+					for (let val of argInfo.values) {
+						if (val.startsWith("loc:")) {
+							val = await localizeForUser(user, val.slice("loc:".length));
+						}
+						fixedValues.push(val);
+					}
+
+					const vals = fixedValues.join("/");
+					str += argInfo.optional ? ` [${vals}]` : ` <${vals}>`;
 				}
 			}
 
@@ -123,36 +129,36 @@ export async function generateHelpContent(msg: Message) {
 			}
 
 			str += `: ${desc}\n`;
-			if (target.arguments) {
-				for (let argName in target.arguments) {
-					const argInfo = target.arguments[argName];
-					if (argName.startsWith("loc:")) {
-						argName = await localizeForUser(user, argName.slice("loc:".length));
-					}
-					if (argInfo.specialCheck && !argInfo.specialCheck(msg)) {
-						continue;
-					}
-					str += "  - ";
-					if (argInfo.values) {
-						const fixedValues: string[] = [];
-						for (let val of argInfo.values) {
-							if (val.startsWith("loc:")) {
-								val = await localizeForUser(user, val.slice("loc:".length));
-							}
-							fixedValues.push(val);
-						}
-						const vals = fixedValues.join("/");
-						str += argInfo.optional ? `[${vals}]` : `<${vals}>`;
-					} else {
-						str += argInfo.optional ? `[${argName}]` : `<${argName}>`;
-					}
+			if (!target.arguments) { continue; }
 
-					let argDesc = argInfo.description;
-					if (argDesc.startsWith("loc:")) {
-						argDesc = await localizeForUser(user, argDesc.slice("loc:".length));
-					}
-					str += `: ${argDesc}\n`;
+			for (let argName in target.arguments) {
+				const argInfo = target.arguments[argName];
+				if (argName.startsWith("loc:")) {
+					argName = await localizeForUser(user, argName.slice("loc:".length));
 				}
+				if (argInfo.specialCheck && !argInfo.specialCheck(msg)) {
+					continue;
+				}
+				str += "  - ";
+				if (argInfo.values) {
+					const fixedValues: string[] = [];
+					for (let val of argInfo.values) {
+						if (val.startsWith("loc:")) {
+							val = await localizeForUser(user, val.slice("loc:".length));
+						}
+						fixedValues.push(val);
+					}
+					const vals = fixedValues.join("/");
+					str += argInfo.optional ? `[${vals}]` : `<${vals}>`;
+				} else {
+					str += argInfo.optional ? `[${argName}]` : `<${argName}>`;
+				}
+
+				let argDesc = argInfo.description;
+				if (argDesc.startsWith("loc:")) {
+					argDesc = await localizeForUser(user, argDesc.slice("loc:".length));
+				}
+				str += `: ${argDesc}\n`;
 			}
 		}
 

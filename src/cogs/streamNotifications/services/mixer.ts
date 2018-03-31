@@ -162,14 +162,13 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	public async fetchChannel(uid: string): Promise<IMixerChannel> {
-		return (await this.makeRequest(this.getAPIURL_Channel(uid))) as IMixerChannel;
+		return this.makeRequest(this.getAPIURL_Channel(uid));
 	}
 
 	public async getStreamStartTime(uid: string): Promise<number> {
-		return new Date(((await this.makeRequest(`${this.getAPIURL_Channel(uid)}/manifest.light2`)) as {
-			now: string,
-			startedAt: string
-		}).startedAt).getTime();
+		const manifest = <IMixerManifest> await this.makeRequest(`${this.getAPIURL_Channel(uid)}/manifest.light2`);
+
+		return new Date(manifest.startedAt).getTime();
 	}
 
 	public getAPIURL_Channel(username: string) {
@@ -177,7 +176,8 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	}
 
 	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
-		const json = (await this.makeRequest(this.getAPIURL_Channel(username))) as IMixerChannel;
+		const json = <IMixerChannel> await this.makeRequest(this.getAPIURL_Channel(username));
+
 		return {
 			serviceName: this.name,
 			uid: `${json.id}`,
@@ -203,7 +203,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	// ========================================
 
 	public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
-		const cache = stream.payload as ICacheItem;
+		const cache = <ICacheItem> stream.payload;
 		if (!cache) {
 			throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure: payload not found");
 		}
@@ -331,6 +331,11 @@ interface IMixerChannel {
 
 	/** Link to the banner */
 	bannerUrl?: string;
+}
+
+interface IMixerManifest {
+	now: string;
+	startedAt: string;
 }
 
 module.exports = MixerStreamingService;

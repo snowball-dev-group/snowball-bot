@@ -276,6 +276,7 @@ export class SnowballBot extends EventEmitter {
 
 		this._discordClient.on("disconnect", async (reason) => {
 			this._log("warn", "Disconnected with reason:", reason);
+			// tslint:disable-next-line:early-exit
 			if ((this._discordClient.status && (this._discordClient.status !== 1 && this._discordClient.status !== 2)) || !this._discordClient.status) {
 				this._log("warn", "No reconnect pending, reconnecting...");
 				try {

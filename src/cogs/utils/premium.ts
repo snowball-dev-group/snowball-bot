@@ -1,7 +1,7 @@
 import { getDB, createTableBySchema } from "./db";
 import { User, GuildMember } from "discord.js";
-import * as getLogger from "loggy";
 import { INullableHashMap } from "../../types/Types";
+import * as getLogger from "loggy";
 
 const PREMIUM_TABLE = "premiums";
 const LOG = getLogger("Utils:Premium");
@@ -26,7 +26,7 @@ interface IPremiumRawRow {
 }
 
 export async function getAllPremiumSubscribers() {
-	return ((await db(PREMIUM_TABLE).select()) as IPremiumRawRow[]).map(e => {
+	return (<IPremiumRawRow[]> await db(PREMIUM_TABLE).select()).map(e => {
 		return {
 			due_to: new Date(e.due_to),
 			subscribed_at: new Date(e.subscribed_at),
@@ -118,9 +118,9 @@ export async function getPremium(person: GuildMember | User, internalCallSign?: 
 	} else if (cached === undefined) {
 		source = "db";
 		// wasn't cached, so fetching from db
-		premiumRow = await db(PREMIUM_TABLE).where({
+		premiumRow = <IPremiumRawRow> await db(PREMIUM_TABLE).where({
 			"id": person.id
-		}).first() as IPremiumRawRow;
+		}).first();
 
 		if (!premiumRow) {
 			// at this moment if premium wasn't returned
@@ -145,14 +145,13 @@ export async function getPremium(person: GuildMember | User, internalCallSign?: 
 	if (internalCallSign && internalCallSign !== INTERNALCALLSIGN) {
 		LOG("err", "Security issue", `#checkPremium(${person.id})`, ":: trying call with sign", internalCallSign);
 		throw new EvalError("You cannot call this function with `internalCallSign`");
-	} else if (!internalCallSign) {
-		if (premiumRow.due_to < Date.now()) {
-			await deletePremium(person);
-			return {
-				result: undefined,
-				source
-			};
-		}
+	} else if (!internalCallSign && premiumRow.due_to < Date.now()) {
+		await deletePremium(person);
+
+		return {
+			result: undefined,
+			source
+		};
 	}
 
 	return {

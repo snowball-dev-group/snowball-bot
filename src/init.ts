@@ -1,7 +1,7 @@
-import logger = require("loggy");
 import { SnowballBot, IBotConfig, IInternalBotConfig } from "./types/SnowballBot";
 import { join as pathJoin } from "path";
 import * as cluster from "cluster";
+import * as logger from "loggy";
 
 const coreInfo = {
 	"version": "0.9.9986"
@@ -139,18 +139,16 @@ async function spawnShard(log: any, shardId: number, shardsCount: number, forwar
 	const c = cluster.fork(env).on("online", () => {
 		log("info", "[Sharding] Cluster", c.id, "is online");
 	}).on("message", (message) => {
-		if (typeof message === "object") {
-			if (typeof message.type === "string") {
-				switch (message.type) {
-					case "online": {
-						shardConnected = true;
-					} break;
-					default: {
-						log("info", "Forwarding message", message);
-						forwardMessage(c, message);
-					} break;
-				}
-			}
+		if (typeof message !== "object" && typeof message.type !== "string") { return; }
+
+		switch (message.type) {
+			case "online": {
+				shardConnected = true;
+			} break;
+			default: {
+				log("info", "Forwarding message", message);
+				forwardMessage(c, message);
+			} break;
 		}
 	}).on("error", (code, signal) => {
 		log("err", "[Sharding] Cluster", c.id, "error received", code, signal);
@@ -166,15 +164,19 @@ async function spawnShard(log: any, shardId: number, shardsCount: number, forwar
 		const id = setInterval(() => {
 			if (shardConnected) { res(); clearInterval(id); }
 			clusterDied = clusterDied || c.isDead();
+
 			if (clusterDied) {
 				clearInterval(id);
 				rej("Cluster died");
 			}
-			if (((Date.now() - forkedAt) > SHARD_TIMEOUT)) {
-				clearInterval(id);
-				rej("Timed out");
-				c.kill("SIGTERM");
+
+			if (((Date.now() - forkedAt) < SHARD_TIMEOUT)) {
+				return;
 			}
+
+			clearInterval(id);
+			rej("Timed out");
+			c.kill("SIGTERM");
 		}, 1);
 	}));
 

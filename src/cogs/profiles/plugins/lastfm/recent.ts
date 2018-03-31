@@ -57,7 +57,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 	}
 
 	public async getEmbed(info: ILastFMInfo | string, caller: GuildMember, profilesModule: ProfilesModule): Promise<IEmbedOptionsField> {
-		if (typeof info !== "object") { info = JSON.parse(info) as ILastFMInfo; }
+		if (typeof info !== "object") { info = <ILastFMInfo> JSON.parse(info); }
 
 		const logPrefix = `getEmbed(${info.username}):`;
 		let profile: IRecentTracksResponse | undefined = undefined;

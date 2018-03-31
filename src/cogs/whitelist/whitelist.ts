@@ -121,7 +121,7 @@ export class Whitelist extends Plugin implements IModule {
 			{
 				const alwaysWhitelisted = options.always_whitelisted;
 				if (alwaysWhitelisted && alwaysWhitelisted instanceof Array) {
-					for (const g of alwaysWhitelisted as string[]) {
+					for (const g of <string[]> alwaysWhitelisted) {
 						this.alwaysWhitelisted.push(g);
 					}
 				}
@@ -174,7 +174,7 @@ export class Whitelist extends Plugin implements IModule {
 	}
 
 	async fetchCurrentMode() {
-		let mode = await getGuildPref("global", "whitelist:mode", true) as number | undefined;
+		let mode = <number | undefined> await getGuildPref("global", "whitelist:mode", true);
 		if (typeof mode !== "number") { mode = this.defaultMode; }
 		this.currentMode = this.parseMode(mode);
 		return this.currentMode;
@@ -307,12 +307,13 @@ export class Whitelist extends Plugin implements IModule {
 			await this.leaveGuild(guild, "WHITELIST_LEAVE_MANYMEMBERS");
 			return;
 		}
-		if (mode.whitelist) {
-			await setGuildPref(guild, "whitelist:status", WHITELIST_STATE.TRIAL);
-			const endDate = Date.now() + this.trialTime;
-			await setGuildPref(guild, "whitelist:until", endDate);
-			this.log("info", `Activated trial on guild "${guild.name}"`);
-		}
+
+		if (!mode.whitelist) { return; }
+
+		await setGuildPref(guild, "whitelist:status", WHITELIST_STATE.TRIAL);
+		const endDate = Date.now() + this.trialTime;
+		await setGuildPref(guild, "whitelist:until", endDate);
+		this.log("info", `Activated trial on guild "${guild.name}"`);
 	}
 
 	async notify(guild: Guild, embed: any) {
@@ -325,16 +326,16 @@ export class Whitelist extends Plugin implements IModule {
 			if (notificationChannel) { break; }
 		}
 
-		if (notificationChannel) {
-			try {
-				await notificationChannel.send("", { embed });
-			} catch (err) {
-				$snowball.captureException(err, {
-					level: "warning",
-					extra: { guildId: guild, embed }
-				});
-				this.log("warn", `Failed to send message to channel ${notificationChannel.name} (${notificationChannel.id})`);
-			}
+		if (!notificationChannel) { return; }
+
+		try {
+			await notificationChannel.send("", { embed });
+		} catch (err) {
+			$snowball.captureException(err, {
+				level: "warning",
+				extra: { guildId: guild, embed }
+			});
+			this.log("warn", `Failed to send message to channel ${notificationChannel.name} (${notificationChannel.id})`);
 		}
 	}
 
@@ -406,18 +407,18 @@ export class Whitelist extends Plugin implements IModule {
 		const u = msg.member || msg.author;
 
 		if (cmd.subCommand === "activate") {
-			if (cmd.args && cmd.args.length === 2) {
-				if (!canBeSnowflake(cmd.args[0].value)) {
+			if (cmd.arguments && cmd.arguments.length === 2) {
+				if (!canBeSnowflake(cmd.arguments[0].value)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
 					});
 					return;
 				}
-				if (cmd.args[1].value === "forever") {
+				if (cmd.arguments[1].value === "forever") {
 					const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 						key: "WHITELIST_ACTIVATE_CONFIRM_FOREVER",
 						formatOptions: {
-							serverId: cmd.args[0].value
+							serverId: cmd.arguments[0].value
 						}
 					}), msg);
 					if (!confirmation) {
@@ -426,9 +427,9 @@ export class Whitelist extends Plugin implements IModule {
 						});
 						return;
 					}
-					await setGuildPref(cmd.args[0].value, "whitelist:status", WHITELIST_STATE.UNLIMITED);
+					await setGuildPref(cmd.arguments[0].value, "whitelist:status", WHITELIST_STATE.UNLIMITED);
 				} else {
-					const time = parseTime(cmd.args[1].value, "ms");
+					const time = parseTime(cmd.arguments[1].value, "ms");
 					const endTime = new Date(Date.now() + time);
 
 					const endString = await toUserLocaleString(msg.member, endTime, DateTime.DATETIME_FULL);
@@ -437,7 +438,7 @@ export class Whitelist extends Plugin implements IModule {
 						key: "WHITELIST_ACTIVATE_CONFIRM_LIMITED",
 						formatOptions: {
 							timeString: endString,
-							serverId: cmd.args[0].value
+							serverId: cmd.arguments[0].value
 						}
 					}), msg);
 
@@ -448,15 +449,15 @@ export class Whitelist extends Plugin implements IModule {
 						return;
 					}
 
-					await setGuildPref(cmd.args[0].value, "whitelist:until", endTime);
-					await setGuildPref(cmd.args[0].value, "whitelist:status", WHITELIST_STATE.LIMITED);
+					await setGuildPref(cmd.arguments[0].value, "whitelist:until", endTime);
+					await setGuildPref(cmd.arguments[0].value, "whitelist:status", WHITELIST_STATE.LIMITED);
 				}
 
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.OK, u, {
 						key: "WHITELIST_ACTIVATED",
 						formatOptions: {
-							serverId: cmd.args[0].value
+							serverId: cmd.arguments[0].value
 						}
 					})
 				});
@@ -466,8 +467,8 @@ export class Whitelist extends Plugin implements IModule {
 				});
 			}
 		} else if (cmd.subCommand === "deactivate") {
-			if (cmd.args && cmd.args.length === 1) {
-				if (!canBeSnowflake(cmd.args[0].value)) {
+			if (cmd.arguments && cmd.arguments.length === 1) {
+				if (!canBeSnowflake(cmd.arguments[0].value)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
 					});
@@ -477,7 +478,7 @@ export class Whitelist extends Plugin implements IModule {
 				const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 					key: "WHITELIST_DEACTIVATE_CONFIRM",
 					formatOptions: {
-						serverId: cmd.args[0].value
+						serverId: cmd.arguments[0].value
 					}
 				}), msg);
 
@@ -488,14 +489,14 @@ export class Whitelist extends Plugin implements IModule {
 					return;
 				}
 
-				await delGuildPref(cmd.args[0].value, "whitelist:until");
-				await delGuildPref(cmd.args[0].value, "whitelist:status");
+				await delGuildPref(cmd.arguments[0].value, "whitelist:until");
+				await delGuildPref(cmd.arguments[0].value, "whitelist:status");
 
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.OK, u, {
 						key: "WHITELIST_DEACTIVATED",
 						formatOptions: {
-							serverId: cmd.args[0].value
+							serverId: cmd.arguments[0].value
 						}
 					})
 				});
@@ -505,8 +506,8 @@ export class Whitelist extends Plugin implements IModule {
 				});
 			}
 		} else if (cmd.subCommand === "ban") {
-			if (cmd.args && cmd.args.length === 1) {
-				if (!canBeSnowflake(cmd.args[0].value)) {
+			if (cmd.arguments && cmd.arguments.length === 1) {
+				if (!canBeSnowflake(cmd.arguments[0].value)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, u, "WHITELIST_ACTIVATE_WRONGID")
 					});
@@ -516,7 +517,7 @@ export class Whitelist extends Plugin implements IModule {
 				const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Progress, u, {
 					key: "WHITELIST_BAN_CONFIRM",
 					formatOptions: {
-						serverId: cmd.args[0].value
+						serverId: cmd.arguments[0].value
 					}
 				}), msg);
 
@@ -527,10 +528,10 @@ export class Whitelist extends Plugin implements IModule {
 					return;
 				}
 
-				await delGuildPref(cmd.args[0].value, "whitelist:until");
-				await setGuildPref(cmd.args[0].value, "whitelist:status", WHITELIST_STATE.BANNED);
+				await delGuildPref(cmd.arguments[0].value, "whitelist:until");
+				await setGuildPref(cmd.arguments[0].value, "whitelist:status", WHITELIST_STATE.BANNED);
 
-				const currentGuild = $discordBot.guilds.get(cmd.args[0].value);
+				const currentGuild = $discordBot.guilds.get(cmd.arguments[0].value);
 				if (currentGuild) {
 					await currentGuild.leave();
 				}
@@ -539,7 +540,7 @@ export class Whitelist extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.OK, u, {
 						key: "WHITELIST_BANNED",
 						formatOptions: {
-							serverId: cmd.args[0].value
+							serverId: cmd.arguments[0].value
 						}
 					})
 				});
@@ -550,8 +551,8 @@ export class Whitelist extends Plugin implements IModule {
 			}
 		} else if (cmd.subCommand === "mode") {
 			const modes = await this.fetchCurrentMode();
-			if (cmd.args && cmd.args.length === 2) {
-				if (!["on", "off"].includes(cmd.args[0].value) || !allowedModes.includes(cmd.args[1].value)) {
+			if (cmd.arguments && cmd.arguments.length === 2) {
+				if (!["on", "off"].includes(cmd.arguments[0].value) || !allowedModes.includes(cmd.arguments[1].value)) {
 					msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 							key: "WHITELIST_MODE_USAGE",
@@ -563,7 +564,7 @@ export class Whitelist extends Plugin implements IModule {
 					return;
 				}
 
-				const modeVal = cmd.args[0].value === "on";
+				const modeVal = cmd.arguments[0].value === "on";
 				const selectedMode = ((arg: string) => {
 					switch (arg) {
 						case "nobotfarms": return "noBotFarms";
@@ -572,7 +573,7 @@ export class Whitelist extends Plugin implements IModule {
 						case "nomaxmembers": return "noMaxMembers";
 						default: return "whitelist";
 					}
-				})(cmd.args[1].value);
+				})(cmd.arguments[1].value);
 
 				if (modeVal && modes[selectedMode]) {
 					msg.channel.send("", {
@@ -609,7 +610,7 @@ export class Whitelist extends Plugin implements IModule {
 						}
 					})
 				});
-			} else if (cmd.args && cmd.args.length < 2) {
+			} else if (cmd.arguments && cmd.arguments.length < 2) {
 				msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 						key: "WHITELIST_MODE_USAGE",

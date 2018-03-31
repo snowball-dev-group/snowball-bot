@@ -163,8 +163,9 @@ class CountV2 extends Plugin implements IModule {
 			operation: "+"
 		};
 
-		let ch: TextChannel;
-		if (!(ch = $discordBot.channels.get(CHANNELID_MAIN) as TextChannel)) {
+		let ch: TextChannel | null = null;
+
+		if (!(ch = <TextChannel | null> $discordBot.channels.get(CHANNELID_MAIN))) {
 			return false;
 		}
 
@@ -254,7 +255,7 @@ class CountV2 extends Plugin implements IModule {
 
 		const answerTimeOK = rRowQueueTime === -1 ? true : secondsSinceTimerAdded < 10;
 
-		const alreadyAnswered = rRowAnsweredBy.indexOf(msg.author.id) !== -1;
+		const alreadyAnswered = rRowAnsweredBy.includes(msg.author.id);
 
 		if (alreadyAnswered && answerTimeOK) {
 			return msg.delete();
@@ -423,7 +424,7 @@ class CountV2 extends Plugin implements IModule {
 		if (!$discordBot.channels.has(CHANNELID_SCOREBOARD)) {
 			throw new Error("Scoreboard channel not found");
 		}
-		const ch = $discordBot.channels.get(CHANNELID_SCOREBOARD) as TextChannel;
+		const ch = <TextChannel> $discordBot.channels.get(CHANNELID_SCOREBOARD);
 
 		const messages = await ch.messages.fetch();
 		for (const message of messages.values()) {
@@ -444,22 +445,23 @@ class CountV2 extends Plugin implements IModule {
 		}
 
 		if (!this.scoreboardMessages.top10) {
-			const msg = await ch.send("", {
+			const msg = <Message> await ch.send("", {
 				embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
 					footerText: STRINGS.TOP_10
 				})
-			}) as Message;
+			});
 			this.scoreboardMessages.top10 = msg;
 		}
 
-		if (!this.scoreboardMessages.latestChanges) {
-			const msg = await ch.send("", {
-				embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
-					footerText: STRINGS.LATEST_CHANGES
-				})
-			}) as Message;
-			this.scoreboardMessages.latestChanges = msg;
-		}
+		if (this.scoreboardMessages.latestChanges) { return; }
+
+		const msg = <Message> await ch.send("", {
+			embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
+				footerText: STRINGS.LATEST_CHANGES
+			})
+		});
+
+		this.scoreboardMessages.latestChanges = msg;
 	}
 
 	async updateScoreboardMessages(playerUpdate?: IScoreboardUserUpdateInfo) {
@@ -494,43 +496,39 @@ class CountV2 extends Plugin implements IModule {
 			});
 		}
 
-		if (this.scoreboardMessages.top10) {
-			let top10: IScoreboardUserRow[];
-			try {
-				top10 = await this.dbClient(TABLENAME_SCOREBOARD).orderBy("exp", "DESC").limit(15);
-			} catch (err) {
-				this.log("err", "Can't get top 10 from database!", err);
-				return;
-			}
+		if (!this.scoreboardMessages.top10) { return; } 
 
-			const lines: string[] = [];
-			let pos = 0;
-			for (const row of top10) {
-				if (row.exp < 10) { return; }
-				if (pos >= 10) { return; }
-				if (!this.scoreboardMessages.top10) {
-					return;
-				} else {
-					const member = this.scoreboardMessages.top10.guild.members.get(row.user);
-					if (!member) {
-						return;
-					}
-					pos++;
-
-					let str = pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : `**${pos}.**`;
-					str += ` \`${member.displayName}\`**-** ${row.exp} очков`;
-					lines.push(str);
-				}
-			}
-
-			const embed: any = {};
-			embed.description = lines.join("\n");
-			embed.footer = { text: STRINGS.TOP_10 };
-
-			await this.scoreboardMessages.top10.edit("", {
-				embed: embed
-			});
+		let top10: IScoreboardUserRow[];
+		try {
+			top10 = await this.dbClient(TABLENAME_SCOREBOARD).orderBy("exp", "DESC").limit(15);
+		} catch (err) {
+			this.log("err", "Can't get top 10 from database!", err);
+			return;
 		}
+
+		const lines: string[] = [];
+		let pos = 0;
+		for (const row of top10) {
+			if (row.exp < 10) { continue; }
+			if (pos >= 10) { continue; }
+
+			const member = this.scoreboardMessages.top10.guild.members.get(row.user);
+			if (!member) { continue; }
+
+			pos++;
+
+			let str = pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : `**${pos}.**`;
+			str += ` \`${member.displayName}\`**-** ${row.exp} очков`;
+			lines.push(str);
+		}
+
+		const embed: any = {};
+		embed.description = lines.join("\n");
+		embed.footer = { text: STRINGS.TOP_10 };
+
+		await this.scoreboardMessages.top10.edit("", {
+			embed: embed
+		});
 	}
 
 	async unload() {

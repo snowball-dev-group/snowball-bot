@@ -94,9 +94,9 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 	async setup(str: string, member: GuildMember, msg: Message) {
 		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
-		let statusMsg = await msg.channel.send("", {
+		let statusMsg = <Message> await msg.channel.send("", {
 			embed: generateEmbed(EmbedType.Progress, status)
-		}) as Message;
+		});
 
 		const postStatus = async () => {
 			statusMsg = await statusMsg.edit("", {
@@ -200,7 +200,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 	async getEmbed(info: string | IOverwatchHeroesProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
 		if (typeof info !== "object") {
-			info = JSON.parse(info) as IOverwatchHeroesProfilePluginInfo;
+			info = <IOverwatchHeroesProfilePluginInfo> JSON.parse(info);
 		}
 
 		let profile: IRegionalProfile | undefined = undefined;
@@ -242,12 +242,12 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					return b.playtime - a.playtime;
 				});
 				for (const heroPlaytime of sorted) {
-					if (heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
-						stats.push({
-							hero: heroPlaytime.hero,
-							stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
-						});
-					}
+					if (heroPlaytime.playtime < 1 || stats.length < HEROES_TO_SHOW) { continue; }
+
+					stats.push({
+						hero: heroPlaytime.hero,
+						stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
+					});
 				}
 			} else if (info.sortBy === "winrate") {
 				const heroesStats = profile.heroes.stats.competitive;
@@ -260,14 +260,16 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					return b.games_won - a.games_won;
 				});
 				for (const heroWins of sorted) {
-					if (heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
-						stats.push({
-							hero: heroWins.hero,
-							stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
-								gamesWon: heroWins.games_won
-							})
-						});
+					if (heroWins.games_won < 1 || stats.length > HEROES_TO_SHOW) {
+						continue;
 					}
+
+					stats.push({
+						hero: heroWins.hero,
+						stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
+							gamesWon: heroWins.games_won
+						})
+					});
 				}
 			}
 			str += await this.getString(stats, caller);
@@ -290,12 +292,12 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					return b.playtime - a.playtime;
 				});
 				for (const heroPlaytime of sorted) {
-					if (heroPlaytime.playtime > 0 && stats.length < HEROES_TO_SHOW) {
-						stats.push({
-							hero: heroPlaytime.hero,
-							stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
-						});
-					}
+					if (heroPlaytime.playtime < 1 || stats.length > HEROES_TO_SHOW) { continue; }
+
+					stats.push({
+						hero: heroPlaytime.hero,
+						stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
+					});
 				}
 			} else if (info.sortBy === "winrate") {
 				const sorted = Object.keys(heroesStats).map((heroName: Hero) => {
@@ -307,14 +309,14 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					return b.games_won - a.games_won;
 				});
 				for (const heroWins of sorted) {
-					if (heroWins.games_won > 0 && stats.length < HEROES_TO_SHOW) {
-						stats.push({
-							hero: heroWins.hero,
-							stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
-								gamesWon: heroWins.games_won
-							})
-						});
-					}
+					if (heroWins.games_won < 1 && stats.length > HEROES_TO_SHOW) { continue; }
+
+					stats.push({
+						hero: heroWins.hero,
+						stat: await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
+							gamesWon: heroWins.games_won
+						})
+					});
 				}
 			}
 			str += await this.getString(stats, caller);

@@ -188,8 +188,11 @@ export default class Profiles extends Plugin implements IModule {
 	private async cmd_profile_plugins(msg: Message) {
 		let str = `# ${await localizeForUser(msg.member, "PROFILES_PROFILEPLUGINS_TITLE")}`;
 
-		for (const name in this.pluginsLoader.loadedModulesRegistry) {
-			const plugin = this.pluginsLoader.loadedModulesRegistry[name] as ModuleBase<IProfilesPlugin>;
+		const names = Object.keys(this.pluginsLoader.loadedModulesRegistry);
+
+		for (let i = 0, l = names.length; i < l; i++) {
+			const name = names[i];
+			const plugin = <ModuleBase<IProfilesPlugin>> this.pluginsLoader.loadedModulesRegistry[name];
 			str += `\n- ${name}`;
 			if (!plugin || !plugin.base) { return; }
 			const plug = plugin.base;
@@ -286,32 +289,31 @@ export default class Profiles extends Plugin implements IModule {
 			const arg = firstSpaceIndex !== -1 ? param.slice(firstSpaceIndex + 1) : "";
 			param = param.slice(0, firstSpaceIndex === -1 ? param.length + 1 : firstSpaceIndex);
 
-			if (["image"].indexOf(param) !== -1) {
+			if (param === "image") {
 				const customize = JSON.parse(profile.customize);
 
-				if (param === "image") {
-					if (arg === "" || (!arg.startsWith("http://") && !arg.startsWith("https://"))) {
-						await msg.channel.send({
-							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_INVALID_LINK")
-						});
-						return;
-					}
-					try {
-						await fetch(encodeURI(arg));
-					} catch (err) {
-						await msg.channel.send({
-							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_DOWNLOAD_FAILED")
-						});
-						return;
-					}
-
-					customize["image_url"] = encodeURI(arg);
+				if (arg === "" || (!arg.startsWith("http://") && !arg.startsWith("https://"))) {
 					await msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PROFILES_PROFILE_IMAGE_SET", {
-							imageUrl: encodeURI(arg)
-						})
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_INVALID_LINK")
 					});
+					return;
 				}
+
+				try {
+					await fetch(encodeURI(arg));
+				} catch (err) {
+					await msg.channel.send({
+						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_DOWNLOAD_FAILED")
+					});
+					return;
+				}
+
+				customize["image_url"] = encodeURI(arg);
+				await msg.channel.send({
+					embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PROFILES_PROFILE_IMAGE_SET", {
+						imageUrl: encodeURI(arg)
+					})
+				});
 
 				profile.customize = JSON.stringify(customize);
 
@@ -320,7 +322,7 @@ export default class Profiles extends Plugin implements IModule {
 				return;
 			}
 
-			const mod = this.pluginsLoader.loadedModulesRegistry[param] as ModuleBase<IProfilesPlugin> | undefined;
+			const mod = this.pluginsLoader.findKeeper<IProfilesPlugin>(param, "name");
 
 			if (!mod) {
 				await msg.channel.send({
@@ -429,11 +431,9 @@ export default class Profiles extends Plugin implements IModule {
 
 			let doneStr = "";
 
-			if (["image"].indexOf(param) !== -1) {
-				if (param === "image") {
-					doneStr = await localizeForUser(msg.member, "PROFILES_PROFILE_IMAGE_REMOVED");
-					delete customize.image_url;
-				}
+			if (param === "image") {
+				doneStr = await localizeForUser(msg.member, "PROFILES_PROFILE_IMAGE_REMOVED");
+				delete customize.image_url;
 			} else {
 				if (!this.pluginsLoader.loadedModulesRegistry[param]) {
 					await msg.channel.send({
@@ -580,7 +580,7 @@ export default class Profiles extends Plugin implements IModule {
 				showStatusChangeTime = false; // it's kinda not works in this case :9
 			}
 		} else if (dbProfile.activity) {
-			const jsonActivity = JSON.parse(dbProfile.activity) as IUserActivity;
+			const jsonActivity = <IUserActivity> JSON.parse(dbProfile.activity);
 
 			statusString += jsonActivity.emoji;
 
@@ -689,102 +689,108 @@ export default class Profiles extends Plugin implements IModule {
 			return pushedMessage;
 		};
 
-		if (dbProfile.customize !== "{}") {
-			const customize = JSON.parse(dbProfile.customize);
+		if (dbProfile.customize === "{}") {
+			await pushUpdate();
+			return;
+		}
 
-			if (customize.image_url) {
-				embed.image = { url: customize.image_url };
+		const customize = JSON.parse(dbProfile.customize);
+
+		if (customize.image_url) {
+			embed.image = { url: customize.image_url };
+		}
+
+		if (customize.video_url) {
+			embed.video = { url: customize.video_url };
+		}
+
+		if (!customize.plugins) {
+			await pushUpdate();
+			return;
+		}
+
+		for (const pluginName of Object.keys(customize.plugins)) {
+			const plugin = this.pluginsLoader.findBase<IProfilesPlugin>(pluginName, "name");
+			if (!plugin) { continue; }
+
+			const addedPlugin = <IAddedProfilePlugin> customize.plugins[pluginName];
+
+			switch (addedPlugin.type) {
+				case AddedProfilePluginType.Embed: {
+					if (!plugin.getEmbed) { continue; }
+
+					const fNum = fields.length;
+
+					fields.push({
+						name: pluginName,
+						value: await localizeForUser(msg.member, "PROFILES_PROFILE_LOADING"),
+						inline: true
+					});
+
+					const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+
+					let canEdit = true;
+					const t: NodeJS.Timer = setTimeout(async () => {
+						this.log("err", pluginLogPrefix, "timed out.");
+						canEdit = false;
+						fields[fNum] = {
+							name: pluginName,
+							value: await localizeForUser(msg.member, "PROFILES_PROFILE_TIMEDOUT"),
+							inline: true
+						};
+						pushUpdate();
+					}, 20000);
+
+					plugin.getEmbed(addedPlugin.json, msg.member, this).then(field => {
+						if (!canEdit) { return; }
+						if (t) { clearTimeout(t); }
+						fields[fNum] = field;
+						if (pushedMessage && ((Date.now() - pushedMessage.createdAt.getTime()) / 1000) < 3) {
+							setTimeout(pushUpdate, 1000);
+						} else {
+							pushUpdate();
+						}
+					}).catch(async (err) => {
+						this.log("err", pluginLogPrefix, "Error at plugin", err);
+						if (t) { clearTimeout(t); }
+						fields[fNum] = {
+							name: pluginName,
+							value: await localizeForUser(msg.member, "PROFILES_PROFILE_FAILED", {
+								msg: err.message
+							})
+						};
+						pushUpdate();
+					});
+				} break;
+				case AddedProfilePluginType.Customs: {
+					if (!plugin.getCustoms) { continue; }
+
+					const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
+
+					let canEdit = true;
+					const t: NodeJS.Timer = setTimeout(() => {
+						this.log("err", pluginLogPrefix, "timed out.");
+						canEdit = false;
+					}, 20000);
+
+					plugin.getCustoms(addedPlugin.json, msg.member, this).then(customs => {
+						if (!canEdit) { return; }
+						if (t) { clearTimeout(t); }
+						if (customs.image_url) {
+							embed.image = { url: customs.image_url };
+						}
+						if (customs.thumbnail_url) {
+							embed.thumbnail = { url: customs.thumbnail_url };
+						}
+						pushUpdate();
+					}).catch(err => {
+						this.log("err", pluginLogPrefix, "Error at plugin", err);
+						if (t) { clearTimeout(t); }
+					});
+				} break;
 			}
-
-			if (customize.video_url) {
-				embed.video = { url: customize.video_url };
-			}
-
-			if (customize.plugins) {
-				for (const pluginName of Object.keys(customize.plugins)) {
-					const plugin = this.pluginsLoader.findBase<IProfilesPlugin>(pluginName, "name");
-					if (!plugin) { continue; }
-
-					const addedPlugin = customize.plugins[pluginName] as IAddedProfilePlugin;
-
-					switch (addedPlugin.type) {
-						case AddedProfilePluginType.Embed: {
-							if (!plugin.getEmbed) { continue; }
-
-							const fNum = fields.length;
-
-							fields.push({
-								name: pluginName,
-								value: await localizeForUser(msg.member, "PROFILES_PROFILE_LOADING"),
-								inline: true
-							});
-
-							const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
-
-							let canEdit = true;
-							const t: NodeJS.Timer = setTimeout(async () => {
-								this.log("err", pluginLogPrefix, "timed out.");
-								canEdit = false;
-								fields[fNum] = {
-									name: pluginName,
-									value: await localizeForUser(msg.member, "PROFILES_PROFILE_TIMEDOUT"),
-									inline: true
-								};
-								pushUpdate();
-							}, 20000);
-
-							plugin.getEmbed(addedPlugin.json, msg.member, this).then(field => {
-								if (!canEdit) { return; }
-								if (t) { clearTimeout(t); }
-								fields[fNum] = field;
-								if (pushedMessage && ((Date.now() - pushedMessage.createdAt.getTime()) / 1000) < 3) {
-									setTimeout(pushUpdate, 1000);
-								} else {
-									pushUpdate();
-								}
-							}).catch(async (err) => {
-								this.log("err", pluginLogPrefix, "Error at plugin", err);
-								if (t) { clearTimeout(t); }
-								fields[fNum] = {
-									name: pluginName,
-									value: await localizeForUser(msg.member, "PROFILES_PROFILE_FAILED", {
-										msg: err.message
-									})
-								};
-								pushUpdate();
-							});
-						} break;
-						case AddedProfilePluginType.Customs: {
-							if (!plugin.getCustoms) { continue; }
-
-							const pluginLogPrefix = `${dbProfile.uid} -> ${pluginName}|`;
-
-							let canEdit = true;
-							const t: NodeJS.Timer = setTimeout(() => {
-								this.log("err", pluginLogPrefix, "timed out.");
-								canEdit = false;
-							}, 20000);
-
-							plugin.getCustoms(addedPlugin.json, msg.member, this).then(customs => {
-								if (!canEdit) { return; }
-								if (t) { clearTimeout(t); }
-								if (customs.image_url) {
-									embed.image = { url: customs.image_url };
-								}
-								if (customs.thumbnail_url) {
-									embed.thumbnail = { url: customs.thumbnail_url };
-								}
-								pushUpdate();
-							}).catch(err => {
-								this.log("err", pluginLogPrefix, "Error at plugin", err);
-								if (t) { clearTimeout(t); }
-							});
-						} break;
-					}
-				}
-				await pushUpdate();
-			} else { await pushUpdate(); }
-		} else { await pushUpdate(); }
+		}
+		await pushUpdate();
 	}
 
 	// =====================================
@@ -813,10 +819,10 @@ export default class Profiles extends Plugin implements IModule {
 	}
 
 	public async getProfile(member: GuildMember, guild: Guild): Promise<IDBUserProfile> {
-		return (await this.db(TABLE_NAME).where({
+		return this.db(TABLE_NAME).where({
 			guild_id: guild.id,
 			uid: member.id
-		}).first()) as IDBUserProfile;
+		}).first();
 	}
 
 	public async getOrCreateProfile(member: GuildMember, guild: Guild) {

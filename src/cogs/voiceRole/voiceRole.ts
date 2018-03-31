@@ -248,27 +248,33 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async getAllSpecificRowsOfGuild(guild: Guild, method: "role" | "channel") {
-		const rows = ((await this.db(SPECIFIC_TABLE_NAME).where({
+		const rows = <ISpecificRoleRow[]> ((await this.db(SPECIFIC_TABLE_NAME).where({
 			guild_id: guild.id
-		})) || []) as ISpecificRoleRow[];
+		})) || []);
+
 		const map = new Map<string, ISpecificRoleRow | ISpecificRoleRow[]>();
+
 		for (const row of rows) {
-			if (method === "channel") {
-				map.set(row.channel_id, row);
-			} else {
+			if (method !== "channel") {
 				const current = map.get(row.voice_role);
+
 				if (current) {
-					map.set(row.voice_role, ([] as ISpecificRoleRow[]).concat(current).concat(row));
+					map.set(row.voice_role, (<ISpecificRoleRow[]> []).concat(current).concat(row));
 				}
+
+				continue;
 			}
+
+			map.set(row.channel_id, row);
 		}
+
 		return map;
 	}
 
-	async getSpecificRow(channel: VoiceChannel | string) {
-		return await this.db(SPECIFIC_TABLE_NAME).where({
+	async getSpecificRow(channel: VoiceChannel | string) : Promise<ISpecificRoleRow> {
+		return this.db(SPECIFIC_TABLE_NAME).where({
 			channel_id: typeof channel === "string" ? channel : channel.id
-		}).first() as ISpecificRoleRow;
+		}).first();
 	}
 
 	async updateSpecificRole(row: ISpecificRoleRow) {
@@ -313,11 +319,9 @@ class VoiceRole extends Plugin implements IModule {
 			if (!guild.channels.has(s.channel_id)) {
 				changes = true;
 				await this.deleteSpecificRow(s);
-			} else {
-				if (!guild.roles.has(s.voice_role)) {
-					changes = true;
-					await this.deleteSpecificRow(s);
-				}
+			} else if (!guild.roles.has(s.voice_role)) {
+				changes = true;
+				await this.deleteSpecificRow(s);
 			}
 		};
 
@@ -375,6 +379,7 @@ class VoiceRole extends Plugin implements IModule {
 			}
 
 			// adding new specific role
+			// tslint:disable-next-line:early-exit
 			if (voiceChannelOfMember) {
 				let specificRoleForChannel: ISpecificRoleRow | undefined = undefined;
 
@@ -388,11 +393,9 @@ class VoiceRole extends Plugin implements IModule {
 							}
 						}
 						if (specificRoleForChannel) { break; }
-					} else {
-						if (specific.channel_id === voiceChannelOfMember.id) {
-							specificRoleForChannel = specific;
-							break;
-						}
+					} else if (specific.channel_id === voiceChannelOfMember.id) {
+						specificRoleForChannel = specific;
+						break;
 					}
 				}
 
@@ -417,42 +420,38 @@ class VoiceRole extends Plugin implements IModule {
 		const specificRow = member.voiceChannel ? await this.getSpecificRow(member.voiceChannel) : undefined;
 		if (!row && !specificRow) { return; }
 
-		if (row && member.voiceChannel) {
+		if (row && member.voiceChannel && row.voice_role !== "-") {
 			// we have row & user in voice channel
 			// let's check everything
-			if (row.voice_role !== "-") {
-				if (member.guild.roles.has(row.voice_role)) {
-					// guild has our voice role
-					// let's give it to user if he has not it
-					if (!member.roles.has(row.voice_role)) {
-						// yep, take this role, my dear
-						await member.roles.add(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_JOINED_VC", {
-							channelName: member.voiceChannel.name
-						}));
-					} // nop, you have this role, next time.. next time...
-				} else {
-					// guild has no our voice role
-					// no surprises in bad admins
-					// removing it
-					row.voice_role = "-";
-					await this.updateGuildRow(row);
-				}
+			if (member.guild.roles.has(row.voice_role)) {
+				// guild has our voice role
+				// let's give it to user if he has not it
+				if (!member.roles.has(row.voice_role)) {
+					// yep, take this role, my dear
+					await member.roles.add(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_JOINED_VC", {
+						channelName: member.voiceChannel.name
+					}));
+				} // nop, you have this role, next time.. next time...
+			} else {
+				// guild has no our voice role
+				// no surprises in bad admins
+				// removing it
+				row.voice_role = "-";
+				await this.updateGuildRow(row);
 			}
 		}
 
+		// tslint:disable-next-line:early-exit
 		if (specificRow) {
 			// we found specific role for this voice channel
 			if (!member.guild.roles.has(specificRow.voice_role)) {
 				// but sadly bad admin removed it, can remove row
 				await this.deleteSpecificRow(specificRow);
-			} else {
-				// dear, do you have this specific role already?
-				if (!member.roles.has(specificRow.voice_role)) {
-					// nope, take it
-					await member.roles.add(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_ADDED", {
-						channelName: member.voiceChannel.name
-					}));
-				}
+			} else if (!member.roles.has(specificRow.voice_role)) {
+				// dear, why don't you have this specific role?
+				await member.roles.add(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_ADDED", {
+					channelName: member.voiceChannel.name
+				}));
 			}
 		}
 	}
@@ -486,6 +485,7 @@ class VoiceRole extends Plugin implements IModule {
 			}
 		}
 
+		// tslint:disable-next-line:early-exit
 		if (specificRow && member.voiceChannel) {
 			// we had specific role for old channel
 			// time to test if everything is OK
@@ -494,14 +494,12 @@ class VoiceRole extends Plugin implements IModule {
 				// we have no specific role no more on this guild
 				// time to delete specific row
 				await this.deleteSpecificRow(specificRow);
-			} else {
+			} else if (member.roles.has(specificRow.voice_role)) {
 				// there we got good answer means everything is OK
 				// we can remove old specific role
-				if (member.roles.has(specificRow.voice_role)) {
-					await member.roles.remove(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_REMOVED", {
-						channelName: member.voiceChannel.name
-					}));
-				}
+				await member.roles.remove(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_REMOVED", {
+					channelName: member.voiceChannel.name
+				}));
 			}
 		}
 	}
@@ -532,7 +530,7 @@ class VoiceRole extends Plugin implements IModule {
 		}
 
 		if (subcmd === "set") {
-			if (!parsed.args) {
+			if (!parsed.arguments) {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 						custom: true,
@@ -541,7 +539,7 @@ class VoiceRole extends Plugin implements IModule {
 				});
 			}
 
-			const resolvedRole = resolveGuildRole(parsed.args[0].raw, msg.guild, false);
+			const resolvedRole = resolveGuildRole(parsed.arguments[0].raw, msg.guild, false);
 			if (!resolvedRole) {
 				return msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
@@ -710,7 +708,7 @@ class VoiceRole extends Plugin implements IModule {
 
 			return;
 		} else if (subcmd === "specific") {
-			if (!parsed.args) {
+			if (!parsed.arguments) {
 				// help for specific
 				return;
 			}
@@ -869,7 +867,7 @@ class VoiceRole extends Plugin implements IModule {
 					});
 				}
 
-				const current = await this.getSpecificRow(resolvedChannel as VoiceChannel);
+				const current = await this.getSpecificRow(<VoiceChannel> resolvedChannel);
 
 				if (!current) {
 					return msg.channel.send("", {
