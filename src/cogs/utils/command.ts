@@ -36,7 +36,7 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 	};
 }
 
-export function argsGenerator(args: ICommandParseResultArg[], original: string): ICommandParseResultArgs {
+function argsGenerator(args: ICommandParseResultArg[], original: string): ICommandParseResultArgs {
 	const normal: string[] = [];
 	const raw: string[] = [];
 
