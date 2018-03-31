@@ -1,5 +1,6 @@
 import { stripEmptyChars, escapeRegExp } from "./text";
 import { INullableHashMap } from "../../types/Types";
+import { slice } from "lodash";
 
 export const CMDPARSER_ARGUMENTS_SEPARATOR = ",";
 
@@ -50,7 +51,7 @@ function argsGenerator(args: ICommandParseResultArg[], original: string): IComma
 
 	// tslint:disable-next-line:prefer-object-spread
 	return Object.assign(args, {
-		only: (type: "value" | "raw") => (type === "value" ? normal : raw).slice(),
+		only: (type: "value" | "raw") => slice(type === "value" ? normal : raw),
 		original
 	});
 }
