@@ -5,7 +5,7 @@ export const CMDPARSER_ARGUMENTS_SEPARATOR = ",";
 export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR): ICommandParseResult {
 	const parts = str.split(" ");
 
-	const cmd = parts.shift();
+	const cmd = parts.shift()!;
 	const subCmd = parts.shift() || null; // subcmd / null
 
 	let args: ICommandParseResultArg[] | null = null;
@@ -28,9 +28,10 @@ export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR
 	}
 
 	return {
-		command: cmd!, // command can't be empty
+		command: cmd,
 		subCommand: subCmd,
-		args: args ? argsGenerator(args, argsStr!) : null
+		args: args != null ? argsGenerator(args, argsStr!) : null,
+		content: subCmd != null ? `${subCmd}${argsStr ? ` ${argsStr}` : ""}` : ""
 	};
 }
 
