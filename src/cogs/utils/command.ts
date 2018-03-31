@@ -83,6 +83,21 @@ export function argumentSplit(argStr: string, separator = ",") {
 	return args;
 }
 
+export function commandRedirect(parsed: ICommandParseResult, redirects: INullableHashMap<(parsed: ICommandParseResult) => any>) {
+	const commands = Object.keys(redirects);
+	const command = parsed.command;
+
+	for (let i = 0, l = commands.length; i < l; i++) {
+		const currentCommand = command[i];
+		if (command !== currentCommand) { return; }
+
+		const callback = redirects[currentCommand];
+		if (!callback) { break; }
+
+		return callback(parsed);
+	}
+}
+
 export interface ICommandParseResult {
 	command: string;
 	subCommand: string | null;

@@ -25,16 +25,6 @@ export function objectToMap<T>(obj) {
 	return map;
 }
 
-export function commandRedirect(content: string, redirects: Map<string, Function>) {
-	for (const [key, val] of redirects) {
-		const keySpaced = `${key} `;
-		const itsStarts = content.startsWith(keySpaced);
-		if (itsStarts || content === key) {
-			val(itsStarts ? content.slice(keySpaced.length) : content);
-		}
-	}
-}
-
 export function escapeDiscordMarkdown(str: string, usernames: boolean = false) {
 	str = replaceAll(str, "`", "'");
 	str = replaceAll(str, "*", "\\*");
