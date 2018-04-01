@@ -21,7 +21,13 @@
 		"forceConsistentCasingInFileNames": true,
 		"pretty": true,
 		"newLine": "LF",
-		"rootDir": "src"
+		"rootDir": "src",
+		"baseUrl": ".",
+		"paths": {
+			"@types/*": [ "./src/types/*" ],
+			"@cogs/*": [ "./src/cogs/*" ],
+			"@utils/*": [ "./src/cogs/utils/*" ]
+		}
 	},
 	"include": [
 		"src/**/*",
