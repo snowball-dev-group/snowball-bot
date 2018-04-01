@@ -189,6 +189,10 @@ let loadComplete = false;
 let exitCalls = 0;
 
 async function initBot(log: logger.ILogFunction, config: IBotConfig, internalConfig: IInternalBotConfig) {
+	log("info", "[Run] Preparing import aliases...");
+
+	prepareAliases(log);
+
 	log("info", "[Run] Initializing bot...");
 	const snowball = new SnowballBot(config, internalConfig);
 
@@ -253,4 +257,21 @@ async function initBot(log: logger.ILogFunction, config: IBotConfig, internalCon
 		log("err", "[Run] Exiting due we can't work without bot connected to Discord");
 		process.exit(1);
 	}
+}
+
+function prepareAliases(log: logger.ILogFunction) {
+	log("info", "[Import Aliases] Registering aliases for commont paths");
+
+	const aliasModule = require("module-alias");
+
+	const currentDirectory = process.cwd();
+
+	aliasModule.addAliases({
+		// ! DON'T FORGET ABOUT TSCONFIG
+		"@types": pathJoin(currentDirectory, "types"),
+		"@cogs": pathJoin(currentDirectory, "cogs"),
+		"@utils": pathJoin(currentDirectory, "cogs/utils/")
+	});
+
+	log("ok", "[Import Aliases] Aliases registered");
 }
