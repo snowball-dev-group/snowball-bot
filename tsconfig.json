@@ -24,7 +24,7 @@
 		"rootDir": "src",
 		"baseUrl": ".",
 		"paths": {
-			"@types/*": [ "./src/types/*" ],
+			"@sb-types/*": [ "./src/types/*" ],
 			"@cogs/*": [ "./src/cogs/*" ],
 			"@utils/*": [ "./src/cogs/utils/*" ]
 		}

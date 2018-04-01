@@ -268,7 +268,7 @@ function prepareAliases(log: logger.ILogFunction) {
 
 	aliasModule.addAliases({
 		// ! DON'T FORGET ABOUT TSCONFIG
-		"@types": pathJoin(currentDirectory, "types"),
+		"@sb-types": pathJoin(currentDirectory, "types"),
 		"@cogs": pathJoin(currentDirectory, "cogs"),
 		"@utils": pathJoin(currentDirectory, "cogs/utils/")
 	});
