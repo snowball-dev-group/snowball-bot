@@ -13,6 +13,7 @@
         "luxon": "^1.0.0",
         "micromatch": "^3.1.10",
         "minimist": "^1.2.0",
+        "module-alias": "^2.0.6",
         "mysql": "^2.15.0",
         "mz": "^2.7.0",
         "node-fetch": "^2.1.2",
