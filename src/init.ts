@@ -99,7 +99,7 @@ const SHARD_TIMEOUT = 30000; // ms
 	}
 })();
 
-async function spawnShards(log: any, shardsCount: number) {
+async function spawnShards(log: logger.ILogFunction, shardsCount: number) {
 	if (cluster.isWorker) {
 		throw new Error("Could not spawn shards inside the worker!");
 	}
@@ -122,7 +122,7 @@ async function spawnShards(log: any, shardsCount: number) {
 	}
 }
 
-async function spawnShard(log: any, shardId: number, shardsCount: number, forwardMessage: (c: cluster.Worker, msg: any) => void) : Promise<cluster.Worker> {
+async function spawnShard(log: logger.ILogFunction, shardId: number, shardsCount: number, forwardMessage: (c: cluster.Worker, msg: any) => void) : Promise<cluster.Worker> {
 	if (cluster.isWorker) {
 		throw new Error("Could not spawn shard inside the worker!");
 	}
@@ -188,7 +188,7 @@ async function spawnShard(log: any, shardId: number, shardsCount: number, forwar
 let loadComplete = false;
 let exitCalls = 0;
 
-async function initBot(log: any, config: IBotConfig, internalConfig: IInternalBotConfig) {
+async function initBot(log: logger.ILogFunction, config: IBotConfig, internalConfig: IInternalBotConfig) {
 	log("info", "[Run] Initializing bot...");
 	const snowball = new SnowballBot(config, internalConfig);
 
