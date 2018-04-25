@@ -849,8 +849,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			if (this.options.token) { headers["Authorization"] = `Bearer ${this.options.token}`; }
 			const resp = await fetch(uri, { headers, method: method.toUpperCase() });
 			if (resp.status === 429) {
-				const resetAt = parseInt(resp.headers.get("ratelimit-reset"), 10);
-				const sleepTime = ((resetAt * 1000) - Date.now()) + 5; // time problems
+				const _resetHeader = resp.headers.get("ratelimit-reset");
+				if (!_resetHeader) {
+					throw new Error("Ratelimited but not provided valid reset time");
+				}
+				const resetIn = parseInt(_resetHeader, 10);
+				const sleepTime = ((resetIn * 1000) - Date.now()) + 5; // time problems
 				this.log("info", `Request to "${uri}" was ratelimited. Sleeping for ${sleepTime}...`);
 				await sleep(sleepTime);
 				return loop(attempt + 1);
