@@ -53,6 +53,7 @@ export class Localizer {
 	private readonly _sourceLang: string;
 	private readonly _fallbackQueue: string[] = [];
 	private readonly _humanizersMap: ILanguageHashMap<Humanizer> = Object.create(null);
+	private readonly _formatMessage = formatMessage.namespace();
 	private _langMaps: ILanguageHashMap<IStringsMap | undefined> = Object.create(null);
 	private _initDone: boolean = false;
 	private _loadedLanguages: string[] = [];
@@ -75,6 +76,11 @@ export class Localizer {
 		} else if (opts.default_language !== opts.source_language) {
 			this._fallbackQueue.push(opts.default_language);
 		}
+
+		// killing console spam about no translations???
+		this._formatMessage.setup({
+			missingTranslation: "ignore"
+		});
 
 		{
 			const covgLogDisabledType = typeof opts.disable_coverage_log;
@@ -474,7 +480,7 @@ export class Localizer {
 	 */
 	public getFormattedString(lang: string = this.sourceLanguage, key: string, variables: IFormatMessageVariables, fallback: boolean = true) {
 		const str = this.getString(lang, key, fallback);
-		return <string> formatMessage(str, variables, lang);
+		return <string> this._formatMessage(str, variables, lang);
 	}
 
 	/**
