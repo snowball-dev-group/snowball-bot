@@ -289,7 +289,7 @@ class VoiceRole extends Plugin implements IModule {
 	}
 
 	async deleteSpecificRow(row: ISpecificRoleRow) {
-		return this.db(SPECIFIC_TABLE_NAME).where(row).delete().first();
+		return this.db(SPECIFIC_TABLE_NAME).where(row).first().delete();
 	}
 
 	async updateGuildRow(row: IGuildRow) {

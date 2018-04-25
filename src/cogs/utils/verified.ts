@@ -86,7 +86,7 @@ async function deleteStoredVerification(verificationData: IVerificationData) {
 
 	localStorage[localStorageKey] = undefined; // nullying, improves perfo
 
-	return DB(TABLE_NAME).where(verificationData).delete().first();
+	return DB(TABLE_NAME).where(verificationData).first().delete();
 }
 
 /// ======================================
