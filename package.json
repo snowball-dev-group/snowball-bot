@@ -14,7 +14,7 @@
         "micromatch": "^3.1.10",
         "minimist": "^1.2.0",
         "module-alias": "^2.0.6",
-        "mysql": "^2.15.0",
+        "mysql2": "^1.5.3",
         "mz": "^2.7.0",
         "node-fetch": "^2.1.2",
         "random-js": "^1.0.8",
