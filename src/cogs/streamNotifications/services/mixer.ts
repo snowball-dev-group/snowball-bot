@@ -188,7 +188,11 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	private async makeRequest(uri: string, attempt: number = 0): Promise<any> {
 		const resp = await fetch(uri);
 		if (resp.status === 429) {
-			const delay = parseInt(resp.headers.get("retry-after"), 10);
+			const _retryHeader = resp.headers.get("retry-after");
+			if (!_retryHeader) {
+				throw new Error("Ratelimited but not given time to wait");
+			}
+			const delay = parseInt(_retryHeader, 10);
 			this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 			await sleep(delay);
 			return this.makeRequest(uri, attempt + 1);
