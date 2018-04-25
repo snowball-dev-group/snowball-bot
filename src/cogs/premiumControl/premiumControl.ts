@@ -682,7 +682,7 @@ class PremiumControl extends Plugin implements IModule {
 		// sync
 
 		for (const member of guild.members.values()) {
-			if (member.roles.highest.position >= guild.me.roles.highest.position) {
+			if (member.roles.highest && (member.roles.highest.position >= guild.me.roles.highest.position)) {
 				// we can't give role to member because this member has role highness that ours
 				done++;
 				continue;
