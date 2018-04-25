@@ -3,7 +3,7 @@
         "bluebird": "^3.5.1",
         "carina": "^0.11.0",
         "crypto-js": "^3.1.9-1",
-        "discord.js": "github:discordjs/discord.js#95b531742a8ed3215dabc5e5e1277e2d0ac3de88",
+        "discord.js": "github:discordjs/discord.js#e12ab7428f49308f1a6a617c8afd7185939b923d",
         "format-message": "^6.0.1",
         "full-url": "^1.0.0",
         "ioredis": "^3.2.2",
