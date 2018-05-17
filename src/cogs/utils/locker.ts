@@ -36,6 +36,15 @@ export default class DiscordLocker {
 	}
 
 	/**
+	 * Checks lock state of resource for selected target
+	 * @param targetId Target of where to check resource lock state
+	 */
+	public isLocked(targetId: PossibleTargets) {
+		targetId = this._normalizeTarget(targetId);
+		return this._lockStates[targetId] || false;
+	}
+
+	/**
 	 * Locks resource for selected target
 	 * @param targetId Target of where resource lock happens
 	 * @param onLock Callback function if lock happened
