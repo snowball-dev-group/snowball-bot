@@ -233,17 +233,17 @@ class Guilds extends Plugin implements IModule {
 		return "snowball.features.guilds";
 	}
 
-	log = getLogger("Guilds");
-	db = getDB();
+	private readonly log = getLogger("Guilds");
+	private readonly db = getDB();
 
-	config: IGuildsModuleConfig;
+	private readonly _config: IGuildsModuleConfig;
 
-	pendingInvites: INullableHashMap<{ code: string; }> = Object.create(null);
-	processMessageListener?: ((msg: any) => void);
+	private readonly _pendingInvites: INullableHashMap<{ code: string; }> = Object.create(null);
+	private processMessageListener?: ((msg: any) => void);
 
 	constructor(config: IGuildsModuleConfig) {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
+			"message": (msg: Message) => this._onMessage(msg)
 		}, true);
 
 		if (!config) { throw new Error("No config passed"); }
@@ -255,11 +255,11 @@ class Guilds extends Plugin implements IModule {
 				if (msg.type === "guilds:rules:pending_clear" && msg.payload) {
 					// payload: <{uid: string}>
 					if (!msg.payload.uid) { return; }
-					if (!this.pendingInvites[msg.payload.uid]) { return; }
-					delete this.pendingInvites[msg.payload.uid];
+					if (!this._pendingInvites[msg.payload.uid]) { return; }
+					delete this._pendingInvites[msg.payload.uid];
 				} else if (msg.type === "guilds:rules:pending" && msg.payload) {
 					if (!msg.payload.uid || !msg.payload.code) { return; }
-					this.pendingInvites[msg.payload.uid] = { code: msg.payload.code };
+					this._pendingInvites[msg.payload.uid] = { code: msg.payload.code };
 				}
 			};
 			process.on("message", this.processMessageListener);
@@ -272,7 +272,7 @@ class Guilds extends Plugin implements IModule {
 			config.emojis[emojiName] = emoji.toString();
 		}
 
-		this.config = config;
+		this._config = config;
 
 		// this.init();
 	}
@@ -281,28 +281,28 @@ class Guilds extends Plugin implements IModule {
 	// Messages handling
 	// ==============================
 
-	async onMessage(msg: Message) {
-		if (msg.channel.type === "dm") { return this.dmCodeHandler(msg); }
+	private async _onMessage(msg: Message) {
+		if (msg.channel.type === "dm") { return this._handleDMCode(msg); }
 		try {
 			if (msg.content.startsWith(BASE_PREFIX)) {
 				if (msg.content === BASE_PREFIX) {
-					return await this.sendHelp(<TextChannel> msg.channel, undefined, msg.member);
+					return await this._sendHelp(<TextChannel> msg.channel, undefined, msg.member);
 				} else if (startsWith(msg.content, CMD_GUILDS_LIST)) {
-					return await this.getGuildsList(msg);
+					return await this._getGuildsList(msg);
 				} else if (startsWith(msg.content, CMD_GUILDS_CREATE)) {
-					return await this.createGuild(msg);
+					return await this._createGuild(msg);
 				} else if (startsWith(msg.content, CMD_GUILDS_EDIT)) {
-					return await this.editGuild(msg);
+					return await this._editGuild(msg);
 				} else if (startsWith(msg.content, CMD_GUILDS_DELETE)) {
-					return await this.deleteGuild(msg);
+					return await this._deleteGuild(msg);
 				} else if (startsWith(msg.content, CMD_GUILDS_INFO)) {
-					return await this.getGuildInfo(msg);
+					return await this._getGuildInfo(msg);
 				} else if (startsWith(msg.content, CMD_GUILDS_INVITE)) {
-					return await this.inviteToGuild(msg);
+					return await this._inviteToGuild(msg);
 				} else if (startsWith(msg.content, CMD_GUILDS_MEMBERS)) {
-					return await this.membersControl(msg);
+					return await this._membersControl(msg);
 				}
-				return await this.joinLeaveGuild(msg);
+				return await this._joinLeaveGuild(msg);
 			}
 		} catch (err) {
 			this.log("err", "Error at running cmd", msg.content, "\n", err);
@@ -317,11 +317,11 @@ class Guilds extends Plugin implements IModule {
 	// Handlers
 	// ==============================
 
-	async dmCodeHandler(msg: Message) {
+	private async _handleDMCode(msg: Message) {
 		if (msg.channel.type !== "dm") { return; } // non-dm msg
 		if (!process.send) { return; } // non-sharded run
 
-		const pendingInvite = this.pendingInvites[msg.author.id];
+		const pendingInvite = this._pendingInvites[msg.author.id];
 		if (!pendingInvite) { return; } // no pending invites
 		if (pendingInvite.code.toLowerCase() === msg.content.toLowerCase()) {
 			process.send({
@@ -340,7 +340,7 @@ class Guilds extends Plugin implements IModule {
 		}
 	}
 
-	async sendHelp(channel: TextChannel, article: string = "guilds", member: GuildMember) {
+	private async _sendHelp(channel: TextChannel, article: string = "guilds", member: GuildMember) {
 		let str = "";
 		switch (article) {
 			case "guilds": {
@@ -382,10 +382,10 @@ class Guilds extends Plugin implements IModule {
 		});
 	}
 
-	async createGuild(msg: Message) {
+	private async _createGuild(msg: Message) {
 		// !guilds create Overwatch, !Overwatch
 		if (msg.content === CMD_GUILDS_CREATE) {
-			return this.sendHelp(<TextChannel> msg.channel, CMD_GUILDS_CREATE, msg.member);
+			return this._sendHelp(<TextChannel> msg.channel, CMD_GUILDS_CREATE, msg.member);
 		}
 
 		if (!rightsCheck(msg.member)) {
@@ -424,7 +424,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		// search if we already having role with this name
-		let dbRow: IGuildRow | undefined = await this.getGuildRow(msg.guild, args[0]);
+		let dbRow: IGuildRow | undefined = await this._getGuildRow(msg.guild, args[0]);
 
 		if (dbRow) {
 			if (!msg.guild.roles.has(dbRow.roleId)) {
@@ -488,9 +488,9 @@ class Guilds extends Plugin implements IModule {
 			});
 		}
 
-		await this.createGuildRow(msg.guild, args[0]);
+		await this._createGuildRow(msg.guild, args[0]);
 
-		dbRow = await this.getGuildRow(msg.guild, args[0]);
+		dbRow = await this._getGuildRow(msg.guild, args[0]);
 
 		if (!dbRow) {
 			return msg.channel.send({
@@ -503,17 +503,17 @@ class Guilds extends Plugin implements IModule {
 		dbRow.customize = "{}";
 		dbRow.ownerId = msg.member.id;
 
-		await this.updateGuildRow(dbRow);
+		await this._updateGuildRow(dbRow);
 
 		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CREATE_DONE")
 		});
 	}
 
-	async editGuild(msg: Message) {
+	private async _editGuild(msg: Message) {
 		// !guilds edit Overwatch, description, Для фанатов этой отвратительной игры
 		if (msg.content === CMD_GUILDS_EDIT) {
-			return this.sendHelp(<TextChannel> msg.channel, CMD_GUILDS_EDIT, msg.member);
+			return this._sendHelp(<TextChannel> msg.channel, CMD_GUILDS_EDIT, msg.member);
 		}
 
 		const args = msg.content.slice(CMD_GUILDS_EDIT.length).split(",");
@@ -546,7 +546,7 @@ class Guilds extends Plugin implements IModule {
 
 		let dbRow: IGuildRow | undefined = undefined;
 		try {
-			dbRow = await this.getGuildRow(msg.guild, guildName);
+			dbRow = await this._getGuildRow(msg.guild, guildName);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			dbRow = undefined;
@@ -878,7 +878,7 @@ class Guilds extends Plugin implements IModule {
 
 		dbRow.customize = JSON.stringify(customize);
 
-		await this.updateGuildRow(dbRow);
+		await this._updateGuildRow(dbRow);
 
 		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
@@ -888,15 +888,15 @@ class Guilds extends Plugin implements IModule {
 		});
 	}
 
-	async deleteGuild(msg: Message) {
+	private async _deleteGuild(msg: Message) {
 		const guildName = msg.content.slice(CMD_GUILDS_DELETE.length).trim();
 		if (guildName === "") {
-			return this.sendHelp(<TextChannel> msg.channel, CMD_GUILDS_DELETE, msg.member);
+			return this._sendHelp(<TextChannel> msg.channel, CMD_GUILDS_DELETE, msg.member);
 		}
 
 		let dbRow: IGuildRow | undefined = undefined;
 		try {
-			dbRow = await this.getGuildRow(msg.guild, guildName);
+			dbRow = await this._getGuildRow(msg.guild, guildName);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			dbRow = undefined;
@@ -923,23 +923,23 @@ class Guilds extends Plugin implements IModule {
 			});
 		}
 
-		await this.deleteGuildRow(dbRow);
+		await this._deleteGuildRow(dbRow);
 
 		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_DELETE_DONE")
 		});
 	}
 
-	async joinLeaveGuild(msg: Message) {
+	private async _joinLeaveGuild(msg: Message) {
 		// !guilds Overwatch
 		const guildName = msg.content.slice(BASE_PREFIX.length).trim();
 		if (guildName.length === 0) {
-			return this.sendHelp(<TextChannel> msg.channel, undefined, msg.member);
+			return this._sendHelp(<TextChannel> msg.channel, undefined, msg.member);
 		}
 
 		let dbRow: IGuildRow | undefined = undefined;
 		try {
-			dbRow = await this.getGuildRow(msg.guild, guildName);
+			dbRow = await this._getGuildRow(msg.guild, guildName);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			dbRow = undefined;
@@ -960,13 +960,13 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		if (!msg.member.roles.has(dbRow.roleId)) {
-			await this.joinGuild(msg, dbRow, role, guildName);
+			await this._joinGuild(msg, dbRow, role, guildName);
 		} else {
-			await this.leaveGuild(msg, dbRow, role, guildName);
+			await this._leaveGuild(msg, dbRow, role, guildName);
 		}
 	}
 
-	async leaveGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
+	private async _leaveGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
 		if (!dbRow || !role) { return; }
 
 		const cz = <IGuildCustomize> JSON.parse(dbRow.customize);
@@ -1009,7 +1009,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		try {
-			dbRow = await this.getGuildRow(msg.guild, guildName);
+			dbRow = await this._getGuildRow(msg.guild, guildName);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			dbRow = undefined;
@@ -1050,7 +1050,7 @@ class Guilds extends Plugin implements IModule {
 		});
 	}
 
-	async joinGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
+	private async _joinGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
 		if (!dbRow || !role) { return; }
 
 		const getEmbed = async (str: string) => {
@@ -1230,7 +1230,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		try {
-			dbRow = await this.getGuildRow(msg.guild, guildName);
+			dbRow = await this._getGuildRow(msg.guild, guildName);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
@@ -1275,7 +1275,7 @@ class Guilds extends Plugin implements IModule {
 			invites.splice(invites.indexOf(msg.member.id), 1);
 			cz.invites = invites;
 			dbRow.customize = JSON.stringify(cz);
-			await this.updateGuildRow(dbRow);
+			await this._updateGuildRow(dbRow);
 		}
 
 		if (cz.rules) {
@@ -1305,15 +1305,15 @@ class Guilds extends Plugin implements IModule {
 		});
 	}
 
-	async getGuildInfo(msg: Message) {
+	private async _getGuildInfo(msg: Message) {
 		const guildName = msg.content.slice(CMD_GUILDS_INFO.length).trim();
 		if (guildName.length === 0) {
-			return this.sendHelp(<TextChannel> msg.channel, CMD_GUILDS_INFO, msg.member);
+			return this._sendHelp(<TextChannel> msg.channel, CMD_GUILDS_INFO, msg.member);
 		}
 
 		let dbRow: IGuildRow | undefined = undefined;
 		try {
-			dbRow = await this.getGuildRow(msg.guild, guildName);
+			dbRow = await this._getGuildRow(msg.guild, guildName);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
@@ -1353,8 +1353,8 @@ class Guilds extends Plugin implements IModule {
 			name: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBER"),
 			value: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBER_VALUE", {
 				member: isMember,
-				greenTick: this.config.emojis.greenTick,
-				redTick: this.config.emojis.redTick
+				greenTick: this._config.emojis.greenTick,
+				redTick: this._config.emojis.redTick
 			}),
 			inline: true
 		});
@@ -1374,8 +1374,8 @@ class Guilds extends Plugin implements IModule {
 			} else {
 				str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_INVITED", {
 					invited: cz.invites ? cz.invites.includes(msg.author.id) : false,
-					greenTick: this.config.emojis.greenTick,
-					redTick: this.config.emojis.redTick
+					greenTick: this._config.emojis.greenTick,
+					redTick: this._config.emojis.redTick
 				});
 			}
 			fields.push({
@@ -1409,7 +1409,7 @@ class Guilds extends Plugin implements IModule {
 		});
 	}
 
-	async membersControl(msg: Message) {
+	private async _membersControl(msg: Message) {
 		if (msg.content === CMD_GUILDS_MEMBERS) { return; } // TODO: add instructions lata?
 		let args = msg.content.split(",").map(arg => arg.trim());
 		args[0] = args[0].slice(CMD_GUILDS_MEMBERS.length).trim();
@@ -1423,7 +1423,7 @@ class Guilds extends Plugin implements IModule {
 
 		let dbRow: IGuildRow | undefined = undefined;
 		try {
-			dbRow = await this.getGuildRow(msg.guild, args[0]);
+			dbRow = await this._getGuildRow(msg.guild, args[0]);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
@@ -1443,7 +1443,7 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		if (args[1] === "list") {
-			return this.membersControlAction(msg, dbRow, "list");
+			return this._membersControlAction(msg, dbRow, "list");
 		} else if (["kick", "ban", "unban"].includes(args[1]) && args.length > 2) {
 			if (msg.mentions.users.size === 0) {
 				return msg.channel.send({
@@ -1455,13 +1455,13 @@ class Guilds extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
 				});
 			}
-			return this.membersControlAction(msg, dbRow, <"kick" | "ban" | "unban"> args[1]);
+			return this._membersControlAction(msg, dbRow, <"kick" | "ban" | "unban"> args[1]);
 		}
 	}
 
 	membersControl_fixString(str: string) { return replaceAll(str, "`", "'"); }
 
-	async membersControlAction(msg: Message, dbRow: IGuildRow, action: "list" | "kick" | "ban" | "unban" | "add") {
+	private async _membersControlAction(msg: Message, dbRow: IGuildRow, action: "list" | "kick" | "ban" | "unban" | "add") {
 		let statusMsg = <Message> await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_MEMBERSCONTROL_LOADING")
 		});
@@ -1578,7 +1578,7 @@ class Guilds extends Plugin implements IModule {
 							}
 							cz.admins.splice(index, 1);
 							dbRow.customize = JSON.stringify(cz);
-							await this.updateGuildRow(dbRow);
+							await this._updateGuildRow(dbRow);
 							adminRemoved = true;
 						}
 					} else if (rightsCheck(member, dbRow, false)) {
@@ -1635,7 +1635,7 @@ class Guilds extends Plugin implements IModule {
 						delete cz.banned;
 					}
 					dbRow.customize = JSON.stringify(cz);
-					await this.updateGuildRow(dbRow);
+					await this._updateGuildRow(dbRow);
 				}
 				statusMsg = await statusMsg.edit({
 					embed: await generateLocalizedEmbed(affected === 0 ? EmbedType.Error : EmbedType.OK, msg.member, {
@@ -1651,7 +1651,7 @@ class Guilds extends Plugin implements IModule {
 		}
 	}
 
-	async inviteToGuild(msg: Message) {
+	private async _inviteToGuild(msg: Message) {
 		if (msg.content === CMD_GUILDS_INVITE) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_INVITE_INFO")
@@ -1674,7 +1674,7 @@ class Guilds extends Plugin implements IModule {
 
 		let dbRow: IGuildRow | undefined = undefined;
 		try {
-			dbRow = await this.getGuildRow(msg.guild, args[0]);
+			dbRow = await this._getGuildRow(msg.guild, args[0]);
 			// args[0] supposed to be guild name
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
@@ -1797,7 +1797,7 @@ class Guilds extends Plugin implements IModule {
 
 		dbRow.customize = JSON.stringify(cz);
 
-		await this.updateGuildRow(dbRow);
+		await this._updateGuildRow(dbRow);
 
 		if (isRevoke) {
 			return msg.channel.send({
@@ -1814,7 +1814,7 @@ class Guilds extends Plugin implements IModule {
 		}
 	}
 
-	async getGuildsList(msg: Message) {
+	private async _getGuildsList(msg: Message) {
 		const pageVal = msg.content.slice(CMD_GUILDS_LIST.length);
 		let list = 1;
 		if (pageVal !== "") {
@@ -1826,7 +1826,7 @@ class Guilds extends Plugin implements IModule {
 			}
 		}
 
-		const dbResp = await this.getGuilds(msg.guild, (10 * list) - 10, 10);
+		const dbResp = await this._getGuilds(msg.guild, (10 * list) - 10, 10);
 		if (dbResp.rows.length === 0) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_LIST_EMPTYPAGE")
@@ -1856,9 +1856,9 @@ class Guilds extends Plugin implements IModule {
 	// DB functions
 	// ==============================
 
-	getGID() { return reverseString(Date.now().toString(16)); }
+	private _createGID() { return reverseString(Date.now().toString(16)); }
 
-	async getGuilds(guild: Guild, offset: number = 0, limit: number = 10) {
+	private async _getGuilds(guild: Guild, offset: number = 0, limit: number = 10) {
 		return {
 			offset: offset,
 			nextOffset: offset + limit,
@@ -1868,41 +1868,41 @@ class Guilds extends Plugin implements IModule {
 		};
 	}
 
-	async getGuildRow(guild: Guild, name: string) : Promise<IGuildRow> {
+	private async _getGuildRow(guild: Guild, name: string) : Promise<IGuildRow> {
 		return this.db(TABLE_NAME).where({
 			guildId: guild.id,
 			name: name
 		}).first();
 	}
 
-	async updateGuildRow(guildRow: IGuildRow) : Promise<void> {
+	private async _updateGuildRow(guildRow: IGuildRow) : Promise<void> {
 		return this.db(TABLE_NAME).where({
 			gid: guildRow.gid
 		}).update(guildRow);
 	}
 
-	async createGuildRow(guild: Guild, name: string) : Promise<void> {
+	private async _createGuildRow(guild: Guild, name: string) : Promise<void> {
 		return this.db(TABLE_NAME).insert(<IGuildRow> {
 			guildId: guild.id,
 			name: name,
 			customize: "{}",
 			roleId: "-1",
 			description: "",
-			gid: this.getGID()
+			gid: this._createGID()
 		});
 	}
 
-	async deleteGuildRow(guildRow: IGuildRow) : Promise<void> {
+	private async _deleteGuildRow(guildRow: IGuildRow) : Promise<void> {
 		return this.db(TABLE_NAME).delete().where({
 			gid: guildRow.gid
 		});
 	}
 
-	async getOrCreateGuildRow(guild: Guild, name: string) {
-		let element = await this.getGuildRow(guild, name);
+	private async _getOrCreateGuildRow(guild: Guild, name: string) {
+		let element = await this._getGuildRow(guild, name);
 		if (!element) {
-			await this.createGuildRow(guild, name);
-			element = await this.getGuildRow(guild, name);
+			await this._createGuildRow(guild, name);
+			element = await this._getGuildRow(guild, name);
 			if (!element) {
 				throw new Error("Can't create guild row at current moment.");
 			}
@@ -1914,7 +1914,7 @@ class Guilds extends Plugin implements IModule {
 	// Plugin functions
 	// ==============================
 
-	async init() {
+	public async init() {
 		let status = false;
 		try {
 			this.log("info", "Fetching table status...");
@@ -1942,7 +1942,7 @@ class Guilds extends Plugin implements IModule {
 		this.handleEvents();
 	}
 
-	async unload() {
+	public async unload() {
 		if (this.processMessageListener) {
 			// removing listeners
 			process.removeListener("message", this.processMessageListener);
