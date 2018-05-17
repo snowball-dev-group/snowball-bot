@@ -1947,6 +1947,10 @@ class Guilds extends Plugin implements IModule {
 	}
 
 	public async unload() {
+		if (!$modLoader.isPendingUnload(this.signature)) {
+			throw new Error("This module doesn't pending unload");
+		}
+
 		if (this.processMessageListener) {
 			// removing listeners
 			process.removeListener("message", this.processMessageListener);
