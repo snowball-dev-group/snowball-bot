@@ -162,7 +162,7 @@ export class Plugin {
 		}
 	}
 
-	public handleEvents() {
+	protected handleEvents() {
 		const keys = Object.keys(this._eventsMap);
 
 		for (let i = 0, l = keys.length; i < l; i++) {
@@ -180,7 +180,7 @@ export class Plugin {
 		}
 	}
 
-	unhandleEvents() {
+	protected unhandleEvents() {
 		const keys = Object.keys(this._eventsMap);
 
 		for (let i = 0, l = keys.length; i < l; i++) {
@@ -190,7 +190,6 @@ export class Plugin {
 			if (!Array.isArray(val)) {
 				$discordBot.removeListener(key, val);
 				continue;
-				
 			}
 
 			for (const handler of val) {
