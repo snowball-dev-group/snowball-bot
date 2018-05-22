@@ -1,7 +1,7 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from ".././plugin";
 import { Message, GuildMember, TextChannel } from "discord.js";
-import { EmbedType, generateEmbed } from "../utils/utils";
+import { EmbedType, generateEmbed, getMessageMemberOrAuthor } from "../utils/utils";
 import { command } from "../utils/help";
 import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
 import * as getLogger from "loggy";
@@ -14,15 +14,15 @@ class ReverseLayout extends Plugin implements IModule {
 		return "walpy.reverse_layout";
 	}
 
-	log = getLogger("fl");
+	private readonly _log = getLogger("fl");
 
 	constructor() {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
+			"message": (msg: Message) => this._onMessage(msg)
 		});
 	}
 
-	reverse(content: string, firstLine: string, secondLine: string): string {
+	private reverse(content: string, firstLine: string, secondLine: string): string {
 		if (!content) { return ""; }
 		let result = "";
 		const lineFrom = firstLine + secondLine;
@@ -34,54 +34,56 @@ class ReverseLayout extends Plugin implements IModule {
 		return result;
 	}
 
-	async onMessage(msg: Message) {
+	private async _onMessage(msg: Message) {
 		if (!msg.content) { return; }
 		if (msg.content !== "!fl") { return; }
-		const user = msg.member || msg.author;
+
+		const author = await getMessageMemberOrAuthor(msg);
+
+		if (!author) { return; }
 
 		// delete msg with command
 		if (!(msg.channel instanceof TextChannel)) { return; }
+
 		try {
 			await msg.delete();
 		} catch (err) {
-			this.log("err", "Can't delete message with command...", err);
+			this._log("warn", "Failed to delete the command message", err);
 		}
 
-		if (await localizeForUser(user, "+FL_SUPPORTED") === "false") {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_NOTSUPPORTED")
+		if (await localizeForUser(author, "+FL_SUPPORTED") === "false") {
+			return msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Error, author, "FL_ERR_NOTSUPPORTED")
 			});
-			return;
 		}
 
 		// fetch last messages in channel
 		const messages = await msg.channel.messages.fetch();
 		if (!messages) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_CANTFETCH")
+			return msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Error, author, "FL_ERR_CANTFETCH")
 			});
-			return;
 		}
 
 		// find last message by this author
-		const originalMessage = messages.find(x => (x.member || x.author).id === user.id);
+		const originalMessage = messages.find(x => (x.member || x.author).id === author.id);
 		if (!originalMessage) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_NOMESSAGES")
+			return msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Error, author, "FL_ERR_NOMESSAGES")
 			});
-			return;
 		}
+
 		if (!originalMessage.content) {
-			await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, user, "FL_ERR_EMPTYMESSAGE")
+			return msg.channel.send("", {
+				embed: await generateLocalizedEmbed(EmbedType.Error, author, "FL_ERR_EMPTYMESSAGE")
 			});
-			return;
 		}
+
 		let reversed = originalMessage.content;
 
 		// fetch replace lines
-		let lineLanguage = await localizeForUser(user, "+FL_REPLACELINE_LOCALIZED");
-		let lineEnglish = await localizeForUser(user, "+FL_REPLACELINE_ENGLISH");
+		let lineLanguage = await localizeForUser(author, "+FL_REPLACELINE_LOCALIZED");
+		let lineEnglish = await localizeForUser(author, "+FL_REPLACELINE_ENGLISH");
 		if (lineLanguage.length !== lineEnglish.length) {
 			const newLength = Math.min(lineLanguage.length, lineEnglish.length);
 			lineLanguage = lineLanguage.substring(0, newLength);
@@ -102,12 +104,12 @@ class ReverseLayout extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateEmbed(EmbedType.Empty, reversed, {
 					author: {
-						name: user.displayName,
-						icon_url: (user instanceof GuildMember ? user.user : user).displayAvatarURL({ format: "webp", size: 128 })
+						name: author instanceof GuildMember ? author.displayName : author.username,
+						icon_url: (author instanceof GuildMember ? author.user : author).displayAvatarURL({ format: "webp", size: 128 })
 					},
 					footer: {
 						icon_url: $discordBot.user.displayAvatarURL({ format: "webp", size: 128 }),
-						text: await localizeForUser(msg.member, "FL_MESSAGE_INREPLY", {
+						text: await localizeForUser(author, "FL_MESSAGE_INREPLY", {
 							botname: $discordBot.user.username
 						})
 					},
@@ -116,18 +118,18 @@ class ReverseLayout extends Plugin implements IModule {
 				})
 			});
 		} catch (err) {
-			this.log("err", "Damn! FL can't send message", err);
+			this._log("err", "Failed to send message with changed layout", err);
 			return;
 		}
 
 		try {
 			await originalMessage.delete();
 		} catch (err) {
-			this.log("err", "Can't delete original message...", err);
+			this._log("err", "Failed to delete original message", err);
 		}
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
 		return true;
 	}
