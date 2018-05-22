@@ -14,7 +14,7 @@ class ReverseLayout extends Plugin implements IModule {
 		return "walpy.reverse_layout";
 	}
 
-	private readonly _log = getLogger("fl");
+	private static readonly _log = getLogger("ReverseLayout");
 
 	constructor() {
 		super({
@@ -22,7 +22,7 @@ class ReverseLayout extends Plugin implements IModule {
 		});
 	}
 
-	private reverse(content: string, firstLine: string, secondLine: string): string {
+	private static _reverse(content: string, firstLine: string, secondLine: string): string {
 		if (!content) { return ""; }
 		let result = "";
 		const lineFrom = firstLine + secondLine;
@@ -48,7 +48,7 @@ class ReverseLayout extends Plugin implements IModule {
 		try {
 			await msg.delete();
 		} catch (err) {
-			this._log("warn", "Failed to delete the command message", err);
+			ReverseLayout._log("warn", "Failed to delete the command message", err);
 		}
 
 		if (await localizeForUser(author, "+FL_SUPPORTED") === "false") {
@@ -92,12 +92,12 @@ class ReverseLayout extends Plugin implements IModule {
 
 		// reverse mentions
 		reversed = reversed.replace(/<@[!&]{0,1}[0-9]{18}>/g,
-			(x) => this.reverse(x, lineLanguage, lineEnglish));
+			(x) => ReverseLayout._reverse(x, lineLanguage, lineEnglish));
 		// reverse emojies
 		reversed = reversed.replace(/<:[^<:>]*:[0-9]{18}>/g,
-			(x) => this.reverse(x, lineLanguage, lineEnglish));
+			(x) => ReverseLayout._reverse(x, lineLanguage, lineEnglish));
 		// reverse whole message
-		reversed = this.reverse(reversed, lineLanguage, lineEnglish);
+		reversed = ReverseLayout._reverse(reversed, lineLanguage, lineEnglish);
 
 		// send reversed message
 		try {
@@ -118,14 +118,14 @@ class ReverseLayout extends Plugin implements IModule {
 				})
 			});
 		} catch (err) {
-			this._log("err", "Failed to send message with changed layout", err);
+			ReverseLayout._log("err", "Failed to send message with changed layout", err);
 			return;
 		}
 
 		try {
 			await originalMessage.delete();
 		} catch (err) {
-			this._log("err", "Failed to delete original message", err);
+			ReverseLayout._log("err", "Failed to delete original message", err);
 		}
 	}
 
