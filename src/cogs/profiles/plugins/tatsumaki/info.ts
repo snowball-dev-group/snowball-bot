@@ -33,11 +33,11 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		this.config = config;
 	}
 
-	async getSetupArgs() {
+	public async getSetupArgs() {
 		return null;
 	}
 
-	async setup(_str: string, member: GuildMember) {
+	public async setup(_str: string, member: GuildMember) {
 		const js: ITatsumakiInfo = {
 			uid: member.id
 		};
@@ -55,7 +55,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		};
 	}
 
-	async getEmbed(info: ITatsumakiInfo | string, caller: GuildMember): Promise<IEmbedOptionsField> {
+	public async getEmbed(info: ITatsumakiInfo | string, caller: GuildMember): Promise<IEmbedOptionsField> {
 		if (typeof info !== "object") {
 			info = <ITatsumakiInfo> JSON.parse(info);
 		}
@@ -103,7 +103,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		}
 	}
 
-	async unload() { return true; }
+	public async unload() { return true; }
 }
 
 module.exports = TatsumakiProfilePlugin;
