@@ -79,7 +79,7 @@ class ModToolsArchive extends Plugin implements IModule {
 
 	constructor(options: IModToolsArchiveOptions) {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
+			"message": (msg: Message) => this._onMessage(msg)
 		}, true);
 		this._options = {
 			bots: false,
@@ -89,7 +89,7 @@ class ModToolsArchive extends Plugin implements IModule {
 		this._log("info", "The settings are:", options);
 	}
 
-	async onMessage(msg: Message) {
+	private async _onMessage(msg: Message) {
 		if (this._options.bots !== undefined && !this._options.bots && msg.author.bot) { return; }
 
 		if (this._options.banned) {
