@@ -14,11 +14,11 @@ class HelpfulCommand extends Plugin implements IModule {
 
 	constructor() {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
+			"message": (msg: Message) => this._onMessage(msg)
 		});
 	}
 
-	async onMessage(msg: Message) {
+	private async _onMessage(msg: Message) {
 		if (msg.content !== "!sb_help") {
 			return;
 		}
@@ -56,7 +56,7 @@ class HelpfulCommand extends Plugin implements IModule {
 
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
 		return true;
 	}
