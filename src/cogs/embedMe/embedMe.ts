@@ -16,8 +16,6 @@ class EmbedME extends Plugin implements IModule {
 		return "snowball.features.embedme";
 	}
 
-	log = getLogger("EmbedME");
-
 	constructor() {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)

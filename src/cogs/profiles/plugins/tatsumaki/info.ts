@@ -21,7 +21,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		return "snowball.features.profile.plugins.tatsumaki";
 	}
 
-	private readonly config: ITatsumakiPluginConfig;
+	private readonly _config: ITatsumakiPluginConfig;
 
 	constructor(config: ITatsumakiPluginConfig) {
 		if (!config) {
@@ -30,7 +30,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		const emoji = $discordBot.emojis.get(config.emojiIconID);
 		if (!emoji) { throw new Error(`Emoji with icon by ID "${config.emojiIconID}" not found`); }
 		config.emojiIconID = emoji.toString();
-		this.config = config;
+		this._config = config;
 	}
 
 	public async getSetupArgs() {
@@ -43,7 +43,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		};
 
 		try {
-			await getTatsuProfile(js.uid, this.config.apiKey);
+			await getTatsuProfile(js.uid, this._config.apiKey);
 		} catch (err) {
 			LOG("err", `${js.uid}: Can't get Tatsumaki profile`, err, "(setup)");
 			throw new Error("Failed to get Tatsumaki profile!");
@@ -64,7 +64,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		let profile: IUserInfo | undefined = undefined;
 
 		try {
-			profile = await getTatsuProfile(info.uid, this.config.apiKey);
+			profile = await getTatsuProfile(info.uid, this._config.apiKey);
 		} catch (err) {
 			LOG("err", logPrefix, "Error", err);
 			throw new Error("Failed to get Tatsumaki profile.");
@@ -94,7 +94,7 @@ export class TatsumakiProfilePlugin implements IProfilesPlugin {
 		try {
 			return {
 				inline: true,
-				name: `${this.config.emojiIconID} Tatsumaki`,
+				name: `${this._config.emojiIconID} Tatsumaki`,
 				value: str
 			};
 		} catch (err) {
