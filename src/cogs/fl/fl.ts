@@ -20,7 +20,6 @@ class ReverseLayout extends Plugin implements IModule {
 		super({
 			"message": (msg: Message) => this.onMessage(msg)
 		});
-		this.log("ok", "FL is loaded");
 	}
 
 	reverse(content: string, firstLine: string, secondLine: string): string {
