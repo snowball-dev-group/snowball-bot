@@ -282,7 +282,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 	//             Module Stuff
 	// ========================================
 
-	async unload() {
+	public async unload() {
 		for (const key in this.streamsCache) {
 			delete this.streamsCache[key];
 		}

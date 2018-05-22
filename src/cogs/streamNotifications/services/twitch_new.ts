@@ -1291,7 +1291,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		return super.emit(type, update);
 	}
 
-	async unload() {
+	public async unload() {
 		this.log("info", "[unload] Unloading...");
 
 		await this._webhooksUnloadHandler();

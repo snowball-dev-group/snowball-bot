@@ -6,6 +6,19 @@ import { EventEmitter } from "events";
 import { IHashMap } from "../../../types/Types";
 import * as getLogger from "loggy";
 
+/*
+╔╦╗╔═╗╔═╗╦═╗╔═╗╔═╗╔═╗╔╦╗╔═╗╔╦╗
+ ║║║╣ ╠═╝╠╦╝║╣ ║  ╠═╣ ║ ║╣  ║║
+═╩╝╚═╝╩  ╩╚═╚═╝╚═╝╩ ╩ ╩ ╚═╝═╩╝
+
+! WARNING !
+
+THIS MODULE IS DEPRECATED AND NO LONGER SUPPORTED
+
+PLEASE AVOID ITS FUTHER USAGE IN YOUR BOT AND CONSIDER SWITCH TO TWITCH_NEW MODULE
+
+*/
+
 const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
 const TWITCH_COLOR = 0x6441A4;
 const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
@@ -338,7 +351,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		return super.emit(type, update);
 	}
 
-	async unload() {
+	public async unload() {
 		for (const key in this.streamsMap) {
 			delete this.streamsMap[key];
 		}

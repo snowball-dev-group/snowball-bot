@@ -265,7 +265,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 		return super.emit(type, update);
 	}
 
-	async unload() {
+	public async unload() {
 		for (const uid in this._carinaListeners) {
 			this.removeSubscription(uid);
 		}
@@ -320,7 +320,7 @@ interface IMixerChannel {
 	 */
 	user: {
 		/**
-		 * Avy url
+		 * Avatar URL
 		 */
 		avatarUrl?: string;
 		/**
