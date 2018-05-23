@@ -213,14 +213,14 @@ export const ICONS = {
 	TADA: "https://i.imgur.com/ijm8BHV.png"
 };
 
-export const COLORS = {
-	ERROR: 0xDD2E44,
-	INFO: 0x3B88C3,
-	OK: 0x77B255,
-	PROGRESS: 0x546E7A,
-	CONFIRMATION: 0x3B88C3,
-	WARNING: 0xFFCC4D
-};
+export const enum COLORS {
+	ERROR = 0xDD2E44,
+	INFO = 0x3B88C3,
+	OK = 0x77B255,
+	PROGRESS = 0x546E7A,
+	CONFIRMATION = 0x3B88C3,
+	WARNING = 0xFFCC4D
+}
 
 export function generateEmbed(type: EmbedType, description: string | undefined, options?: IEmbedOptions) {
 	const embed: any = {};
