@@ -239,7 +239,7 @@ class Guilds extends Plugin implements IModule {
 	private readonly _config: IGuildsModuleConfig;
 
 	private readonly _pendingInvites: INullableHashMap<{ code: string; }> = Object.create(null);
-	private processMessageListener?: ((msg: any) => void);
+	private readonly _processMessageListener?: ((msg: any) => void);
 
 	constructor(config: IGuildsModuleConfig) {
 		super({
@@ -249,7 +249,7 @@ class Guilds extends Plugin implements IModule {
 		if (!config) { throw new Error("No config passed"); }
 
 		if ($botConfig.sharded) {
-			this.processMessageListener = (msg) => {
+			this._processMessageListener = (msg) => {
 				if (typeof msg !== "object") { return; }
 				if (msg.type && !msg.type.startsWith("guilds:")) { return; }
 				if (msg.type === "guilds:rules:pending_clear" && msg.payload) {
@@ -262,7 +262,7 @@ class Guilds extends Plugin implements IModule {
 					this._pendingInvites[msg.payload.uid] = { code: msg.payload.code };
 				}
 			};
-			process.on("message", this.processMessageListener);
+			process.on("message", this._processMessageListener);
 		}
 
 		for (const emojiName in config.emojis) {
@@ -1459,7 +1459,7 @@ class Guilds extends Plugin implements IModule {
 		}
 	}
 
-	membersControl_fixString(str: string) { return replaceAll(str, "`", "'"); }
+	private static _membersControlFixString(str: string) { return replaceAll(str, "`", "'"); }
 
 	private async _membersControlAction(msg: Message, dbRow: IGuildRow, action: "list" | "kick" | "ban" | "unban" | "add") {
 		let statusMsg = <Message> await msg.channel.send({
@@ -1482,7 +1482,7 @@ class Guilds extends Plugin implements IModule {
 		switch (action) {
 			case "list": {
 				let str = `# ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST", {
-					guildName: this.membersControl_fixString(dbRow.name)
+					guildName: Guilds._membersControlFixString(dbRow.name)
 				})}`;
 
 				let ownerStr: string | undefined;
@@ -1490,7 +1490,7 @@ class Guilds extends Plugin implements IModule {
 				const otherMembers: string[] = [];
 
 				for (const member of members.values()) {
-					const memberEntry = `- ${this.membersControl_fixString(member.displayName)}`;
+					const memberEntry = `- ${Guilds._membersControlFixString(member.displayName)}`;
 
 					const isOwner = rightsCheck(member, dbRow, true);
 					if (isOwner) {
@@ -1898,17 +1898,17 @@ class Guilds extends Plugin implements IModule {
 		});
 	}
 
-	private async _getOrCreateGuildRow(guild: Guild, name: string) {
-		let element = await this._getGuildRow(guild, name);
-		if (!element) {
-			await this._createGuildRow(guild, name);
-			element = await this._getGuildRow(guild, name);
-			if (!element) {
-				throw new Error("Can't create guild row at current moment.");
-			}
-		}
-		return element;
-	}
+	// private async _getOrCreateGuildRow(guild: Guild, name: string) {
+	// 	let element = await this._getGuildRow(guild, name);
+	// 	if (!element) {
+	// 		await this._createGuildRow(guild, name);
+	// 		element = await this._getGuildRow(guild, name);
+	// 		if (!element) {
+	// 			throw new Error("Can't create guild row at current moment.");
+	// 		}
+	// 	}
+	// 	return element;
+	// }
 
 	// ==============================
 	// Plugin functions
@@ -1951,9 +1951,9 @@ class Guilds extends Plugin implements IModule {
 			throw new Error("This module doesn't pending unload");
 		}
 
-		if (this.processMessageListener) {
+		if (this._processMessageListener) {
 			// removing listeners
-			process.removeListener("message", this.processMessageListener);
+			process.removeListener("message", this._processMessageListener);
 		}
 		this.unhandleEvents();
 		return true;
