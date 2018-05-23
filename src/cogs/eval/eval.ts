@@ -19,7 +19,7 @@ class EvalJS extends Plugin implements IModule {
 		return "snowball.core_features.eval";
 	}
 
-	log = getLogger("EvalJS");
+	private static readonly _log = getLogger("EvalJS");
 
 	constructor() {
 		super({
@@ -45,7 +45,7 @@ class EvalJS extends Plugin implements IModule {
 			try {
 				cb();
 			} catch (err) {
-				this.log("err", "Safe function calling thrown an error", err);
+				EvalJS._log("err", "Safe function calling thrown an error", err);
 			}
 		};
 	}
@@ -76,7 +76,7 @@ class EvalJS extends Plugin implements IModule {
 				})
 			});
 		} catch (err) {
-			this.log("err", "Can't send message with output:", err);
+			EvalJS._log("err", "Can't send message with output:", err);
 			return;
 		}
 
