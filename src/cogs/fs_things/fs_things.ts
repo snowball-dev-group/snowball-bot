@@ -66,95 +66,95 @@ class FanServerThings extends Plugin implements IModule {
 		return "snowball.partners.fsofbsadw";
 	}
 
-	options: IOptions;
-	nickRegexp: RegExp;
-	log = getLogger("FSofBSaDW");
+	private readonly _options: IOptions;
+	private readonly _nickRegexp: RegExp;
+	private readonly _log = getLogger("FSofBSaDW");
 
 	constructor(options: IOptions) {
 		super({
-			"guildMemberUpdate": (oldMember: GuildMember, newMember: GuildMember) => this.onUpdate(oldMember, newMember),
-			"guildMemberAdd": (member: GuildMember) => this.newMember(member),
-			"message": (msg: Message) => this.onMessage(msg)
+			"guildMemberUpdate": (oldMember: GuildMember, newMember: GuildMember) => this._onUpdate(oldMember, newMember),
+			"guildMemberAdd": (member: GuildMember) => this._onNewMember(member),
+			"message": (msg: Message) => this._onMessage(msg)
 		}, true);
 		
-		this.nickRegexp = new RegExp(options.nickRegexp, "i");
+		this._nickRegexp = new RegExp(options.nickRegexp, "i");
 		const fsGuild = $discordBot.guilds.get(options.fsGuildId);
 		if (!fsGuild) {
-			this.log("err", "Fan Server's guild not found");
+			this._log("err", "Fan Server's guild not found");
 			return;
 		}
 
 		for (const roleId of options.subRoles) {
 			const subRole = fsGuild.roles.get(roleId);
 			if (!subRole) {
-				this.log("err", "One of the subroles is not found:", roleId);
+				this._log("err", "One of the subroles is not found:", roleId);
 				throw new Error(`Invalid subscriber role reference: ${roleId}`);
 			}
-			this.log("ok", `Found subscriber role: ${subRole.id} - ${subRole.name}`);
+			this._log("ok", `Found subscriber role: ${subRole.id} - ${subRole.name}`);
 		}
 
 		const oneSubRole = fsGuild.roles.get(options.oneSubRole);
 		if (!oneSubRole) {
-			this.log("err", `Could not find general subscribers role: ${options.oneSubRole}`);
+			this._log("err", `Could not find general subscribers role: ${options.oneSubRole}`);
 			throw new Error(`Invalid general role reference: ${options.oneSubRole}`);
 		}
 
-		this.log("ok", `Found general subscriber role: ${oneSubRole.id} - ${oneSubRole.name}`);
+		this._log("ok", `Found general subscriber role: ${oneSubRole.id} - ${oneSubRole.name}`);
 
 		if (typeof options.syncInterval !== "number") {
-			this.log("info", `Sync interval set to minimal value - ${SYNC_INTERVAL_MIN}`);
+			this._log("info", `Sync interval set to minimal value - ${SYNC_INTERVAL_MIN}`);
 			options.syncInterval = SYNC_INTERVAL_MIN;
 		} else {
 			options.syncInterval = Math.max(SYNC_INTERVAL_MIN, options.syncInterval);
-			this.log("info", `Sync interval set to the value - ${options.syncInterval}`);
+			this._log("info", `Sync interval set to the value - ${options.syncInterval}`);
 		}
 
-		this.options = options;
+		this._options = options;
 
 		this.handleEvents();
 	}
 
-	syncInterval: NodeJS.Timer;
+	private _syncInterval: NodeJS.Timer;
 
-	async init() {
-		await this.sync();
-		if (!this.syncInterval) {
-			this.syncInterval = setInterval(async () => this.sync(false), this.options.syncInterval);
+	public async init() {
+		await this._sync();
+		if (!this._syncInterval) {
+			this._syncInterval = setInterval(async () => this._sync(false), this._options.syncInterval);
 		}
 	}
 
-	async sync(log = true) {
-		const fsGuild = $discordBot.guilds.get(this.options.fsGuildId);
+	private async _sync(log = true) {
+		const fsGuild = $discordBot.guilds.get(this._options.fsGuildId);
 		if (!fsGuild) {
-			this.log("err", "Fan Server's guild not found, skipping init cycle");
+			this._log("err", "Fan Server's guild not found, skipping init cycle");
 			return;
 		}
-		log && this.log("info", "Synchronization started");
+		log && this._log("info", "Synchronization started");
 		const startedAt = Date.now();
 		for (const member of fsGuild.members.values()) {
-			await this.onUpdate(member, member);
+			await this._onUpdate(member, member);
 		}
-		log && this.log("ok", `Synchronization done in ${(Date.now() - startedAt)}ms!`);
+		log && this._log("ok", `Synchronization done in ${(Date.now() - startedAt)}ms!`);
 	}
 
-	async onUpdate(oldMember: GuildMember, newMember: GuildMember) {
-		if (oldMember.guild.id === this.options.fsGuildId) {
-			await this.onFSUpdate(oldMember, newMember);
+	private async _onUpdate(oldMember: GuildMember, newMember: GuildMember) {
+		if (oldMember.guild.id === this._options.fsGuildId) {
+			await this._onFSUpdate(oldMember, newMember);
 		}
 	}
 
-	async onMessage(msg: Message) {
+	private async _onMessage(msg: Message) {
 		if (!msg.member || msg.channel.type !== "text") { return undefined; }
-		if (msg.guild.id !== this.options.fsGuildId && msg.author.id !== $botConfig.botOwner) { return undefined; }
+		if (msg.guild.id !== this._options.fsGuildId && msg.author.id !== $botConfig.botOwner) { return undefined; }
 		const cmd = acceptedCommands.find(c => msg.content.startsWith(`!${c}`));
 		if (!cmd) { return undefined; }
 		switch (cmd) {
-			case "choose": case "pick": return this.cmd_choose(msg, cmd);
+			case "choose": case "pick": return this._chooseCmd(msg, cmd);
 			default: { return undefined; }
 		}
 	}
 
-	async cmd_choose(msg: Message, cmd: string) {
+	private async _chooseCmd(msg: Message, cmd: string) {
 		// limited only to admins?
 		if (!msg.member.permissions.has("ADMINISTRATOR")) { return; }
 
@@ -211,19 +211,19 @@ class FanServerThings extends Plugin implements IModule {
 		});
 	}
 
-	async newMember(member: GuildMember) {
-		if (member.guild.id !== this.options.fsGuildId) { return; }
-		await this.nickCheck(member);
+	private async _onNewMember(member: GuildMember) {
+		if (member.guild.id !== this._options.fsGuildId) { return; }
+		await this._nickCheck(member);
 	}
 
-	async nickCheck(member: GuildMember, oldMember?: GuildMember) {
+	private async _nickCheck(member: GuildMember, oldMember?: GuildMember) {
 		if (member.permissions.has(["ADMINISTRATOR"]) || member.permissions.has(["MANAGE_MESSAGES", "BAN_MEMBERS", "KICK_MEMBERS"])) {
 			// admin / moderator
 			return;
 		}
 
-		if (this.options.nickSkipped) {
-			for (const skipArgument of this.options.nickSkipped) {
+		if (this._options.nickSkipped) {
+			for (const skipArgument of this._options.nickSkipped) {
 				switch (skipArgument.toLowerCase()) {
 					case "$snowball_premium": {
 						if (await isPremium(member)) {
@@ -231,7 +231,7 @@ class FanServerThings extends Plugin implements IModule {
 						} else { continue; }
 					}
 					case "$sub_role": {
-						if (member.roles.has(this.options.oneSubRole)) {
+						if (member.roles.has(this._options.oneSubRole)) {
 							return;
 						} else { continue; }
 					}
@@ -245,55 +245,55 @@ class FanServerThings extends Plugin implements IModule {
 								return;
 							} else { continue; }
 						}
-						this.log("err", "Invalid skip argument provided", skipArgument);
+						this._log("err", "Invalid skip argument provided", skipArgument);
 					} break;
 				}
 			}
 		}
 
-		if (this.nickRegexp.test(member.displayName) || member.displayName === this.options.wrongNickFallback) {
+		if (this._nickRegexp.test(member.displayName) || member.displayName === this._options.wrongNickFallback) {
 			return;
 		}
 
 		if (!oldMember) {
-			member.setNickname(this.options.wrongNickFallback);
+			member.setNickname(this._options.wrongNickFallback);
 			return;
 		}
 
-		if (!this.nickRegexp.test(oldMember.displayName) && oldMember.displayName !== this.options.wrongNickFallback) {
-			member.setNickname(this.options.wrongNickFallback);
+		if (!this._nickRegexp.test(oldMember.displayName) && oldMember.displayName !== this._options.wrongNickFallback) {
+			member.setNickname(this._options.wrongNickFallback);
 		} else {
 			member.setNickname(oldMember.displayName);
 		}
 	}
 
-	async onFSUpdate(oldMember: GuildMember, newMember: GuildMember) {
-		await this.nickCheck(newMember, oldMember);
+	private async _onFSUpdate(oldMember: GuildMember, newMember: GuildMember) {
+		await this._nickCheck(newMember, oldMember);
 
 		// finding subscription roles
-		const subRole = newMember.roles.filter((r) => this.options.subRoles.includes(r.id));
+		const subRole = newMember.roles.filter((r) => this._options.subRoles.includes(r.id));
 		// checking if member has general subscribers role
-		const oneSubRole = newMember.roles.find((r) => this.options.oneSubRole === r.id);
+		const oneSubRole = newMember.roles.find((r) => this._options.oneSubRole === r.id);
 
 		// let removedRoles = oldMember.roles.filter((r) => !newMember.roles.has(r.id));
 		const newRoles = newMember.roles.filter((r) => !oldMember.roles.has(r.id));
 
 		if (subRole.size > 0 && !oneSubRole) {
-			const newSubRoles = newRoles.filter((r) => this.options.subRoles.includes(r.id));
+			const newSubRoles = newRoles.filter((r) => this._options.subRoles.includes(r.id));
 
-			this.log("info", `${newMember.displayName} (ID: ${newMember.id}) - found subscriber role(s): ${subRole.map(r => r.name).join(", ")}`);
+			this._log("info", `${newMember.displayName} (ID: ${newMember.id}) - found subscriber role(s): ${subRole.map(r => r.name).join(", ")}`);
 
 			// has subrole but not onesub role
-			await newMember.roles.add(this.options.oneSubRole);
+			await newMember.roles.add(this._options.oneSubRole);
 
 			const random = new Random(Random.engines.mt19937().autoSeed());
 
 			// not going to search channel if none of the subscriber roles is NEW
 			if (newSubRoles.size > 0) {
-				const announceChannel = newMember.guild.channels.find("id", this.options.subAncChannel);
+				const announceChannel = newMember.guild.channels.find("id", this._options.subAncChannel);
 				if (announceChannel) {
 					for (const newSubscriberRole of newSubRoles.keys()) {
-						const texts = this.options.texts.filter(r => r.roleId === newSubscriberRole);
+						const texts = this._options.texts.filter(r => r.roleId === newSubscriberRole);
 						if (texts.length === 0) { continue; }
 						const randText: ISubText = random.pick(texts);
 						// as we already know - announceChannel has TextChannel type
@@ -302,16 +302,16 @@ class FanServerThings extends Plugin implements IModule {
 				}
 			}
 		} else if (subRole.size === 0 && oneSubRole) {
-			this.log("info", `${newMember.displayName} (ID: ${newMember.id}) - has no subscriber role(s), but has general one, removing`);
+			this._log("info", `${newMember.displayName} (ID: ${newMember.id}) - has no subscriber role(s), but has general one, removing`);
 
 			// doesn't has sub role but has onesub role
-			await newMember.roles.remove(this.options.oneSubRole);
+			await newMember.roles.remove(this._options.oneSubRole);
 		}
 	}
 
-	async unload() {
-		if (this.syncInterval) {
-			clearInterval(this.syncInterval);
+	public async unload() {
+		if (this._syncInterval) {
+			clearInterval(this._syncInterval);
 		}
 		this.unhandleEvents();
 		return true;
