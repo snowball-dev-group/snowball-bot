@@ -3,7 +3,6 @@ import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 import { command as docCmd } from "../utils/help";
 import { localizeForUser } from "../utils/ez-i18n";
-import * as getLogger from "loggy";
 
 @docCmd("HELPFUL", "embed", "loc:EMBEDME_CMDMETA_DESCRIPTION", {
 	"loc:PROFILES_META_SETBIO_ARG0": {
@@ -18,11 +17,11 @@ class EmbedME extends Plugin implements IModule {
 
 	constructor() {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
+			"message": (msg: Message) => this._onMessage(msg)
 		});
 	}
 
-	async onMessage(msg: Message) {
+	private async _onMessage(msg: Message) {
 		if (msg.author && msg.author.bot) { return; }
 		if (!msg.content.startsWith("!embed")) { return; }
 		if (msg.content === "!embed") {
@@ -57,7 +56,7 @@ class EmbedME extends Plugin implements IModule {
 		if (msg.channel.type === "text") { msg.delete(); }
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
 		return true;
 	}
