@@ -210,28 +210,28 @@ export class Humanizer {
 		};
 	}
 
-	locale: IHumanizerLanguage;
-	defaultOptions: IHumanizerDefaultOptions;
+	private readonly _locale: IHumanizerLanguage;
+	private readonly _defaultOptions: IHumanizerDefaultOptions;
 
 	constructor(locale: IHumanizerLanguage, options?: IHumanizerDefaultOptions) {
 		if (!locale) {
 			throw new Error("Humanizer locale is not specified");
 		}
 
-		this.locale = locale;
+		this._locale = locale;
 		if (options) {
-			this.defaultOptions = options;
+			this._defaultOptions = options;
 		} else {
-			this.defaultOptions = Humanizer.DEFAULT_OPTIONS;
+			this._defaultOptions = Humanizer.DEFAULT_OPTIONS;
 		}
 	}
 
-	humanize(milliseconds: number, optionsOverrides?: IHumanizerOptionsOverrides) {
+	public humanize(milliseconds: number, optionsOverrides?: IHumanizerOptionsOverrides) {
 		let ms = Math.abs(milliseconds);
 
-		const dictionary = this.locale;
+		const dictionary = this._locale;
 
-		const options = optionsOverrides ? <IHumanizerDefaultOptions & IHumanizerOptionsOverrides> { ...this.defaultOptions, ...optionsOverrides } : this.defaultOptions;
+		const options = optionsOverrides ? <IHumanizerDefaultOptions & IHumanizerOptionsOverrides> { ...this._defaultOptions, ...optionsOverrides } : this._defaultOptions;
 
 		const pieces: Array<{
 			unitCount: number;
@@ -307,7 +307,7 @@ export class Humanizer {
 		const result: string[] = [];
 		pieces.some((piece) => {
 			if (piece.unitCount) {
-				result.push(Humanizer.render(piece.unitCount, piece.unitName, dictionary));
+				result.push(Humanizer._render(piece.unitCount, piece.unitName, dictionary));
 			}
 
 			return (result.length === options.largest);
@@ -325,13 +325,13 @@ export class Humanizer {
 			}
 		} else {
 			const type = options.units[options.units.length - 1];
-			renderedResult = Humanizer.render(0, type, dictionary);
+			renderedResult = Humanizer._render(0, type, dictionary);
 		}
 
 		return renderedResult;
 	}
 
-	static render(count: number, type: Unit, dictionary: IHumanizerLanguage) {
+	private static _render(count: number, type: Unit, dictionary: IHumanizerLanguage) {
 		const dictionaryValue = dictionary[type];
 		if (!dictionaryValue) {
 			throw new Error("Humanizer locale formatter is not specified");
