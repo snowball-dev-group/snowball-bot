@@ -57,29 +57,29 @@ interface ISetLanguageCommandOptions {
 		description: "loc:LANGUAGE_META_GUILDENFORCE_ARG0_DESC"
 	}
 })
-class SetLanguageCommand extends Plugin implements IModule {
+export class SetLanguageCommand extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.core_features.setlanguage";
 	}
 
-	private readonly prefs = getPreferencesNames();
-	private readonly log = getLogger("SetLanguage");
-	private readonly flags: IHashMap<string> = Object.create(null);
-	private readonly noLazy: boolean;
-	private readonly crowdinLink: string;
-	private readonly googleMapsApiKey?: string;
+	private readonly _prefs = getPreferencesNames();
+	private readonly _log = getLogger("SetLanguage");
+	private readonly _flags: IHashMap<string> = Object.create(null);
+	private readonly _noLazy: boolean;
+	private readonly _crowdinLink: string;
+	private readonly _googleMapsApiKey?: string;
 
 	constructor(options: ISetLanguageCommandOptions) {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
+			"message": (msg: Message) => this._onMessage(msg)
 		});
 
 		if (!options) { throw new Error("No options found"); }
 
-		this.noLazy = !!options["no_lazy"];
-		this.crowdinLink = options.crowdinLink;
-		this.googleMapsApiKey = options.googleApiKey;
-		this.flags = createHashMap(options.flags);
+		this._noLazy = !!options["no_lazy"];
+		this._crowdinLink = options.crowdinLink;
+		this._googleMapsApiKey = options.googleApiKey;
+		this._flags = createHashMap(options.flags);
 	}
 
 	public async init() {
@@ -87,43 +87,43 @@ class SetLanguageCommand extends Plugin implements IModule {
 			throw new Error("This module is not pending initialization");
 		}
 
-		if (!this.noLazy) {
-			this.log("warn", "Lazy loading enabled, not going to do anything");
+		if (!this._noLazy) {
+			this._log("warn", "Lazy loading enabled, not going to do anything");
 			return;
 		}
 
-		this.log("info", "Syncing...");
+		this._log("info", "Syncing...");
 		for (const g of $discordBot.guilds.values()) {
-			this.log("info", `Updating language for guild "${g.name}"`);
+			this._log("info", `Updating language for guild "${g.name}"`);
 			await forceGuildLanguageUpdate(g);
-			this.log("info", `Updating enforcing status for guild "${g.name}"`);
+			this._log("info", `Updating enforcing status for guild "${g.name}"`);
 			await forceGuildEnforceUpdate(g);
-			this.log("info", `-- Started language update for ${g.members.size} members`);
+			this._log("info", `-- Started language update for ${g.members.size} members`);
 			for (const m of g.members.values()) { await getUserLanguage(m); }
 		}
-		this.log("info", `Started language update for ${$discordBot.users.size} users`);
+		this._log("info", `Started language update for ${$discordBot.users.size} users`);
 		for (const m of $discordBot.users.values()) { await getUserLanguage(m); }
-		this.log("ok", "Sync done, poor DB");
+		this._log("ok", "Sync done, poor DB");
 	}
 
-	private async onMessage(msg: Message) {
+	private async _onMessage(msg: Message) {
 		if (msg.channel.type !== "dm" && msg.channel.type !== "text") { return; }
 		if (!startsWith(msg.content, BASE_PREFIX)) { return; }
 		try {
 			if (msg.content === BASE_PREFIX) {
-				return await this.getCurrentLang(msg);
+				return await this._getCurrentLang(msg);
 			} else if (startsWith(msg.content, CMD.SWITCH)) {
-				return await this.switchLanguage(msg);
+				return await this._changeLanguage(msg);
 			} else if (startsWith(msg.content, CMD.TIMEZONE)) {
-				return await this.timezone(msg);
+				return await this._timezone(msg);
 			} else if (startsWith(msg.content, CMD.GUILDS_SWITCH)) {
-				return await this.guildSwitch(msg);
+				return await this._changeGuildLanguage(msg);
 			} else if (startsWith(msg.content, CMD.GUILDS_TIMEZONE)) {
-				return await this.guildTimezone(msg);
+				return await this._guildTimezone(msg);
 			} else if (startsWith(msg.content, CMD.GUILDS_ENFORCE)) {
-				return await this.guildEnforce(msg);
+				return await this._guildEnforce(msg);
 			} else if (startsWith(msg.content, CMD.CODES)) {
-				return await this.getCodes(msg);
+				return await this._getCodes(msg);
 			} else {
 				return await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member || msg.author, {
@@ -137,12 +137,12 @@ class SetLanguageCommand extends Plugin implements IModule {
 				});
 			}
 		} catch (err) {
-			this.log("err", `Error running command "${msg.content}"`, err);
+			this._log("err", `Error running command "${msg.content}"`, err);
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
 		}
 	}
 
-	private async getCurrentLang(msg: Message) {
+	private async _getCurrentLang(msg: Message) {
 		const u = msg.member || msg.author;
 		const langCode = await getUserLanguage(u);
 
@@ -154,7 +154,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		if (!($localizer.getString(langCode, "+COMMUNITY_MANAGED") === "false")) {
 			str += "\n\n";
 			str += $localizer.getFormattedString(langCode, "LANGUAGE_COMMUNITYMANAGED", {
-				crowdinLink: `${this.crowdinLink}/${$localizer.getString(langCode, "+CROWDIN_CODE")}`
+				crowdinLink: `${this._crowdinLink}/${$localizer.getString(langCode, "+CROWDIN_CODE")}`
 			});
 		}
 
@@ -162,11 +162,11 @@ class SetLanguageCommand extends Plugin implements IModule {
 			embed: await generateLocalizedEmbed(EmbedType.Information, u, {
 				custom: true,
 				string: str
-			}, { thumbUrl: this.flags[langCode] || undefined })
+			}, { thumbUrl: this._flags[langCode] || undefined })
 		});
 	}
 
-	private async switchLanguage(msg: Message) {
+	private async _changeLanguage(msg: Message) {
 		const u = msg.member || msg.author;
 		if (msg.content === CMD.SWITCH) {
 			return msg.channel.send({
@@ -181,7 +181,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		}
 
 		if (msg.channel.type !== "dm") {
-			const enforcingEnabled = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
+			const enforcingEnabled = await getGuildPref(msg.guild, this._prefs.guildEnforce, true);
 			if (enforcingEnabled) {
 				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ENFORCEDLANG")
@@ -196,7 +196,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 		}
 
-		await setUserPref(u, this.prefs.user, lang);
+		await setUserPref(u, this._prefs.user, lang);
 		await forceUserLanguageUpdate(u);
 
 		return msg.channel.send({
@@ -209,7 +209,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	private async getCodes(msg: Message) {
+	private async _getCodes(msg: Message) {
 		const u = msg.member || msg.author;
 		let str = `# ${await localizeForUser(u, "LANGUAGE_CODES_HEADER")}\n\n`;
 
@@ -228,7 +228,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	private async guildSwitch(msg: Message) {
+	private async _changeGuildLanguage(msg: Message) {
 		if (msg.channel.type !== "text") {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
@@ -260,8 +260,8 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 		}
 
-		const enforcingState = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
-		await setGuildPref(msg.guild, this.prefs.guild, lang);
+		const enforcingState = await getGuildPref(msg.guild, this._prefs.guildEnforce, true);
+		await setGuildPref(msg.guild, this._prefs.guild, lang);
 		await forceGuildLanguageUpdate(msg.guild);
 
 		return msg.channel.send({
@@ -274,7 +274,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	private async guildEnforce(msg: Message) {
+	private async _guildEnforce(msg: Message) {
 		if (msg.channel.type !== "text") {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "LANGUAGE_GUILD_ONLYGUILDS")
@@ -300,7 +300,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 		}
 
-		const enforcingState = await getGuildPref(msg.guild, this.prefs.guildEnforce, true);
+		const enforcingState = await getGuildPref(msg.guild, this._prefs.guildEnforce, true);
 		const newEnforcingState = arg === "true";
 
 		if (enforcingState === newEnforcingState) {
@@ -314,7 +314,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 			});
 		}
 
-		await setGuildPref(msg.guild, this.prefs.guildEnforce, newEnforcingState);
+		await setGuildPref(msg.guild, this._prefs.guildEnforce, newEnforcingState);
 		await forceGuildEnforceUpdate(msg.guild);
 
 		return msg.channel.send({
@@ -329,7 +329,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 
 	// #region Timezones Stuff
 
-	private async timezone(msg: Message) {
+	private async _timezone(msg: Message) {
 		const msgAuthor = await getMessageMemberOrAuthor(msg);
 		if (!msgAuthor) { return; }
 
@@ -351,12 +351,12 @@ class SetLanguageCommand extends Plugin implements IModule {
 		let newTZ = msg.content.slice(CMD.TIMEZONE.length);
 
 		if (!intlAcceptsTimezone(newTZ)) {
-			const result = await SetLanguageCommand._timezoneFallback(msg, msgAuthor, newTZ, this.googleMapsApiKey);
+			const result = await SetLanguageCommand._timezoneFallback(msg, msgAuthor, newTZ, this._googleMapsApiKey);
 			if (!result) { return; }
 			newTZ = result;
 		}
 
-		await setUserPref(msgAuthor, this.prefs.userTimezone, newTZ);
+		await setUserPref(msgAuthor, this._prefs.userTimezone, newTZ);
 
 		newTZ = await forceUserTimezoneUpdate(msgAuthor);
 
@@ -372,7 +372,7 @@ class SetLanguageCommand extends Plugin implements IModule {
 		});
 	}
 
-	private async guildTimezone(msg: Message) {
+	private async _guildTimezone(msg: Message) {
 		const msgMember = await getMessageMember(msg);
 		if (!msgMember) { return; }
 
@@ -400,12 +400,12 @@ class SetLanguageCommand extends Plugin implements IModule {
 		let newTZ = msg.content.slice(CMD.GUILDS_TIMEZONE.length);
 
 		if (!intlAcceptsTimezone(newTZ)) {
-			const result = await SetLanguageCommand._timezoneFallback(msg, msgMember, newTZ, this.googleMapsApiKey);
+			const result = await SetLanguageCommand._timezoneFallback(msg, msgMember, newTZ, this._googleMapsApiKey);
 			if (!result) { return; }
 			newTZ = result;
 		}
 
-		await setGuildPref(msgMember.guild, this.prefs.userTimezone, newTZ);
+		await setGuildPref(msgMember.guild, this._prefs.userTimezone, newTZ);
 
 		newTZ = await forceGuildTimezoneUpdate(msgMember.guild);
 
