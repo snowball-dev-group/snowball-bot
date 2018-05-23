@@ -105,16 +105,14 @@ export function argumentSplit(argStr: string, separator = ",") {
  * commandRedirect(parsed, { "ping": () => this._pingHandler(parsed) })
  */
 export function commandRedirect(parsed: ICommandParseResult, redirects: INullableHashMap<(parsed: ICommandParseResult) => any>) {
-	const commands = Object.keys(redirects);
 	const command = parsed.command;
 
-	for (let i = 0, l = commands.length; i < l; i++) {
-		const currentCommand = command[i];
-		if (command !== currentCommand) { return; }
+	// parsed.command → "!hello"
+	// commands → { "!hello" }
 
-		const callback = redirects[currentCommand];
-		if (!callback) { break; }
+	const callback = redirects[command];
 
+	if (callback) {
 		return callback(parsed);
 	}
 }
