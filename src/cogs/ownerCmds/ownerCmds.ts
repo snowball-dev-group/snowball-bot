@@ -16,11 +16,11 @@ class OwnerCommands extends Plugin implements IModule {
 
 	constructor() {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
+			"message": (msg: Message) => this._onMessage(msg)
 		});
 	}
 
-	async onMessage(msg: Message) {
+	private async _onMessage(msg: Message) {
 		if (!msg.author) { return; }
 		if (msg.author.id !== $botConfig.botOwner) { return; }
 
@@ -110,7 +110,7 @@ class OwnerCommands extends Plugin implements IModule {
 		});
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
 		return true;
 	}
