@@ -255,35 +255,42 @@ function isCustomString(obj: any): obj is ICustomEmbedString {
 	return "custom" in obj && obj["custom"] === true && "string" in obj && !("formattingOptions" in obj) && !("key" in obj);
 }
 
-export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify, descriptionKey: string | ILocalizedEmbedString | ICustomEmbedString | undefined, options: IEmbedOptions = {}) {
+export async function generateLocalizedEmbed(type: EmbedType, target: UserIdentify | Guild, descriptionKey: string | ILocalizedEmbedString | ICustomEmbedString | undefined, options: IEmbedOptions = {}) {
+	// based on target define localize function
+	const localize = target instanceof Guild ? async (key: string, formatOptions?: IFormatMessageVariables) => {
+		return localizeForGuild(target, key, formatOptions);
+	} : async (key: string, formatOptions?: IFormatMessageVariables) => {
+		return localizeForUser(target, key, formatOptions);
+	};
+
 	switch (type) {
 		case EmbedType.Error: {
 			if (options.errorTitle) { break; }
-			options.errorTitle = await localizeForUser(user, "EMBED_ERROR");
+			options.errorTitle = await localize("EMBED_ERROR");
 		} break;
 		case EmbedType.Information: {
 			if (options.informationTitle) { break; }
-			options.informationTitle = await localizeForUser(user, "EMBED_INFORMATION");
+			options.informationTitle = await localize("EMBED_INFORMATION");
 		} break;
 		case EmbedType.OK: {
 			if (options.okTitle) { break; }
-			options.okTitle = await localizeForUser(user, "EMBED_SUCCESS");
+			options.okTitle = await localize("EMBED_SUCCESS");
 		} break;
 		case EmbedType.Tada: {
 			if (options.tadaTitle) { break; }
-			options.tadaTitle = await localizeForUser(user, "EMBED_TADA");
+			options.tadaTitle = await localize("EMBED_TADA");
 		} break;
 		case EmbedType.Progress: {
 			if (options.progressTitle) { break; }
-			options.progressTitle = await localizeForUser(user, "EMBED_PROGRESS");
+			options.progressTitle = await localize("EMBED_PROGRESS");
 		} break;
 		case EmbedType.Question: {
 			if (options.questionTitle) { break; }
-			options.questionTitle = await localizeForUser(user, "EMBED_QUESTION");
+			options.questionTitle = await localize("EMBED_QUESTION");
 		} break;
 		case EmbedType.Warning: {
 			if (options.warningTitle) { break; }
-			options.warningTitle = await localizeForUser(user, "EMBED_WARNING");
+			options.warningTitle = await localize("EMBED_WARNING");
 		} break;
 	}
 
@@ -296,7 +303,7 @@ export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify
 			descriptionKey = descriptionKey.slice("custom:".length);
 			return generateEmbed(type, descriptionKey, options);
 		} else {
-			return generateEmbed(type, await localizeForUser(user, descriptionKey), options);
+			return generateEmbed(type, await localize(descriptionKey), options);
 		}
 	}
 
@@ -304,7 +311,7 @@ export async function generateLocalizedEmbed(type: EmbedType, user: UserIdentify
 		return generateEmbed(type, descriptionKey.string, options);
 	}
 
-	return generateEmbed(type, await localizeForUser(user, descriptionKey.key, descriptionKey.formatOptions), options);
+	return generateEmbed(type, await localize(descriptionKey.key, descriptionKey.formatOptions), options);
 }
 
 // #region Interfaces
