@@ -1524,13 +1524,13 @@ class StreamNotifications extends Plugin implements IModule {
 		};
 	}
 
-	convertToMap<T>(toConvert: T[], key: string): Map<string, T> {
-		const map = new Map<string, T>();
-		for (const elem of toConvert) {
-			map.set(elem[key], elem);
-		}
-		return map;
-	}
+	// private static _convertToMap<T>(toConvert: T[], key: string): Map<string, T> {
+	// 	const map = new Map<string, T>();
+	// 	for (const elem of toConvert) {
+	// 		map.set(elem[key], elem);
+	// 	}
+	// 	return map;
+	// }
 
 	private _convertToNormalSubscription(raw: ISubscriptionRawRow): ISubscriptionRow {
 		return {
