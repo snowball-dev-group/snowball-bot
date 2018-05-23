@@ -28,12 +28,12 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 		return "snowball.features.profile.plugins.lastfm";
 	}
 
-	private readonly config: ILastFMPluginConfig;
+	private readonly _config: ILastFMPluginConfig;
 
 	constructor(config: ILastFMPluginConfig) {
 		// converting to any
 		config.emojis = <any> resolveEmojiMap(config.emojis, $discordBot.emojis);
-		this.config = config;
+		this._config = config;
 	}
 
 	public async getSetupArgs(caller: GuildMember) {
@@ -44,7 +44,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 		const info: ILastFMInfo = { username: str };
 
 		try {
-			await getOrFetchRecents(info.username, this.config.apiKey);
+			await getOrFetchRecents(info.username, this._config.apiKey);
 		} catch (err) {
 			LOG("err", `setup(${info.username}): Failed to get recent tracks`, err);
 			throw new Error(`Failed to fetch recent tracks of "${info.username}"`);
@@ -63,7 +63,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 		let profile: IRecentTracksResponse | undefined = undefined;
 		try {
 			LOG("info", logPrefix, "Getting recent tracks...");
-			profile = await getOrFetchRecents(info.username, this.config.apiKey);
+			profile = await getOrFetchRecents(info.username, this._config.apiKey);
 		} catch (err) {
 			LOG("err", logPrefix, "Failed to get recent tracks", err);
 
@@ -84,7 +84,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 
 			return {
 				inline: true,
-				name: `${this.config.emojis.logo} Last.fm`,
+				name: `${this._config.emojis.logo} Last.fm`,
 				value: `❌ ${await localizeForUser(caller, errKey)}`
 			};
 		}
@@ -93,13 +93,13 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 			LOG("err", logPrefix, "No 'profile' variable!");
 			return {
 				inline: true,
-				name: `${this.config.emojis.logo} Last.fm`,
+				name: `${this._config.emojis.logo} Last.fm`,
 				value: `❌ ${await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ERR_INVALIDRESP")}`
 			};
 		}
 
 		try {
-			let str = profile.recenttracks.track.length === 0 ? `${this.config.emojis.ghost} ${await localizeForUser(caller, "")}` : "";
+			let str = profile.recenttracks.track.length === 0 ? `${this._config.emojis.ghost} ${await localizeForUser(caller, "")}` : "";
 			let tracksCount = 0;
 			for (const track of profile.recenttracks.track) {
 				if (++tracksCount > 3) { break; }
@@ -130,7 +130,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 
 			return {
 				inline: true,
-				name: `${this.config.emojis.logo} Last.fm`,
+				name: `${this._config.emojis.logo} Last.fm`,
 				value: str
 			};
 		} catch (err) {
@@ -139,7 +139,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 		}
 	}
 
-	async unload() { return true; }
+	public async unload() { return true; }
 }
 
 module.exports = LastFMRecentProfilePlugin;
