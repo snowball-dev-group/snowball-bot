@@ -78,10 +78,10 @@ export class TyperError extends Error {
     /**
      * Prefix for Typer errors
      */
-	static ERROR_PREFIX = "Typer check failed:";
+	public static errorPrefix = "Typer check failed:";
 
 	constructor(message: string, public readonly path: string, public readonly invalidInfo: ITypeErrorInvalidInfo) {
-		super(`${TyperError.ERROR_PREFIX} ${message}`);
+		super(`${TyperError.errorPrefix} ${message}`);
 	}
 }
 
@@ -93,7 +93,7 @@ export class Typer {
     /**
      * Checks if `obj` is undefined or null
      */
-	static isUndefined(obj: any): obj is undefined | null {
+	public static isUndefined(obj: any): obj is undefined | null {
 		return typeof obj === "undefined" || obj === null;
 	}
 
@@ -101,7 +101,7 @@ export class Typer {
      * Alias to `Array.isArray`
      * @deprecated Use `Array.isArray` instead
      */
-	static isArray(obj: any): obj is any[] {
+	public static isArray(obj: any): obj is any[] {
 		return Array.isArray(obj);
 	}
 
@@ -109,7 +109,7 @@ export class Typer {
      * Checks if passed `obj` is Object
      * Alias to `typeof obj === "object"`
      */
-	static isObject(obj: any): obj is object {
+	public static isObject(obj: any): obj is object {
 		return typeof obj === "object";
 	}
 
@@ -120,7 +120,7 @@ export class Typer {
      * @param val Value
      * @param path Path of object
      */
-	static checkValueBySchema(schema: ISchemaObject, val: any, path: string) {
+	public static checkValueBySchema(schema: ISchemaObject, val: any, path: string) {
 		// preparing
 		if (Typer.isUndefined(schema.optional)) {
 			schema.optional = false;
@@ -227,7 +227,7 @@ export class Typer {
 		}
 	}
 
-	static checkObjectBySchema(schema: ISchema, obj: object, deepPath: string = "obj") {
+	public static checkObjectBySchema(schema: ISchema, obj: object, deepPath: string = "obj") {
 		for (const property in schema) {
 			const propSchema = schema[property];
 			Typer.checkValueBySchema(propSchema, obj[property], `${deepPath}.${property}`);
