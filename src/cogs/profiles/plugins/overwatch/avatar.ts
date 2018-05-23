@@ -16,11 +16,11 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 		return "snowball.features.profile.plugins.overwatch.avatar";
 	}
 
-	async getSetupArgs(caller: GuildMember) {
+	public async getSetupArgs(caller: GuildMember) {
 		return localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
 	}
 
-	async setup(str: string, member: GuildMember, msg: Message) {
+	public async setup(str: string, member: GuildMember, msg: Message) {
 		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
 		let statusMsg = <Message> await msg.channel.send("", {
@@ -113,7 +113,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 		};
 	}
 
-	async getCustoms(info: string | IOverwatchProfilePluginInfo) {
+	public async getCustoms(info: string | IOverwatchProfilePluginInfo) {
 		if (typeof info === "string") {
 			info = <IOverwatchProfilePluginInfo> JSON.parse(info);
 		}
@@ -135,7 +135,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 		};
 	}
 
-	async unload() { return true; }
+	public async unload() { return true; }
 }
 
 module.exports = ImageProfilePlugin;

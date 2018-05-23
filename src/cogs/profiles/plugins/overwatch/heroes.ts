@@ -70,7 +70,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		return "snowball.features.profile.plugins.overwatch.heroes";
 	}
 
-	config: IOWHeroesPluginConfig;
+	private readonly _config: IOWHeroesPluginConfig;
 
 	constructor(config: IOWHeroesPluginConfig) {
 		if (!config) {
@@ -84,14 +84,14 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 			config.emojis[emojiName] = emoji.toString();
 		}
 
-		this.config = Object.freeze(config);
+		this._config = Object.freeze(config);
 	}
 
-	async getSetupArgs(caller: GuildMember) {
+	public async getSetupArgs(caller: GuildMember) {
 		return localizeForUser(caller, "OWPROFILEPLUGIN_HEROES_ARGS");
 	}
 
-	async setup(str: string, member: GuildMember, msg: Message) {
+	public async setup(str: string, member: GuildMember, msg: Message) {
 		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
 		let statusMsg = <Message> await msg.channel.send("", {
@@ -198,7 +198,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		};
 	}
 
-	async getEmbed(info: string | IOverwatchHeroesProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
+	public async getEmbed(info: string | IOverwatchHeroesProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
 		if (typeof info !== "object") {
 			info = <IOverwatchHeroesProfilePluginInfo> JSON.parse(info);
 		}
@@ -225,11 +225,11 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		};
 
 		if (!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
-			str += `${this.config.emojis.competitive} __**${tStrs.competitive}**__\n`;
+			str += `${this._config.emojis.competitive} __**${tStrs.competitive}**__\n`;
 			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")}\n`;
 		} else {
 			const compOveral = profile.stats.competitive.overall_stats;
-			str += `${this.getTierEmoji(compOveral.tier)} __**${tStrs.competitive}**__\n`;
+			str += `${this._getTierEmoji(compOveral.tier)} __**${tStrs.competitive}**__\n`;
 			const stats: HeroStats = [];
 			if (info.sortBy === "playtime") {
 				const heroesStats = profile.heroes.stats.competitive;
@@ -246,7 +246,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 					stats.push({
 						hero: heroPlaytime.hero,
-						stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
+						stat: this._getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
 					});
 				}
 			} else if (info.sortBy === "winrate") {
@@ -272,10 +272,10 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					});
 				}
 			}
-			str += await this.getString(stats, caller);
+			str += await this._getString(stats, caller);
 		}
 
-		str += `\n${this.config.emojis.quickplay} __**${tStrs.quickplay}**__\n`;
+		str += `\n${this._config.emojis.quickplay} __**${tStrs.quickplay}**__\n`;
 
 		if (!profile.stats.quickplay) {
 			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER")}\n`;
@@ -296,7 +296,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 
 					stats.push({
 						hero: heroPlaytime.hero,
-						stat: this.getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
+						stat: this._getPlaytimeStr(heroPlaytime.playtime, await getUserLanguage(caller))
 					});
 				}
 			} else if (info.sortBy === "winrate") {
@@ -319,38 +319,38 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 					});
 				}
 			}
-			str += await this.getString(stats, caller);
+			str += await this._getString(stats, caller);
 		}
 
 		return {
 			inline: true,
-			name: `${this.config.emojis.overwatchIcon} ${tStrs.title}`,
+			name: `${this._config.emojis.overwatchIcon} ${tStrs.title}`,
 			value: str
 		};
 	}
 
-	getTierEmoji(tier: Tier) {
+	private _getTierEmoji(tier: Tier) {
 		switch (tier) {
-			case null: return this.config.emojis.bronze;
-			default: return this.config.emojis[tier];
+			case null: return this._config.emojis.bronze;
+			default: return this._config.emojis[tier];
 		}
 	}
 
-	async getString(heroesStats: HeroStats, caller: GuildMember) {
+	private async _getString(heroesStats: HeroStats, caller: GuildMember) {
 		let str = "";
 		for (const stat of heroesStats) {
-			str += `${this.getHeroIcon(stat.hero)} `;
-			str += await this.getHeroString(stat.hero, caller);
+			str += `${this._getHeroIcon(stat.hero)} `;
+			str += await this._getHeroString(stat.hero, caller);
 			str += ` - ${stat.stat}\n`;
 		}
 		return str;
 	}
 
-	getHeroIcon(hero: Hero): string {
-		return this.config.emojis[hero] || "?";
+	private _getHeroIcon(hero: Hero): string {
+		return this._config.emojis[hero] || "?";
 	}
 
-	getPlaytimeStr(playtime: number, language: string) {
+	private _getPlaytimeStr(playtime: number, language: string) {
 		const ms = ((playtime * 60) * 60) * 1000;
 		return $localizer.humanizeDuration(language, ms, undefined, {
 			largest: 2,
@@ -359,15 +359,15 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		});
 	}
 
-	async getHeroString(hero: Hero, caller: GuildMember) {
+	private async _getHeroString(hero: Hero, caller: GuildMember) {
 		try {
 			return await localizeForUser(caller, `OVERWATCH_HERO_${hero}`.toUpperCase());
 		} catch (err) {
-			return this.getFallbackHeroString(hero);
+			return this._getFallbackHeroString(hero);
 		}
 	}
 
-	getFallbackHeroString(hero: Hero) {
+	private _getFallbackHeroString(hero: Hero) {
 		switch (hero) {
 			default: return hero.charAt(0).toUpperCase() + hero.slice(1);
 			case "lucio": return "Lúcio";
@@ -377,7 +377,7 @@ export class OWHeroesProfilePlugin implements IProfilesPlugin {
 		}
 	}
 
-	async unload() { return true; }
+	public async unload() { return true; }
 }
 
 module.exports = OWHeroesProfilePlugin;

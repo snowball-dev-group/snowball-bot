@@ -32,7 +32,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 		return "snowball.features.profile.plugins.overwatch.stats";
 	}
 
-	config: IOWStatsPluginConfig;
+	private readonly _config: IOWStatsPluginConfig;
 
 	constructor(config: IOWStatsPluginConfig) {
 		if (!config) {
@@ -46,14 +46,14 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			config.emojis[emojiName] = emoji.toString();
 		}
 
-		this.config = Object.freeze(config);
+		this._config = Object.freeze(config);
 	}
 
-	async getSetupArgs(caller: GuildMember) {
+	public async getSetupArgs(caller: GuildMember) {
 		return localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
 	}
 
-	async setup(str: string, member: GuildMember, msg: Message) {
+	public async setup(str: string, member: GuildMember, msg: Message) {
 		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
 		let statusMsg = <Message> await msg.channel.send("", {
@@ -144,7 +144,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 		};
 	}
 
-	async getEmbed(info: string | IOverwatchProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
+	public async getEmbed(info: string | IOverwatchProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
 		if (typeof info !== "object") {
 			info = <IOverwatchProfilePluginInfo> JSON.parse(info);
 		}
@@ -174,15 +174,15 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			tie: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_TIE")
 		};
 
-		str += `${this.config.emojis.norating} __**${await localizeForUser(caller, "OWPROFILEPLUGIN_COMPETITIVE")}**__\n`;
+		str += `${this._config.emojis.norating} __**${await localizeForUser(caller, "OWPROFILEPLUGIN_COMPETITIVE")}**__\n`;
 
 		if (!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
-			str += this.getTierEmoji(null);
+			str += this._getTierEmoji(null);
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
 		} else {
 			const compOveral = profile.stats.competitive.overall_stats;
 			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_RATING", {
-				tier_emoji: this.getTierEmoji(compOveral.tier),
+				tier_emoji: this._getTierEmoji(compOveral.tier),
 				rank: compOveral.comprank
 			})}\n`;
 			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
@@ -195,7 +195,7 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			})})`;
 		}
 
-		str += `\n${this.config.emojis.quickplay} __**${await localizeForUser(caller, "OWPROFILEPLUGIN_QUICKPLAY")}**__\n`;
+		str += `\n${this._config.emojis.quickplay} __**${await localizeForUser(caller, "OWPROFILEPLUGIN_QUICKPLAY")}**__\n`;
 
 		if (!profile.stats.quickplay) {
 			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
@@ -220,17 +220,17 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		return {
 			inline: true,
-			name: `${this.config.emojis.overwatchIcon} Overwatch`,
+			name: `${this._config.emojis.overwatchIcon} Overwatch`,
 			value: str
 		};
 	}
 
-	getTierEmoji(tier: "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master" | "grandmaster" | null) {
-		if (!tier) { return this.config.emojis.norating; }
-		return this.config.emojis[tier];
+	private _getTierEmoji(tier: "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master" | "grandmaster" | null) {
+		if (!tier) { return this._config.emojis.norating; }
+		return this._config.emojis[tier];
 	}
 
-	async unload() { return true; }
+	public async unload() { return true; }
 }
 
 module.exports = OWStatsProfilePlugin;
