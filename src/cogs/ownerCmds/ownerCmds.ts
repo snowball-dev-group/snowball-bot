@@ -12,7 +12,7 @@ class OwnerCommands extends Plugin implements IModule {
 		return "snowball.core_features.ownercmds";
 	}
 
-	log: Function = logger("OwnerCMDs");
+	private readonly _log: Function = logger("OwnerCMDs");
 
 	constructor() {
 		super({
@@ -61,7 +61,7 @@ class OwnerCommands extends Plugin implements IModule {
 					});
 				}
 			},
-			"!change_avy": async () => {
+			"!change_pfp": async () => {
 				try {
 					const resp = await fetch(msg.attachments.first().url);
 
@@ -81,7 +81,8 @@ class OwnerCommands extends Plugin implements IModule {
 							embed: await generateLocalizedEmbed(
 								EmbedType.OK, caller, "OWNERCMDS_CHANGEAVY_DONE", {
 									imageUrl: newUser.displayAvatarURL({ format: "png", size: 1024 })
-								})
+								}
+							)
 						});
 					} catch (err) {
 						return msg.channel.send("", {
@@ -95,7 +96,7 @@ class OwnerCommands extends Plugin implements IModule {
 						});
 					}
 				} catch (err) {
-					this.log("err", "Error downloading avy");
+					this._log("err", "Error changing/downloading profile picture");
 					return msg.channel.send("", {
 						embed: await generateLocalizedEmbed(
 							EmbedType.Error, caller, {
