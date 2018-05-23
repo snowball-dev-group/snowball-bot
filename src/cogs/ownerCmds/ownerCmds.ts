@@ -111,6 +111,10 @@ class OwnerCommands extends Plugin implements IModule {
 	}
 
 	public async unload() {
+		if (!$modLoader.isPendingUnload(this.signature)) {
+			throw new Error("This module is not pending unload");
+		}
+
 		this.unhandleEvents();
 		return true;
 	}
