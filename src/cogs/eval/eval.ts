@@ -23,11 +23,11 @@ class EvalJS extends Plugin implements IModule {
 
 	constructor() {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
+			"message": (msg: Message) => this._onMessage(msg)
 		});
 	}
 
-	safeEval(script: string, context: Context) {
+	private static _safeEval(script: string, context: Context) {
 		const vmScript = new VM.Script(script);
 		const vmContext = VM.createContext(context);
 		return vmScript.runInContext(vmContext, {
@@ -40,7 +40,7 @@ class EvalJS extends Plugin implements IModule {
 	 * Making our function a bit safe
 	 * @param cb Function that will be called
 	 */
-	makeSafe(cb: () => void) {
+	private static _makeSafe(cb: () => void) {
 		return () => {
 			try {
 				cb();
@@ -50,7 +50,7 @@ class EvalJS extends Plugin implements IModule {
 		};
 	}
 
-	async onMessage(message: Message) {
+	private async _onMessage(message: Message) {
 		if (!message.author) { return; }
 		if (message.author.id !== $botConfig.botOwner) { return; }
 		if (!message.content) { return; }
@@ -88,12 +88,12 @@ class EvalJS extends Plugin implements IModule {
 			// Actually, it named `safeEval` but it's absolutely not safe
 			// For example, if you set timer and throw error there
 
-			const output = this.safeEval(script, {
+			const output = EvalJS._safeEval(script, {
 				...global,
 				$bot: $discordBot,
 				$msg: message,
-				setTimeout: (handler: () => void, ms: number) => setTimeout(this.makeSafe(handler), ms),
-				setInterval: (handler: () => void, ms: number) => setInterval(this.makeSafe(handler), ms),
+				setTimeout: (handler: () => void, ms: number) => setTimeout(EvalJS._makeSafe(handler), ms),
+				setInterval: (handler: () => void, ms: number) => setInterval(EvalJS._makeSafe(handler), ms),
 				require: require,
 				process: undefined
 			});
@@ -101,7 +101,7 @@ class EvalJS extends Plugin implements IModule {
 			totalExecutionTime += Date.now() - startTime;
 
 			if (isPromise(output)) {
-				await this._outputEdit(resultMsg, user, totalExecutionTime, output, await localizeForUser(i18nTarget, "EVAL_PROMISE_WAITING"), EmbedType.Progress, i18nTarget);
+				await EvalJS._outputEdit(resultMsg, user, totalExecutionTime, output, await localizeForUser(i18nTarget, "EVAL_PROMISE_WAITING"), EmbedType.Progress, i18nTarget);
 				try {
 					startTime = Date.now();
 
@@ -111,24 +111,24 @@ class EvalJS extends Plugin implements IModule {
 
 					totalExecutionTime += Date.now() - startTime;
 
-					this._outputEdit(resultMsg, user, totalExecutionTime, resolvedValue, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE"), EmbedType.OK, i18nTarget);
+					EvalJS._outputEdit(resultMsg, user, totalExecutionTime, resolvedValue, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE"), EmbedType.OK, i18nTarget);
 				} catch (err) {
 					totalExecutionTime += Date.now() - startTime;
 
-					this._outputEdit(resultMsg, user, totalExecutionTime, err, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE_ERR"), EmbedType.Warning, i18nTarget);
+					EvalJS._outputEdit(resultMsg, user, totalExecutionTime, err, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE_ERR"), EmbedType.Warning, i18nTarget);
 				}
 			} else {
-				this._outputEdit(resultMsg, user, totalExecutionTime, output, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE"), EmbedType.OK, i18nTarget);
+				EvalJS._outputEdit(resultMsg, user, totalExecutionTime, output, await localizeForUser(i18nTarget, "EVAL_EXECUTION_DONE"), EmbedType.OK, i18nTarget);
 			}
 		} catch (err) {
 			totalExecutionTime += Date.now() - startTime;
-			this._outputEdit(resultMsg, user, totalExecutionTime, err, await localizeForUser(i18nTarget, "EVAL_EXECUTION_FAILED"), EmbedType.Error, i18nTarget);
+			EvalJS._outputEdit(resultMsg, user, totalExecutionTime, err, await localizeForUser(i18nTarget, "EVAL_EXECUTION_FAILED"), EmbedType.Error, i18nTarget);
 		}
 	}
 
-	async _outputEdit(resultMsg: Message, member: GuildMember | User, totalExecutionTime: number, output: any, text : string, type: EmbedType, i18nTarget: UserIdentify) {
+	private static async _outputEdit(resultMsg: Message, member: GuildMember | User, totalExecutionTime: number, output: any, text : string, type: EmbedType, i18nTarget: UserIdentify) {
 		try {
-			const outputInsp = this.outputToString(output);
+			const outputInsp = EvalJS._outputToString(output);
 
 			await resultMsg.edit(undefined, {
 				embed: await generateLocalizedEmbed(type, member, {
@@ -153,7 +153,7 @@ class EvalJS extends Plugin implements IModule {
 		}
 	}
 
-	outputToString(output: any) {
+	private static _outputToString(output: any) {
 		let depth = 5;
 		let outputInsp: string = replaceAll(util.inspect(output, false, depth), "`", "'");
 		while (outputInsp.length > 2000 && depth > 0) {
@@ -165,7 +165,7 @@ class EvalJS extends Plugin implements IModule {
 		return outputInsp;
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
 		return true;
 	}
