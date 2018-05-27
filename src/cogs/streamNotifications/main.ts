@@ -1359,6 +1359,19 @@ class StreamNotifications extends Plugin implements IModule {
 
 		if (!channel) {
 			this.log("err", `Not found channel for subscribed subject ${scope.id} to subscription ${subscription.uid} (${providerName}) (subject-type: ${isUser ? "user" : "guild"})`);
+
+			// TODO: Test if guild is currently offline
+
+			await this._unsubscribe(
+				subscription,
+				scope instanceof User ? {
+					guildId: StreamNotifications._getUserSubscriberID(scope)
+				} : {
+					guildId: scope.id,
+					channelId: alternativeChannel ? alternativeChannel.id : undefined
+				}
+			);
+
 			return;
 		}
 
