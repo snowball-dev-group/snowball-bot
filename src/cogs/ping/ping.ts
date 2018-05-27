@@ -2,7 +2,7 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 import { command } from "../utils/help";
-import MessagesFlows, { IPublicFlowUnit, IMessageFlowContext } from "../cores/messagesFlows";
+import MessagesFlows, { IMessageFlowContext, IPublicFlowCommand } from "../cores/messagesFlows";
 import { getUserLanguage } from "../utils/ez-i18n";
 import * as getLogger from "loggy";
 
@@ -16,7 +16,7 @@ class Ping extends Plugin implements IModule {
 	}
 
 	private static readonly _log = getLogger("PingJS");
-	private flowHandler: IPublicFlowUnit;
+	private _flowHandler: IPublicFlowCommand;
 
 	constructor() {
 		super({}, true);
@@ -27,7 +27,10 @@ class Ping extends Plugin implements IModule {
 		if (!messagesFlowsKeeper) { throw new Error("`MessageFlows` not found!"); }
 
 		messagesFlowsKeeper.onInit((flowsMan: MessagesFlows) => {
-			return this.flowHandler = flowsMan.watchForMessages((ctx) => this.onMessage(ctx), ALLOWED_CMDS);
+			return this._flowHandler = flowsMan.watchForCommands(
+				(ctx) => this._onMessage(ctx),
+				ALLOWED_CMDS
+			);
 		});
 	}
 
@@ -61,9 +64,9 @@ class Ping extends Plugin implements IModule {
 		return msg.edit(isEmbed ? { embed: { description: pongStr } } : pongStr);
 	}
 
-		if (this.flowHandler) {
-			this.flowHandler.unhandle();
 	public async unload() {
+		if (this._flowHandler) {
+			this._flowHandler.unhandle();
 		}
 		this.unhandleEvents();
 		return true;
