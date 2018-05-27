@@ -1,12 +1,13 @@
-import { randomString } from "../utils/random";
-import { sleep } from "../utils/utils";
+import { randomString } from "@utils/random";
+import { sleep } from "@utils/utils";
 import { setTimeout } from "timers";
 import PrefixAll from "./prefixAll/prefixAll";
-import { IModule, ModuleBase, ModuleLoadState } from "../../types/ModuleLoader";
+import { IModule, ModuleBase, ModuleLoadState } from "@sb-types/ModuleLoader";
 import { Message } from "discord.js";
-import { parse as parseCmd, ICommandParseResult } from "../utils/command";
+import { parse as parseCmd, ICommandParseResult } from "@utils/command";
 import * as getLogger from "loggy";
 import * as Bluebird from "bluebird";
+import { EventEmitter } from "events";
 
 export const MESSAGEFLOWS_SIGNATURE = "snowball.core_features.messageflows";
 export const HANDLER_TIMEOUT = 5000;
@@ -21,6 +22,7 @@ export default class MessagesFlows implements IModule {
 	}
 
 	private readonly _flowUnits: Array<IFlowUnit<any>> = [];
+	private readonly _commandDispatcher = new EventEmitter();
 
 	// kinda flow optimizations
 	private _anyWith = {
@@ -106,13 +108,86 @@ export default class MessagesFlows implements IModule {
 		return val === 0 ? -1 : val; // kinda hacky
 	}
 
+	private _cmdEventName(cmd: string) {
+		return `cmd{${cmd}}`;
+	}
+
+	private _buildUnhandleWrapper(cb: () => boolean) {
+		let isUnhandled = false;
+		return () => {
+			if (isUnhandled) {
+				throw new Error("Already unhandled");
+			}
+
+			isUnhandled = true;
+
+			return cb();
+		};
+	}
+
+	/**
+	 * Watches for any new messages and once some message arrives tries to parse command and calls needed method
+	 * @param handler Command handler
+	 * @param commands Commands to handle
+	 */
+	public watchForCommands(handler: Handler<ICommandParseResult>, commands: string | string[]) : Readonly<IPublicFlowCommand> {
+		const eventHandler = (msg: Message, prefix: string, parsed: ICommandParseResult) => {
+			// building context for each execution
+
+			const ctx: IMessageFlowContext<ICommandParseResult> = {
+				message: msg,
+				prefix,
+				parsed
+			};
+
+			handler(ctx);
+		};
+
+		const handledEvents: string[] = [];
+		if (Array.isArray(commands)) {
+			for (let i = 0, l = commands.length; i < l; i++) {
+				const cmd = commands[i];
+				const eventName = this._cmdEventName(cmd);
+				this._commandDispatcher.on(
+					eventName,
+					eventHandler
+				);
+				handledEvents.push(eventName);
+			}
+		} else {
+			const eventName = this._cmdEventName(commands);
+			this._commandDispatcher.on(
+				eventName,
+				eventHandler
+			);
+			handledEvents.push(eventName);
+		}
+
+		return Object.freeze({
+			commands: (<string[]> []).concat(commands),
+			unhandle: this._buildUnhandleWrapper(
+				() => {
+					for (let i = 0, l = handledEvents.length; i < l; i++) {
+						const eventName = handledEvents[i];
+						this._commandDispatcher.removeListener(
+							eventName,
+							eventHandler
+						);
+					}
+
+					return true;
+				}
+			)
+		});
+	}
+
 	/**
 	 * Watches for any new messages and once some message arrives follows (or not if desired) the flow of checks and calls
 	 * @param handler Command handler
 	 * @param check Command checking function
 	 * @param options Options for watcher
 	 */
-	public watchForMessages<T = ICommandParseResult>(handler: Handler<T>, check: IFlowCheckArgument<T> | string | string[], options: IWatcherCreationOptions<T> = {
+	public watchForMessages<T = ICommandParseResult>(handler: Handler<T>, check: IFlowCheckArgument<T>, options: IWatcherCreationOptions<T> = {
 		followsTheFlow: true,
 		checkPrefix: true,
 		timeoutCheck: this._timings.timeoutCheck,
@@ -154,7 +229,7 @@ export default class MessagesFlows implements IModule {
 	}
 
 	private async _parseCommand(msg: Message, prefix?: string | false) {
-		if (typeof prefix !== "boolean") { prefix = await this._getPrefix(msg); }
+		// if (typeof prefix !== "boolean") { prefix = await this._getPrefix(msg); }
 		return parseCmd(prefix ? msg.content.slice(prefix.length) : msg.content);
 	}
 
@@ -166,9 +241,21 @@ export default class MessagesFlows implements IModule {
 		const flowUnits = this._flowUnits;
 		if (!flowUnits || flowUnits.length === 0) { return; }
 
-		// optimizing future results
-		const prefix = this._anyWith.prefixCheck ? await this._getPrefix(msg) : undefined;
-		const simpleParserResult = this._anyWith.defaultParsing ? await this._parseCommand(msg, prefix) : undefined;
+		const prefix = await this._getPrefix(msg);
+		const simpleParserResult = await this._parseCommand(msg, prefix);
+
+		if (prefix) { // executing command
+			const eventName = this._cmdEventName(simpleParserResult.command);
+
+			this._commandDispatcher.emit(
+				eventName,
+				msg,
+				prefix,
+				simpleParserResult
+			);
+		}
+
+		// execute units
 
 		for (let i = 0, l = flowUnits.length; i < l; i++) {
 			const flowUnit = flowUnits[i];
@@ -220,7 +307,7 @@ export default class MessagesFlows implements IModule {
 						_handlerErr = undefined;
 						const executionStart = Date.now();
 						const handlerExecution = flowUnit.handler(ctx);
-						
+
 						if (handlerExecution instanceof Promise) {
 							const normalizedTimeoutWait = this._normalizeTimeout("handler", flowUnit.timeoutHandler);
 
@@ -283,7 +370,7 @@ export default class MessagesFlows implements IModule {
 		}
 	}
 
-	async unload() {
+	public async unload() {
 		$discordBot.removeListener("message", this._messageHandler);
 		return true;
 	}
@@ -298,6 +385,11 @@ interface IFlowUnit<T> {
 	timeoutCheck: number;
 	timeoutHandler: number;
 	_id: string;
+}
+
+export interface IPublicFlowCommand {
+	commands: string[];
+	unhandle(): boolean;
 }
 
 export interface IPublicFlowUnit {
