@@ -15,7 +15,7 @@ class Ping extends Plugin implements IModule {
 		return "snowball.core_features.ping";
 	}
 
-	private readonly log = getLogger("PingJS");
+	private static readonly _log = getLogger("PingJS");
 	private flowHandler: IPublicFlowUnit;
 
 	constructor() {
@@ -31,7 +31,7 @@ class Ping extends Plugin implements IModule {
 		});
 	}
 
-	async onMessage(ctx: IMessageFlowContext) {
+	private async _onMessage(ctx: IMessageFlowContext) {
 		if (!ctx.parsed) { return; }
 		if (!ALLOWED_CMDS.includes(ctx.parsed.command)) { return; }
 
@@ -56,14 +56,14 @@ class Ping extends Plugin implements IModule {
 			isNegativeDelay
 		});
 
-		this.log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms (${delayWoPingStr}ms, =${delay}ms)`);
+		Ping._log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms (${delayWoPingStr}ms, =${delay}ms)`);
 
 		return msg.edit(isEmbed ? { embed: { description: pongStr } } : pongStr);
 	}
 
-	async unload() {
 		if (this.flowHandler) {
 			this.flowHandler.unhandle();
+	public async unload() {
 		}
 		this.unhandleEvents();
 		return true;
