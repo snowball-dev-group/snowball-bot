@@ -526,6 +526,29 @@ export async function resolveGuildMember(nameOrID: string, guild: Guild, strict 
 	return undefined;
 }
 
+
+export function getUserDisplayName(user: GuildMember | User, includeTag = false, includeAt = false) : string {
+	let displayName: string;
+
+	if (user instanceof GuildMember) {
+		displayName = user.displayName;
+		if (includeTag) {
+			displayName += `#${user.user.tag}`;
+		}
+	} else {
+		displayName = user.username;
+		if (includeTag) {
+			displayName += `#${user.tag}`;
+		}
+	}
+
+	if (includeAt) {
+		displayName = `@${displayName}`;
+	}
+
+	return displayName;
+}
+
 export function sleep<T>(delay: number = 1000, value?: T): Promise<T> {
 	return new Promise<T>((resolve) => {
 		setTimeout(() => {
