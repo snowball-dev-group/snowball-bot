@@ -239,7 +239,6 @@ export default class MessagesFlows implements IModule {
 
 	private async _executeMessageFlow(msg: Message) {
 		const flowUnits = this._flowUnits;
-		if (!flowUnits || flowUnits.length === 0) { return; }
 
 		const prefix = await this._getPrefix(msg);
 		const simpleParserResult = await this._parseCommand(msg, prefix);
