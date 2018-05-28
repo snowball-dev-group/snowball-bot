@@ -234,7 +234,11 @@ export default class MessagesFlows implements IModule {
 	}
 
 	private async _getPrefix(msg: Message) {
-		return (this.prefixAllKeeper && this.prefixAllKeeper.state === ModuleLoadState.Initialized && this.prefixAllKeeper.base) ? this.prefixAllKeeper.base.checkPrefix(msg) : false;
+		if (!this.prefixAllKeeper || this.prefixAllKeeper.state !== ModuleLoadState.Initialized || !this.prefixAllKeeper.base) {
+			return false;
+		}
+
+		return this.prefixAllKeeper.base.checkPrefix(msg);
 	}
 
 	private async _executeMessageFlow(msg: Message) {
