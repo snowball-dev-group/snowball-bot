@@ -463,7 +463,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
 		if (streamers.length === 0) {
-			this.log("warn", "Passed zero subscriptions!");
+			// we just don't fetch emptiness
 			return;
 		}
 
