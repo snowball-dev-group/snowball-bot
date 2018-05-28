@@ -39,17 +39,12 @@ export default class MessagesFlows implements IModule {
 	};
 
 	// message handler?
-	private readonly _messageHandler: ((msg: Message) => any);
+	private _messageHandler: ((msg: Message) => any);
 
 	// prefixal' instance
 	private prefixAllKeeper?: ModuleBase<PrefixAll>;
 
 	private readonly log = getLogger("MessagesFlows");
-
-	constructor() {
-		this._messageHandler = ((msg: Message) => this._executeMessageFlow(msg));
-		$discordBot.on("message", this._messageHandler);
-	}
 
 	public async init() {
 		const prefixAllKeeper = $snowball.modLoader.signaturesRegistry["snowball.core_features.prefixall"];
@@ -59,6 +54,10 @@ export default class MessagesFlows implements IModule {
 		} else {
 			this.prefixAllKeeper = prefixAllKeeper;
 		}
+
+		this._messageHandler = (msg: Message) => this._executeMessageFlow(msg);
+
+		$discordBot.on("message", this._messageHandler);
 	}
 
 	/**
