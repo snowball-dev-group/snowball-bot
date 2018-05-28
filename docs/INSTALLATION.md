@@ -1,6 +1,6 @@
 # Installation Guide
 
-We're glad you want to set up your own copy of Snowball.
+We're glad you want to set up your own copy of Snowball Bot.
 
 This is not as hard as it may seem. We're trying to keep that process really easy.
 
@@ -12,42 +12,48 @@ Snowball project is continuously developing.
 
 While we have **"staged", "stable" branches** it **doesn't really mean that these versions are really more stable**.
 
-- "Staged" refers to version that we actively use right now in production
-- "Stable" means version that doesn't contains new untested changes yet
+- "Staged" refers to version that we actively use right now in production. Remember that we love to test things in production, so be prepare for testings
+- "Stable" means version that doesn't contains new untested changes yet. It's unstable and old, don't trust this one. Thank you
 
-We recommend you to stick with the staged version or maybe manually checkout to latest commits which were tested by you and should not do anything harmful.
+Some branches may rarely get updates and be outdated because our team is pretty lazy to update them. Yes, I know it's only two commands. What do you mean this is not okay? Pick our best commits and run them if you so dislike how we organize things!!! (ﾉಥ益ಥ）ﾉ彡┻━┻)
 
-Also, this guide is based on Ubuntu server. We haven't tested and tried to install Snowball on other systems but it should not be a really big problem:
+So... We recommend you to stick with the staged version or maybe manually checkout to latest commits which were tested by you and should not do anything harmful.
 
-Most of tools that we use are cross-platform, except Redis: they have no builds for Windows, but there's community versions. These should work pretty good.
+This guide is based on Ubuntu server. We haven't tested and tried to install Snowball Bot on other systems but it should not be a really big problem: most of the tools that we use are cross-platform, except... Redis. Well, Redis has no builds for Windows, but there's community versions and they should work just fine.
+
+If you're hosting Snowball Bot on Windows, please share your results of such hosting in a special channel for developers and hosts on [our Discord servers][discord_links].
+
+This guide lacks of information? Some things said wrong? [Read how you can contribute your fixes][contribution_doc] for this guide.
+
+Okay, nuff said here.
 
 ## Requirements
 
-We don't have much? Well, that depends on use and we don't have exact values.
+We don't have much requirements, because the values are so dynamic we can't write them down. This all depends on usage of your bot.
 
-- For small Discord servers (~500 members) Snowball should be easy to host even on **512MB/1 vCore machines**
-- Snowball instance by default is about 2MB in length, but when you install dependencies, this size increases **up to 50MB** (!)
-- **You're not required to provide Snowball root access**. Even more, we would not recommend provide any root access to Snowball and host it on separate account
+- For small Discord servers (~500 members) Snowball should be easy to host even on **512MB/1 vCore machines**. Enable SWAP if you're not 100% sure it'll handle load
+- Snowball Bot working directory size by default is about 2MB in length, but when you install dependencies, this size increases **up to 50MB** (beware!)
+- **You're not required to provide Snowball Bot root access**. Even more, we don't not recommend provide any root access to bot, host it on separate account to be safe
 
 ## Preparation
 
-First of all you need to have copy of Snowball's instance.
+First of all you need to have copy of Snowball Bot build.
 
-To obtain your own instance, you can:
+To obtain your own build, you can:
 
 ### Build project manually
 
-If you wish to customize building and make some changes, you can read our [document about the building][building_doc].
+If you wish to customize building and make some changes to the code, you can read our [guide about the building the project][building_doc].
 
 ### Download the recent builds from our CI artifacts
 
-Gitlab CI builds our branches on every commit.
+GitLab CI builds our branches on every commit. Building will fail if there's any errors in the code or with modules. We don't have tests (yet?).
 
-You can find latest artifacts [here][gitlab_ci]. Even that they contain `node_modules` you still need to manually install dependencies as they may depend on your system and contain developer dependencies, so read futher.
+You can find recent artifacts [on this GitLab CI page][gitlab_ci]. Even that these contain `node_modules` you may need to manually install dependencies as they can depend on your system and contain developer dependencies.
 
 ## Storing stuff
 
-We're using MariaDB and Redis to store stuff. There's also local node cache which disappears on every bot restart, so except bot process will use more memory as it works (at some point it should stop to increase).
+We're using MariaDB and Redis to store data. There's also local node cache which disappears on every bot restart, so except bot process will use more memory as long it works (at some point RAM usage should stop to increase).
 
 ### MariaDB / MySQL
 
@@ -55,20 +61,20 @@ MariaDB / MySQL are used to store any "long-needed" data such as archives, activ
 
 If you don't plan to use bot globally but only on your servers, then you're okay without much knowledge of DB hosting stuff.
 
-- Our modules manually create tables and do migrations if that required.
+- Our modules manually create tables and do migrations if that required. You'll still be required to create database for these tables
 
 #### Installing the MariaDB / MySQL
 
 There you have a choice of what to use for storing your data. We use MariaDB, but you can use MySQL if you want to. There's not much difference and both work pretty well with Snowball.
 
-Why we made such choice? They are really easy to set up and configure. We got much trouble with other databases.
+Why we made such choice? They are really easy to set up and configure. We got many troubles setting up other database engines (maybe because we aren't good at it).
 
-If you're the developer and wish to help us make support for more database storage types (like PostgreSQL ❤), please read [how to contribute][contribution_doc].
+If you're the developer and wish to help us make support for more database storage types (like PostgreSQL ❤), please read ["how to contribute"][contribution_doc].
 
-So, back to the installation! You can read an instruction on how to install...
+So, back to the installation. There's needed information:
 
-- MariaDB [here][mariadb_installation]
-- And MySQL [here][mysql_installation].
+- [Guide on MariaDB installation][mariadb_installation]
+- [Guide on MySQL installation][mysql_installation]
 
 #### Configuration
 
@@ -94,11 +100,19 @@ So, back to the installation! You can read an instruction on how to install...
 
     Make sure to grant it the permission to create tables.
 
-Google is your best friend!
+    PRO TIP: make your database accessible from the "outside", create your account (to avoid usage of `root`) and use [HeidiSQL](https://www.heidisql.com/) to manage the databases.
+
+3. Create database for bot to store its tables.
+
+    By default Snowball Bot uses `snowbot` database. So you can create it with the default name.
+
+1. Don't forget to run `mysql_secure_installation` command to ensure database security for production use.
+
+Google is your best friend on configuring MySQL/MariaDB server.
 
 #### Telling secrets to our bot
 
-Snowball should know which user and password to use for establishing the connection with the database.
+Snowball Bot should know which user and password to use for establishing the connection with the database.
 
 You need to change these environment variables (*well, if you need to, most of them have default values*).
 
@@ -115,13 +129,11 @@ We use Redis to store temporary cache like Overwatch profiles.
 
 #### Installing the Redis
 
-The guide is [here][redis_installation]. Again, they have no builds for Windows, you must Google for it.
+There's awesome guide on [how to install and configure Redis server on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-redis-on-ubuntu-16-04) by DigitalOcean community.
 
-#### Configurating
+There's no official builds for Windows, so you need to google all this stuff.
 
-You can set up a password if you want. Redis should be limited to `localhost` by default.
-
-#### Psst, Snowball. I got the number for Redis!
+#### Psst, Snowball Bot. I got the number for Redis!
 
 Again, we're back to environment variables, here's the list to Redis-related ones:
 
@@ -131,17 +143,17 @@ Again, we're back to environment variables, here's the list to Redis-related one
 
 ## Installing Snowball
 
-### 1. Node.JS
+### 1. Node.js
 
-Before continuing you should have Node.JS installed on your server.
+Before continuing you should have Node.js installed on your server.
 
-To install Node.JS follow [these instructions][node_installation].
+To install Node.js follow [these instructions][node_installation].
 
-**You may need to [build Node.JS manually with ICU support](https://github.com/nodejs/node/wiki/Intl) or install [full-icu](https://www.npmjs.com/package/full-icu) in order to display localized dates and use [Intl](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl)**.
+⚠ **You may need to [build Node.JS manually with ICU support](https://github.com/nodejs/node/wiki/Intl) or [install full-icu](https://www.npmjs.com/package/full-icu) in order to display localized dates and use [Intl API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl)**.
 
 ### 2. Editing configuration
 
-See [configuration document][configuration_doc].
+See ["configuration" document][configuration_doc], it describes how to properly configure everything.
 
 ### 3. Uploading package
 
@@ -159,11 +171,12 @@ npm i --production
 
 If you didn't build the Node.JS project manually with ICU support, then you may need to install `full-icu` package:
 
-- Use `npm i full-icu`.
+- Run command `npm i full-icu`
+- Edit your `./run.sh` / `./run.bat` to include `--icu-data-dir=node_modules/full-icu` argument
 
-### 5. Booting up.
+### 5. Booting up! 🚀
 
-Final step, let's see how it works.
+Final step, let's see how it works!
 
 If your server is on Linux-based system, type:
 
@@ -183,9 +196,9 @@ For Windows we have `.bat` file too.
 
 ---
 
-Bot should start up normally. If it does not, please go to our Discord servers for troubleshooting.
+Bot should start up normally. If it does not, please go to our Discord servers for troubleshooting together.
 
-You may find our Discord servers' links [here][discord_links].
+You may find our Discord servers' links [on the "README" page][discord_links].
 
 <!-- META -->
 
