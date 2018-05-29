@@ -1,12 +1,12 @@
-# Snowball configuration
+# Snowball Bot configuration
 
-Snowball configuration files are read by `init` script.
+Snowball Bot configuration files are read by `init` script.
 
 This instruction is for default `init` script, which you may find in `src/init.ts`.
 
 ---
 
-To configure how Snowball or plugins will perform, go to `out/config` directory.
+To configure how Snowball Bot or plugins will perform, go to `out/config` directory.
 
 Configuration files are named `configuration.{environment}.json`.
 
