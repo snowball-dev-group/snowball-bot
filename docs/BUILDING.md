@@ -1,26 +1,26 @@
-# Building Snowball
+# Building Snowball Bot
 
-Ohai! Do you want to build Snowball project? Weow, that's cool. Let's get started!
+Ohai! Do you want to build Snowball Bot project? Weow, that's cool. Let's get started!
 
 ## What do we need?
 
 Before we going to build the project, we need to grab these cool tools:
 
 - [Git client][git_url]
-- [Node.JS][nodejs_url]
+- [Node.js][nodejs_url] (npm comes pre-installed)
 
 ## Building flow
 
 ### 1. Checking out the current version
 
-If you're developer and/or Snowball project contributor, you may want to checkout `master` branch.
+If you're developer and/or Snowball Bot project contributor, you may want to checkout `master` branch.
 
 For others we recommend to check out either `staged` or `master`.
 
 To clone project and check out to the needed branch, use command:
 
 ```bash
-git clone --branch=staged https://gitlab.com/SnowballBot/Snowball.git
+git clone --branch=staged https://gitlab.com/snowball-dev-group/Snowball-Bot.git
 ```
 
 ### 2. Installing dependencies
