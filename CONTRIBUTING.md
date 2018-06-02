@@ -18,7 +18,7 @@ First of all, let's talk about what kind of contribution you want to make into t
 
 ## Feedback
 
-You can leave your feedback on our Discord server. Our Discord servers can be found in [README file][discord_links].
+You can leave your feedback on our Discord server. Our Discord servers can be found in the [README file][discord_links].
 
 Or if you want, leave feedback in the Issues section on our [GitLab repository][gitlab_url].
 
@@ -166,7 +166,7 @@ Created with :heart: by Snowball's Development Team.
 
 [gitlab_url]: https://gitlab.com/SnowballBot/Snowball
 [crowdin_url]: https://crowdin.com/project/snowball-bot
-[discord_links]: /README.md#our-discord-servers
+[discord_links]: /README.md#join-our-discord-servers
 [code_doc]: /CODE_OF_CONDUCT.md
 [todo_doc]: /TODO.md
 [commit_style_doc]: /docs/COMMIT_STYLE.md
