@@ -266,4 +266,4 @@ Once you configured everything and run the script. Bot should start up normally.
 [mysql_installation]: https://dev.mysql.com/doc/en/installing.html
 [redis_installation]: https://redis.io/download
 [node_installation]: https://nodejs.org/en/download/current/
-[discord_links]: /README.md#our-discord-servers
+[discord_links]: /README.md#join-our-discord-servers
