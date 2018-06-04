@@ -8,6 +8,7 @@ import { localizeForGuild, extendAndBind } from "@cogs/utils/ez-i18n";
 import * as logger from "loggy";
 
 const DEFAULT_TABLE_NAME = "count";
+const DEFAULT_COOLDOWN = 180; // seconds
 const DEFAULT_EMOJI: ICountEmoji = {
 	channelTopicError: "raw:\u26A0", // :warning:
 	channelTopicLatestNumber: "raw:\uD83D\uDDD2", // :notepad_spiral:
@@ -17,7 +18,7 @@ const DEFAULT_EMOJI: ICountEmoji = {
 interface ICountOptions {
 	tableName?: string;
 	channelId: string;
-	userCooldown: number;
+	userCooldown?: number;
 	emoji?: ICountEmoji;
 }
 
@@ -32,6 +33,7 @@ export default class Count extends Plugin implements IModule {
 	private readonly _tableName: string;
 	private readonly _channelId: string;
 	private readonly _emoji: ICountEmoji;
+	private readonly _cooldown: number;
 	private _pruneI18nFunc: () => string[];
 
 	constructor(options?: ICountOptions) {
@@ -62,6 +64,8 @@ export default class Count extends Plugin implements IModule {
 		} else {
 			this._emoji = { ...DEFAULT_EMOJI };
 		}
+
+		this._cooldown = options.userCooldown != null ? options.userCooldown : DEFAULT_COOLDOWN;
 
 		this._emoji = <any> resolveEmojiMap(<any> this._emoji, $discordBot.emojis);
 	}
@@ -156,7 +160,7 @@ export default class Count extends Plugin implements IModule {
 
 		const rowDate = parseInt(row.date, 10);
 
-		if (row.author === member.id && ((Date.now() - rowDate) / 1000) < 180) {
+		if (row.author === member.id && ((Date.now() - rowDate) / 1000) < this._cooldown) {
 			return msg.delete();
 		}
 
