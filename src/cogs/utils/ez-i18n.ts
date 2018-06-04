@@ -314,6 +314,28 @@ export async function generateLocalizedEmbed(type: EmbedType, target: UserIdenti
 	return generateEmbed(type, await localize(descriptionKey.key, descriptionKey.formatOptions), options);
 }
 
+// #region Localizer extending as EZPZ
+
+/**
+ * Extends all languages from the folder and binds extended keys
+ * @param path Path to load language(s) from
+ * @returns Function to prune languages and unbind the keys
+ */
+export async function extendAndBind(path: string | string[], owner: string) {
+	const extendedKeys = await $localizer.extendLanguages(
+		await $localizer.directoryToLanguagesTree(path)
+	);
+
+	$localizer.bindKeys(extendedKeys, owner);
+
+	return () => {
+		$localizer.unbindKeys(extendedKeys, owner);
+		return $localizer.pruneLanguages(extendedKeys);
+	};
+}
+
+// #endregion
+
 // #region Interfaces
 
 interface ILocalizedEmbedString {
