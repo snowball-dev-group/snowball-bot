@@ -3,124 +3,234 @@ import { Plugin } from "../plugin";
 import { Message, TextChannel } from "discord.js";
 import { getDB } from "../utils/db";
 import { convertNumbers } from "../utils/letters";
-import * as knex from "knex";
+import { getMessageMember, resolveEmojiMap } from "@cogs/utils/utils";
+import { localizeForGuild, extendAndBind } from "@cogs/utils/ez-i18n";
 import * as logger from "loggy";
 
-class Count extends Plugin implements IModule {
+const DEFAULT_TABLE_NAME = "count";
+const DEFAULT_EMOJI: ICountEmoji = {
+	channelTopicError: "raw:\u26A0", // :warning:
+	channelTopicLatestNumber: "raw:\uD83D\uDDD2", // :notepad_spiral:
+	reactionError: "raw:\u274C" // :x:
+};
+
+interface ICountOptions {
+	tableName?: string;
+	channelId: string;
+	userCooldown: number;
+	emoji?: ICountEmoji;
+}
+
+export default class Count extends Plugin implements IModule {
 	public get signature() {
-		return "dafri.interactive.count";
+		return `dafri.interactive.count{${this._channelId}}`;
 	}
 
-	log: Function = logger("CountChannel");
-	dbClient: knex;
-	countRegex: RegExp;
-	dbInitialized: boolean = false;
+	private static readonly _countRegex = /^\d{0,}$/i;
+	private readonly _log: Function = logger("CountChannel");
+	private readonly _db = getDB();
+	private readonly _tableName: string;
+	private readonly _channelId: string;
+	private readonly _emoji: ICountEmoji;
+	private _pruneI18nFunc: () => string[];
 
-	constructor() {
+	constructor(options?: ICountOptions) {
 		super({
-			"message": (msg: Message) => this.onMessage(msg)
-		});
-		this.dbClient = getDB();
+			"message": (msg: Message) => this._onMessage(msg)
+		}, true);
 
-		this.dbClient.schema.hasTable("count").then(itHas => {
-			if (itHas) {
-				this.log("ok", "DB: we have table `count`, can safely continue work...");
-				this.dbInitialized = true;
-				return;
-			}
-			this.log("warn", "DB: seems we doesn't have table `count` in database, going to create it right now");
-			this.dbClient.schema.createTable("count", (tb) => {
+		if (!options) {
+			throw new Error("No options have been found. Options are required to use this plugin");
+		}
+
+		if (!options.channelId) {
+			throw new Error("No `channelId` have been found set in options. `channelId` is required to use this plugin");
+		}
+
+		this._channelId = options.channelId;
+
+		const _tableName = options.tableName;
+		if (_tableName) {
+			this._log(`Using "${_tableName}" as table name`);
+			this._tableName = _tableName;
+		} else {
+			this._log(`No table name set. Using default value ("${DEFAULT_TABLE_NAME}")`);
+		}
+
+		if (options.emoji) {
+			this._emoji = { ...DEFAULT_EMOJI, ...options.emoji };
+		} else {
+			this._emoji = { ...DEFAULT_EMOJI };
+		}
+
+		this._emoji = <any> resolveEmojiMap(<any> this._emoji, $discordBot.emojis);
+	}
+
+	public async init() {
+		if (!$modLoader.isPendingInitialization(this.signature)) {
+			throw new Error("This module doesn't pending initialization");
+		}
+
+		const _channelId = this._channelId;
+
+		this._log("info", `[init] Searching for channel with ID "${_channelId}"`);
+
+		const channel = $discordBot.channels.get(_channelId);
+
+		if (!channel) {
+			throw new Error(`Channel with ID "${_channelId}" haven't been found`);
+		} else if (channel.type !== "text") {
+			throw new Error(`Channel with ID "${_channelId}" has type ${channel.type}, only "text" channels could be used with this plugin`);
+		}
+
+		const _tableName = this._tableName;
+
+		this._log("info", "[init] Preparing the table");
+
+		const isTableReady = await this._db.schema.hasTable(_tableName);
+		if (!isTableReady) {
+			this._log("warn", `[init] We don't have table "${_tableName}" in the database. Creating the table...`);
+
+			await this._db.schema.createTable(_tableName, (tb) => {
 				tb.integer("count").notNullable();
 				tb.string("author").notNullable();
 				tb.string("date").notNullable();
-			}).catch(err => {
-				this.log("err", "DB: we can't prepare DB", err);
-			}).then(() => {
-				this.log("ok", "DB: we successfully prepared our DB and ready to work!");
-				this.dbInitialized = true;
 			});
-		});
 
-		this.countRegex = /^\d{0,}$/i;
+			this._log("ok", "[init] Table was successfully created");
+		}
+
+		this._log("info", "[init] Extending locales and binding ownership...");
+
+		this._pruneI18nFunc = await extendAndBind(
+			[__dirname, "i18n"],
+			this.signature
+		);
+
+		this._log("info", "[init] Handling the events...");
+
+		this.handleEvents();
 	}
 
-	async onMessage(msg: Message) {
-		if (msg.channel.id !== "295643316610007050") { return; }
-		if (!msg.author) { return; }
-		if (!this.dbInitialized) { return; }
-		if (msg.channel.type === "dm") { return; }
-		if (!msg.content) { msg.delete(); return; }
-		const override = msg.content.startsWith("!");
-		if (!this.countRegex.test(override ? msg.content.slice(1) : msg.content)) { msg.delete(); return; }
+	private async _onMessage(msg: Message) {
+		if (msg.channel.id !== this._channelId) { return; }
 
-		if (override) {
-			if (msg.author.id === $botConfig.botOwner) {
+		const member = await getMessageMember(msg);
+		if (!member) { return; }
+
+		if (msg.channel.type !== "text") { return; }
+
+		if (!msg.content) { return msg.delete(); }
+
+		const isOverride = msg.content.startsWith("!");
+
+		if (!Count._countRegex.test(isOverride ? msg.content.slice(1) : msg.content)) {
+			return msg.delete();
+		}
+
+		if (isOverride) {
+			if (member.id === $botConfig.botOwner) {
 				const mNumber = parseInt(msg.content.slice(1), 10);
-				if (isNaN(mNumber)) { msg.delete(); return; }
-				await this.dbClient("count").insert({
-					author: msg.author.id,
+
+				if (isNaN(mNumber)) {
+					return msg.delete();
+				}
+		
+				await this._db("count").insert({
+					author: member.id,
 					count: mNumber,
 					date: `${Date.now()}`
 				});
+
 				return;
 			} else {
-				msg.delete();
-				return;
+				return msg.delete();
 			}
 		}
 
-		const row = await this.dbClient("count").orderBy("count", "DESC").first("count", "author", "date");
+		const row = await this._db("count").orderBy("count", "DESC").first();
 
-		if (!row) { this.log("err", "Not found element"); return; }
+		if (!row) {
+			return this._log("err", "Not found element");
+		}
 
 		const rowDate = parseInt(row.date, 10);
 
-		if (row.author === msg.author.id && ((Date.now() - rowDate) / 1000) < 180) { msg.delete(); return; }
+		if (row.author === member.id && ((Date.now() - rowDate) / 1000) < 180) {
+			return msg.delete();
+		}
 
-		const mNumber = parseInt(msg.content, 10);
-		if (isNaN(mNumber)) { msg.delete(); return; }
+		const newNumber = parseInt(msg.content, 10);
+		if (isNaN(newNumber)) {
+			return msg.delete();
+		}
 
-		if ((row.count + 1) !== mNumber) {
-			msg.delete();
-			return;
+		if ((row.count + 1) !== newNumber) {
+			return msg.delete();
 		}
 
 		try {
-			await this.dbClient("count").insert({
-				author: msg.author.id,
-				count: mNumber,
+			await this._db("count").insert({
+				author: member.id,
+				count: newNumber,
 				date: `${Date.now()}`
 			});
 		} catch (err) {
-			this.log("err", "Can't push number to DB", err);
+			this._log("err", "Can't push number to DB", err);
 			try {
-				await msg.react("❌");
+				await msg.react(this._emoji.reactionError);
 				await (<TextChannel> msg.channel).edit({
-					topic: ":warning: База данных не отвечает..."
+					topic: await localizeForGuild(
+						msg.guild, 
+						"COUNT_TOPIC_DBERROR", {
+							emoji: this._emoji.channelTopicError
+						}
+					)
 				});
-				this.log("ok", "Successfully written error message to description and reacted to message");
+				this._log("ok", "Successfully written error message to description and reacted to message");
 			} catch (err) {
-				this.log("err", "Cannot react to message or edit description of channel: ", err);
+				this._log("err", "Cannot react to message or edit description of channel: ", err);
 			}
 		}
 
 		try {
 			await (<TextChannel> msg.channel).edit({
-				topic: `:v: Последнее число: ${convertNumbers(mNumber)}`
+				topic: await localizeForGuild(
+					msg.guild,
+					"COUNT_TOPIC_LATEST", {
+						numbers: convertNumbers(newNumber),
+						emoji: this._emoji.channelTopicLatestNumber
+					}
+				)
 			});
 		} catch (err) {
-			this.log("err", "Can't change description of channel", err);
+			this._log("err", "Can't change description of channel", err);
 		}
 
-		if (Math.floor(Math.random() * 6) > 4 && row.author !== msg.client.user.id) {
-			msg.channel.send((mNumber + 1).toString());
+		if (row.author !== msg.client.user.id && Math.floor(Math.random() * 6) > 4) {
+			return msg.channel.send((newNumber + 1).toString());
 		}
 	}
 
-	unload() {
+	public async unload() {
+		if (!$modLoader.isPendingUnload(this.signature)) {
+			throw new Error("This module doesn't pending unload");
+		}
+
+		this._log("[unload] Unhandling all the events...");
+
 		this.unhandleEvents();
-		return new Promise<boolean>((res) => res(true));
+
+		this._log("[unload] Events are unhandled, pruning locales");
+
+		this._pruneI18nFunc();
+
+		return true;
 	}
 }
 
-module.exports = Count;
+interface ICountEmoji {
+	channelTopicError: string;
+	channelTopicLatestNumber: string;
+	reactionError: string;
+}
