@@ -57,6 +57,7 @@ export class Localizer {
 	private _langMaps: ILanguageHashMap<IStringsMap | undefined> = Object.create(null);
 	private _initDone: boolean = false;
 	private _loadedLanguages: string[] = [];
+	private _boundKeys: INullableHashMap<string[]>;
 
 	/**
 	 * Returns default language
@@ -307,9 +308,14 @@ export class Localizer {
 				this._log("warn", `"${key}" is not found in source language yet.`);
 			}
 
-			if (langMap[key] && !this._opts.extendOverride) {
-				this._log("info", `Don't override "${key}" in "${langName}" as override is set to \`false\``);
-				continue;
+			if (langMap[key]) {
+				if (this._isBoundByAnyone(key)) {
+					this._log("warn", `Don't override key "${key}" in language "${langName}" as it bound by someone`);
+					continue;
+				} else if (!this._opts.extendOverride) {
+					this._log("info", `Don't override key "${key}" in language "${langName}" as override is set to \`false\``);
+					continue;
+				}
 			}
 
 			langMap[key] = value;
@@ -354,14 +360,98 @@ export class Localizer {
 	 * Removes specified keys from all languages
 	 * @param keys Keys to remove
 	 * @example $localizer.pruneLanguages(["8BALL_ANSWER_CERTAIN", ...])
+	 * @returns Keys that were removed
 	 */
-	public async pruneLanguages(keys: string[]) {
+	public pruneLanguages(keys: string[]) {
 		keys = keys.filter(key => !PRUNE_BANNED_KEYS.includes(key));
+
+		const _pruneResults: string[] = [];
+
 		for (const langName in this._langMaps) {
 			const langFile = this._langMaps[langName];
 			if (!langFile) { continue; }
-			for (const key of keys) { langFile[key] = undefined; }
+			for (const key of keys) {
+				if (this._isBoundByAnyone(key)) {
+					this._log("info", `Not removing key ${key} from "${langName}" because it is bound by someone`);
+				}
+
+				langFile[key] = undefined; // null'ing
+
+				_pruneResults.push(key);
+			}
 		}
+
+		return _pruneResults;
+	}
+
+	private _isBoundByAnyone(key: string) {
+		const owners = this._boundKeys[key];
+		return owners != null && owners.length !== 0;
+	}
+
+	/**
+	 * Binds specified keys to disallow purge until unbinding happened
+	 * 
+	 * Binding also disallows modification of strings, any other modules will not be able to redefine the string
+	 * @param keys Keys to bind
+	 * @param owner Who's binding the keys (signature, etc.)
+	 * @returns Successfully bound keys to the owner
+	 */
+	public bindKeys(keys: string | string[], owner: string) {
+		const _boundKeys = this._boundKeys;
+		keys = Array.isArray(keys) ? keys : [ keys ];
+
+		const _bindingResult: string[] = [];
+
+		for (let i = 0, l = keys.length; i < l; i++) {
+			const key = keys[i];
+			let owners = _boundKeys[key];
+			if (!owners) {
+				this._log(`Key "${key}" being first time bound by "${owner}"`);
+				owners = _boundKeys[key] = [];
+			} else if (owners.includes(owner)) {
+				throw new Error(`Key "${key}" is already bound to this owner ("${owner}")`);
+			}
+
+			owners.push(owner);
+
+			_bindingResult.push(key);
+		}
+
+		return _bindingResult;
+	}
+
+	/**
+	 * Unbinds the specified keys to allow purge if nobody binds the same keys
+	 * @param keys The keys to unbind
+	 * @param owner Who's unbinding the keys (signature, etc.)
+	 * @returns Sucessfully unbound keys from the owner
+	 */
+	public unbindKeys(keys: string | string[], owner: string) {
+		const _boundKeys = this._boundKeys;
+		keys = Array.isArray(keys) ? keys : [ keys ];
+		
+		const _unbindingResult: string[] = [];
+
+		for (let i = 0, l = keys.length; i < l; i++) {
+			const key = keys[i];
+			const owners = _boundKeys[key];
+			if (!owners) {
+				this._log("warn", `Key "${key}" wasn't bound to anyone. Not unbinding the key`);
+				continue;
+			}
+			
+			const index = owners.indexOf(owner);
+
+			if (index !== -1) {
+				this._log("warn", `Key "${key}" wasn't bound to the "${owner}". Skipped`);
+				continue;
+			}
+
+			_unbindingResult.push(owners.splice(index, 1)[0]);
+		}
+
+		return _unbindingResult;
 	}
 
 	/**
