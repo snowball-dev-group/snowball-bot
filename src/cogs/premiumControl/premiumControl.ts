@@ -674,7 +674,9 @@ class PremiumControl extends Plugin implements IModule {
 			return delGuildPref(guild, "premiumctl:role");
 		}
 
-		if (premiumRole.position >= guild.me.roles.highest.position) {
+		const highestBotsRole = guild.me.roles.highest;
+
+		if (premiumRole.position >= highestBotsRole.position) {
 			this.log("warn", logPrefix, "Premium role is above bot's one, so bot can't give it");
 			return delGuildPref(guild, "premiumctl:role");
 		}
@@ -682,7 +684,8 @@ class PremiumControl extends Plugin implements IModule {
 		// sync
 
 		for (const member of guild.members.values()) {
-			if (member.roles.highest && (member.roles.highest.position >= guild.me.roles.highest.position)) {
+			const highestMemberRole = member.roles.highest;
+			if (highestMemberRole && (highestMemberRole.position >= highestBotsRole.position)) {
 				// we can't give role to member because this member has role highness that ours
 				done++;
 				continue;
