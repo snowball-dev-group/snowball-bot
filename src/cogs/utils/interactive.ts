@@ -8,10 +8,6 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 		return false;
 	}
 
-	if (!_confirmationMessage) {
-		return false;
-	}
-
 	try {
 		await _confirmationMessage.react("✅");
 		await _confirmationMessage.react("❌");
