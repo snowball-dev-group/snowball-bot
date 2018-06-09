@@ -1,0 +1,4 @@
+{
+    "COUNT_TOPIC_DBERROR": "{emoji} Could not update the number in a database. Please, try again later",
+    "COUNT_TOPIC_LATEST": "{emoji} Latest number: {numbers}"
+}
