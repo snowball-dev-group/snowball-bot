@@ -425,16 +425,25 @@ export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = tru
 		nameOrID = nameOrID.toLowerCase();
 	}
 
-	for (const channel of guild.channels.values()) {
+	const channels = guild.channels.array();
+
+	for (let i = 0, l = channels.length; i < l; i++) {
+		const channel = channels[i];
+
 		if (!types.includes(<any> channel.type)) { continue; }
+
 		const channelName = caseStrict ? channel.name : channel.name.toLowerCase();
-		switch (strict) {
-			case true: {
-				if (channelName === nameOrID) { return channel; }
-			} break;
-			case false: {
-				if (channelName.includes(nameOrID)) { return channel; }
-			} break;
+
+		if (strict) {
+			if (channelName === nameOrID) {
+				return channel;
+			}
+
+			continue;
+		}
+
+		if (channelName.includes(nameOrID)) {
+			return channel;
 		}
 	}
 
