@@ -371,27 +371,34 @@ export interface ILogger {
 
 export const SNOWFLAKE_REGEXP = /^[0-9]{16,20}$/;
 
-export function resolveGuildRole(nameOrID: string, guild: Guild, strict = true, caseStrict = false) {
-	if (SNOWFLAKE_REGEXP.test(nameOrID)) {
-		// it's can be ID
-		const role = guild.roles.get(nameOrID);
+export function resolveGuildRole(nameOrId: string, guild: Guild, strict = true, caseStrict = false) {
+	if (SNOWFLAKE_REGEXP.test(nameOrId)) {
+		// can be ID
+		const role = guild.roles.get(nameOrId);
 		if (role) { return role; }
 	}
 
 	if (!caseStrict) {
-		nameOrID = nameOrID.toLowerCase();
+		nameOrId = nameOrId.toLowerCase();
 	}
 
+	const roles = guild.roles.array();
+
 	// going to search
-	for (const role of guild.roles.values()) {
+	for (let i = 0, l = roles.length; i < l; i++) {
+		const role = roles[i];
 		const roleName = (caseStrict ? role.name : role.name.toLowerCase());
-		switch (strict) {
-			case true: {
-				if (roleName === nameOrID) { return role; }
-			} break;
-			case false: {
-				if (roleName.includes(nameOrID)) { return role; }
-			} break;
+
+		if (strict) {
+			if (roleName === nameOrId) {
+				return role;
+			}
+
+			continue;
+		}
+
+		if (roleName.includes(nameOrId)) {
+			return role;
 		}
 	}
 
