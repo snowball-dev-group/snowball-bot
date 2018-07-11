@@ -140,7 +140,7 @@ function helpCheck(msg: Message) {
 		optional: false
 	}
 }, helpCheck)
-class StreamNotifications extends Plugin implements IModule {
+export default class StreamNotifications extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.features.stream_notifications";
 	}
@@ -1843,4 +1843,3 @@ interface IPseudoSubscription {
 	provider: string;
 	uid: string;
 }
-module.exports = StreamNotifications;
