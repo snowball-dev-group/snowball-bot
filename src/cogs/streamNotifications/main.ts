@@ -229,6 +229,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
+
 			return;
 		}
 
@@ -241,6 +242,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					}
 				})
 			});
+
 			return;
 		}
 
@@ -253,6 +255,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_WRONGIDFORMAT"))
 				});
+
 				return;
 			}
 
@@ -263,6 +266,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_CHANNELNOTFOUND"))
 				});
+
 				return;
 			}
 
@@ -270,6 +274,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_WRONGCHANNELTYPE"))
 				});
+
 				return;
 			}
 
@@ -295,6 +300,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
+
 			return;
 		}
 
@@ -307,6 +313,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					}
 				})
 			});
+
 			return;
 		}
 
@@ -317,6 +324,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_INVALIDARG0"))
 					});
+
 					return;
 				}
 			} break;
@@ -324,7 +332,9 @@ export default class StreamNotifications extends Plugin implements IModule {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_INVALIDARG"))
 				});
-			} return;
+
+				return;
+			}
 		}
 
 		// find this subscription to ensure that is exists
@@ -338,6 +348,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_SUBNOTFOUND"))
 			});
+
 			return;
 		}
 
@@ -365,6 +376,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_ME_ALREADYMENTIONS"))
 					});
+
 					return;
 				}
 
@@ -382,6 +394,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					await msg.channel.send("", {
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_ME_ALREADYNOTMENTIONS"))
 					});
+
 					return;
 				}
 
@@ -416,6 +429,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
+
 			return;
 		}
 
@@ -430,6 +444,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					}
 				})
 			});
+
 			return;
 		}
 
@@ -451,6 +466,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					}
 				})
 			});
+
 			return;
 		} else if ((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds && settings.subscribedTo.length >= this.options.limits.users)) {
 			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
@@ -463,6 +479,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 						}
 					})
 				});
+
 				return;
 			}
 		}
@@ -474,6 +491,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_PROVIDERNOTFOUND"))
 			});
+
 			return;
 		}
 
@@ -492,6 +510,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_UNKNOWN"))
 				});
 			}
+
 			return;
 		}
 
@@ -511,6 +530,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 							}
 						})
 					});
+
 					return;
 				}
 
@@ -527,6 +547,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 							}
 						})
 					});
+
 					return;
 				}
 
@@ -547,6 +568,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("CANCELED"))
 			});
+
 			return;
 		}
 
@@ -579,6 +601,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
+
 			return;
 		}
 
@@ -593,6 +616,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					}
 				})
 			});
+
 			return;
 		}
 
@@ -613,6 +637,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 							}
 						})
 					});
+
 					return;
 				}
 				alternativeChannel = usedAlternativeChannelArg.channel;
@@ -631,6 +656,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_FAULT_SUBNOTFOUND"))
 				});
+
 				return;
 			}
 
@@ -648,6 +674,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_CANCELED"))
 				});
+
 				return;
 			}
 
@@ -660,6 +687,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_FAULT_SUBNOTFOUND_REFETCH"))
 				});
+
 				return;
 			}
 
@@ -685,6 +713,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		use: boolean; channel?: TextChannel;
 	} {
 		if (scope !== "guild" || !arg) { return { use: false }; }
+
 		return {
 			use: true, channel: <TextChannel> resolveGuildChannel(arg, guild, false, false, true, ["text"])
 		};
@@ -698,6 +727,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
+
 			return;
 		}
 
@@ -720,6 +750,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 					}
 				})
 			});
+
 			return;
 		} else if (args) {
 			page = parseInt(args[0], 10);
@@ -728,6 +759,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				await msg.channel.send("", {
 					embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_INVALIDPAGE"))
 				});
+
 				return;
 			}
 		} else if (!args) {
@@ -748,6 +780,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_ISEMPTY"))
 			});
+
 			return;
 		}
 
@@ -767,6 +800,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_ISEMPTY"))
 			});
+
 			return;
 		}
 
@@ -914,6 +948,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 	private async _noFetchingAvoidance(subscription: ISubscriptionRow) {
 		if (subscription.subscribers.length === 0) {
 			this.log("warn_trace", `[No Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but no subscriptions found. Consider calling 'uselessFetchingAvoidance' instead. No action taken, returning \`false\` result`);
+
 			return false;
 		}
 
@@ -921,12 +956,14 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 		if (!provider) {
 			this.log("warn", `[No Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but there is no such provider. No action taken, returning \`false\` result`);
+
 			return false;
 		}
 
 		if ($botConfig.mainShard) {
 			if (provider.isSubscribed(subscription.uid)) {
 				this.log("warn", `[No Fetching Avoidance] Already subscribed to "${subscription.provider}[${subscription.uid}]". No action taken, returning \`false\` result`);
+
 				return false;
 			}
 
@@ -944,6 +981,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		} else {
 			const eText = `Not in the main shard, but \`process.send\` is not provided. Deadlock reached.`;
 			this.log("err_trace", `[No Fetching Avoidance] ${eText}`);
+
 			throw new Error(eText);
 		}
 
@@ -960,6 +998,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 		if (!provider) {
 			this.log("warn", `[Useless Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but there is no such provider. No action taken, returning \`false\` result`);
+
 			return false;
 		}
 
@@ -992,6 +1031,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			if (subscription.uid !== pseudoSubsciption.uid) { continue; }
 			if (++simultaneousSubscriptions >= this.options.sss_limit) { return true; }
 		}
+
 		return false;
 	}
 
@@ -1017,6 +1057,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 	private static _recoverUserID(id: string) {
 		const res = USER_SUBSCRIBER_REGEXP.exec(id);
 		if (!res || !res[1]) { return undefined; }
+
 		return res[1];
 	}
 
@@ -1027,6 +1068,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 	private static _recoverGuildID(id: string) {
 		const res = GUILD_SUBSCRIBER_REGEXP.exec(id);
 		if (!res || res.length !== 3) { return undefined; }
+
 		return {
 			guildId: res[1],
 			channelId: res[2] === "" ? undefined : res[2].slice(1)
@@ -1048,6 +1090,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				target = StreamNotifications._getUserSubscriberID(target);
 			}
 		}
+
 		return target;
 	}
 
@@ -1227,6 +1270,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 		if (!provider) {
 			this.log("warn", `[Push] "${providerName}" not found as loaded service`);
+
 			return;
 		}
 
@@ -1247,12 +1291,15 @@ export default class StreamNotifications extends Plugin implements IModule {
 					result, providerName
 				}
 			});
+
 			this.log("err", `[Push] Failed to get embed for stream of "${subscription.provider}[${subscription.uid}]"`, err);
+
 			return;
 		}
 
 		if (!embed) {
 			this.log("warn", `[Push] Embed has not returned for stream of "${subscription.provider}[${subscription.uid}]"`);
+
 			return;
 		}
 
@@ -1261,8 +1308,10 @@ export default class StreamNotifications extends Plugin implements IModule {
 			const dbSettings = await this._getSettings(scope);
 			if (!dbSettings) {
 				this.log("err", `Not found \`dbSettings\` for subscriber "${scope.id}" of subscription "${providerName}[${subscription.uid}]"`);
+
 				return;
 			}
+
 			settings = StreamNotifications._convertToNormalSettings(dbSettings);
 			this._guildSettingsCache[scope.id] = settings;
 		}
@@ -1316,9 +1365,6 @@ export default class StreamNotifications extends Plugin implements IModule {
 					this.log("err", "Could not find message with ID", notification.messageId, "to update message", err);
 
 					if (err instanceof DiscordAPIError) {
-						// so we probably don't have access or something
-						// we don't need to attempt updating message
-						// so removing this notification :shrug:
 						await this._deleteNotification(notification);
 					}
 
@@ -1437,6 +1483,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 				subscribedTo: "[]"
 			});
 		}
+
 		return settings;
 	}
 
@@ -1528,11 +1575,13 @@ export default class StreamNotifications extends Plugin implements IModule {
 		if (!filter.uid && !filter.username) {
 			throw new Error("Nor uid nor username provided");
 		}
+
 		return this.db(TABLE.subscriptions).select().where(filter).first();
 	}
 
 	private async _createSubscription(row: ISubscriptionRawRow) {
 		await this.db(TABLE.subscriptions).insert(row);
+
 		return row;
 	}
 
@@ -1559,6 +1608,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 	private async _createSettings(row: ISettingsRow) {
 		await this.db(TABLE.settings).insert(row);
+
 		return row;
 	}
 
