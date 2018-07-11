@@ -204,11 +204,11 @@ export default class StreamNotifications extends Plugin implements IModule {
 				default: await this.subcmd_list(msg, cmd.subCommand, args); break;
 			}
 		} catch (err) {
+			this.log("err", `Error starting command "${msg.content}"`, err);
+			$snowball.captureException(err, { extra: messageToExtra(msg) });
 			await msg.channel.send("", {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.author, LOCALIZED("CMD_ERROR"))
 			});
-			$snowball.captureException(err, { extra: messageToExtra(msg) });
-			this.log("err", `Error starting command "${msg.content}"`, err);
 		}
 	}
 
