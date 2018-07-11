@@ -53,77 +53,6 @@ interface INotificationsModuleSettings {
 	sss_limit: number;
 }
 
-interface ISubscriptionRawRow {
-	provider: string;
-	uid: string;
-	username: string;
-	subscribers: string;
-}
-
-interface ISettingsRow {
-	guild: string;
-	channelId: string | "-" | null;
-	mentionsEveryone: string;
-	subscribedTo: string;
-}
-
-interface ISettingsParsedRow {
-	channelId: string | null;
-	guild: string;
-	mentionsEveryone: ISettingsSubscription[];
-	subscribedTo: ISettingsSubscription[];
-}
-
-interface ISettingsSubscription extends IStreamingServiceStreamer {
-	alternativeChannel?: string;
-}
-
-interface IPseudoSettingsSubscription {
-	serviceName: string;
-	uid: string;
-	alternativeChannel?: string;
-}
-
-type SubscriptionFilter = {
-	provider: string;
-	uid?: string;
-	username?: string;
-};
-
-interface ISubscriptionRow {
-	/**
-	 * Provider if talking about module that fetches it, otherwise streaming service name
-	 */
-	provider: string;
-	/**
-	 * UID of the streamer
-	 */
-	uid: string;
-	/**
-	 * Username of the streamer
-	 */
-	username: string;
-	/**
-	 * Array of Guild IDs that subscribed to this channel
-	 */
-	subscribers: string[];
-}
-
-interface INotification {
-	guild: string;
-	provider: string;
-	channelId: string;
-	streamId: string;
-	streamerId: string;
-	messageId: string;
-	sentAt: number;
-}
-
-interface IPseudoSubscription {
-	provider: string;
-	uid: string;
-}
-
 const LOCALIZED = (str: string) => `STREAMING_${str.toUpperCase()}`;
 const HELP_CATEGORY = "HELPFUL";
 const DEFAULT_LIMITS = { users: 20, guilds: 20 };
@@ -1844,4 +1773,74 @@ class StreamNotifications extends Plugin implements IModule {
 	// #endregion
 }
 
+interface ISubscriptionRawRow {
+	provider: string;
+	uid: string;
+	username: string;
+	subscribers: string;
+}
+
+interface ISettingsRow {
+	guild: string;
+	channelId: string | "-" | null;
+	mentionsEveryone: string;
+	subscribedTo: string;
+}
+
+interface ISettingsParsedRow {
+	channelId: string | null;
+	guild: string;
+	mentionsEveryone: ISettingsSubscription[];
+	subscribedTo: ISettingsSubscription[];
+}
+
+interface ISettingsSubscription extends IStreamingServiceStreamer {
+	alternativeChannel?: string;
+}
+
+interface IPseudoSettingsSubscription {
+	serviceName: string;
+	uid: string;
+	alternativeChannel?: string;
+}
+
+type SubscriptionFilter = {
+	provider: string;
+	uid?: string;
+	username?: string;
+};
+
+interface ISubscriptionRow {
+	/**
+	 * Provider if talking about module that fetches it, otherwise streaming service name
+	 */
+	provider: string;
+	/**
+	 * UID of the streamer
+	 */
+	uid: string;
+	/**
+	 * Username of the streamer
+	 */
+	username: string;
+	/**
+	 * Array of Guild IDs that subscribed to this channel
+	 */
+	subscribers: string[];
+}
+
+interface INotification {
+	guild: string;
+	provider: string;
+	channelId: string;
+	streamId: string;
+	streamerId: string;
+	messageId: string;
+	sentAt: number;
+}
+
+interface IPseudoSubscription {
+	provider: string;
+	uid: string;
+}
 module.exports = StreamNotifications;
