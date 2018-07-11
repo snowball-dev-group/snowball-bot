@@ -920,7 +920,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		const provider = this.servicesLoader.findBase<IStreamingService>(subscription.provider, "name");
 
 		if (!provider) {
-			this.log("warn", `[No Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but such provider not found. No action taken, returning \`false\` result`);
+			this.log("warn", `[No Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but there is no such provider. No action taken, returning \`false\` result`);
 			return false;
 		}
 
@@ -959,7 +959,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		const provider = this.servicesLoader.findBase<IStreamingService>(subscription.provider, "name");
 
 		if (!provider) {
-			this.log("warn", `[Useless Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but such provider not found. No action taken, returning \`false\` result`);
+			this.log("warn", `[Useless Fetching Avoidance] Asked to check "${subscription.provider}[${subscription.uid}]", but there is no such provider. No action taken, returning \`false\` result`);
 			return false;
 		}
 
