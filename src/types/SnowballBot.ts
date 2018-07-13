@@ -176,7 +176,8 @@ export class SnowballBot extends EventEmitter {
 		/**
 		 * Internal configuration
 		 */
-		private readonly _internalConfiguration: IInternalBotConfig) {
+		private readonly _internalConfiguration: IInternalBotConfig
+	) {
 
 		super();
 		
@@ -230,28 +231,34 @@ export class SnowballBot extends EventEmitter {
 			shardsCount: 1
 		};
 
-		// checking options
+		// Prepare the options
 		const djsOptions = this._config.djs_config || {};
 
-		{ // checking shards count
+		{ // Checks the shards count
 			const shardCount = this._internalConfiguration.shardsCount;
+
 			if (this._config.shardingOptions.enabled) {
-				this._log("warn", "WARNING! Running in sharding mode is still expiremental, please use it with risk!");
+				this._log("warn", "WARNING! Running in sharding mode is still expiremental. Please use it with caution!");
+
 				if (shardCount < 0) {
 					this._log("err", "Invalid shards count", shardCount);
 					throw new Error("Invalid shards count");
 				}
+
 				publicBotConfig.sharded = true;
 			}
 		}
 
-		{ // checking shard id
+		{ // Check shard ID
 			const shardId = this._internalConfiguration.shardId;
+
 			if (shardId >= 0) {
 				this._log("info", "Running as shard with ID", shardId);
+
 				if (shardId === 0) {
 					publicBotConfig.mainShard = true;
 				}
+
 				publicBotConfig.shardId = shardId;
 			} else {
 				throw new Error("Invalid shard id");
@@ -261,43 +268,83 @@ export class SnowballBot extends EventEmitter {
 		djsOptions.shardId = this._internalConfiguration.shardId;
 		djsOptions.shardCount = this._internalConfiguration.shardsCount;
 
-		this._log("info", "Preparing Discord client");
+		this._log("info", "Preparing the Discord client...");
 
-		// Making new Discord Client
+		// Make the new Discord Client
 		this._discordClient = new djs.Client(djsOptions);
 
-		// Setting max listeners
+		// Set max listeners number
 		this._discordClient.setMaxListeners(0);
 
-		this._discordClient.on("error", (err) => {
-			this._log("err", "Error at Discord client", err);
-			this.captureException(err);
-		});
+		// Handle the messages
+		this._discordClient
+			.on("warn", (info: string) => this._log("warn", info))
+			.on("error", (err) => {
+				this._log("err", "Error at the Discord client", err);
+				this.captureException(err);
+			});
 
+		// Handle the disconnect
 		this._discordClient.on("disconnect", async (reason) => {
-			this._log("warn", "Disconnected with reason:", reason);
-			// tslint:disable-next-line:early-exit
-			if ((this._discordClient.status && (this._discordClient.status !== 1 && this._discordClient.status !== 2)) || !this._discordClient.status) {
-				this._log("warn", "No reconnect pending, reconnecting...");
-				try {
-					await this.login();
-					this._log("ok", "Reconnected");
-				} catch (err) {
-					this._log("err", "Detected error while reconnecting", err);
-					this.captureException(err);
+			this._log("warn", "Disconnected with the reason:", reason);
+
+			const status = this._discordClient.status;
+
+			if (typeof status !== "number" || status < 3) {
+				switch (status) {
+					case 2: {
+						this._log("info", "The reconnection in process. Not handling the disconnect event...");
+					} break;
+					case 1: {
+						this._log("warn", "Currently connecting (which is unexpected status in this situation). Not handling the disconnect event...");
+					} break;
+					case 0: {
+						this._log("info", "\"READY\" status, the reconnect already happened. Not handling the disconnect event...");
+					} break;
+					default: {
+						this._log("warn", "Unexpected status detected, for safety reason. Not handling the disconnect event...");
+					} break;
 				}
+
+				return;
+			}
+			
+
+			this._log("warn", "No reconnect pending, reconnecting...");
+
+			try {
+				await this.login();
+				this._log("ok", "Reconnected successfully");
+			} catch (err) {
+				this._log("err", "Detected error while reconnecting", err);
+				this.captureException(err);
+
+				this.shutdown("reconnection_failure");
 			}
 		});
 
-		this._discordClient.on("warn", (info: string) => this._log("warn", info));
+		// Handle other miscellaneous events
+		this._discordClient
+			.on("reconnecting", () => {
+				this._log("info", "The Discord client reported reconnecting...");
+			})
+			.on("resumed", (replayedEvents) => {
+				this._log("ok", `The connection has been resumed with ${replayedEvents} events replayed`);
+			})
+			.on("ready", () => {
+				this._log("info", "The Discord client reported \"READY\"");
+			})
+			.on("rateLimit", (ratelimit: djs.RateLimitData) => {
+				this._log("warn", `Ratelimit hit. ${ratelimit.method} ${ratelimit.path} ${ratelimit.route} - ${ratelimit.timeout}`);
+			});
 
-		// Global bot variable, which should be used by plugins
+		// Define the global bot variable, which should be used by the plugins
 		Object.defineProperty(global, "$discordBot", {
 			configurable: false, enumerable: false,
 			writable: true, value: this._discordClient
 		});
 
-		// Public bot config
+		// Define the global public bot configuration for the plugins
 		Object.defineProperty(global, "$botConfig", {
 			configurable: false, enumerable: false,
 			writable: true, value: publicBotConfig
@@ -324,11 +371,13 @@ export class SnowballBot extends EventEmitter {
 
 	public captureException(err: Error, options?: Raven.CaptureOptions) {
 		if (!this.raven) { return; }
+
 		return this.raven.captureException(err, options);
 	}
 
 	public captureMessage(message: string, options?: Raven.CaptureOptions) {
 		if (!this.raven) { return; }
+
 		return this.raven.captureMessage(message, options);
 	}
 
@@ -354,9 +403,11 @@ export class SnowballBot extends EventEmitter {
 	 */
 	public async login() {
 		this._log("info", "Connecting to Discord...");
+
 		if (!this._discordClient) {
 			throw new Error("Discord client not requires reconnecting");
 		}
+
 		return this._discordClient.login(this._config.token);
 	}
 
@@ -365,7 +416,7 @@ export class SnowballBot extends EventEmitter {
 	 * @param reason Reason of shutdown whcih will be transfered to all modules
 	 */
 	public async shutdown(reason = "unknown") {
-		this._log("info", `Shutting down with reason: "${reason}"`);
+		this._log("info", `Shutting down with the reason: "${reason}"`);
 		await this.modLoader.unload(Object.keys(this.modLoader.loadedModulesRegistry));
 		await this._discordClient.destroy();
 	}
