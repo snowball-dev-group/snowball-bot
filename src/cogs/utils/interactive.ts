@@ -269,14 +269,14 @@ function collectMessage(confirmationMessage: Message, authorId: string, cancelCb
 
 			const collector = confirmationMessage.channel.createMessageCollector(
 				(msg: Message) => {
-					LOG("info_trace", `${logContext} Message ID ${msg.id}. Author ID: ${msg.author.id}`);
+					LOG("info", `${logContext} Message ID ${msg.id}. Author ID: ${msg.author.id}`);
 
 					if (msg.author.id !== authorId) { return false; }
 
 					const res = msg.content === "y" || msg.content === "n";
 
 					if (res) {
-						LOG("info_trace", `${logContext} Message is accepted and will be collected`);
+						LOG("info", `${logContext} Message is accepted and will be collected`);
 					}
 
 					return res;
