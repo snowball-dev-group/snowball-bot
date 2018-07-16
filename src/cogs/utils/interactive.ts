@@ -283,6 +283,11 @@ function collectMessage(confirmationMessage: Message, authorId: string, cancelCb
 
 			let isCanceled = false;
 
+			collector.once("collect", (...args: any[]) => {
+				LOG("ok", `${logContext} Collected element`, args);
+				collector.stop("collected");
+			});
+
 			collector.on("end", (collection) => {
 				if (isCanceled) { return; }
 
