@@ -1,5 +1,12 @@
 import { Message, MessageReaction, User, TextChannel, GuildMember, DMChannel } from "discord.js";
 import { getMessageMember, getMessageMemberOrAuthor } from "@cogs/utils/utils";
+import * as getLogger from "loggy";
+
+const LOG = getLogger("Utils:Interactive");
+
+function yesNo(bool: boolean) {
+	return bool ? "Yes" : "No";
+}
 
 export async function createConfirmationMessage(embed, originalMsg: Message): Promise<boolean> {
 	let confirmMsg: Message | undefined = undefined;
@@ -9,6 +16,8 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 	} catch (err) {
 		return false;
 	}
+
+	const logContext = `(CFM / ${confirmMsg.id})`;
 
 	const author = await getMessageMemberOrAuthor(originalMsg);
 
@@ -22,6 +31,8 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 	let canUseReactions = true;
 
 	if (isText) {
+		LOG("info", `${logContext} Is text channel, checking permissions...`);
+
 		const myPermissions = await (async () => {
 			const bot = await getMessageMember(confirmMsg);
 	
@@ -31,10 +42,10 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 	
 			return bot.permissionsIn(confirmMsg.channel);
 		})();
-	
+
 		const authorPermissions = await (async () => {
 			const member = author instanceof GuildMember ? author : await getMessageMember(originalMsg);
-	
+
 			if (!member) {
 				throw new Error("Could not find author as a member of the server");
 			}
@@ -48,10 +59,16 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 
 		canUseMessages = authorPermissions.has("SEND_MESSAGES");
 		canUseReactions = myPermissions.has("ADD_REACTIONS");
+
+		LOG("info", `${logContext} Can use reactions? ${yesNo(canUseReactions)}`);
+		LOG("info", `${logContext} Can use messages? ${yesNo(canUseMessages)}`);
 	}
 
 	if (!canUseMessages && !canUseReactions) {
+		LOG("warn", `${logContext} Cannot use any actions, returning false`);
+
 		// what we supposed to do???
+
 		return false;
 	}
 
@@ -59,6 +76,8 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 	let messageWaiterPromise: Promise<boolean> | undefined;
 
 	if (canUseMessages) {
+		LOG("info", `${logContext} Creating messages waiter...`);
+
 		const result = await createMessageWaiter(
 			confirmMsg,
 			author.id
@@ -66,6 +85,8 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 
 		messageWaiterCancelFunc = result.cancel;
 		messageWaiterPromise = result.promise;
+
+		LOG("ok", `${logContext} Created messages waiter!`);
 	}
 
 	const promises: Array<Promise<boolean>> = [];
@@ -73,6 +94,8 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 	if (messageWaiterPromise) { promises.push(messageWaiterPromise); }
 
 	if (canUseReactions) {
+		LOG("info", `${logContext} Creating reactions waiter...`);
+
 		const reactionWaiterPromise = reactionWaiter(confirmMsg, author.id, (cancel) => {
 			if (!messageWaiterPromise) { return; }
 
@@ -83,8 +106,11 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 			});
 		});
 
+		LOG("info", `${logContext} Initialized reaction waiter promise`);
+
 		reactionWaiterPromise.then((val) => {
 			if (messageWaiterCancelFunc) {
+				LOG("info", `${logContext} We're faster than messages waiter, cancelling it...`);
 				messageWaiterCancelFunc();
 			}
 
@@ -94,11 +120,15 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 		promises.push(
 			reactionWaiterPromise
 		);
+
+		LOG("ok", `${logContext} Created reactions waiter`);
 	}
 
 	if (promises.length === 0) {
 		throw new Error("No methods available for confirmation");
 	}
+
+	LOG("info", `${logContext} Race starting`);
 
 	return Promise.race(promises);
 }
@@ -106,16 +136,24 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 type CancellationCallback = (cancel: () => void) => void;
 
 async function reactionWaiter(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback) {
+	const logContext = `(RWT / ${confirmationMessage.id})`;
+
 	// set reactions
 	try {
+		LOG("info", "Using reactions on the message...");
+
 		await confirmationMessage.react("✅");
 		await confirmationMessage.react("❌");
 	} catch (err) {
 		return false;
 	}
 
+	LOG("ok", `${logContext} Reactions set w/o errors, collecting reaction...`);
+
 	// collect
 	const reaction = await collectReaction(confirmationMessage, authorId, cancelCb);
+
+	LOG("info", `${logContext} Collection done, the result is ${reaction ? "reaction" : "empty"}`);
 
 	// check
 	return reaction ? reaction.emoji.name === "✅" : false;
@@ -124,13 +162,21 @@ async function reactionWaiter(confirmationMessage: Message, authorId: string, ca
 function collectReaction(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback) : Promise<MessageReaction | undefined> {
 	return new Promise(
 		(resolve) => {
+			const logContext = `(RCL / ${confirmationMessage.id})`;
+
+			LOG("info", `${logContext} Creating the collector...`);
+
 			const collector = confirmationMessage.createReactionCollector(
 				(reaction: MessageReaction, user: User) => {
+					LOG("info", `${logContext} Reaction: ${reaction.emoji.name}. User ID: ${user.id}`);
+
 					if (user.id !== authorId) { return false; }
 
 					if (reaction.emoji.name !== "✅" && reaction.emoji.name !== "❌") {
 						return false;
 					}
+
+					LOG("info", `${logContext} Reaction is accepted and will be collected`);
 
 					return true;
 				}, {
@@ -143,10 +189,22 @@ function collectReaction(confirmationMessage: Message, authorId: string, cancelC
 
 			let isCanceled = false;
 
+			collector.once("end", (collected) => {
+				if (isCanceled) { return; }
+
+				LOG("ok", `${logContext} Collection complete`);
+
+				resolve(collected.first());
+			});
+
+			LOG("info", `${logContext} Collector created, confirming acknowledgement...`);
+
 			cancelCb(async () => {
 				if (isCanceled) {
 					throw new Error("Could not cancel cancelled");
 				}
+
+				LOG(`info`, `${logContext} Cancelling collection...`);
 
 				isCanceled = true;
 
@@ -155,13 +213,9 @@ function collectReaction(confirmationMessage: Message, authorId: string, cancelC
 				confirmationMessage.reactions.remove("✅");
 				confirmationMessage.reactions.remove("❌");
 
+				LOG("ok", `${logContext} Collection cancelled`);
+
 				resolve();
-			});
-
-			collector.once("end", (collected) => {
-				if (isCanceled) { return; }
-
-				resolve(collected.first());
 			});
 		}
 	);
@@ -175,42 +229,80 @@ interface IMessageWaiterInitResult {
 }
 
 function createMessageWaiter(confirmationMessage: Message, authorId: string) {
+	const logContext = `(CMW / ${confirmationMessage.id})`;
+
 	return new Promise<IMessageWaiterInitResult>((resolve) => {
-		const promise = messageWaiter(confirmationMessage, authorId, (cancel) => {
+		let promise;
+
+		LOG("info", `${logContext} Creating the waiter, resolving on acknowledge`);
+
+		promise = messageWaiter(confirmationMessage, authorId, (cancel) => {
+			LOG("ok", `${logContext} Acknowledged. Waiter is ready`);
+
 			resolve({ promise, cancel });
 		});
 	});
 }
 
 async function messageWaiter(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback) {
+	const logContext = `(MWT / ${confirmationMessage.id})`;
+
+	LOG("info", `${logContext} Collecting the messages`);
+
 	const message = await collectMessage(confirmationMessage, authorId, cancelCb);
+
+	LOG("ok", `${logContext} The collection is done. The result is ${message ? message.content : "nothing"}`);
 
 	return message ? message.content === "y" : false;
 }
 
 function collectMessage(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback) : Promise<Message | undefined> {
+	const logContext = `(MCL / ${confirmationMessage.id})`;
+
 	return new Promise(
 		(resolve) => {
+			LOG("info", `${logContext} Creating the collector...`);
+
 			const collector = confirmationMessage.channel.createMessageCollector(
-				(msg: Message) => msg.author.id === authorId && (msg.content === "y" || msg.content === "n"), {
+				(msg: Message) => {
+					LOG("info_trace", `${logContext} Message ID ${msg.id}. Author ID: ${msg.author.id}`);
+
+					if (msg.author.id !== authorId) { return false; }
+
+					const res = msg.content === "y" || msg.content === "n";
+
+					if (res) {
+						LOG("info_trace", `${logContext} Message is accepted and will be collected`);
+					}
+
+					return res;
+				}, {
 					time: 60000
 				}
 			);
 
 			let isCanceled = false;
 
+			collector.on("end", (collection) => {
+				if (isCanceled) { return; }
+
+				LOG("ok", `${logContext} Collection complete`);
+
+				resolve(collection.first());
+			});
+
+			LOG("info", `${logContext} Collector creating, confirming acknowledgement...`);
+
 			cancelCb(() => {
 				isCanceled = true;
+
+				LOG("info", `${logContext} Cancelling collection...`);
 
 				collector.stop("cancelled");
 
 				resolve();
-			});
 
-			collector.on("end", (collection) => {
-				if (isCanceled) { return; }
-
-				resolve(collection.first());
+				LOG("ok", `${logContext} Collecting cancelled`);
 			});
 		}
 	);
