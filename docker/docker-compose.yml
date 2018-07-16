@@ -1,4 +1,4 @@
-version: '3'
+version: '3.3'
 
 services:
   sdg_sb_db:
@@ -7,10 +7,13 @@ services:
     volumes:
       - .data/mysql/data:/var/lib/mysql
     environment:
-      MYSQL_USER: snowball-bot
-      MYSQL_ROOT_PASSWORD: superball-superpassword
-      MYSQL_DATABASE: snowball-bot
-      DATA_SAVE_PATH: /var/lib/mysql
+      - MYSQL_ROOT_HOST=%
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_USER=snowball-bot
+      - MYSQL_PASSWORD=superball-superpassword
+      - MYSQL_DATABASE=snowball-bot
+      - DATA_SAVE_PATH=/var/lib/mysql
+    restart: always
   sdg_sb_redis:
     image: redis:latest
     volumes:
@@ -18,12 +21,17 @@ services:
     ports:
       - 6379:6379
   sdg_sb_bot:
+    depends_on:
+      - sdg_sb_db
+      - sdg_sb_redis
     image: sdg_sb-bot
     build: .
     restart: on-failure
     environment:
-      NODE_ENV: production
-      DB_PASSWD: superball-superpassword
-    depends_on:
-      - sdg_sb_db
-      - sdg_sb_redis
+      - NODE_ENV=production
+      - REDIS_HOST=sdg_sb_redis
+      - DB_HOST=sdg_sb_db
+      - DB_NAME=snowball-bot
+      - DB_USER=snowball-bot
+      - DB_PASSWD=superball-superpassword
+
