@@ -1,8 +1,8 @@
 import { EventEmitter } from "events";
 import { INullableHashMap } from "./Types";
 import { ISchemaObject } from "./Typer";
-import { isAbsolute } from "path";
 import * as logger from "loggy";
+import * as path from "path";
 
 // #region Interfaces and enums
 
@@ -336,7 +336,13 @@ export class ModuleLoader {
 			this.register(moduleInfo);
 		}
 
-		this.config.basePath = isAbsolute(this.config.basePath) ? this.config.basePath : `${__dirname}/../${this.config.basePath}`;
+		// tslint:disable-next-line:early-exit
+		if (!path.isAbsolute(this.config.basePath)) {
+			this.config.basePath = path.join(
+				process.cwd(),
+				this.config.basePath
+			);
+		}
 	}
 
 	/**
@@ -379,7 +385,9 @@ export class ModuleLoader {
 			throw new Error("No module info");
 		}
 
-		moduleInfo.path = isAbsolute(moduleInfo.path) ? moduleInfo.path : `${this.config.basePath}/${moduleInfo.path}`;
+		if (!path.isAbsolute(moduleInfo.path)) {
+			moduleInfo.path = `${this.config.basePath}/${moduleInfo.path}`;
+		}
 
 		try {
 			moduleInfo.path = require.resolve(moduleInfo.path);
