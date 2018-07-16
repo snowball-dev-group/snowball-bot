@@ -1,0 +1,31 @@
+version: '3.6'
+
+services:
+  sdg_sb_db:
+    image: sdg_sb-db
+    build: .docker/db/
+    volumes:
+      - .data/mysql/data:/var/lib/mysql
+    environment:
+      MYSQL_USER: snowball-bot
+      MYSQL_ROOT_PASSWORD: superball-superpassword
+      MYSQL_DATABASE: snowball-bot
+      DATA_SAVE_PATH: /var/lib/mysql
+    ports:
+      - 3306:3306
+  sdg_sb_redis:
+    image: redis:latest
+    volumes:
+      - .data/redis/:/data
+    ports:
+      - 6379:6379
+  sdg_sb_bot:
+    image: sdg_sb-bot
+    build: .
+    restart: on-failure
+    environment:
+      NODE_ENV: production
+      DB_PASSWD: superball-superpassword
+    depends_on:
+      - sdg_sb_db
+      - sdg_sb_redis
