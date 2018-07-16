@@ -5,7 +5,7 @@ let connection: knex;
 export function getDB() {
 	if (!connection) {
 		if (!process.env["DB_PASSWD"]) {
-			throw new Error("DB password not set in process environment.");
+			LOG("warn", "Password not set in environment variables. It is unrecommended to have database open without the password");
 		}
 		connection = knex({
 			client: "mysql2",
