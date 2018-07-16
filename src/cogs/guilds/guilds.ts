@@ -1915,7 +1915,7 @@ class Guilds extends Plugin implements IModule {
 	// ==============================
 
 	public async init() {
-		if ($modLoader.isPendingInitialization(this.signature)) {
+		if (!$modLoader.isPendingInitialization(this.signature)) {
 			throw new Error("This module doesn't pending initialization");
 		}
 
