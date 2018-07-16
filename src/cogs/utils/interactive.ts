@@ -128,9 +128,13 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 		throw new Error("No methods available for confirmation");
 	}
 
-	LOG("info", `${logContext} Race starting`);
+	LOG("info", `${logContext} Race of ${promises.length} promises starting...`);
 
-	return Promise.race(promises);
+	const result = await Promise.race(promises);
+
+	LOG("info", `${logContext} Race complete`);
+
+	return result;
 }
 
 type CancellationCallback = (cancel: () => void) => void;
@@ -140,7 +144,7 @@ async function reactionWaiter(confirmationMessage: Message, authorId: string, ca
 
 	// set reactions
 	try {
-		LOG("info", "Using reactions on the message...");
+		LOG("info", `${logContext} Using reactions on the message...`);
 
 		await confirmationMessage.react("✅");
 		await confirmationMessage.react("❌");
