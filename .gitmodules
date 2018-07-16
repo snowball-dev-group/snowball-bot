@@ -1,6 +1,6 @@
 [submodule "src/cogs/reload"]
 	path = src/cogs/reload
-	url = https://gitlab.com/SnowballBot/Modules/Reload_Module.git
+	url = ../Modules/Reload_Module.git
 [submodule "src/cogs/8ball"]
 	path = src/cogs/8ball
-	url = git@gitlab.com:SnowballBot/Modules/8Ball.git
+	url = ../Modules/8Ball.git
