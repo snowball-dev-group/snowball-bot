@@ -35,11 +35,11 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 
 		const myPermissions = await (async () => {
 			const bot = await getMessageMember(confirmMsg);
-	
+
 			if (!bot) {
 				throw new Error("Could not find bot as a member of the server");
 			}
-	
+
 			return bot.permissionsIn(confirmMsg.channel);
 		})();
 
@@ -49,7 +49,7 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 			if (!member) {
 				throw new Error("Could not find author as a member of the server");
 			}
-	
+
 			return member.permissionsIn(confirmMsg.channel);
 		})();
 
@@ -72,6 +72,8 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 		return false;
 	}
 
+	const promises: Array<Promise<boolean>> = [];
+
 	let messageWaiterCancelFunc: () => void | undefined;
 	let messageWaiterPromise: Promise<boolean> | undefined;
 
@@ -86,12 +88,10 @@ export async function createConfirmationMessage(embed, originalMsg: Message): Pr
 		messageWaiterCancelFunc = result.cancel;
 		messageWaiterPromise = result.promise;
 
-		LOG("ok", `${logContext} Created messages waiter!`);
+		LOG("ok", `${logContext} Created messages waiter!`, result);
+
+		promises.push(messageWaiterPromise);
 	}
-
-	const promises: Array<Promise<boolean>> = [];
-
-	if (messageWaiterPromise) { promises.push(messageWaiterPromise); }
 
 	if (canUseReactions) {
 		LOG("info", `${logContext} Creating reactions waiter...`);
@@ -163,7 +163,7 @@ async function reactionWaiter(confirmationMessage: Message, authorId: string, ca
 	return reaction ? reaction.emoji.name === "✅" : false;
 }
 
-function collectReaction(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback) : Promise<MessageReaction | undefined> {
+function collectReaction(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback): Promise<MessageReaction | undefined> {
 	return new Promise(
 		(resolve) => {
 			const logContext = `(RCL / ${confirmationMessage.id})`;
@@ -248,19 +248,26 @@ function createMessageWaiter(confirmationMessage: Message, authorId: string) {
 	});
 }
 
-async function messageWaiter(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback) {
-	const logContext = `(MWT / ${confirmationMessage.id})`;
+function messageWaiter(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback) {
+	return new Promise(
+		(resolve) => {
+			const logContext = `(MWT / ${confirmationMessage.id})`;
 
-	LOG("info", `${logContext} Collecting the messages`);
+			LOG("info", `${logContext} Collecting the messages`);
 
-	const message = await collectMessage(confirmationMessage, authorId, cancelCb);
+			collectMessage(confirmationMessage, authorId, cancelCb)
+				.then(
+					(message) => {
+						LOG("ok", `${logContext} The collection is done. The result is ${message ? message.content : "nothing"}`);
 
-	LOG("ok", `${logContext} The collection is done. The result is ${message ? message.content : "nothing"}`);
-
-	return message ? message.content === "y" : false;
+						resolve(message);
+					}
+				);
+		}
+	);
 }
 
-function collectMessage(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback) : Promise<Message | undefined> {
+function collectMessage(confirmationMessage: Message, authorId: string, cancelCb: CancellationCallback): Promise<Message | undefined> {
 	const logContext = `(MCL / ${confirmationMessage.id})`;
 
 	return new Promise(
