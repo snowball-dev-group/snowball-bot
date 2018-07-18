@@ -2,6 +2,7 @@ import { SnowballBot, IBotConfig, IInternalBotConfig } from "./types/SnowballBot
 import { join as pathJoin } from "path";
 import * as cluster from "cluster";
 import * as logger from "loggy";
+import * as Bluebird from "bluebird";
 
 const CORE_INFO = {
 	"version": "0.9.9986"
@@ -237,9 +238,9 @@ const EXIT_QUOTES = [
 ];
 
 async function initBot(log: logger.ILogFunction, config: IBotConfig, internalConfig: IInternalBotConfig) {
-	log("info", "[Run] Preparing import aliases...");
+	log("info", "[Run] Preparation...");
 
-	prepareAliases(log);
+	await prepare(log);
 
 	log("info", "[Run] Initializing bot...");
 	const snowball = new SnowballBot(config, internalConfig);
@@ -341,6 +342,12 @@ async function initBot(log: logger.ILogFunction, config: IBotConfig, internalCon
 	}
 }
 
+async function prepare(log: logger.ILogFunction) {
+	prepareAliases(log);
+
+	setupBluebird(log);
+}
+
 function prepareAliases(log: logger.ILogFunction) {
 	log("info", "[Import Aliases] Registering aliases for commont paths");
 
@@ -356,4 +363,14 @@ function prepareAliases(log: logger.ILogFunction) {
 	});
 
 	log("ok", "[Import Aliases] Aliases registered");
+}
+
+function setupBluebird(log) {
+	log("info", "[Bluebird] Configuring bluebird");
+
+	Bluebird.config({
+		warnings: true,
+		longStackTraces: true,
+		cancellation: true
+	});
 }
