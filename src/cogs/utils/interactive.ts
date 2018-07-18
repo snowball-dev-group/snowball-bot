@@ -16,85 +16,96 @@ const enum EMOJI {
 	RED_CROSS_MARK = "❌"
 }
 
-export function createConfirmationMessage(embed: IEmbed, originalMsg: Message) : Bluebird<boolean> {
+export function createConfirmationMessage(embed: IEmbed, originalMsg: Message): Bluebird<boolean> {
 	let logContext = `(CMS / 0:${originalMsg.id})`;
 
-	return new Bluebird(async (resolve, _reject, onCancel) => {
-		let confirmMsg: Message | undefined;
+	return new Bluebird(
+		async (resolve, _reject, onCancel) => {
+			let confirmMsg: Message | undefined;
 
-		try {
-			confirmMsg = <Message> await originalMsg.channel.send(
-				"", {
-					embed: <any> embed
+			try {
+				confirmMsg = <Message> await originalMsg.channel.send(
+					"", {
+						embed: <any> embed
+					}
+				);
+			} catch (err) {
+				LOG("info", `${logContext} Message sending failure`, err.message);
+
+				return false;
+			}
+
+			logContext = `(CMD / 1:${confirmMsg.id})`;
+
+			const author = await getMessageMemberOrAuthor(originalMsg);
+
+			if (!author) {
+				throw new Error("Cannot get original message author");
+			}
+
+			const isText = confirmMsg.channel.type === "text";
+
+			let canUseMessages = true;
+			let canUseReactions = true;
+
+			if (isText) {
+				LOG("info", `${logContext} Is text channel, check permissions...`);
+
+				const myPermissions = await getPermissions(confirmMsg);
+
+				if (!myPermissions) {
+					throw new Error("Failed to check bot's permissions in the channel");
 				}
+
+				canUseReactions = myPermissions.has("ADD_REACTIONS");
+
+				const authorPermissions = await getPermissions(originalMsg);
+
+				if (!authorPermissions) {
+					throw new Error("Failed to check author's permissions in the channel");
+				}
+
+				canUseMessages = authorPermissions.has("SEND_MESSAGES");
+			}
+
+			LOG("info", `${logContext} Can use messages? ${yesNo(canUseMessages)}`);
+			LOG("info", `${logContext} Can use reactions? ${yesNo(canUseReactions)}`);
+
+			if (!canUseMessages && !canUseReactions) {
+				LOG("warn", `${logContext} Cannot use any of the methods to confirm message`);
+
+				throw new Error("No method to confirm action is found");
+			}
+
+			const messageConfirmed = messageWaiter(confirmMsg, author.id);
+			const reactionConfirmed = reactionWaiter(confirmMsg, author.id);
+
+			messageConfirmed.then(
+				cancel(reactionConfirmed)
 			);
-		} catch (err) {
-			LOG("info", `${logContext} Message sending failure`, err.message);
 
-			return false;
+			reactionConfirmed.then(
+				cancel(messageConfirmed)
+			);
+
+			Bluebird
+				.race<boolean>([
+					messageConfirmed,
+					reactionConfirmed
+				])
+				.timeout(60000)
+				.catch(
+					() => resolve(false)
+				)
+				.then(
+					(val) => {
+						LOG("ok", `${logContext} Resolved as "${val}"`);
+
+						return resolve(!!val);
+					}
+				);
 		}
-
-		logContext = `(CMD / 1:${confirmMsg.id})`;
-
-		const author = await getMessageMemberOrAuthor(originalMsg);
-
-		if (!author) {
-			throw new Error("Cannot get original message author");
-		}
-
-		const isText = confirmMsg.channel.type === "text";
-
-		let canUseMessages = true;
-		let canUseReactions = true;
-
-		if (isText) {
-			LOG("info", `${logContext} Is text channel, check permissions...`);
-
-			const myPermissions = await getPermissions(confirmMsg);
-
-			if (!myPermissions) {
-				throw new Error("Failed to check bot's permissions in the channel");
-			}
-
-			canUseReactions = myPermissions.has("ADD_REACTIONS");
-
-			const authorPermissions = await getPermissions(originalMsg);
-
-			if (!authorPermissions) {
-				throw new Error("Failed to check author's permissions in the channel");
-			}
-
-			canUseMessages = authorPermissions.has("SEND_MESSAGES");
-		}
-
-		LOG("info", `${logContext} Can use messages? ${yesNo(canUseMessages)}`);
-		LOG("info", `${logContext} Can use reactions? ${yesNo(canUseReactions)}`);
-
-		if (!canUseMessages && !canUseReactions) {
-			LOG("warn", `${logContext} Cannot use any of the methods to confirm message`);
-
-			throw new Error("No method to confirm action is found");
-		}
-
-		const promises: Array<Bluebird<boolean>> = [];
-
-		const messageConfirmed = messageWaiter2(confirmMsg, author.id);
-		const reactionConfirmed = reactionWaiter(confirmMsg, author.id);
-
-		messageConfirmed.then(
-			cancel(reactionConfirmed)
-		);
-
-		reactionConfirmed.then(
-			cancel(messageConfirmed)
-		);
-
-		const race = Bluebird.race(promises);
-
-		if (onCancel) { onCancel(() => race.cancel()); }
-
-		race.then(resolve);
-	});
+	);
 }
 
 function cancel<T>(promise: Bluebird<T>) {
@@ -119,7 +130,7 @@ async function getPermissions(msg: Message) {
 
 // #region Reaction Waiter
 
-function reactionWaiter(confirmationMessage: Message, authorId: string) : Bluebird<boolean> {
+function reactionWaiter(confirmationMessage: Message, authorId: string): Bluebird<boolean> {
 	const logContext = `(RWT / ${confirmationMessage.id})`;
 
 	return new Bluebird.Promise(async (resolve, _reject, onCancel) => {
@@ -146,11 +157,12 @@ function reactionWaiter(confirmationMessage: Message, authorId: string) : Bluebi
 	});
 }
 
-function collectReaction(confirmationMessage: Message, authorId: string) : Bluebird<MessageReaction | undefined> {
-	return new Bluebird((resolve, _reject, onCancel) => {
-		if (!onCancel) { throw new Error("Invalid promise, expected onCancel to be passed"); }
+function collectReaction(confirmationMessage: Message, authorId: string): Bluebird<MessageReaction | undefined> {
+	return new Bluebird(
+		(resolve, _reject, onCancel) => {
+			if (!onCancel) { throw new Error("Invalid promise, expected onCancel to be passed"); }
 
-		const logContext = `(RCL / ${confirmationMessage.id})`;
+			const logContext = `(RCL / ${confirmationMessage.id})`;
 
 			LOG("info", `${logContext} Creating the collector...`);
 
@@ -180,7 +192,7 @@ function collectReaction(confirmationMessage: Message, authorId: string) : Blueb
 			collector.once("end", (collected) => {
 				if (isCanceled) { return; }
 
-				LOG("ok", `${logContext} Done - ${collected.size} messages collected`);
+				LOG("ok", `${logContext} Done - ${collected.size} reaction(s) collected`);
 
 				resolve(collected.first());
 			});
@@ -207,14 +219,15 @@ function collectReaction(confirmationMessage: Message, authorId: string) : Blueb
 
 				resolve();
 			});
-	});
+		}
+	);
 }
 
 // #endregion
 
 //#region Message Waiter
 
-function messageWaiter2(confirmationMessage: Message, authorId: string) {
+function messageWaiter(confirmationMessage: Message, authorId: string) {
 	const logContext = `(MWT / ${confirmationMessage.id})`;
 
 	return new Bluebird<boolean>(async (resolve, _reject, onCancel) => {
@@ -222,7 +235,7 @@ function messageWaiter2(confirmationMessage: Message, authorId: string) {
 
 		LOG("info", `${logContext} Collect the messages...`);
 
-		const collectectMes	= collectMessage1(confirmationMessage, authorId);
+		const collectectMes = collectMessage(confirmationMessage, authorId);
 
 		onCancel(() => collectectMes.cancel());
 
@@ -234,11 +247,11 @@ function messageWaiter2(confirmationMessage: Message, authorId: string) {
 	});
 }
 
-function messageToBool(msg: Message) : boolean {
+function messageToBool(msg: Message): boolean {
 	return msg.content === "y" ? true : false;
 }
 
-function collectMessage1(confirmationMessage: Message, authorId: string) {
+function collectMessage(confirmationMessage: Message, authorId: string) {
 	const logContext = `(MCL / ${confirmationMessage.id})`;
 
 	return new Bluebird<Message>((resolve, _reject, onCancel) => {
@@ -261,7 +274,7 @@ function collectMessage1(confirmationMessage: Message, authorId: string) {
 		collector.once("end", (collected) => {
 			if (isCanceled) { return; }
 
-			LOG("ok", `${logContext} Done - ${collected.size} reactions collected`);
+			LOG("ok", `${logContext} Done - ${collected.size} message(s) collected`);
 
 			resolve(collected.first());
 		});
@@ -280,7 +293,7 @@ function collectMessage1(confirmationMessage: Message, authorId: string) {
 	});
 }
 
-function collectorCallback(authorId: string) : (msg: Message) => boolean {
+function collectorCallback(authorId: string): (msg: Message) => boolean {
 	// load languages possibly
 
 	const logContext = `(MCB / ${authorId})`;
