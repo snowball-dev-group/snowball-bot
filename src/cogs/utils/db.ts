@@ -1,4 +1,5 @@
 import * as knex from "knex";
+import * as getLogger from "loggy";
 
 let connection: knex;
 
