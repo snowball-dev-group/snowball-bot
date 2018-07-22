@@ -2,7 +2,6 @@ import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, GuildMember, Role, TextChannel, DMChannel, DiscordAPIError, Emoji } from "discord.js";
 import { EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
-import { getDB, createTableBySchema } from "../utils/db";
 import { default as fetch } from "node-fetch";
 import { createConfirmationMessage, waitForMessages } from "../utils/interactive";
 import { parse as parseURI } from "url";
@@ -14,27 +13,9 @@ import { IPCMessage, INullableHashMap } from "../../types/Types";
 import { messageToExtra } from "../utils/failToDetail";
 import * as ua from "universal-analytics";
 import * as getLogger from "loggy";
+import { GuildsDBController, IGuildRow, IGuildCustomize } from "@cogs/guilds/dbController";
 
-const TABLE_NAME = "guilds";
-
-const TABLE_SCHEMA = {
-	// unique guild id
-	"gid": "string",
-	// discord guild snowflake
-	"guildId": "string",
-	// guild role id
-	"roleId": "string",
-	// owner discord id
-	"ownerId": "string",
-	// guild name
-	"name": "string",
-	// description
-	"description": "string",
-	// guild styles
-	"customize": {
-		type: "TEXT"
-	}
-};
+const DEFAULT_TABLE_NAME = "guilds";
 
 const BANNED_HOSTS = ["goo.gl", "grabify.link", "bit.ly"];
 const EMOJI_NAME_REGEXP = /[a-z0-9\_\-]{2,36}/i;
@@ -53,81 +34,7 @@ export interface IGuildsModuleConfig {
 		greenTick: string;
 		redTick: string;
 	};
-}
-
-export interface IGuildRow {
-	/**
-	 * Discord Guild SNOWFLAKE
-	 */
-	guildId: string;
-	/**
-	 * Discord Role SNOWFLAKE
-	 */
-	roleId: string;
-	/**
-	 * Name of Guild
-	 */
-	name: string;
-	/**
-	 * Description of guild
-	 */
-	description: string;
-	/**
-	 * Customize JSON
-	 */
-	customize: string | any;
-	/**
-	 * Unique Guild ID
-	 */
-	gid: string;
-	/**
-	 * Owner ID
-	 */
-	ownerId: string;
-}
-
-export interface IGuildCustomize {
-	/**
-	 * Guild admins who can control it
-	 */
-	admins: string[];
-	/**
-	 * Is this guild private?
-	 */
-	invite_only?: boolean;
-	/**
-	 * Google Analystic key
-	*/
-	ua?: string;
-	/**
-	 * Welcome message
-	 */
-	welcome_msg?: string;
-	/**
-	 * Channel for welcome message
-	 */
-	welcome_msg_channel?: string;
-	/**
-	 * Guild invites
-	 * (for private guilds)
-	 */
-	invites?: string[];
-	/**
-	 * Big image in information block
-	 */
-	image_url?: string;
-	/**
-	 * Icon URL
-	 */
-	icon_url?: string;
-	/**
-	 * Guild rules
-	 */
-	rules?: string;
-	/**
-	 * Banned users
-	 */
-	banned?: string[];
+	tableName?: string;
 }
 
 const BASE_PREFIX = "!guilds";
@@ -234,12 +141,13 @@ class Guilds extends Plugin implements IModule {
 	}
 
 	private readonly log = getLogger("Guilds");
-	private readonly db = getDB();
 
 	private readonly _config: IGuildsModuleConfig;
 
 	private readonly _pendingInvites: INullableHashMap<{ code: string; }> = Object.create(null);
 	private readonly _processMessageListener?: ((msg: any) => void);
+
+	private readonly _dbController: GuildsDBController;
 
 	constructor(config: IGuildsModuleConfig) {
 		super({
@@ -272,9 +180,11 @@ class Guilds extends Plugin implements IModule {
 			config.emojis[emojiName] = emoji.toString();
 		}
 
-		this._config = config;
+		this._dbController = new GuildsDBController(
+			config.tableName || DEFAULT_TABLE_NAME
+		);
 
-		// this.init();
+		this._config = config;
 	}
 
 	// ==============================
@@ -488,7 +398,7 @@ class Guilds extends Plugin implements IModule {
 			});
 		}
 
-		await this._createGuildRow(msg.guild, args[0]);
+		await this._createGuildRow(msg.guild, args[0], msg.member.id, role.id);
 
 		dbRow = await this._getGuildRow(msg.guild, args[0]);
 
@@ -497,11 +407,6 @@ class Guilds extends Plugin implements IModule {
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_DBERROR")
 			});
 		}
-
-		dbRow.roleId = role.id;
-		dbRow.name = args[0];
-		dbRow.customize = "{}";
-		dbRow.ownerId = msg.member.id;
 
 		await this._updateGuildRow(dbRow);
 
@@ -1858,44 +1763,41 @@ class Guilds extends Plugin implements IModule {
 
 	private _createGID() { return reverseString(Date.now().toString(16)); }
 
+	/**
+	 * @deprecated
+	 */
 	private async _getGuilds(guild: Guild, offset: number = 0, limit: number = 10) {
-		return {
-			offset: offset,
-			nextOffset: offset + limit,
-			rows: <IGuildRow[]> await this.db(TABLE_NAME).where({
-				guildId: guild.id
-			}).offset(offset).limit(limit)
-		};
+		return this._dbController.getGuilds(
+			guild, offset, limit
+		);
 	}
 
+	/**
+	 * @deprecated
+	 */
 	private async _getGuildRow(guild: Guild, name: string) : Promise<IGuildRow> {
-		return this.db(TABLE_NAME).where({
-			guildId: guild.id,
-			name: name
-		}).first();
+		return this._dbController.getGuild(guild, name);
 	}
 
+	/**
+	 * @deprecated
+	 */
 	private async _updateGuildRow(guildRow: IGuildRow) : Promise<void> {
-		return this.db(TABLE_NAME).where({
-			gid: guildRow.gid
-		}).update(guildRow);
+		return this._dbController.updateGuild(guildRow);
 	}
 
-	private async _createGuildRow(guild: Guild, name: string) : Promise<void> {
-		return this.db(TABLE_NAME).insert(<IGuildRow> {
-			guildId: guild.id,
-			name: name,
-			customize: "{}",
-			roleId: "-1",
-			description: "",
-			gid: this._createGID()
-		});
+	/**
+	 * @deprecated
+	 */
+	private async _createGuildRow(guild: Guild, name: string, ownerId: string, roleId: string) : Promise<void> {
+		return this._dbController.createGuild(guild, name, ownerId, roleId);
 	}
 
+	/**
+	 * @deprecated
+	 */
 	private async _deleteGuildRow(guildRow: IGuildRow) : Promise<void> {
-		return this.db(TABLE_NAME).delete().where({
-			gid: guildRow.gid
-		});
+		return this._dbController.deleteGuild(guildRow);
 	}
 
 	// private async _getOrCreateGuildRow(guild: Guild, name: string) {
@@ -1919,28 +1821,7 @@ class Guilds extends Plugin implements IModule {
 			throw new Error("This module doesn't pending initialization");
 		}
 
-		let status = false;
-		try {
-			this.log("info", "Fetching table status...");
-			status = await this.db.schema.hasTable(TABLE_NAME);
-		} catch (err) {
-			this.log("err", "Can't get table status", err);
-			$snowball.captureException(err);
-			return;
-		}
-
-		if (!status) {
-			this.log("info", "Table not exists in DB, creating...");
-			try {
-				await createTableBySchema(TABLE_NAME, TABLE_SCHEMA);
-			} catch (err) {
-				this.log("err", "Can't create table by schema", err);
-				$snowball.captureException(err);
-				return;
-			}
-		} else {
-			this.log("info", "Table exists in DB");
-		}
+		await this._dbController.init();
 
 		this.log("ok", "Loaded and ready to work");
 		this.handleEvents();
