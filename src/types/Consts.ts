@@ -44,3 +44,8 @@ export const enum DiscordAPIErrorCodes {
 	INVALID_API_VERSION = 50041,
 	REACTION_BLOCKED = 90001,
 }
+
+export const enum ErrorMessages {
+	NOT_PENDING_INITIALIZATION = "This module is not pending initialization",
+	NOT_PENDING_UNLOAD = "This module is not pending unload"
+}
