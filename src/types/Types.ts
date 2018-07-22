@@ -168,10 +168,10 @@ export abstract class DatabaseMigration<T> {
 	public static async applyMigrations<T>(db: knex, tableName: string, migrationsPath: string) {
 		const availableMigrations = (await fs.readdir(
 			migrationsPath
-		)).sort();
+		)).sort(); // returns FILENAMES
 
 		for (let i = 0, l = availableMigrations.length; i < l; i++) {
-			const migrationPath = availableMigrations[i];
+			const migrationPath = path.join(migrationsPath, availableMigrations[i]);
 			const migration = <DatabaseMigration<T>> new (require(migrationPath).default)(db, tableName);
 
 			const shortName = path.basename(migrationPath);
