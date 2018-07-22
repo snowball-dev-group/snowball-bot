@@ -2,6 +2,8 @@ import * as knex from "knex";
 
 let connection: knex;
 
+const LOG = getLogger("Utils:DB");
+
 export function getDB() {
 	if (!connection) {
 		if (!process.env["DB_PASSWD"]) {
@@ -17,6 +19,8 @@ export function getDB() {
 				charset: "utf8mb4"
 			}
 		});
+
+		LOG("info", "Connection has been opened!");
 	}
 	return connection;
 }
