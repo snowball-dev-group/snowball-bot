@@ -137,7 +137,7 @@ export abstract class DatabaseMigration<T> {
 		let i = 0;
 
 		while (i !== -1) {
-			const select = <T[]> await this._db()
+			const select = <T[]> await this._db(this._tableName)
 				.select()
 				.limit(BATCH_SIZE)
 				.offset(i);
