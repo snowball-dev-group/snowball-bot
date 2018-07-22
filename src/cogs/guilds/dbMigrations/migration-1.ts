@@ -29,7 +29,7 @@ export class GuildIDMigration extends DatabaseMigration<IGuildRow> {
 	public async migrate() {
 		const _tableName = this._tableName;
 
-		this._processInChunks(async (chunk, size) => {
+		await this._processInChunks(async (chunk, size) => {
 			for (let i = 0; i < size; i++) {
 				const row = chunk[i];
 
