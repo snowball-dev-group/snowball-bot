@@ -14,9 +14,9 @@ export function getDB() {
 			client: "mysql2",
 			connection: {
 				host: process.env["DB_HOST"] || "127.0.0.1",
-				user: process.env["DB_USER"] || "snowballbot",
+				user: process.env["DB_USER"] || "snowball-bot",
 				password: process.env["DB_PASSWD"],
-				database: process.env["DB_NAME"] || "snowbot",
+				database: process.env["DB_NAME"] || "snowball-bot",
 				charset: "utf8mb4"
 			}
 		});
