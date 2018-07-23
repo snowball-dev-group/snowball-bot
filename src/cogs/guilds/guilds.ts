@@ -1,7 +1,7 @@
 import { IModule } from "../../types/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, GuildMember, Role, TextChannel, DMChannel, DiscordAPIError, Emoji } from "discord.js";
-import { EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
+import { EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown, resolveEmojiMap } from "../utils/utils";
 import { default as fetch } from "node-fetch";
 import { createConfirmationMessage, waitForMessages } from "../utils/interactive";
 import { parse as parseURI } from "url";
@@ -160,12 +160,11 @@ class Guilds extends Plugin implements IModule {
 			this._addProcessMessageListener();
 		}
 
-		for (const emojiName in config.emojis) {
-			const emojiId = config.emojis[emojiName];
-			const emoji = $discordBot.emojis.get(emojiId);
-			if (!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
-			config.emojis[emojiName] = emoji.toString();
-		}
+		config.emojis = <any> resolveEmojiMap(
+			config.emojis,
+			$discordBot.emojis,
+			true
+		);
 
 		this._dbController = new GuildsDBController(
 			config.tableName || DEFAULT_TABLE_NAME
