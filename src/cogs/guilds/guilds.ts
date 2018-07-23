@@ -48,6 +48,14 @@ const CMD_GUILDS_MEMBERS = `${BASE_PREFIX} members`;
 const DEFAULT_ROLE_PREFIX = `!`;
 const HELP_CATEGORY = "GUILDS";
 
+const enum SHARDING_MESSAGE_TYPE {
+	BASE_PREFIX = "guilds:",
+	RULES_ACCEPTED = "guilds:rules:accept",
+	RULES_REJECTED = "guilds:rules:reject",
+	PENDING_INVITE_CLEAR = "guilds:rules:pending_clear",
+	PENDING_INVITE_CREATE = "guilds:rules:pending"
+}
+
 function isServerAdmin(member: GuildMember) {
 	return member.permissions.has(["MANAGE_CHANNELS", "MANAGE_ROLES"], true);
 }
@@ -176,15 +184,28 @@ class Guilds extends Plugin implements IModule {
 	private _addProcessMessageListener() {
 		this._processMessageListener = (msg) => {
 			if (typeof msg !== "object") { return; }
-			if (msg.type && !msg.type.startsWith("guilds:")) { return; }
-			if (msg.type === "guilds:rules:pending_clear" && msg.payload) {
-				// payload: <{uid: string}>
-				if (!msg.payload.uid) { return; }
+
+			if (
+				msg.type &&
+				!msg.type.startsWith(SHARDING_MESSAGE_TYPE.BASE_PREFIX)
+			) {
+				return;
+			}
+
+			if (!msg.payload) { return; }
+
+			if (!msg.payload.uid) { return; }
+
+			if (msg.type === SHARDING_MESSAGE_TYPE.PENDING_INVITE_CLEAR) {
 				if (!this._pendingInvites[msg.payload.uid]) { return; }
+
 				delete this._pendingInvites[msg.payload.uid];
-			} else if (msg.type === "guilds:rules:pending" && msg.payload) {
-				if (!msg.payload.uid || !msg.payload.code) { return; }
-				this._pendingInvites[msg.payload.uid] = { code: msg.payload.code };
+			} else if (msg.type === SHARDING_MESSAGE_TYPE.PENDING_INVITE_CREATE) {
+				if (!msg.payload.code) { return; }
+
+				this._pendingInvites[msg.payload.uid] = {
+					code: msg.payload.code
+				};
 			}
 		};
 
@@ -239,14 +260,14 @@ class Guilds extends Plugin implements IModule {
 		if (!pendingInvite) { return; } // no pending invites
 		if (pendingInvite.code.toLowerCase() === msg.content.toLowerCase()) {
 			process.send({
-				type: "guilds:rules:accept",
+				type: SHARDING_MESSAGE_TYPE.RULES_ACCEPTED,
 				payload: {
 					uid: msg.author.id
 				}
 			});
 		} else if (msg.content === "-") {
 			process.send({
-				type: "guilds:rules:reject",
+				type: SHARDING_MESSAGE_TYPE.RULES_REJECTED,
 				payload: {
 					uid: msg.author.id
 				}
@@ -1062,7 +1083,7 @@ class Guilds extends Plugin implements IModule {
 				}
 			} else if (process.send) {
 				process.send({
-					type: "guilds:rules:pending",
+					type: SHARDING_MESSAGE_TYPE.PENDING_INVITE_CREATE,
 					payload: {
 						uid: msg.author.id,
 						code
@@ -1076,24 +1097,36 @@ class Guilds extends Plugin implements IModule {
 					const listener = (ipcMsg: IPCMessage<{
 						uid: string
 					}>) => {
-						if (typeof ipcMsg !== "object") { return; }
-						// tslint:disable-next-line:early-exit
-						if ((ipcMsg.type === "guilds:rules:accept" || ipcMsg.type === "guilds:rules:reject") && ipcMsg.payload) {
-							if (ipcMsg.payload.uid && ipcMsg.payload.uid === msg.author.id) {
-								clearTimeout(t);
-								resolve(ipcMsg.type === "guilds:rules:accept");
-							}
+
+						// We actully could not use variable statements
+						// because TypeScript doesn't find them relative
+						// so if it would be a separate variable, then we
+						// would not be able to check `ipcMsg.type` on bottom
+
+						if (
+							(typeof ipcMsg !== "object" || !ipcMsg.payload) ||
+							(ipcMsg.type !== SHARDING_MESSAGE_TYPE.RULES_ACCEPTED &&
+								ipcMsg.type !== SHARDING_MESSAGE_TYPE.RULES_REJECTED) ||
+							ipcMsg.payload.uid !== msg.author.id
+						) {
+							return;
 						}
+
+						clearTimeout(t);
+
+						resolve(ipcMsg.type === SHARDING_MESSAGE_TYPE.RULES_ACCEPTED);
 					};
 
 					resolve = (v) => {
 						if (process.send) {
 							process.send({
-								type: "guilds:rules:pending_clear",
+								type: SHARDING_MESSAGE_TYPE.PENDING_INVITE_CLEAR,
 								payload: { uid: msg.author.id }
 							});
 						}
+
 						process.removeListener("message", listener);
+
 						return res(v);
 					};
 
