@@ -144,8 +144,8 @@ class Guilds extends Plugin implements IModule {
 
 	private readonly _config: IGuildsModuleConfig;
 
+	private _processMessageListener?: ((msg: any) => void);
 	private readonly _pendingInvites: INullableHashMap<{ code: string; }> = Object.create(null);
-	private readonly _processMessageListener?: ((msg: any) => void);
 
 	private readonly _dbController: GuildsDBController;
 
@@ -157,20 +157,7 @@ class Guilds extends Plugin implements IModule {
 		if (!config) { throw new Error("No config passed"); }
 
 		if ($botConfig.sharded) {
-			this._processMessageListener = (msg) => {
-				if (typeof msg !== "object") { return; }
-				if (msg.type && !msg.type.startsWith("guilds:")) { return; }
-				if (msg.type === "guilds:rules:pending_clear" && msg.payload) {
-					// payload: <{uid: string}>
-					if (!msg.payload.uid) { return; }
-					if (!this._pendingInvites[msg.payload.uid]) { return; }
-					delete this._pendingInvites[msg.payload.uid];
-				} else if (msg.type === "guilds:rules:pending" && msg.payload) {
-					if (!msg.payload.uid || !msg.payload.code) { return; }
-					this._pendingInvites[msg.payload.uid] = { code: msg.payload.code };
-				}
-			};
-			process.on("message", this._processMessageListener);
+			this._addProcessMessageListener();
 		}
 
 		for (const emojiName in config.emojis) {
@@ -185,6 +172,24 @@ class Guilds extends Plugin implements IModule {
 		);
 
 		this._config = config;
+	}
+
+	private _addProcessMessageListener() {
+		this._processMessageListener = (msg) => {
+			if (typeof msg !== "object") { return; }
+			if (msg.type && !msg.type.startsWith("guilds:")) { return; }
+			if (msg.type === "guilds:rules:pending_clear" && msg.payload) {
+				// payload: <{uid: string}>
+				if (!msg.payload.uid) { return; }
+				if (!this._pendingInvites[msg.payload.uid]) { return; }
+				delete this._pendingInvites[msg.payload.uid];
+			} else if (msg.type === "guilds:rules:pending" && msg.payload) {
+				if (!msg.payload.uid || !msg.payload.code) { return; }
+				this._pendingInvites[msg.payload.uid] = { code: msg.payload.code };
+			}
+		};
+
+		process.on("message", this._processMessageListener);
 	}
 
 	// ==============================
