@@ -26,6 +26,7 @@ function isHostBanned(host: string) {
 	if (host.startsWith("www.")) {
 		host = host.slice("www.".length);
 	}
+
 	return BANNED_HOSTS.includes(host);
 }
 
@@ -57,19 +58,26 @@ const enum SHARDING_MESSAGE_TYPE {
 }
 
 function isServerAdmin(member: GuildMember) {
-	return member.permissions.has(["MANAGE_CHANNELS", "MANAGE_ROLES"], true);
+	return member.permissions.has([
+		"MANAGE_CHANNELS",
+		"MANAGE_ROLES"
+	], true);
 }
 
 function rightsCheck(member: GuildMember, row?: IGuildRow, noAdmins = false) {
 	const checkA = isServerAdmin(member);
+
 	let checkB = false;
+
 	if (row) {
 		const cz = <IGuildCustomize> JSON.parse(row.customize);
 		checkB = row.ownerId === member.id || member.id === $botConfig.botOwner;
+
 		if (!noAdmins) {
 			checkB = checkB || (cz.admins && cz.admins.includes(member.id));
 		}
 	}
+
 	return checkA || checkB;
 }
 
@@ -453,7 +461,9 @@ class Guilds extends Plugin implements IModule {
 
 		{
 			// nice argument parsing
-			let currentElem: string; let i = 0;
+			let currentElem: string;
+			let i = 0;
+
 			while ((currentElem = args.splice(0, 1)[0]) !== undefined) {
 				if (++i === 3) { break; }
 				switch (i) {
@@ -1434,7 +1444,7 @@ class Guilds extends Plugin implements IModule {
 				for (const member of members.values()) {
 					const memberEntry = `- ${Guilds._membersControlFixString(member.displayName)}`;
 
-					const isOwner = rightsCheck(member, dbRow, true);
+					const isOwner = dbRow.ownerId === ownerStr;
 					if (isOwner) {
 						ownerStr = memberEntry;
 						continue;
@@ -1684,7 +1694,7 @@ class Guilds extends Plugin implements IModule {
 					}
 				} else {
 					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_AUTOREVOKED", {
-						id: `${uid}`
+						id: uid
 					})}\n`;
 				}
 				cz.invites.splice(index, 1);
