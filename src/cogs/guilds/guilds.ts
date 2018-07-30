@@ -6,7 +6,7 @@ import { messageToExtra } from "@utils/failToDetail";
 import { createConfirmationMessage, waitForMessages } from "@utils/interactive";
 import { command } from "@utils/help";
 import { randomString } from "@utils/random";
-import { replaceAll, startsWith } from "@utils/text";
+import { replaceAll, startsWith, removeEveryoneMention } from "@utils/text";
 import { EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown, resolveEmojiMap, getUserDisplayName } from "@utils/utils";
 import { Plugin } from "@cogs/plugin";
 import { GuildsDBController, IGuildRow, IGuildCustomize } from "@cogs/guilds/dbController";
@@ -533,7 +533,7 @@ class Guilds extends Plugin implements IModule {
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_IMAGESET");
 			} break;
 			case "rules": {
-				content = content.replace("@everyone", "@\u200Beveryone").replace("@here", "@\u200Bhere");
+				content = removeEveryoneMention(content);
 				customize.rules = content;
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_RULESSET");
 			} break;
@@ -558,7 +558,7 @@ class Guilds extends Plugin implements IModule {
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_WELCOMECHANNELSET");
 			} break;
 			case "welcome_msg": {
-				content = content.replace("@everyone", "@\u200Beveryone").replace("@here", "@\u200Bhere");
+				content = removeEveryoneMention(content);
 				if (!content.includes("{usermention}") && !content.includes("{username}")) {
 					let confirmation = false;
 					try {
@@ -577,7 +577,7 @@ class Guilds extends Plugin implements IModule {
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_WELCOMEMSGSET");
 			} break;
 			case "description": {
-				content = content.replace("@everyone", "@\u200Beveryone").replace("@here", "@\u200Bhere");
+				content = removeEveryoneMention(content);
 				dbRow.description = content;
 				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_DESCRIPTIONSET");
 			} break;
