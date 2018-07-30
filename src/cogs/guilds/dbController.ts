@@ -1,6 +1,5 @@
 import { Guild } from "discord.js";
 import { getDB, createTableBySchema } from "@cogs/utils/db";
-import { fs } from "mz";
 import { DatabaseMigration } from "@sb-types/Types";
 import * as shortid from "shortid";
 import * as getLogger from "loggy";
@@ -140,15 +139,22 @@ export class GuildsDBController {
 	}
 }
 
-export interface IGuildRow {
+export type UnchangeableGuildProperies = {
 	/**
 	 * Discord Guild SNOWFLAKE
 	 */
-	guildId: string;
+	readonly guildId: string;
 	/**
 	 * Discord Role SNOWFLAKE
 	 */
-	roleId: string;
+	readonly roleId: string;
+	/**
+	 * Unique Guild ID
+	 */
+	readonly gid: string;
+};
+
+export interface IGuildRow extends UnchangeableGuildProperies {
 	/**
 	 * Name of Guild
 	 */
@@ -161,10 +167,6 @@ export interface IGuildRow {
 	 * Customize JSON
 	 */
 	customize: string | any;
-	/**
-	 * Unique Guild ID
-	 */
-	gid: string;
 	/**
 	 * Owner ID
 	 */
