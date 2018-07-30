@@ -1,34 +1,27 @@
-import { IModule } from "../../types/ModuleLoader";
-import { Plugin } from "../plugin";
+import { IModule } from "@sb-types/ModuleLoader";
+import { IPCMessage, INullableHashMap } from "@sb-types/Types";
+import { profilePicture, ProfilePictureFormat, ProfilePictureAnimatedBehavior } from "@utils/avatar";
+import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "@utils/ez-i18n";
+import { messageToExtra } from "@utils/failToDetail";
+import { createConfirmationMessage, waitForMessages } from "@utils/interactive";
+import { command } from "@utils/help";
+import { randomString } from "@utils/random";
+import { replaceAll, startsWith } from "@utils/text";
+import { EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown, resolveEmojiMap, getUserDisplayName } from "@utils/utils";
+import { Plugin } from "@cogs/plugin";
+import { GuildsDBController, IGuildRow, IGuildCustomize } from "@cogs/guilds/dbController";
+import { GUILD_HELP_KEYS, SHARDING_MESSAGE_TYPE, isHostBanned } from "@cogs/guilds/consts";
 import { Message, Guild, GuildMember, Role, TextChannel, DMChannel, DiscordAPIError, Emoji } from "discord.js";
-import { EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown, resolveEmojiMap } from "../utils/utils";
-import { default as fetch } from "node-fetch";
-import { createConfirmationMessage, waitForMessages } from "../utils/interactive";
 import { parse as parseURI } from "url";
-import { replaceAll, reverseString, startsWith } from "../utils/text";
-import { command } from "../utils/help";
-import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "../utils/ez-i18n";
-import { randomString } from "../utils/random";
-import { IPCMessage, INullableHashMap } from "../../types/Types";
-import { messageToExtra } from "../utils/failToDetail";
+import { default as fetch } from "node-fetch";
 import * as ua from "universal-analytics";
 import * as getLogger from "loggy";
-import { GuildsDBController, IGuildRow, IGuildCustomize } from "@cogs/guilds/dbController";
 
 const DEFAULT_TABLE_NAME = "guilds";
 
-const BANNED_HOSTS = ["goo.gl", "grabify.link", "bit.ly"];
 const EMOJI_NAME_REGEXP = /[a-z0-9\_\-]{2,36}/i;
 const EMOJI_ACCESSIBLE_FORMATS = [".png", ".webp", ".jpg", ".gif"];
 const EMOJI_MAXSIZE = 262144; // bytes
-
-function isHostBanned(host: string) {
-	if (host.startsWith("www.")) {
-		host = host.slice("www.".length);
-	}
-
-	return BANNED_HOSTS.includes(host);
-}
 
 export interface IGuildsModuleConfig {
 	emojis: {
@@ -46,16 +39,8 @@ const CMD_GUILDS_DELETE = `${BASE_PREFIX} delete`;
 const CMD_GUILDS_INFO = `${BASE_PREFIX} info`;
 const CMD_GUILDS_INVITE = `${BASE_PREFIX} invite`;
 const CMD_GUILDS_MEMBERS = `${BASE_PREFIX} members`;
-const DEFAULT_ROLE_PREFIX = `!`;
+const DEFAULT_ROLE_PREFIX = "!";
 const HELP_CATEGORY = "GUILDS";
-
-const enum SHARDING_MESSAGE_TYPE {
-	BASE_PREFIX = "guilds:",
-	RULES_ACCEPTED = "guilds:rules:accept",
-	RULES_REJECTED = "guilds:rules:reject",
-	PENDING_INVITE_CLEAR = "guilds:rules:pending_clear",
-	PENDING_INVITE_CREATE = "guilds:rules:pending"
-}
 
 function isServerAdmin(member: GuildMember) {
 	return member.permissions.has([
@@ -64,91 +49,92 @@ function isServerAdmin(member: GuildMember) {
 	], true);
 }
 
-function rightsCheck(member: GuildMember, row?: IGuildRow, noAdmins = false) {
-	const checkA = isServerAdmin(member);
+function isGuildManager(member: GuildMember, row?: IGuildRow, noAdmins = false) {
+	const serverAdmin = isServerAdmin(member);
 
-	let checkB = false;
+	let guildOwner = false;
 
 	if (row) {
 		const cz = <IGuildCustomize> JSON.parse(row.customize);
-		checkB = row.ownerId === member.id || member.id === $botConfig.botOwner;
+
+		guildOwner = row.ownerId === member.id || member.id === $botConfig.botOwner;
 
 		if (!noAdmins) {
-			checkB = checkB || (cz.admins && cz.admins.includes(member.id));
+			guildOwner = guildOwner || (cz.admins && cz.admins.includes(member.id));
 		}
 	}
 
-	return checkA || checkB;
+	return serverAdmin || guildOwner;
 }
 
 function helpCheck(msg: Message) {
-	return msg.channel.type === "text" && rightsCheck(msg.member);
+	return msg.channel.type === "text" && isGuildManager(msg.member);
 }
 
 function defHelpCheck(msg: Message) {
 	return msg.channel.type === "text";
 }
 
-@command(HELP_CATEGORY, BASE_PREFIX.slice(1), "loc:GUILDS_META_JOINLEAVE", {
-	"loc:GUILDS_META_GUILDNAME": {
+@command(HELP_CATEGORY, BASE_PREFIX.slice(1), GUILD_HELP_KEYS.joinLeaveDesc, {
+	[GUILD_HELP_KEYS.guildNameArg]: {
 		optional: false,
-		description: "loc:GUILDS_META_JOINLEAVE_ARG0_DESC"
+		description: GUILD_HELP_KEYS.joinLeaveArg0Desc
 	}
 }, defHelpCheck)
-@command(HELP_CATEGORY, CMD_GUILDS_CREATE.slice(1), "loc:GUILDS_META_CREATE", {
-	"loc:GUILDS_META_GUILDNAME": {
+@command(HELP_CATEGORY, CMD_GUILDS_CREATE.slice(1), GUILD_HELP_KEYS.createDesc, {
+	[GUILD_HELP_KEYS.guildNameArg]: {
 		optional: false,
-		description: "loc:GUILDS_META_CREATE_ARG0_DESC"
+		description: GUILD_HELP_KEYS.createArg0Desc
 	},
-	"loc:GUILDS_META_CREATE_ARG1": {
+	[GUILD_HELP_KEYS.createArg1]: {
 		optional: true,
-		description: "loc:GUILDS_META_CREATE_ARG1_DESC"
+		description: GUILD_HELP_KEYS.createArg1Desc
 	}
 }, helpCheck)
-@command(HELP_CATEGORY, CMD_GUILDS_EDIT.slice(1), "loc:GUILDS_META_EDIT", {
-	"loc:GUILDS_META_GUILDNAME": {
+@command(HELP_CATEGORY, CMD_GUILDS_EDIT.slice(1), GUILD_HELP_KEYS.editDesc, {
+	[GUILD_HELP_KEYS.guildNameArg]: {
 		optional: false,
-		description: "loc:GUILDS_META_EDIT_ARG0_DESC"
+		description: GUILD_HELP_KEYS.editArg0Desc
 	},
-	"loc:GUILDS_META_EDIT_ARG1": {
+	[GUILD_HELP_KEYS.editArg1]: {
 		optional: false,
-		description: "loc:GUILDS_META_EDIT_ARG1_DESC"
+		description: GUILD_HELP_KEYS.editArg1Desc
 	},
-	"loc:GUILDS_META_EDIT_ARG2": {
+	[GUILD_HELP_KEYS.editArg2]: {
 		optional: false,
-		description: "loc:GUILDS_META_EDIT_ARG2_DESC"
+		description: GUILD_HELP_KEYS.editArg2Desc
 	}
 }, helpCheck)
-@command(HELP_CATEGORY, CMD_GUILDS_INVITE.slice(1), "loc:GUILDS_META_INVITE", {
-	"loc:GUILDS_META_GUILDNAME": {
+@command(HELP_CATEGORY, CMD_GUILDS_INVITE.slice(1), GUILD_HELP_KEYS.inviteDesc, {
+	[GUILD_HELP_KEYS.guildNameArg]: {
 		optional: false,
-		description: "loc:GUILDS_META_INVITE_ARG0_DESC"
+		description: GUILD_HELP_KEYS.inviteArg0Desc
 	},
-	"loc:GUILDS_META_INVITE_ARG1": {
+	[GUILD_HELP_KEYS.inviteArg1]: {
 		optional: true,
-		description: "loc:GUILDS_META_INVITE_ARG1_DESC"
+		description: GUILD_HELP_KEYS.inviteArg1Desc
 	},
-	"loc:GUILDS_META_INVITE_ARG2": {
+	[GUILD_HELP_KEYS.inviteArg2]: {
 		optional: false,
-		description: "loc:GUILDS_META_INVITE_ARG2_DESC"
+		description: GUILD_HELP_KEYS.inviteArg2Desc
 	}
 })
-@command(HELP_CATEGORY, CMD_GUILDS_DELETE.slice(1), "loc:GUILDS_META_DELETE", {
-	"loc:GUILDS_META_GUILDNAME": {
+@command(HELP_CATEGORY, CMD_GUILDS_DELETE.slice(1), GUILD_HELP_KEYS.deleteDesc, {
+	[GUILD_HELP_KEYS.guildNameArg]: {
 		optional: false,
-		description: "loc:GUILDS_META_DELETE_ARG0_DESC"
+		description: GUILD_HELP_KEYS.deleteArg0Desc
 	}
 }, helpCheck)
-@command(HELP_CATEGORY, CMD_GUILDS_LIST.slice(1), "loc:GUILDS_META_LIST", {
-	"loc:GUILDS_META_LIST_ARG0": {
+@command(HELP_CATEGORY, CMD_GUILDS_LIST.slice(1), GUILD_HELP_KEYS.listDesc, {
+	[GUILD_HELP_KEYS.listArg0]: {
 		optional: true,
-		description: "loc:GUILDS_META_LIST_ARG0_DESC"
+		description: GUILD_HELP_KEYS.listArg0Desc
 	}
 }, defHelpCheck)
-@command(HELP_CATEGORY, CMD_GUILDS_INFO.slice(1), "loc:GUILDS_META_INFO", {
-	"loc:GUILDS_META_GUILDNAME": {
+@command(HELP_CATEGORY, CMD_GUILDS_INFO.slice(1), GUILD_HELP_KEYS.infoDesc, {
+	[GUILD_HELP_KEYS.guildNameArg]: {
 		optional: true,
-		description: "loc:GUILDS_META_INFO_ARG0_DESC"
+		description: GUILD_HELP_KEYS.infoArg0Desc
 	}
 }, defHelpCheck)
 class Guilds extends Plugin implements IModule {
@@ -331,7 +317,7 @@ class Guilds extends Plugin implements IModule {
 			return this._sendHelp(<TextChannel> msg.channel, CMD_GUILDS_CREATE, msg.member);
 		}
 
-		if (!rightsCheck(msg.member)) {
+		if (!isGuildManager(msg.member)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
 			});
@@ -498,7 +484,7 @@ class Guilds extends Plugin implements IModule {
 			});
 		}
 
-		if (!rightsCheck(msg.member, dbRow)) {
+		if (!isGuildManager(msg.member, dbRow)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
 			});
@@ -506,7 +492,7 @@ class Guilds extends Plugin implements IModule {
 
 		const customize = <IGuildCustomize> JSON.parse(dbRow.customize);
 
-		const isCalledByAdmin = !rightsCheck(msg.member, dbRow, true);
+		const isCalledByAdmin = !isGuildManager(msg.member, dbRow, true);
 
 		let doneString = "";
 
@@ -848,7 +834,7 @@ class Guilds extends Plugin implements IModule {
 			});
 		}
 
-		if (!rightsCheck(msg.member, dbRow, true)) {
+		if (!isGuildManager(msg.member, dbRow, true)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
 			});
@@ -1318,7 +1304,7 @@ class Guilds extends Plugin implements IModule {
 			if (isMember) {
 				if (dbRow.ownerId === msg.member.id) {
 					str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_OWNER");
-				} else if (rightsCheck(msg.member, dbRow)) {
+				} else if (isGuildManager(msg.member, dbRow)) {
 					str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_ADMIN");
 				} else {
 					str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_MEMBER");
@@ -1402,7 +1388,8 @@ class Guilds extends Plugin implements IModule {
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_NOMENTIONS")
 				});
 			}
-			if (!rightsCheck(msg.member, dbRow, false)) {
+
+			if (!isGuildManager(msg.member, dbRow, false)) {
 				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
 				});
@@ -1450,7 +1437,7 @@ class Guilds extends Plugin implements IModule {
 						continue;
 					} // owner
 
-					if (!isOwner && rightsCheck(member, dbRow, false)) {
+					if (!isOwner && isGuildManager(member, dbRow, false)) {
 						admins.push(memberEntry);
 						continue;
 					}
@@ -1517,9 +1504,9 @@ class Guilds extends Plugin implements IModule {
 						continue;
 					}
 
-					if (rightsCheck(msg.member, dbRow, true)) {
+					if (isGuildManager(msg.member, dbRow, true)) {
 						// command called by admin or guild owner
-						if (rightsCheck(member, dbRow, false)) {
+						if (isGuildManager(member, dbRow, false)) {
 							const cz = <IGuildCustomize> JSON.parse(dbRow.customize);
 							const index = (cz.admins || []).indexOf(member.id);
 							if (index < 0) {
@@ -1533,7 +1520,7 @@ class Guilds extends Plugin implements IModule {
 							await this._updateGuildRow(dbRow);
 							adminRemoved = true;
 						}
-					} else if (rightsCheck(member, dbRow, false)) {
+					} else if (isGuildManager(member, dbRow, false)) {
 						str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_GUILDADMOROWNR", {
 							username: escapeDiscordMarkdown(mention.username, true)
 						})}\n`;
@@ -1644,7 +1631,7 @@ class Guilds extends Plugin implements IModule {
 
 		const cz = <IGuildCustomize> JSON.parse(dbRow.customize);
 
-		if (!rightsCheck(msg.member, dbRow)) {
+		if (!isGuildManager(msg.member, dbRow)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
 			});
