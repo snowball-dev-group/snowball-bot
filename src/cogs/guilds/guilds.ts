@@ -175,6 +175,8 @@ class Guilds extends Plugin implements IModule {
 		this._config = config;
 	}
 
+	// #region Process/message listener
+
 	private _addProcessMessageListener() {
 		this._processMessageListener = (msg) => {
 			if (typeof msg !== "object") { return; }
@@ -206,9 +208,9 @@ class Guilds extends Plugin implements IModule {
 		process.on("message", this._processMessageListener);
 	}
 
-	// ==============================
-	// Messages handling
-	// ==============================
+	// #endregion
+
+	// #region General message handler & router
 
 	private async _onMessage(msg: Message) {
 		if (msg.channel.type === "dm") { return this._handleDMCode(msg); }
@@ -242,9 +244,9 @@ class Guilds extends Plugin implements IModule {
 		}
 	}
 
-	// ==============================
-	// Handlers
-	// ==============================
+	// #endregion
+
+	// #region Handlers
 
 	private async _handleDMCode(msg: Message) {
 		if (msg.channel.type !== "dm") { return; } // non-dm msg
@@ -310,6 +312,10 @@ class Guilds extends Plugin implements IModule {
 			})
 		});
 	}
+
+	// #endregion
+
+	// #region Commands
 
 	private async _createGuild(msg: Message) {
 		// !guilds create Overwatch, !Overwatch
@@ -1791,11 +1797,9 @@ class Guilds extends Plugin implements IModule {
 		});
 	}
 
-	// ==============================
-	// DB functions
-	// ==============================
+	// #endregion
 
-	private _createGID() { return reverseString(Date.now().toString(16)); }
+	// #region Storage functions
 
 	/**
 	 * @deprecated
@@ -1809,31 +1813,34 @@ class Guilds extends Plugin implements IModule {
 	/**
 	 * @deprecated
 	 */
-	private async _getGuildRow(guild: Guild, name: string) : Promise<IGuildRow> {
+	private async _getGuildRow(guild: Guild, name: string): Promise<IGuildRow> {
 		return this._dbController.getGuild(guild, name);
 	}
 
 	/**
 	 * @deprecated
 	 */
-	private async _updateGuildRow(guildRow: IGuildRow) : Promise<void> {
+	private async _updateGuildRow(guildRow: IGuildRow): Promise<void> {
 		return this._dbController.updateGuild(guildRow);
 	}
 
 	/**
 	 * @deprecated
 	 */
-	private async _createGuildRow(guild: Guild, name: string, ownerId: string, roleId: string) : Promise<void> {
+	private async _createGuildRow(guild: Guild, name: string, ownerId: string, roleId: string): Promise<void> {
 		return this._dbController.createGuild(guild, name, ownerId, roleId);
 	}
 
 	/**
 	 * @deprecated
 	 */
-	private async _deleteGuildRow(guildRow: IGuildRow) : Promise<void> {
+	private async _deleteGuildRow(guildRow: IGuildRow): Promise<void> {
 		return this._dbController.deleteGuild(guildRow);
 	}
 
+	// #endregion
+
+	// #region Module functions
 	// private async _getOrCreateGuildRow(guild: Guild, name: string) {
 	// 	let element = await this._getGuildRow(guild, name);
 	// 	if (!element) {
@@ -1846,9 +1853,6 @@ class Guilds extends Plugin implements IModule {
 	// 	return element;
 	// }
 
-	// ==============================
-	// Plugin functions
-	// ==============================
 
 	public async init() {
 		if (!$modLoader.isPendingInitialization(this.signature)) {
@@ -1873,6 +1877,8 @@ class Guilds extends Plugin implements IModule {
 		this.unhandleEvents();
 		return true;
 	}
+
+	// #endregion
 }
 
 module.exports = Guilds;
