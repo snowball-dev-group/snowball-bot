@@ -7,11 +7,13 @@ RUN apk add --update git && \
 
 WORKDIR /opt/app
 
-COPY . /opt/app/
+COPY package{,-lock}.json /opt/app/
 
 RUN yarn install --production
 
 RUN yarn add full-icu
 ENV NODE_ICU_DATA node_modules/full-icu
+
+COPY . /opt/
 
 CMD node --trace-warnings --use_strict init.js
