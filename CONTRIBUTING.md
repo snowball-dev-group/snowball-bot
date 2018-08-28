@@ -24,7 +24,7 @@ Or if you want, leave feedback in the Issues section on our [GitLab repository][
 
 ## Issues
 
-Same applies to the bugs, but with an exclusion: any bugs linked to the code (when you understand and know exactly where an error happens) are going to the Issues section. We track issues on both [Github][github_issues] and [GitLab][gitlab_issues]. We still recommend using GitLab.
+Same applies to the bugs, but with an exclusion: any bugs linked to the code (when you understand and know exactly where an error happens) are going to the Issues section. We track issues on both [GitHub][github_issues] and [GitLab][gitlab_issues]. We still recommend using GitLab.
 
 ## Merge Requests
 
@@ -116,7 +116,7 @@ Some extensions we strongly recommend:
 
 If there's a code, which does a same thing, it would be better to share that code with other modules. To perform this, you can make:
 
-- utilites in `utils` folder - there's already some utilites for your needs, like ones to create embeds
+- utilities in `utils` folder - there's already some utilities for your needs, like ones to create embeds
 - shared module methods - this way is only applicable to modules which are not plugins (aka "cores")
 
 ##### 3. Make public plugins
