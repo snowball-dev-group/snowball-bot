@@ -1,4 +1,4 @@
-import { GuildMember, User, AvatarOptions } from "discord.js";
+import { GuildMember, User, AvatarOptions, Guild } from "discord.js";
 import * as getLogger from "loggy";
 
 const LOG = getLogger("Utils:Avatar");
@@ -32,6 +32,17 @@ export function profilePicture(
 
 		return user.avatarURL(
 			createFormat(user)
+		);
+	};
+}
+
+export function guildIcon(format = ProfilePictureFormat.SMALL) {
+	const predefinedFmt = 
+		predefineOptionsByFormat(format);
+
+	return (guild: Guild) => {
+		return guild.iconURL(
+			predefinedFmt
 		);
 	};
 }
