@@ -1,0 +1,3098 @@
+---
+
+# Determines if the translation is managed by the community
+# “true” if managed by community, otherwise “false”
++COMMUNITY_MANAGED: "false"
+
+# Name of the translation (language name)
++NAME: "English"
+
+# Country of the language
+# For example, English can be British (United Kingdom), Canadian (Canada), American (US)
++COUNTRY: "United States"
+
+# Is fix layout supported?
+# `true` if supported, otherwise 
++FL_SUPPORTED: "false"
+
+# Fix Layout: Original QWERTY keyboard line
++FL_REPLACELINE_ENGLISH: F<DULT~:PBQRKVYJGHCNEA{WXIO}SM">Zf,dult`;pbqrkvyjghcnea[wxio]sm'.z&
+
+# Fix Layout: Switch QWERTY keyboard line
++FL_REPLACELINE_LOCALIZED: АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя?
+
+# Plural for years
+"+HUMANIZE:DURATION:YEARS": "{years, plural, one {# year} other {# years}}"
+
+# Plural for months
+"+HUMANIZE:DURATION:MONTHS": "{months, plural, one {# month} other {# months}}"
+
+# Plural for weeks
+"+HUMANIZE:DURATION:WEEKS": "{weeks, plural, one {# week} other {# weeks}}"
+
+# Plural for days
+"+HUMANIZE:DURATION:DAYS": "{days, plural, one {# day} other {# days}}"
+
+# Plural for hours
+"+HUMANIZE:DURATION:HOURS": "{hours, plural, one {# hour} other {# hours}}"
+
+# Plural for minutes
+"+HUMANIZE:DURATION:MINUTES": "{minutes, plural, one {# minute} other {# minutes}}"
+
+# Plural for seconds
+"+HUMANIZE:DURATION:SECONDS": "{seconds, plural, one {# second} other {# seconds}}"
+
+# Sent when user enters the archive command without arguments
+# {prefix} (string) — used prefix to call the command
+# {limit} (number) — number of messages that can be archived via single call of the command
+ARCIVE_HELP: |-
+  **Messages archiving command**.
+
+  Usage: `{prefix} [target type], <target>, <target>, <...>, <# of messages>, <offset>`.
+
+  Available target types (target type — targets):
+  • `channel` — `[#channel / Channel ID]`, `u: [@user#1234 / User ID]`
+   Archives only messages from the target channels and users (if chosen).
+  • `user` — `[@user#1234 / User ID]`
+   Archives only users' messages from the server.
+  • `guild` — *no targets*
+   Archives all the messages from the server.
+
+  Maximum number of messages to archive is {limit, plural, one {# message} other {# messages}}.
+  Use `offset` argument to get next `n` number of messages.
+
+  Messages archived only from the channels you have access to, other messages will be hidden.
+
+# Sent when user enters invalid target type
+ARCHIVE_UNKNOWN_TARGET: "Unknown target type. Use `{prefix}` to learn about the target types and arguments."
+
+# Sent when user tries to get invalid number of message
+# {limit} (number) — number of messages that can be archived via single call of the command
+ARCHIVE_INVALID_LENGTH: "**Invalid number of messages**. You can only request {limit, plural, one {# message} other {# messages}} per archive."
+
+# Sent when user tries to use “user” target type but doesn't provide any additional arguments
+# {prefix} (string) — used prefix to call the command
+ARCHIVE_REQUIRES_ARGS_USER: "“User” target type requires additional arguments. Learn more using the command `{prefix}`"
+
+# Sent when bot fails to resolve (find) the required user
+# {search} (string) — what user was searching for
+ARCHIVE_ERR_RESOLVING_USER: "**Search `{search}` did not match any users**. Make sure that the name is correct or use the user ID instead."
+
+# Sent when bot find the channel, but it's not text-type channel
+# {search} (string) — what user was searching for
+ARCHIVE_ERR_RESOLVING_CHANNEL_TYPEINVALID: |-
+  **The channel that matches the search `{search}` is a voice channel**. Messages can only be sent in the text channels.
+
+  Specify the search or use the ID of the required channel to archive messages from.
+
+# Sent when bot fails to find any channel by the specified query
+# {search} (string) — what user was searching for
+ARCHIVE_ERR_RESOLVING_CHANNEL: "**Search `{search}` did not match any channels**. Make sure that the name is correct or use the channel ID instead."
+
+# Sent when nothing has been found
+ARCHIVE_ERR_NOTHINGFOUND: "**Unable to find anything**. Perhaps the bot did not record any of messages yet or you don't have access to the matched channels."
+
+# Sent when archiving is done to say how many messages been found with the attached archive file
+# {lines} (number) — how many messages were archived into file
+ARCHIVE_DONE: ":mag: **Search complete** — we have found and archived {lines, plural, one {# message} other {# messages}}."
+
+# Sent when user types the Message Preview command without any arguments
+# {prefix} (string) — prefix used to call the command
+ARCHIVE_MESSAGE_HELP: |-
+  **Preview the Message by ID**.
+
+  Usage: `{prefix} [Message ID]`.
+
+  :warning: Please note, that…
+  • Message is searched within the whole server, using the archive database.
+  • Archives messages never deleted or updated (if edited). 
+  • The message won't be displayed if the caller has no access to the channel where the message was sent.
+
+# Sent when user specifies invalid message ID
+ARCHIVE_MESSAGE_INVALID_ID: "Invalid message ID."
+
+# Sent when bot fails to find any message by the given ID
+ARCHIVE_MESSAGE_NOTFOUND: "None messages matches the given ID."
+
+# Sent when the message is found in the archive, but bot cannot find the channel it was sent to
+ARCHIVE_MESSAGE_CHANNELNOTFOUND: "Message found, but the channel where it was sent is either removed or unavailable."
+
+# Sent when the message is found in the archive, but user has no access to the channel
+ARCHIVE_MESSAGE_NOPERMISSIONS: "Message found, but you don't have access to the channel where it was sent."
+
+# Sent when the message is found in the archive, but it was removed an user has no “Manage Messages” permission
+ARCHIVE_MESSAGE_NOPERMISSIONS@REMOVED: "Message found, but you have no “Manage Messages” permission to read deleted messages."
+
+# Used as a title for embed with the message preview
+# {id} (string) — ID of the message
+ARCHIVE_MESSAGE_TITLE: "Message Preview · ID: {id}"
+
+# Used as a title for field “Embeds” in embed with the message preview
+ARCHIVE_MESSAGE_FIELD_EMBEDS_TITLE: "Embeds"
+
+# Used as the value of field “Embeds” in embed with the message preview
+# {count} (number) — number of embeds included in the message
+ARCHIVE_MESSAGE_FIELD_EMBEDS_VALUE: "Message had {count, plural, one {# embed} other {# embeds}}. They will be sent in the following messages by the bot."
+
+# Used as a title for field “Files” in embed with the message preview
+ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_TITLE: "Files"
+
+# Used as a value of field “Files” in embed with the message preview
+# {fileName} (string) — name of the file
+# {link} (string) — link to the file on Discord's CDN
+ARCHIVE_MESSAGE_FIELD_ATTACHMENTS_VALUE: "[`{fileName}`]({link})"
+
+# Sent in message with attached embed from the message preview sent before
+# {id} (string) — ID of the message
+ARCHIVE_MESSAGE_EMBEDMESSAGE_DESCRIPTION: "Message Preview — Embed · ID: {id}"
+
+# Sent when user tries to call archive status management command without any additional arguments
+# {status} (boolean string) — current state of the archiving (true/false)
+ARCHIVE_STATUS_INVALIDARG: |-
+  Archiving is currently turned **{status, select, true {on} other {off}}** on this server.
+
+  To change this, use the following arguments when executing this command:
+  • `true` to enable Message Archiving;
+  • `false` to disable it.
+
+# Sent when user tries to change archiving state when it's already in that state
+# {status} (boolean string) — current state of the archiving (true/false)
+ARCHIVE_STATUS_ALREADY: "Message Archiving is already turned **{status, select, true {on} other {off}}**. You don't need to do anything."
+
+# Sent as a confirmation when user wants to enable archiving
+ARCHIVE_STATUS_CONFIRMATION_ENABLING: |-
+  Turn Message Archiving on?
+
+  :warning: **What you need to know before enabling this option**:
+
+  • All messages from the server will be stored for an unlimited time — this may change later.
+
+  • Members without “Manage Messages” permission cannot __create archives__.
+  They still will be able to use the Message Preview command to preview __existing messages__.
+
+  • Moderators will not be able to see the messages sent to the channels they have no access to.
+
+  • You can disable messages archiving whenever you want to — archived messages will not be deleted.
+  Yet you won't be able to export them to the file until archiving is turned on back again.
+
+# Sent as a confirmation when user wants to disable archiving
+ARCHIVE_STATUS_CONFIRMATION_DISABLING: |-
+  Turn Message Archiving off?
+
+  :warning: This will not delete any archived messages, but you won't be able to export them to the file until archiving is enabled back again.
+
+  If you wish to completely purge archived messages, you must contact the person who owns this bot.
+
+# Sent when archiving state changed
+# {status} (boolean string) — new state of the archiving (true/false)
+ARCHIVE_STATUS_CHANGED: "Messages Archiving turned **{status, select, true {on} other {off}}**."
+
+# Used in archive file as the attachment type for a file
+ARCHIVE_ITEM_ENTRY_TYPE:ATTACHMENT: "Attachment"
+
+# Used in archive file as the attachment type for an embed
+ARCHIVE_ITEM_ENTRY_TYPE:EMBED: "Embed"
+
+# Used in archive file for the line with the file
+# {type} (string) — type of the attachment, see “ARCHIVE_ITEM_ENTRY_TYPE:ATTACHMENT” string
+# {file.id} (string) — ID of the file
+# {file.name} (string) — name of the file
+# {file.url} (string) — URL to the file on Discord's CDN
+ARCHIVE_ITEM_ENTRY:ATTACHMENT: "- [{type}][{file.id}]: {file.name} - {file.url}"
+
+# Used in archive file for the line with an embed
+# {type} (string) — type of the embed
+# {json} (string) — JSON with the embed
+ARCHIVE_ITEM_ENTRY:EMBED: "- [{type}]: {json}"
+
+# Used in archive file for the line with a message
+# {sentAt} (string) — when message was sent (localized string using the Node.js Intl with latest ICU data)
+# {channelId} (string) — ID of the channel message was sent to
+# {authorId} (string) — ID of the author that sent the message
+# {messageId} (string) — ID of the message
+# {author} (string) — Author's username with included tag
+# {content} (string) — Message contant
+ARCHIVE_ITEM: "{sentAt} ({channelId} / {authorId} / {messageId}) {author}: {content}"
+
+# Sent when user tries to add the color which already exists on the server
+COLORS_ADD_ALREADYEXISTS: "**This color already exists**. You can delete the colors using `delete` argument."
+
+# Sent when user tries to call the command with invalid number of arguments
+COLORS_ADD_ARGSERR: "**2-3 arguments required**. Usage of the command: `!color add <name>[, required|roles], <Role name or ID>`."
+
+# Sent as a confirmation when user wants to add new color
+# {colorName} (string) — name of the color specified by the user (escaped from markdown)
+# {colorRoleName} (string) — name of the role which was specified by the user (escaped from markdown)
+# {colorHEX} (string) — HEX string of the color (#123123 for example, will be also shown in the confirmation thumbnail)
+COLORS_ADD_CONFIRMATION: "You are about to add the color “{colorName}”, which role is `{colorRoleName}` with the nickname color set to `{colorHEX}` (shown in the thumbnail)."
+
+# Used in the confirmation embed when user wants to add new color with only one required role
+# {requiredRoleName} (string) — name of the role which was specified by the user (escaped from markdown)
+COLORS_ADD_CONFIRMATION_REQUIREDROLE: "The color will be only available to members who have the role “{requiredRoleName}.”"
+
+# Used in the confirmation embed when user wants to add new color with multiple required roles before the list with these roles
+COLORS_ADD_CONFIRMATION_REQUIREDROLES: "The color will be only available to members who have the following roles:"
+
+# Used in the confirmation embed when user wants to add new color with multiple requires roles as the item in the list
+# {roleName} (string) — name of the role
+# {id} (string) — ID of the role
+# {last} (boolean string) — is it the last element in the list (true/false), use if your language needs it
+COLORS_ADD_CONFIRMATION_REQUIREDROLES_ITEM: "• “{roleName}” · ID: {id} {last, select, true {} other {}}"
+
+# Used in the confirmation embed when user wants to add new color to warn about consequiences, such as reset of all the rights
+COLORS_ADD_CONFIRMATION_RIGHTSWARNING: "The role of this color will lose all its permissions. This is irreversible — proceed?"
+
+# Sent when color has been successfully added
+COLORS_ADD_DONE: "Color added."
+
+# Sent as error when user tries to add new color but the role is higher that the highest bot's role
+# Read more about Discord's role hierarcy here: https://support.discordapp.com/hc/en-us/articles/214836687
+COLORS_ADD_INVALIDROLEPOSITION: "Specified role is higher than the highest bot's role. The bot won't be able to add it to the members as well as changing its permissions. To continue, move the highest bot's role above the chosen role for the color."
+
+# Sent error when user tries to add new color with the reserved name (for example, “add”)
+COLORS_ADD_NAMERESERVED: |-
+  Cannot create the color with the reserved name (possibly, it's used by a command). 
+  To continue, please use a different name.
+
+# Sent the error when user-specified required role is not found
+COLORS_ADD_REQUIREDROLENOTFOUND: "The required role to assign this color not found."
+
+# Sent the error when one of the user-specified required roles is not found
+COLORS_ADD_REQUIREDROLENOTFOUND2: "Could not find the required role by the search “{rolename}.”"
+
+# Sent when bot fails to edit user-specified role for a new color
+COLOR_ADD_ROLEFIX_FAILED: "Could not edit the color's role."
+
+# Sent when bot fails to find the user-specified role for a new color
+COLORS_ADD_ROLENOTFOUND: "Color's role not found."
+
+# Sent when color is already somehow assigned during the run of assigning handle
+COLORS_ALREADYSET: "This color has already been assigned to you."
+
+# Sent as a confirmation when user assigns a new color to warn about the consequences such as removal of all previous colors
+COLORS_ASSIGN_CONFIRMATION: "Are you sure you want to assign this color to yourself? This will take away all previous colors."
+
+# Sent when a new color has been assigned to user
+COLORS_ASSIGN_DONE: "New color was assigned to you!"
+
+# Sent when user clicks “×” in the confirmation or does nothing for some time
+COLORS_CANCELED: "Action canceled."
+
+# Sent when bot fails to find specified color
+# {colorName} (string) — user-specified color
+COLORS_COLORNOTFOUND: "Could not find the color “{colorName}.”"
+
+# Sent when color gets deleted when bot waits for the confirmation
+COLORS_DELETE_ALREADYDELETED: "The color has already been deleted while waiting for your confirmation."
+
+# Sent as a confirmation when user wants to delete a color
+COLORS_DELETE_CONFIRMATION: |-
+  Delete this color?
+
+  ⚠ The color's role will not be deleted, therefore taken way from members — don't forget to delete it manually if you don't need it anymore.
+
+# Sent when user tries to call delete command without any arguments
+# {prefix} (string) — prefix used to call the command
+COLORS_DELETE_INFO: |-
+  To remove the color, type its name right after the `delete` subcommand.
+
+  Example command: `{prefix} delete blue`.
+
+# Sent when color gets deleted after the user confirmation
+COLORS_DELETE_DONE: "Color deleted."
+
+# Sent when user color gets deleted without the confirmation because it's role was already deleted and there's no need to confirm this action
+COLORS_DELETE_DONE@NO_CONFIRMATION: "Color deleted without the confirmation: the role has already been deleted."
+
+# Sent when user runs a diagnostic but there are no colors on the server
+COLORS_DIAG_NOCOLORS: "This server doesn't have any colors to assign yet."
+
+# Sent when user has no required permissions to run the a diagnostic
+COLORS_DIAG_NOTPERMISSIONS: "You do not have sufficient permissions to run a diagnostic."
+
+# Used in a diagnostic report when all required roles for the color were deleted, therefore nobody can assign the color
+COLORS_DIAG_REPORT_BAD_HEALTH: "❌ **Error: all required roles were deleted** — color is unassignable"
+
+# Used is a diagnostic report when all required roles for the color are existing on the server
+COLORS_DIAG_REPORT_GOOD_HEALTH: "✅ Everything is fine with this one."
+
+# Used in a diagnostic report when some of the required roles for the color were deleted
+COLORS_DIAG_REPORT_WARNING_HEALTH: "⚠ **Warning: some of the required roles were deleted**"
+
+# Used in a diagnostic report when required role for the color was deleted, therefore nobody can assign the color
+COLORS_DIAG_REPORT_REQUIREDROLEDELETED: "❌ **Error: the required role is deleted** — color is unassignable."
+
+# Used in a diagnostic report to show which role required for the color (which bot tries to search for then)
+# {roleId} (string) — ID of the role
+COLORS_DIAG_REPORT_REQUIRESROLE: "• requires the role with ID {roleId}:"
+
+# Used in a diagnostic report to show which roles are required for the color (which bot tries to search for then)
+COLORS_DIAG_REPORT_REQUIRESROLES: "• requires the roles:"
+
+# Used in a diagnostic report to show which role gets assigned to user when he tries to assign the color
+# {roleId} (string) — ID of the role bot was searching for
+COLORS_DIAG_REPORT_ASIGN: "• assigns the role with ID {roleId}:"
+
+# Used in a diagnostic report when the role bot was searching for is deleted
+COLORS_DIAG_REPORT_ROLEDELETED: "❌ **Error: the role was deleted**"
+
+# Used in a diagnostic report when the role bot was searching has been found
+# {roleName} (string) — name of a resolved role by the ID
+COLORS_DIAG_REPORT_ROLEFOUND: "• ✅ Role found: {roleName}"
+
+# Used in a diagnostic report when the bot cannot find a role by the ID
+# {roleId} (string) — ID of the role
+COLORS_DIAG_REPORT_ROLENOTFOUND: "• ⚠ Could not find role with ID {roleId}"
+
+# Used in a diagnostic report when the role bot was searching for has been found
+# {roleName} (string) — name of a resolved role by the ID
+# {roleId} (string) — ID of the role bot was searching for
+COLORS_DIAG_REPORT_ROLEROW: "• ✅ “{roleName}” · ID: {roleId}"
+
+# Used in a diagnostic report as the line for roles lookup
+COLORS_DIAG_REPORT_ROLESSEARCH: "• Roles lookup:"
+
+# Sent when bot fails to assign the color role
+COLORS_FAILED_ASSIGN: "Could not assign the color role"
+
+# Sent when bot fails to remove the previous color roles
+COLORS_FAILED_UNASSIGN: "Could not take away the previous colors' roles"
+
+# Used as a title for embed with the info about the color
+COLORS_GETINFO_DESCRIPTION: "About the color"
+
+# Used as a title for field “Is color available?” in embed with the info about the color
+COLORS_GETINFO_FIELD_AVAILABLE: "Is available?"
+
+# Used as a value of field “Is color available?” when color is not available for user to assign
+COLORS_GETINFO_FIELD_AVAILABLE_NO: "🚫 Nope"
+
+# Used as a value of field “Is color available?” when color is available for user to assign 
+COLORS_GETINFO_FIELD_AVAILABLE_YES: "✅ Yes"
+
+# Used as a title for field “Color role” in embed with the info about the color
+COLORS_GETINFO_FIELD_ROLE: "Role"
+
+# Used as a value of field “Color role” in embed with the info about the color
+# {roleName} (string) — name of the role
+# {roleId} (string) — ID of the role
+COLORS_GETINFO_FIELD_ROLE_VALUE: "{roleName} · ID: {roleId}"
+
+# Used as a title for field “Required roles” in embed with the info about the color
+COLORS_GETINFO_FIELD_REQUIREDROLES: "ℹ Any of the roles is required to assign"
+
+# Used in the value of field “Required roles” in embed with the info about the color
+# {name} (string)  —  name of the role
+# {status} (string) — status of the role
+COLORS_GETINFO_FIELD_REQUIREDROLES_ITEM: "• **{name}** · {status}"
+
+# Used in the value of field “Required role” in embed with the info about the color
+# when user has the required role
+COLORS_GETINFO_FIELD_REQUIREDROLES_ITEM_STATUS_YES: "you have this role"
+
+# Used in the value of field “Required role” in embed with the info about the color
+# when user has no required role
+COLORS_GETINFO_FIELD_REQUIREDROLES_ITEM_STATUS_NO: "you don't have this role"
+
+# Sent when user tries to call the command without the arguments
+# {prefix} (string) — prefix used to call the command
+COLORS_GETINFO_INFO: |-
+  To get more information about this color, type its name right after the `info` subcommand.
+
+  Example: `{prefix} info blue`.
+
+# Sent when bot fails to find the color
+# {prefix} (string) — prefix used to call the command
+COLORS_GETINFO_NOTFOUND: "**Could not find that color**. You can see the list of colors by using `{prefix} list` command."
+
+# Sent when the color role has been deleted but color itself is not
+COLORS_GETINFO_ROLEREMOVED: |-
+  **Role of this color was deleted**. The information is unavailable.
+
+  Ask an administrator to remove the color.
+
+# Sent when bot cannot assign the color role because it has no Manage Roles permission
+COLORS_INVALIDBOTPERMS: "Bot cannot manage roles, therefore cannot assign you a role. Please, ask an administrator to give “Manage Roles” permission to the bot."
+
+# Used as a description in the embed with the colors list
+COLORS_LIST_INSTALL_TIP: "Learn more about them using `{prefix} info [color name]`"
+
+# Used as a title in the embed with the colors list
+COLORS_LIST_TITLE: "List of colors to assign"
+
+# Used as a title of field “Available colors” in the embed with the colors list
+COLORS_LIST_FIELDS_AVAILABLE: "Available to assign:"
+
+# Used as a title of field “Unavailable” in the embed with the colors list
+COLORS_LIST_FIELDS_NOROLE: "No required role:"
+
+# Used as the value of field “Available colors” in the embed with the colors list
+COLORS_LIST_FIELDS_NOTHINGAVAILABLE: "None colors available"
+
+# Sent when there are no colors on the server
+COLORS_LIST_NOCOLORS: "There are no colors on this server (⌣_⌣”)"
+
+# Used as a title of the “color add” command
+COLORS_META_ADD: "Add Color"
+
+COLORS_META_ADD_ARG0_DESC: "a simple name of the color that members can use"
+
+COLORS_META_ADD_ARG1: ", required role(s)"
+
+COLORS_META_ADD_ARG1_DESC: "role(s), required to assign the color"
+
+COLORS_META_ADD_ARG2: ", role"
+
+COLORS_META_ADD_ARG2_DESC: "name or ID of the color role"
+
+# Used as a title of the “color” command
+COLORS_META_ASSIGN: "Assign Color"
+
+COLORS_META_ASSIGN_ARG_DESC: "name of the color to assign"
+
+COLORS_META_COLORNAME: "color name"
+
+# Used as a title of the “color delete” command
+COLORS_META_DELETE: "Delete Color"
+
+COLORS_META_DELETE_ARG_DESC: "name of the color to remove"
+
+# Used as a title of the “color info” command
+COLORS_META_INFO: "Color Info"
+
+COLORS_META_INFO_ARG_DESC: "name of the color to show information"
+
+# Used as a title of the “color list” command
+COLORS_META_LIST: "Colors List"
+
+# Used as a title of the “color onjoin” command
+COLORS_META_ONJOIN: "Default Color for New Members"
+
+COLORS_META_ONJOIN_ARG0: "mode"
+
+COLORS_META_ONJOIN_ARG0_DESC: "mode of the color assigning"
+
+COLORS_META_ONJOIN_ARG1: "color name"
+
+COLORS_META_ONJOIN_ARG1_DESC: "name of the color to assign"
+
+# Used as a title of the “color rename” command
+COLORS_META_RENAME: "Rename Color"
+
+COLORS_META_RENAME_ARG0: "current name"
+
+COLORS_META_RENAME_ARG0_DESC: "current name of the color"
+
+COLORS_META_RENAME_ARG1: "new name"
+
+COLORS_META_RENAME_ARG1_DESC: "new name for the color"
+
+# Used as a title of the “color reset” command
+COLORS_META_RESET: "Reset Colors"
+
+# Sent when user has no permission to run the command
+COLORS_NOPERMISSION: "Insufficient permissions to run this command."
+
+# Sent when user has no required role to assign the color
+COLORS_NOREQUIREDROLE: "You have no role that allows you to assign this color."
+
+# Sent when user has no required roles to assign the color
+COLORS_NOREQUIREDROLES: "You have no any role that allows you to assign this color."
+
+# Send when bot fails to find the color
+COLORS_NOTFOUND: "Could not find that color."
+
+# Sent when user tries to use feature that is not available on the default servers
+COLORS_ONLYPARTNERED: |-
+  This feature is only allowed on whitelisted servers.
+
+  Your server isn't one of these (・・。)ゞ
+
+# Sent when user tries to use feature that is not available
+# {prefix} (string) — prefix used to call the command
+COLORS_RANDOM_ARGERR0: |-
+  Command usage:
+  `{prefix} onjoin [off/set [color name]/random]`
+
+# Sent when user specifies additional arguments for mode “off”
+COLORS_RANDOM_ARGERR1: "`off` does not require additional arguments."
+
+# Sent when user provides a wrong number of arguments for mode “set”
+COLORS_RANDOM_ARGERR2: "Invalid number of arguments for mode `set`."
+
+# Sent when user specifies additional arguments for mode “random”
+COLORS_RANDOM_ARGERR3: "`random` does not require additional arguments."
+
+# Sent when feature gets disabled
+COLORS_RANDOM_REMOVED: "Feature disabled."
+
+# Sent when user tries to use the color which requires specific roles to assign
+COLORS_RANDOM_REQUIRESROLE: "This color requires special roles, therefore, cannot be assigned to newly joined users."
+
+# Sent when feature gets enabled to “set” mode
+COLORS_RANDOM_SET: "Color for new members set."
+
+# Used as a notice when either “set” or “random” mode gets enabled
+COLORS_RANDOM_SET_WARN: |-
+  ⚠ Beware: if the server has verification enabled, color role won't be assigned because that skips the verification process.
+
+  We're working on automatic assignment after the verification is complete.
+
+# Sent when feature gets enabled to “random” mode
+COLORS_RANDOM_SETRANDOM: "Now new members will be assigned a random color."
+
+# Sent when user tries to use name that is already assigned to the other color
+# {colorName} (string) — name of the color
+COLORS_RENAME_ALREADYEXISTS: "Color “{colorName}” already exists."
+
+# Sent when user provides invalid number of arguments
+# {prefix} (string) — prefix used to call the commad
+COLORS_RENAME_ARGSERR: "**Invalid number of arguments**. Should be like `{prefix} rename penk, pink`, the comma separates old and new name."
+
+# Sent as a confirmation when user wants to rename the color
+# {before} (string) — previous name of the color
+# {after} (string) — new name for the color
+COLORS_RENAME_CONFIRMATION: "Name of the color “{before}” will be changed to “{after}.” Proceed?"
+
+# Sent when user-specifed name for the color gets assigned to the other color while we waited for the confirmation
+COLORS_RENAME_CONFIRMATIONWAITBINDED: "While we waited for a confirmation, a color with the name “{colorName}” was created. Use a different name."
+
+# Sent when the color gets deleted or changed while we waited for the confirmation
+COLORS_RENAME_CONFIRMATIONWAITREMOVED: "Name of the color “{colorName}” already been changed or the color was deleted while we waited for the confirmation."
+
+# Sent when name of the color gets changed
+COLORS_RENAME_DONE: "Color name changed."
+
+# Sent as a confirmation when user wants to reset all colors
+COLORS_RESET_CONFIRMATION: "This will remove all the color roles from you. Proceed?"
+
+# Sent when user color has been reset
+COLORS_RESET_DONE: |-
+  All the color roles were removed from you.
+
+  Now you should have a default color.
+
+# Sent when bot fails to reset user color
+COLORS_RESET_FAILED: "Could not remove the color roles, an error occurred."
+
+# Sent when bot find the color, but its role already deleted
+COLORS_ROLENOTFOUND: "The color role not found. Ask an administrator to delete this color."
+
+# Sent when something goes wwong whiwe wunning a command
+COLORS_RUNNINGFAILED: |-
+  OOPSIE WOOPSIE!! Something went wwong! OwO
+
+  An error occurred while running the command.
+
+  We've just tried to send a notification about the accident to our developers.
+  Let's hope for a fix. Also, try again later!
+
+# Used as an audit log reason when creating color with this role
+COLORS_AUDITLOG_ROLE_PERMISSIONS_ANNULLED: "Reset permissions for the role of color “{colorName}” with {initiator}'s confirmation"
+
+# Used as an audit log reason when new user joins the server and gets assigned a random role
+COLORS_AUDITLOG_RANDOM_ROLE: "Random role for a new server member"
+
+# Used as an audit log reason when new user joins the server and gets assigned a set role
+COLORS_AUDITLOG_ONJOIN_ROLE: "Role for a new server member"
+
+# Used as an audit log reason when user assigns the color
+# {colorName} (string) — name of the color
+COLORS_AUDITLOG_COLOR_ASSIGNED: "Assignation of the color “{colorName}”"
+
+# Used as an audit log reason when user gets assigned a new color
+COLORS_AUDITLOG_PREVIOUS_COLOR_REMOVED: "Removal of previous color roles"
+
+# Used as an audit log reason when user resets their colors
+COLORS_AUDITLOG_COLORS_RESET: "Manual color roles reset"
+
+# Used as a title for embed with the “Error” type
+EMBED_ERROR: "Error"
+
+# Used as a title for embed with the “Informative” type
+EMBED_INFORMATION: "Information"
+
+# Used as a title for embed with the “Progress” type
+EMBED_PROGRESS: "Loading…"
+
+# Used as a title for embed with the “Question” type
+EMBED_QUESTION: "Confirmation…"
+
+# Used as a title for embed with the “Success” type
+EMBED_SUCCESS: "Success!"
+
+# Used as a title for embed with the “Ta-da” type
+# (exciting version of “Success” type)
+EMBED_TADA: "Ta-da!"
+
+# Used as a title for embed with the “Warning” type
+EMBED_WARNING: "Warning"
+
+EMBEDME_CMDMETA_ARG_DESCRIPTION: "embed content"
+
+# Used as a title for “embed” command
+EMBEDME_CMDMETA_DESCRIPTION: "Turn Text Into Embed"
+
+# Used as a footer text in a generated embed
+EMBEDME_EMBED: "Embed by {botName}"
+
+# Sent when user calls the command without content
+EMBEDME_INFO: |-
+  **Embed Command**.
+
+  Use this command to embed any text. This won't work with images because the original message getting removed. Embeds support markdown links — `[text](https://example.com/)` and custom emojis from the other servers, but bot needs to be added to servers with those emotes.
+
+# Used as a description for embed while evaluating the code
+EVAL_EXECUTION_PROGRESS_TEXT: "Please, wait. Evaluating the code…"
+
+# Used as a title for embed while evaluating the code
+EVAL_EXECUTION_PROGRESS_TITLE: "Evaluating the code…"
+
+# Uses as a description for embed while waiting for returned async function
+EVAL_PROMISE_WAITING: "Waiting for an asynchronous function…"
+
+# Used as a description for embed when evaluation is complete
+EVAL_EXECUTION_DONE: "Evaluation complete"
+
+# Used as a description for embed when evaluation is complete with error
+EVAL_EXECUTION_DONE_ERR: "Evaluation complete with error"
+
+# Used as a description for embed when evaulation fails
+EVAL_EXECUTION_FAILED: "Evaluation failed"
+
+# Used as a title for the field “Spent time” in embed when evaluating the code
+EVAL_EXECUTION_TIME: "Time spent"
+
+# Used as a value for the field “Spent time” in embed when evaluating the code
+EVAL_EXECUTION_TIME_VALUE: "{time} ms"
+
+# Used as a description for embed when output is too large to be embed
+EVAL_EXECUTION_LONGTEXT_DESC: "The result exceeds 2000 characters, therefore cannot be embedded."
+
+# Used as a title for embed when output is too large to embed
+EVAL_EXECUTION_LONGTEXT_TITLE: "Long result"
+
+# Sent when bot fails to fetch the messages
+FL_ERR_CANTFETCH: |-
+  Cannot read the latest messages in this channel.
+
+  Check if the bot has permission to read messages history.
+
+# Sent when a latest message by the user has no content
+FL_ERR_EMPTYMESSAGE: "Could not change the keyboard layout of the message without text"
+
+# Sent when bot fails to find any messages by the user
+FL_ERR_NOMESSAGES: "Could not find any messages — either you didn't send one or it was sent a long time ago."
+
+# Sent when Fix Layout is not supported by the current language
+FL_ERR_NOTSUPPORTED: "Your language doesn't support the keyboard layout change command."
+
+# Sent when Fix Layout command is used outside the servers
+FL_ERR_NOTTEXTCHANNEL: "The command doesn't work here."
+
+# Used as a footer text for embed with fixed message
+FL_MESSAGE_INREPLY: "Keyboard layout changed by {botname}"
+
+# Sent when command called without any arguments
+FSTHINGS_CHOOSE_NOROLENAME: |-
+  **The message doesn't contain a role name or its mention**.
+
+  You can use a unique part of the name or ID. If a message contains multiple role mentions, the bot will use only the first one.
+
+# Sent when bot cannot find the role
+FSTHINGS_CHOOSE_ROLENOTFOUND: |-
+  **Role not found**. Are you sure the name is correct?
+
+  :warning: If the message contained the role mention, this must be a bug in [library we use](https://discord.js.org/). Please, contact the bot developer about this and we'll check everything.
+
+# Sent when bot found the role but none members on the server assigned to it
+FSTHINGS_CHOOSE_EMPTYROLE: "No members found with this role."
+
+# Sent when internal error with random happens
+# TODO: re-roll
+FSTHINGS_CHOOSE_INTERNALERROR001: |-
+  {foundMembers, plural, one {# member} other {# members}} found, but the random decided to choose neither of them. This is a known bug and unfixable yet. Try running this command again — if this won't fix the problem, please report to the bot developer.
+
+# Used as a description for embed with the randomly selected member
+FSTHINGS_CHOOSE_FOUND: "So here whom we've found"
+
+# Used as a title of field “Role” in embed with the randomly selected member
+FSTHINGS_CHOOSE_EMBED_ROLE: "Member with the role…"
+
+# Used as a title of field “Role” in embed with the randomly selected member
+FSTHINGS_CHOOSE_EMBED_MEMBER: "And here they are:"
+
+# Guilds
+
+# Sent when “create” subcommand called without arguments
+GUILDS_ARTICLE_CREATE: |-
+  Command usage:
+  `{prefix} <guild name>, <guild role>`.
+
+# Sent when “delete” subcommand called without arguments
+GUILDS_ARTICLE_DELETE: |-
+  Command usage:
+  `{prefix} <guild name>`.
+
+# Sent when “edit” subcommand called without arguments
+GUILDS_ARTICLE_EDIT: |-
+  Command usage:
+  `{prefix} <guild name>, <setting>, <value>`.
+
+# Sent when the command command called without arguments
+GUILDS_ARTICLE_GENERAL: |-
+  This command is used to join and leave server guilds.
+
+  Guilds — unique server groups based on interests or players. When you join any guild, it gives you a special role, which may open channels dedicated to it.
+
+  • Want to see a list of guilds on this server? Use `{prefix} list` subcommand.
+  • To learn more about the guild, use `{prefix} info <guild name>`.
+  • Finally, to join the guild, just type its name after the command: `{prefix} <guild name>`.
+
+  You can see all commands of the guilds module by using help command.
+
+# Used in message when the command called without arguments (if enabled)
+GUILDS_ARTICLE_GENERAL_SURVEY: "May we take a minute of your time to participate in the survey about this command? It will only require the Google account. [Open survey]({surveyLink})"
+
+# Sent when “info” subcommand called without arguments
+GUILDS_ARTICLE_INFO: |-
+  Command usage:
+  `{prefix} <guild name>`.
+
+# Sent when “list” subcommand called without arguments
+GUILDS_ARTICLE_LIST: |-
+  Command usage:
+  `{prefix} [page]`.
+
+# Used as an audit log reason when user creates the guild
+# {guildName} (string) — name of the guild
+GUILDS_AUDITLOG_CREATED_OWNER: "The owner of the guild “{guildName}”"
+
+# Used as an audit log reason when user joins the guild
+# {guildName} (string) — name of the guild
+GUILDS_AUDITLOG_JOINED_GUILD: "Joined the guild ”{guildName}”"
+
+# Used as an audit log reason when user leaves the guild
+# {guildName} (string) — name of the guild
+GUILDS_AUDITLOG_LEFT_GUILD: "Left the guild “{guildName}”"
+
+# Used as an audit log reason when user gets kicked from the guild
+# {guildName} (string) — name of the guild
+# {initiator} (string) — username (including tag) of the user
+GUILDS_AUDITLOG_KICKED: "Kicked from the guild “{guildName}” by {initiator}"
+
+# Used as an audit log reason when user gets banned from the guild
+# {guildName} (string) — name of the guild
+# {initiator} (string) — username (including tag) of the user
+GUILDS_AUDITLOG_BANNED: "Banned from the guild “{guildName}” by {initiator}"
+
+# Used as an audit log reason when role is created by the user from user's confirmation
+# {guildName} (string) — name of the guild
+# {initiator} (string) — username (including tag) of the user
+GUILDS_AUDITLOG_ROLE_CREATED: "Created role for the guild “{guildName}” with {initiator}'s confirmation'"
+
+# Sent when operation gets canceled by the user
+GUILDS_CANCELED: "Operation canceled."
+
+# Sent when the guild with user-specified name is already created but its role deleted
+GUILDS_CREATE_ALREADYFOUND_NOROLE: |-
+  There already guild with that name, but its role was deleted from the server.
+
+  You can delete this guild to create a new one with that name.
+
+# Sent when the guild with user-specified name found
+# TODO: remove “_role”
+GUILDS_CREATE_ALREADYFOUND_ROLE: "Guild with that name is already exists on this server."
+
+# Sent when an error with database happens
+GUILDS_CREATE_DBERROR: "Database failure — try again later."
+
+# Sent when guild has been created
+GUILDS_CREATE_DONE: "Guild created!"
+
+# Used as a title of the field “Tip about commas” in embed sent when user calls the “create” command with incorrect number of arguments
+GUILDS_CREATE_FIELD_TIP: "*Tip!*"
+
+# Used as a value of the field “Tip about commas” in embed sent when user calls the “create” command with incorrect number of arguments
+GUILDS_CREATE_FIELD_TIP_TEXT: |-
+  This command uses commas as the separator. You cannot use commas in guild names.
+
+  If a role name contains these, you can use its ID or unique part of the name.
+
+# Used as a title of the field “Command usage” in embed sent when user calls the “create” command with incorrect number of arguments
+GUILDS_CREATE_FIELDS_USAGE: "Correct usage of the command:"
+
+# Used as a value of the field “Command usage” in embed sent when user calls the “create” command with incorrect number of arguments
+GUILDS_CREATE_FIELDS_USAGE_TEXT: "{prefix} <guild name>[, role name / ID]"
+
+# Sent when user tries to create a guild with the reserved name
+GUILDS_CREATE_RESERVEDNAME: |-
+  Cannot create a guild with the reserved name (most likely, it's used by a command so you will be unable to join it).
+
+  To continue, please use a different name.
+
+# Sent when bot fails to resolve the role
+GUILDS_CREATE_RESOLVINGFAILED: "Unable to find the role (⌣_⌣”)"
+
+# Sent when bot fails to assign role to the user
+GUILDS_CREATE_ROLEASSIGNATIONFAILED: "Could not assign you the guild's role."
+
+# Sent as a confirmation for default role creating by the bot if no guild role was specified
+GUILDS_CREATE_ROLECREATING_CONFIRMATION: |-
+  You didn't type a role name.
+
+  Bot can create a default role with the name “{roleName}” and without any permissions.
+  You will be able to manage this role later. Use it to create guild-specific channels.
+
+  Proceed?
+
+# Sent when user calls the command with invalid number of arguments
+GUILDS_CREATE_WRONGARGSCOUNT: "Invalid number of arguments."
+
+# Sent as a confirmation when user wants to delete the guild
+GUILDS_DELETE_CONFIRMATION: |-
+  Are you sure you want to remove this guild?
+
+  :information_source: Its role won't be deleted and unassigned from the members.
+
+# Sent when guild has been deleted
+GUILDS_DELETE_DONE: "Guild deleted."
+
+# Sent when specified member to promote is already the guild administrator
+GUILDS_EDIT_ADDADMNOTGUILDMEMBER: "This member is already the guild administrator."
+
+# Sent when “add admin” setting called by the administrator (not owner)
+GUILDS_EDIT_ADDADMPERMS: "Only the guild owner and the server administrators can promote members."
+
+# Sent when bot fails to resolve the channel
+GUILDS_EDIT_CHANNELNOTFOUND: "Cannot find that channel."
+
+# Sent when the guild description gets successfully changed
+GUILDS_EDIT_DESCRIPTIONSET: "Guild description changed."
+
+# Sent when the Guild Google Analytics code has been set
+GUILDS_EDIT_GOOGLEUADONE: "Google Analytics code set."
+
+# Sent when user to tries set Google Analytics Code setting to incorrect value
+# Don't forget to change “?hl=[language code]” and see if the URL is working, if it doesn't — remove the link
+GUILDS_EDIT_GOOGLEUAWRONGCODE: |-
+  Incorrect Google Analytics code.
+
+  You may learn how to find your tracking code in [article on Google's support site](https://support.google.com/analytics/answer/1008080?hl=en).
+
+# Sent when bot fails to find any guild with user-specified name
+GUILDS_EDIT_GUILDNOTFOUND: "Cannot find any guild with that name."
+
+# Sent when bot fails to download an image
+GUILDS_EDIT_IMAGELOADINGFAILED: "Unable to download an image, make sure the URL is correct and not linked to the user's session (IP, cookies and stuff)."
+
+# Sent when the guild banner has been changed
+GUILDS_EDIT_IMAGESET: "Guild banner changed."
+
+# Sent when user tries to use large file to add emoji (error generated by API)
+GUILDS_EDIT_INVALIDFORM_SIZE: "File is too large for emoji."
+
+# Sent when user tries to use invalid file to add emoji (error generated by API)
+GUILDS_EDIT_INVALIDFORM_BODY: "Discord doesn't accept files of that type."
+
+# Sent when user tries to use large file to add emoji
+# {maxSizeKB} (number) — maximum size of the file for emoji
+GUILDS_EDIT_INVALIDSIZE: "File is too large. Maximum file size for emoji is {maxSizeKB} KB."
+
+# Sent when user enters invalid URL
+GUILDS_EDIT_INVALIDLINK: "Invalid URL."
+
+# Sent when user enters invalid setting name
+GUILDS_EDIT_INVALIDPARAM: "Invalid setting."
+
+# Sent when user tries to toggle current “Invite only” mode to the same state as before
+GUILDS_EDIT_IOALREADY: "“Invite only” mode is already turned **{ioAlreadyEnabled, select, true {on} other {off}}**."
+
+# Sent when the “Invite only” mode state gets changed
+GUILDS_EDIT_IOCHANGED: "“Invite only” mode turned {ioEnabled, select, true {on} other {off}}."
+
+# Sent when bot fails to resolve the guild member for setting
+GUILDS_EDIT_MEMBERNOTFOUND: "Cannot find that member."
+
+# Sent when bot doesn't see any mentions or user didn't specify one
+GUILDS_EDIT_NOMENTIONS: "You didn't mention any member."
+
+# Sent when user without permissions tries to manage the guild
+GUILDS_EDIT_NOPERMS: "Only the guild owner and the server administrators can change this setting."
+
+# Sent as a confirmation when user tries to set welcome message to something without any mentions or username
+GUILDS_EDIT_NOUSERMENTION: |-
+  **You don't mentioning the new members of the guild**! (・_・ヾ
+
+  Welcome messages are meant to… *sigh* welcome new members to your guild.
+
+  Proceed without mention?
+
+# Sent when user mentions the channel that doesn't belong to the current server
+GUILDS_EDIT_OTHERCHANNEL: "Channel belongs to the different server."
+
+# Sent when user tries to transfer guild ownership but they're not owner of the guild or admin of the server
+GUILDS_EDIT_OWNERERR: "Only the guild owner and the server administrators can transfer ownership over the guild."
+
+# Sent when user tries to demote the guild administrator but they're not owner of the guild or admin of the server
+GUILDS_EDIT_RMADMPERMS: "Only the guild owner and the server administrators can demote a guild administrator."
+
+# Sent when user tries to demote guild administrators but there are no administrators in that guild
+GUILDS_EDIT_RMNOADMINS: "This guild doesn't have any administrators yet."
+
+# Sent when guild rules have been changed
+GUILDS_EDIT_RULESSET: "Guild Rules content saved."
+
+# Sent when user mentions too many users
+GUILDS_EDIT_SINGLEMENTION: "This command accepts only one mention."
+
+# Sent as a confirmation when user wants to transfer ownership
+# {serverAdmin} (boolean string) — is command called by the server administrator
+GUILDS_EDIT_TRANSFERCONFIRMATION: |-
+  Are you sure you want to transfer ownership over the guild to {username}?
+
+  {serverAdmin, select, true {Previous guild owner} other {You}} won't anymore be able to modify the guild until promoted to the guild administrators or someone will transfer ownership back to {serverAdmin, select, true {them} other {you}}.
+
+# Sent when ownership over the guild gets transfered
+# {serverAdmin} (boolean string) — is command called by the server administrator
+GUILDS_EDIT_TRANSFERDONE: "Ownership transferred. {serverAdmin, select, false {You've lost all control over the guild.} other {}}"
+
+# Sent when user tries to transfer ownership to the current guild owner
+GUILDS_EDIT_TRANSFEROWNERSHIPTOOWNER: "Cannot transfer the guild to its current owner."
+
+# Sent when user cannot type “true” or “false” correctly
+GUILDS_EDIT_TRUEFALSEERR: "Invalid value. The valid values are `true` or `false`."
+
+# Sent when welcome channel has been changed
+GUILDS_EDIT_WELCOMECHANNELSET: "Channel for the welcome messages changed."
+
+# Sent when welcome message has been changed
+GUILDS_EDIT_WELCOMEMSGSET: "Welcome message content changed."
+
+# Sent when user tries to set welcome message channel setting to invalid channel (like voice-type channel)
+GUILDS_EDIT_WRONGCHANNEL: "Invalid channel."
+
+# Sent when emoji name doesn't pass the test
+GUILDS_EDIT_INVALIDEMOJINAME: "Invalid emoji name."
+
+# Sent when user tries to add emoji but didn't attach the file with it
+GUILDS_EDIT_NOATTACHMENT: "You didn't attach the emoji image."
+
+# Sent when user tries to send multiple files when adds emoji
+# You can send multiple files in a single message on Android, didn't ya know?
+GUILDS_EDIT_TOOMANYATTACHMENTS: "Only one file allowed."
+
+# Sent when user sends file of invalid type
+GUILDS_EDIT_INVALIDTYPE: "Invalid file format."
+
+# Sent when an unknown error is reported by the API
+# (more like error code is not handled by the bot)
+GUILDS_EDIT_EMOJIOTHERERR: "An unknown error occured."
+
+# Sent when user tries to add emoji but the bot has no permission to Manage Emoji on the server
+GUILDS_EDIT_NOEMOJIPERMISSIONS: "The bot has no permission to Manage Emoji."
+
+# Sent when bot cannot use the endpoint by some reason
+GUILDS_EDIT_BADFORBOT: "It seems this bot cannot add emoji yet."
+
+# Sent when emoji has been created
+# {name} (string) — name of the emoji
+# {emoji} (string) — emoji itself in Discord's format (<:name:ID>)
+GUILDS_EDIT_EMOJICREATED: "Emoji with the name “{name}” sucessfully created! {emoji} {emoji} {emoji}"
+
+# Sent when user tries to add emoji but there no slots for emoji of that type 
+# Discord has 50 slots for static emojis and 50 for regular ones, on some servers this can be extended on Discord's decision
+GUILDS_EDIT_NOSLOTS: "The server has no free slots for emoji of this type (◞‸◟；)"
+
+# Used a placeholder when guild has no description
+GUILDS_INFO_DESCRIPTIONPLACEHOLDER: "- *no description* -"
+
+# Sent when guild role is already deleted
+GUILDS_INFO_FAILED_ROLEFAILURE: "Guilds role was deleted. It's corrupted, therefore we cannot display its information."
+
+# Used as a title for the field “Invited?” in the embed with the guild info
+GUILDS_INFO_FIELDS_IOSTATUS: "Invited?"
+
+# Used as a value for the field “Invited?” in the embed with the guild info
+GUILDS_INFO_FIELDS_IOSTATUS_VALUE_ADMIN: "🛠️ Administrator"
+
+# Used as a value for the field “Invited?” in the embed with the guild info
+# {invited} (boolean string) — is user invited to the guild? (true/false)
+GUILDS_INFO_FIELDS_IOSTATUS_VALUE_INVITED: "{invited, select, true {{greenTick} You're welcome to join!} other{{redTick} Nope}}"
+
+# Used as a value for the field “Invited?” in the embed with the guild info
+GUILDS_INFO_FIELDS_IOSTATUS_VALUE_MEMBER: "👤 Already a member!"
+
+# Used as a value for the field “Invited?” in the embed with the guild info
+GUILDS_INFO_FIELDS_IOSTATUS_VALUE_OWNER: "👑 Owner"
+
+# Used as a title for the field “Joined?” in the embed with the guild info
+GUILDS_INFO_FIELDS_MEMBER: "Member?"
+
+# Used as a value for the field “Joined?” in the embed with the guild info
+# {member} (boolean string) — have the user joined the guild already? (true/false)
+GUILDS_INFO_FIELDS_MEMBER_VALUE: "{member, select, true {{greenTick} Yup!} other {{redTick} Not yet}}"
+
+# Used as a title for the field “Members count” in the embed with the guild info
+GUILDS_INFO_FIELDS_MEMBERS: "Members"
+
+# Used as a value for the field “Members count” in the embed with the guild info
+# {count} (number) — how many members of the server are assigned to the guild role
+GUILDS_INFO_FIELDS_MEMBERS_VALUE: "{count, plural, =0 {None} one {# member} other {# members}}"
+
+# Used when user is already invited to the guild
+# {username} (string) — display name of user that was invited to the guild
+GUILDS_INVITE_ALREADYINVITED: "{username} is already invited to the guild."
+
+# Used when invite gets automatically revoked because the mentioned user not a member of the server anymore
+# {id} (string) — ID of the user that was invited to the guild
+GUILDS_INVITE_AUTOREVOKED: "Invite for a user with the ID “{id}” is automatically revoked: they are no longer a member of the server."
+
+# Used when invite gets automatically revoked because the mentioned user is already a member of the guild
+GUILDS_INVITE_AUTOREVOKED_1: "Invite for {username} was automatically revoked: they are already a member of the guild."
+
+# Used when invite wasn't sent because user is already a member of the guild
+GUILDS_INVITE_GUILDMEMBER: "{username} is already the guild member."
+
+# Sent when the “invite” command was called without the arguments
+GUILDS_INVITE_INFO: |-
+  Use this command to invite other members of the server to a guild.
+
+  You must be an administrator or owner of the guild in order to invite users.
+
+# Used as title for embed after invites were sent
+# {invited} (number) — number of invited users
+GUILDS_INVITE_INVITED: "{invited, plural, =0 {No members were} one {# member} other {# members}} invited"
+
+# Sent to the Direct Messages of an invited user
+# {guildName} (string) — display name of the guild where user was invited to
+# {serverName} (string) — name of the server where this guild takes place
+# {prefix} (string) — prefix for the command to join
+# {RAWguildName} (string) — “raw” name of the guild for the command
+# {botName} (string) — name of the bot
+GUILDS_INVITE_INVITEMSG: |-
+  Hi! You have been invited to join the guild “{guildName}” on the server “{serverName}.”
+
+  Use the command below on the server to join the guild:
+  `{prefix} {RAWguildName}`.
+
+  Have a nice day,
+  {botName}.
+
+# Used when invite is being sent to user
+# {username} (string) — user who receives the invite
+GUILDS_INVITE_INVITESENT: "Invite for {username} sent."
+
+# Used when nobody is invited to the guild
+GUILDS_INVITE_NOINVITES: "No one is invited yet."
+
+# Sent when user tries to call the command without any mentioned users
+GUILDS_INVITE_NOMENTIONS: "You didn't mention any members." 
+
+# Used when mentioned user to invite is not a member of the server
+# {username} (string) — display name of the mentioned user
+GUILDS_INVITE_NOTAMEMBER: "{username} is not a member of the server."
+
+# Used when user tries to revoke invite for user that wasn't invited to the guild
+# {username} (string) — display name of the mentioned user
+GUILDS_INVITE_NOTINVITED: "{username} is not invited to join the guild."
+
+# Used when user has been invited to the guild, but the invite wasn't sent (Direct Messages disabled)
+# {username} (string) — display name of the user
+GUILDS_INVITE_NOTSENT: "{username} can join now, but the invite wasn't sent."
+
+# Used as a title for embed after invites were revoked
+# {revoked} (number) — number of revoked invites
+GUILDS_INVITE_REVOKED: "{revoked, plural, =0 {No invites were} one {# invite} other {# invites}} revoked"
+
+# Used when invite gets revoked
+# {username} (number) — display name of the member which invite was revoked
+GUILDS_INVITE_REVOKEDITEM: "{username}'s invite revoked."
+
+# Sent when user tries to call the “invite” command without arguments
+GUILDS_INVITE_USAGE: |-
+  The correct usage of the command is `{prefix} [guild name]<, revoke>, [mentions]`.
+
+  Use the `revoke` argument to revoke sent invites.
+
+# Sent when user tries to join the guild they were banned from
+GUILDS_JOIN_BANNEDERR: |-
+  **You were banned from joining this guild.**
+
+  If you think it's a mistake, contact the guild or server administrator.
+
+# Used when user have joined the guild
+# {guildName} — name of the guild
+GUILDS_JOIN_DONE: "Joined the guild “{guildName}.”"
+
+# Used when guild gets deleted while we waited for the confirmation
+GUILDS_JOIN_FAILED_DESTROYED: "The guild was deleted while we waited for the confirmation."
+
+# Used when bot fails to send Direct Message with the rules to the user
+# {guildName} — name of the guild
+# Don't forget to change “hc/[language code]/” and see if the page exists, remove the link if it doesn't.
+GUILDS_JOIN_FAILED_DM: |-
+  Unable to send a message with rules of the guild “{guildName}” into Direct Messages.
+
+  Please, check if you have enabled message receiving from this server in Privacy Settings.
+  Refer to [this article on Discord's Support site](https://support.discordapp.com/hc/en-us/articles/217916488) if you need any help with that.
+
+# Used when bot fails to assign the guild role
+GUILDS_JOIN_FAILED_ROLEASSIGN: "Cannot assign the guild role."
+
+# Sent when user tries to join the guild and its role is already deleted
+GUILDS_JOIN_FAILED_ROLEDELETED: "Guild role was deleted. The guild is corrupted, therefore cannot you join it."
+
+# Sent when user didn't accept the rules of the guild in Direct Messages
+GUILDS_JOIN_FAILED_RULES: "Didn't accept the rules of the guild “{guildName}.”"
+
+# Used in Direct Messages when user didn't accept the rules of the guild
+GUILDS_JOIN_FAILED_RULES_DM: "Cannot join the guild — you haven't accepted the rules of the guild “{guildName}.”"
+
+# Sent when user tries to join the guild which requires invites and user doesn't have it
+GUILDS_JOIN_IOERR: "This is an invite-only guild. You must be invited by the manager in order to join."
+
+# Sent when user accept the rules of the guild via confirmation code
+GUILDS_JOIN_JOINED_RULES_DM: "Thanks for accepting the rules. You've now joined the guild “{guildName}” on the server “{serverName}”!"
+
+# Used as a footer text in the embed with the rules
+GUILDS_JOIN_JOINED_RULES_DM_TITLE: "Rules accepted."
+
+# Used as a title in embed when user joins the guild
+# {username} — display name of the user
+# {guildName} — name of the guild
+GUILDS_JOIN_PROGRESS_TITLE: "{username} joining the guild “{guildName}”"
+
+# Used as a description in embed when user joins the guild
+# {guildName} — name of the guild
+GUILDS_JOIN_PROGRESS: "Joining the guild “{guildName}”…"
+
+# Used as a description in embed when user joins the guild and needs to confirm the rules
+# {username} — display name of the user
+# {guildName} — name of the guild
+GUILDS_JOIN_PROGRESS_RULES: "{username}, rules of the guild “{guildName}” are sent in your direct messages. Please read them and accept using the provided code, or deny using the cancel character."
+
+# Used as a title for field “Code” in the embed with guild rules
+GUILDS_JOIN_RULES_FIELDS_CODE: "Confirmation code"
+
+# Used as a footer text in the embed with guild rules
+GUILDS_JOIN_RULES_FOOTER_TEXT: "Please, send the confirmation code"
+
+# Used as a footer text in the embed with guild roles after they accepted
+GUILDS_JOIN_RULES_FOOTER_TEXT_OK: "You've accepted these rules"
+
+# Used as a title in the embed with guild rules
+# {guildName} — name of the guild
+GUILDS_JOIN_RULES_TITLE: "Rules of the guild “{guildName}”"
+
+# Sent when guild gets deleted while we waited for the confirmation
+GUILDS_LEAVE_ALREADYDELETEDROLE: "Guild was deleted while we waited for the confirmation, therefore cannot leave it."
+
+# Sent as a confirmation when user already has the guild role / wants to leave the guild
+# {guildName} — name of the guild
+GUILDS_LEAVE_CONFIRMATION: "Leave the guild “{guildName}”?"
+
+# Sent when user have left the guild
+# {guildName} — name of the guild
+GUILDS_LEAVE_DONE: "You have left the guild “{guildName}.”"
+
+# Used when user leaves the guild with “Invite only” mode enabled
+GUILDS_LEAVE_INVITEWARNING: "⚠ Leaving this guild you can join it back only having an invite."
+
+# Sent when guild role was deleted
+GUILDS_LEAVE_NOROLE: "Guild role was deleted, therefore cannot leave it."
+
+# Sent when bot fails to remove the guild role from user
+GUILDS_LEAVE_ROLEFAILED: "Failed to remove the guild role from you."
+
+# Used as a description in the embed with the guilds list
+# {prefix} — prefix used to call the command
+GUILDS_LIST_JOININFO: "Use `{prefix} [guild name]` to join the guild."
+
+# Used as a title in the embed with the guilds list
+# {list} (number) — current page number
+GUILDS_LIST_PAGE: "Guilds list · Page #{list}"
+
+# Sent when user enters an incorrect page number
+GUILDS_LIST_WRONGUSAGE: "Incorrect page number."
+
+# Used as a title in the embed when user bans the server members from the guild
+# {members} (number) — how many members were banned
+GUILDS_MEMBERSCONTROL_BANNED: "{members, plural, =0 {No members were} one {# member} other {# members}} banned"
+
+# Used when user bans the administrator from the guild
+# {username} (string) — display name of the user action was taken on
+GUILDS_MEMBERSCONTROL_BANNEDADMITEM: "Administrator {username} banned from the guild."
+
+# Used when user bans the server member from the guild
+# {username} (string) — display name of the user action was taken on
+GUILDS_MEMBERSCONTROL_BANNEDITEM: "{username} banned from the guild."
+
+# Used when user tries to ban the guild owner
+# {username} (string) — display name of the user action was taken on
+GUILDS_MEMBERSCONTROL_GUILDADMOROWNR: "{username} is either the owner or administrator of the guild."
+
+# Used as a title in the embed when user kicks the server members from the guild
+# {members} (number) — how many members were kicked
+GUILDS_MEMBERSCONTROL_KICKED: "{members, plural, =0 {No members were} few {# member} other {# members}} kicked"
+
+# Used when user kicks the administrator from the guild
+# {username} (string) — display name of the user action was taken on
+GUILDS_MEMBERSCONTROL_KICKEDADMITEM: "Administrator {username} kicked from the guild."
+
+# Used when user kicks the server member from the guild
+# {username} (string) — display name of the user action was taken on
+GUILDS_MEMBERSCONTROL_KICKEDITEM: "{username} kicked from the guild."
+
+# Uses as a header in the the members list codeblock
+# {guildName} (string) — name of the guild that the member list was generated for
+GUILDS_MEMBERSCONTROL_LIST: "Members of the guild “{guildName}”"
+
+# Used as a header for the category “Owner” in the the members list codeblock
+GUILDS_MEMBERSCONTROL_LIST_OWNER: "Owner"
+
+# Used as a header for the category “Administrators” in the the members list codeblock
+GUILDS_MEMBERSCONTROL_LIST_ADMINS: "Administrators"
+
+# Used as a header for the category “Other members” in the the members list codeblock
+GUILDS_MEMBERSCONTROL_LIST_EVERYONE: "Other members"
+
+# Used when bot is searching for members with the role
+GUILDS_MEMBERSCONTROL_LOADING: "Loading the list of guild members…"
+
+# Sent when user mentions too many server members
+GUILDS_MEMBERSCONTROL_MAXMENTIONS: "You can mention a maximum 20 members per command run."
+
+# Sent when user doesn't mention any server member
+GUILDS_MEMBERSCONTROL_NOMENTIONS: "You didn't mention any server member."
+
+# Sent when no server members were banned from the guild
+GUILDS_MEMBERSCONTROL_NONEBANNED: "No banned users."
+
+# Used when user tries to take an action on a member who haven't joined the guild
+# {username} (string) — display name of the user admin attempted to take action on
+GUILDS_MEMBERSCONTROL_NOTAMEMBER: "{username} is not a member of the guild."
+
+# Used when user tries to take an action on a user who is not on the server
+# {username} (string) — display name of the user admin attempted to take action on
+GUILDS_MEMBERSCONTROL_NOTAMEMBEROFSERVER: "{username} is not a member of the server."
+
+# Used when user tries to unban member which wasn't banned from the guild
+GUILDS_MEMBERSCONTROL_NOTBANNED: "{username} wasn't banned from this guild."
+
+# Used when bot is sending members list into Direct Messages
+GUILDS_MEMBERSCONTROL_SENDING: "Sending members list…"
+
+# Used when bot cannot send members list into Direct Messages
+GUILDS_MEMBERSCONTROL_SENDINGERR: |-
+  **Cannot send you members list**.
+
+  Please, check if your DMs are enabled on this server.
+
+# Used when bot have sent guild members list into Direct Messages of the user
+GUILDS_MEMBERSCONTROL_SENT: "Members list sent into your Direct Messages."
+
+# Used when user tries to take action on member which is currently admin of the guild
+# {username} (string) — display name of the user admin attempted to take action on
+GUILDS_MEMBERSCONTROL_SERVERADM: "{username} is administrator of the server or guild"
+
+# Used as a title in the embed when user unbans the server members in the guild
+GUILDS_MEMBERSCONTROL_UNBANNED: "{members, plural, =0 {No members were} one {# member} other {# members}} unbanned in the guild"
+
+# Used when user unbans the server member in the guild
+# {username} (string) — display name of the user admin taken action on
+GUILDS_MEMBERSCONTROL_UNBANNEDITEM: "{username} unbanned in the guild."
+
+# USed as title of the “guild create” subcommand
+GUILDS_META_CREATE: "Create Guild"
+
+GUILDS_META_CREATE_ARG0_DESC: "name of a new guild"
+
+GUILDS_META_CREATE_ARG1: ", role name or ID"
+
+GUILDS_META_CREATE_ARG1_DESC: "name or ID of the existing role for the guild"
+
+# Used as title of the “guild delete” subcommand
+GUILDS_META_DELETE: "Delete Guild"
+
+GUILDS_META_DELETE_ARG0_DESC: "name of the guild to delete"
+
+# Used as title of the “guild edit” subcommand
+GUILDS_META_EDIT: "Edit Guild Settings"
+
+GUILDS_META_EDIT_ARG0_DESC: "name of the guild to modify"
+
+GUILDS_META_EDIT_ARG1: ", setting"
+
+GUILDS_META_EDIT_ARG1_DESC: "setting to change"
+
+GUILDS_META_EDIT_ARG2: ", value"
+
+GUILDS_META_EDIT_ARG2_DESC: "value for the setting you change"
+
+GUILDS_META_GUILDNAME: "guild name"
+
+# Used as title of the “guild info” subcommand
+GUILDS_META_INFO: "Guild Info"
+
+GUILDS_META_INFO_ARG0_DESC: "name of the guild to show information"
+
+# Used as title of the “guild invite” subcommand
+GUILDS_META_INVITE: "Invite to the Guild"
+
+GUILDS_META_INVITE_ARG0_DESC: "name of the guild to invite members in"
+
+GUILDS_META_INVITE_ARG1: ", revoke,"
+
+GUILDS_META_INVITE_ARG1_DESC: "<revoke> if you need to revoke sent invites"
+
+GUILDS_META_INVITE_ARG2: "@mentions"
+
+GUILDS_META_INVITE_ARG2_DESC: "mentions of members to invite / which invites to revoke"
+
+# Used as title of the “guild” command
+GUILDS_META_JOINLEAVE: "Join/Leave Guild"
+
+GUILDS_META_JOINLEAVE_ARG0_DESC: "name of the guild to join / leave"
+
+# Used as title of the “guild list” subcommand
+GUILDS_META_LIST: "Guilds List"
+
+GUILDS_META_LIST_ARG0: "page"
+
+GUILDS_META_LIST_ARG0_DESC: "page number"
+
+# Sent when user has no permission to run the command
+GUILDS_NOPERMISSIONS: "Insufficient permissions to run this command."
+
+# Sent when error happens while running the command
+GUILDS_RUNNINGFAILED: |-
+  Heckin hecc! Command broke
+
+  An error occurred while running the command.
+
+  We've just tried to send a notification about the accident to our developers.
+  Let's hope for a fix. Also, try again later!
+
+# Used as a title of the “Colors” category in the commands list
+HELP_CATEGORY_COLORS: "Colors"
+
+# Used as a title of the “Entertaiment” category in the commands list
+HELP_CATEGORY_FUN: "Entertainment"
+
+# Used as a title of the “Guilds” category in the commands list
+HELP_CATEGORY_GUILDS: "Guilds"
+
+# Used as a title of the “Helpful” category in the commands list
+HELP_CATEGORY_HELPFUL: "Helpful"
+
+# Used as a title of the “Language” category in the commands list
+HELP_CATEGORY_LANGUAGE: "Language"
+
+# Used as a title of the “Premium” category in the commands list
+HELP_CATEGORY_PREMIUM: "Premium"
+
+# Used as a title of the “Profiles” category in the commands list
+HELP_CATEGORY_PROFILES: "Profiles"
+
+# Used as a title of the “Utilities” category in the commands list
+HELP_CATEGORY_UTILITES: "Utilities"
+
+# Used as a title of the “Voice Roles” category in the commands list
+HELP_CATEGORY_VOICEROLE: "Voice Roles"
+
+# Used as a title of the “Whitelist” category in the commands list
+HELP_CATEGORY_WHITELIST: "Whitelist"
+
+# Used as a title for the “help” command
+HELPFULCMD_CMDMETA_DESCRIPTION: "Sends the commands list"
+
+# Sent when bot fails to send the commands list into Direct Messages of the user
+HELPFULCMD_ERRSENDING: "Failed to send commands list into your Direct Messages."
+
+# Used when bot sending the commands list into Direct Messages of the user
+HELPFULCMD_SENDINGTOPM: "Sending the commands list into your Direct Messages…"
+
+# Used when bot have sent the commands list into Direct Messages of the user
+HELPFULCMD_SENTTOPM: "Commands list sent to your Direct Messages!"
+
+# Used as a header for the “Language Codes” codeblock
+LANGUAGE_CODES_HEADER: "Available languages:"
+
+# Used in a list of available languages when the translation is managed by the community
+LANGUAGE_CODES_ITEM_CM: "[community translation]"
+
+# Used in the embed with the current user's language
+LANGUAGE_COMMUNITYMANAGED: |-
+  The translation is done by the community.
+
+  Do you know English language and want to contribute? [Join our translation project]({crowdinLink}) and help us make the bot accessible for the world people!
+
+# Sent when user calls the “sb_lang” command
+LANGUAGE_CURRENTLANG: |-
+  Your current language: {lang}.
+  Translation progress: {coverage, number}%
+
+# Sent when user tries to switch “Enforce Mode” to its current state
+LANGUAGE_GUILD_ENFORCE_ALREADY: "“Enforce Mode” is already **{enforcingEnabled, select, true {enabled} other {disabled}}**."
+
+# Sent when user cannot correctly type “true” or “false”
+LANGUAGE_GUILD_ENFORCE_ARGERR: "Incorrect value. Use “true” to enable the “Enforce Mode” or “false” to disable it."
+
+# Sent when enforce mode is enabled by the user
+LANGUAGE_GUILD_ENFORCE_CHANGED: "“Enforce Mode” **{enabled, select, true {enabled} other {disabled}}**."
+
+# Sent when user calls th “guild enforce” command without arguments
+# {prefix} (string) — prefix used to call the command
+LANGUAGE_GUILD_ENFORCE_USAGE: |-
+  Correct usage of this command: `{prefix} [true/false]`.
+
+  The value of “true” enables the “Enforce Mode” and “false” disables it.
+
+# Sent when user attempts to change the language on server with “Enforce Mode” enabled
+LANGUAGE_GUILD_ENFORCEDLANG: "“Enforce Mode” is enabled on this server. You cannot use any other languages than the servers's default one. To change your global language, use this command in the Direct Messages."
+
+# Sent when user has no permission to run the command
+# I'M SO SORRY FOR REPEATING THIS ONE FOR THE THIRD TIME.
+LANGUAGE_GUILD_NOPERMISSIONS: "Insufficient permissions to run this command."
+
+# Sent when user attempts to call the command which works only on the servers
+LANGUAGE_GUILD_ONLYGUILDS: "This command only works on the servers."
+
+# Sent when the server language have changed
+# {lang} (string) — name of the currently used language
+LANGUAGE_GUILD_SWITCH_DONE: "Server language changed to {lang}."
+
+# Sent when the server language have changed and “Enforce Mode” is not enabled
+LANGUAGE_GUILD_SWITCH_DONE_ENFORCING: |-
+  Server language changed to {lang}.
+
+  Tip: you can enable “Enforce Mode” to ensure all member get the bot's responses only in this language when running the commands on your server.
+
+# Sent when user calls the “guild switch” command without the arguments
+# {prefix} (string) — prefix used to call the command
+# {codesCmd} (string) — command to list all the language codes
+LANGUAGE_GUILD_SWITCH_USAGE: |-
+  Correct usage of this command: `{prefix} [language code]`.
+
+  Tip: you can list all the language codes using the command `{codesCmd}`.
+
+# Used as a title for the “sb_lang” command
+LANGUAGE_META_DEFAULT: "Current Language Info"
+
+# Used as a title for the “sb_lang switch” subcommand
+LANGUAGE_META_SWITCH: "Change Language"
+
+LANGUAGE_META_SWITCH_ARG0: "language"
+
+LANGUAGE_META_SWITCH_ARG0_DESC: "code of the language to switch"
+
+# Used as a title for the “sb_lang codes” subcommand
+LANGUAGE_META_CODES: "List of Language Codes"
+
+# Used as a title for the “sb_lang guild switch” subcommand
+LANGUAGE_META_GUILDSWITCH: "Change Server Language"
+
+# Used as a title for the “sb_lang guild enforce”
+LANGUAGE_META_GUILDENFORCE: "Change “Enforce Mode” Status"
+
+LANGUAGE_META_GUILDENFORCE_ARG0: "status"
+
+LANGUAGE_META_GUILDENFORCE_ARG0_DESC: "“true” to enable, “false” to disable"
+
+# Sent when user calls the “sb_lang” command without the arguments
+# {codesCmd} (string) — command to list all the language codes
+# {switchCmd} (string) — command to change the language
+LANGUAGE_UNKNOWNCOMMAND: |-
+  **Unknown subcommand**.
+
+  Wanted to switch the language? You can get the language codes using the command `{codesCmd}`, then use the `{switchCmd} [code]` to change your language.
+
+  List all the Language Module commands using the help command.
+
+# Sent when user language have changed
+LANGUAGE_SWITCH_DONE: "Your language changed. Now your language is {lang}."
+
+# Sent when bot fails to find the user-specified language
+LANGUAGE_SWITCH_ERRLANGNOTFOUND: "Cannot find that language."
+
+# Sent when user calls the “sb_lang switch” subcommand without the arguments
+# {codesCmd} (string) — command to list all the language codes
+LANGUAGE_SWITCH_USAGE: "Correct command usage: `{prefix} [code]`. You can get the language codes using the command `{codesCmd}`."
+
+# Sent when user specifies an invalid time zone
+LANGUAGE_TIMEZONE_INVALID: "Invalid time zone."
+
+# Sent when bot cannot find the specified time zone
+LANGUAGE_TIMEZONE_NOT_FOUND: "No time zone matches the search."
+
+# Sent as a confirmation for the language timezone command
+LANGUAGE_TIMEZONE_CONFIRMATION@FOUND_ADDRESS: |-
+  Found the following location: {address}.
+
+  Do you want to set its time zone as yours?
+
+# Sent when user presses “×” in the confirmation
+LANGUAGE_TIMEZONE_CANCELED_TITLE: "Canceled."
+
+# Sent when time zone haven't been changed
+LANGUAGE_TIMEZONE_CANCELED@FOUND_ADDRESS: "Time zone has __not__ been changed."
+
+# Used to show the current user's time zone
+# {timezone} (string) — time zone used for user
+LANGUAGE_TIMEZONE_CURRENT@USER: "Your current time zone — {timezone}."
+
+# Used to show the current server's time zone
+# {timezone} (string) — time zone used on the server
+LANGUAGE_TIMEZONE_CURRENT@GUILD: "Current server's time zone — {timezone}."
+
+# Used to show the current time in selected time zone
+# {currentTime} (string) — current datetime string formated used Node.js Intl API (with recent ICU data)
+LANGUAGE_TIMEZONE_TIME: "Current time in the selected time zone: {currentTime}."
+
+# Sent when bot cannot find the specified location using the Google Maps API
+LANGUAGE_TIMEZONE_APIERR@TIMEZONE_RESOLVE: "Cannot find the time zone for the found location."
+
+# Sent when the server's time zone have been changed
+LANGUAGE_TIMEZONE_DONE@GUILD: |-
+  Server's time zone changed to “{newTimezone}.”
+
+  This change only affects the members who have not set the time zone yet.
+
+# Sent when user's time zone have been changed
+LANGUAGE_TIMEZONE_DONE@USER: "Your time zone changed to “{newTimezone}.”"
+
+# Used in the plugins list as the setup argument
+LASTFMPROFILEPLUGIN_ARGS: "[username]"
+
+# Sent when invalid response has been received from the Last.fm API
+LASTFMPROFILEPLUGIN_ERR_INVALIDRESP: "Invalid server response."
+
+# Sent when specified username cannot be found on the Last.fm
+LASTFMPROFILEPLUGIN_ERR_NOTFOUND: "Cannot find that Last.fm profile! ┐(￣～￣)┌"
+
+# Sent when error response code has been received from the Last.fm API
+LASTFMPROFILEPLUGIN_ERR_SERVERERROR: |-
+  Something wrong with the Last.fm API.
+
+  Try again a bit later.
+
+# Sent when an unknown error code has been received from the Last.fm API
+LASTFMPROFILEPLUGIN_ERR_UNKNOWN@NOERROR: "Unknown error code received from the Last.fm API."
+
+# Sent when an unknown error has occurred while fetching the profile
+LASTFMPROFILEPLUGIN_ERR_UNKNOWN: "Unknown error has occurred while loading the profile."
+
+# Used to display the track in history
+# {name} (string) — name of the track
+# {artist} (string) — artist(s)
+LASTFMPROFILEPLUGIN_TRACK: "**{name}** by {artist}"
+
+# Used to display how long ago the track was played
+# {sincePlayed} (string) — localized time string, see “+HUMANIZE:DURATION:…” strings
+LASTFMPROFILEPLUGIN_SINCEPLAYED: "{sincePlayed} ago"
+
+# Sent when the bot's profile picture have been updated
+OWNERCMDS_CHANGEAVY_DONE: "Profile picture successfully updated."
+
+# Sent when an unknown error occurs while running the command
+# {errMessage} (string) — error message
+OWNERCMDS_CHANGEAVY_FAULT_REQERROR: "An error has occurred while executing the command: {errMessage}."
+
+# Sent when Discord's CDN returns an error (it never shouldn't, but just in case)
+OWNERCMDS_CHANGEAVY_FAULT_RESPERR: "Discord's media server has returned an error."
+
+# Sent when the bot fails to update the profile picture
+OWNERCMDS_CHANGEAVY_FAULT_SETFAILED: "Failed to update the profile picture."
+
+# Sent when the bot's username has been changed
+# {oldName} (string) — previous username
+# {newName} (string) — new username
+OWNERCMDS_CHANGENAME_DONE: "Username successfully updated from {oldName} to {newName}."
+
+# Sent when an unknwo nerror occurs while running the co… do you have déjà vu too?
+OWNERCMDS_CHANGENAME_FAULT: "An error has occurred while executing the command: {errMessage}."
+
+# Used as a title for the field “Sorting methods” in embed when invalid sorting method specified
+OWPROFILEPLUGIN_AVAILABLE_METHODS: "Available sorting methods:"
+
+# Used as a title for the field “Platforms” in embed when invalid platform specified
+OWPROFILEPLUGIN_AVAILABLE_PLATFORMS: "Available platforms:"
+
+# Used as a title for the field “Regions” in embed when invalid region specified
+OWPROFILEPLUGIN_AVAILABLE_REGIONS: "Available regions:"
+
+# Used as a header for “Competive” section in the embedded plugin
+OWPROFILEPLUGIN_COMPETITIVE: "COMPETITIVE"
+
+# Used in the plugins list as the setup arguments
+# ⚠ Do not translate “BattleTag” — it's official name for the username in Battle.net given by Blizzard, and it is not translatable in any languages!
+OWPROFILEPLUGIN_DEFAULT_ARGS: "<BattleTag>[;Region[;Platform]]"
+
+# Sent when user's keyboard is broken and they cannot enter anything else but the command itself
+OWPROFILEPLUGIN_ERR_ARGS: "No arguments provided."
+
+# Sent when fetching fails with an unknown error (mostly because profile is not found)
+OWPROFILEPLUGIN_ERR_FETCHINGFAILED: |-
+  **We're unable to find that profile**.
+
+  Check the BattleTag (it is case sensitive) and make sure you set the profile visibility to Public level.
+
+# Sent when no API response has been received
+OWPROFILEPLUGIN_ERR_FETCHINGFAILED_API: |-
+  **No API response received**.
+
+  Possibly the API is currently unavailable. Try again a bit later.
+
+# Sent when no BattleTag is provided
+# ⚠ Do not translate “BattleTag” — it's official name for the username in Battle.net given by Blizzard, and it is not translatable in any languages!
+OWPROFILEPLUGIN_ERR_NOBTAG: "No BattleTag provided. Our crystal ball believes that your BattleTag is IamLazyPerson#76341, but we won't trust it, so please provide the valid BattleTag."
+
+# Used as a description in embed when an invalid platform provided
+OWPROFILEPLUGIN_ERR_WRONGPLATFORM: "Invalid platform provided."
+
+# Used as a description in embed when an invalid region provided
+OWPROFILEPLUGIN_ERR_WRONGREGION: "Invalid region provided."
+
+# Used as a description in embed when an invalid sorting method provided
+OWPROFILEPLUGIN_ERR_WRONGSORTMETHOD: "Invalid sorting method provided."
+
+# Used as a description in embed when user is adding the plugin
+OWPROFILEPLUGIN_FETCHINGPROFILE: "Loading the profile…"
+
+# Used in the embedded profile plugin to display how many games played by the user
+OWPROFILEPLUGIN_GAMESPLAYED: "{games, plural, =0 {No games were} one {# game was} other {# games were}} played."
+
+# Used in the embedded profile plugin to display how many games were won by the user
+OWPROFILEPLUGIN_GAMESWON: "Games won: {gamesWon, number}"
+
+# Used in the embedded profile plugin to display hero name of “Ana”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_ANA: "Ana"
+
+# Used in the embedded profile plugin to display hero name of “Bastion”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_BASTION: "Bastion"
+
+# Used in the embedded profile plugin to display hero name of “Brigitte”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_BRIGITTE: "Brigitte"
+
+# Used in the embedded profile plugin to display hero name of “Doomfist”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_DOOMFIST: "Doomfist"
+
+# Used in the embedded profile plugin to display hero name of “D.Va”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_DVA: "D.Va"
+
+# Used in the embedded profile plugin to display hero name of “Genji”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_GENJI: "Genji"
+
+# Used in the embedded profile plugin to display hero name of “Hanzo”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_HANZO: "Hanzo"
+
+# Used in the embedded profile plugin to display hero name of “Junkrat”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_JUNKRAT: "Junkrat"
+
+# Used in the embedded profile plugin to display hero name of “Lúcio”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_LUCIO: "Lúcio"
+
+# Used in the embedded profile plugin to display hero name of “McCree”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_MCCREE: "McCree"
+
+# Used in the embedded profile plugin to display hero name of “Mei”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_MEI: "Mei"
+
+# Used in the embedded profile plugin to display hero name of “Mercy”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_MERCY: "Mercy"
+
+# Used in the embedded profile plugin to display hero name of “Orisa”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_ORISA: "Orisa"
+
+# Used in the embedded profile plugin to display hero name of “Pharah”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_PHARAH: "Pharah"
+
+# Used in the embedded profile plugin to display hero name of “Reaper”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_REAPER: "Reaper"
+
+# Used in the embedded profile plugin to display hero name of “Reinhardt”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_REINHARDT: "Reinhardt"
+
+# Used in the embedded profile plugin to display hero name of “Roadhog”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_ROADHOG: "Roadhog"
+
+# Used in the embedded profile plugin to display hero name of “Soldier: 76”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_SOLDIER76: "Soldier: 76"
+
+# Used in the embedded profile plugin to display hero name of “Sombra”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_SOMBRA: "Sombra"
+
+# Used in the embedded profile plugin to display hero name of “Symmetra”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_SYMMETRA: "Symmetra"
+
+# Used in the embedded profile plugin to display hero name of “Torbjörn”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_TORBJORN: "Torbjörn"
+
+# Used in the embedded profile plugin to display hero name of “Tracer”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_TRACER: "Tracer"
+
+# Used in the embedded profile plugin to display hero name of “Widowmaker”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_WIDOWMAKER: "Widowmaker"
+
+# Used in the embedded profile plugin to display hero name of “Winston”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_WINSTON: "Winston"
+
+# Used in the embedded profile plugin to display hero name of “Zarya”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_ZARYA: "Zarya"
+
+# Used in the embedded profile plugin to display hero name of “Zenyatta”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_ZENYATTA: "Zenyatta"
+
+# Used in the embedded profile plugin to display hero name of “Moira”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, either don't translate this or do it if you know how the English names converted to your language
+OVERWATCH_HERO_MOIRA: "Moira"
+
+# Used in the embedded profile plugin to display hero role of “Offense”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, you can translate the role name yourself if you know the right translation
+OVERWATCH_ROLE_OFFENSE: "Offense"
+
+# Used in the embedded profile plugin to display hero role of “Defense”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, you can translate the role name yourself if you know the right translation
+OVERWATCH_ROLE_DEFENSE: "Defense"
+
+# Used in the embedded profile plugin to display hero role of “Tank”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, you can translate the role name yourself if you know the right translation
+OVERWATCH_ROLE_TANK: "Tank"
+
+# Used in the embedded profile plugin to display hero role of “Support”
+# ℹ You can use the following page to get the in-game translation: https://playoverwatch.com/en-us/heroes/ (don't forget to change the language)
+# If there is no your language on that page, you can translate the role name yourself if you know the right translation
+OVERWATCH_ROLE_SUPPORT: "Support"
+
+# Used in the plugins list as the setup arguments
+# ⚠ Do not translate “BattleTag” — it's official name for the username in Battle.net given by Blizzard, and it is not translatable in any languages!
+OWPROFILEPLUGIN_HEROES_ARGS: "<BattleTag>[;Region[;Platform[;Sorting Method (playtime / winrate)]]]"
+
+# Used in the profile to show the name of the embedded plugin
+# ⚠ Do not translate “Overwatch”
+OWPROFILEPLUGIN_HEROES_EMBED_TITLE: "Overwatch · Heroes"
+
+# Used in the embedded profile plugin to display for how many time game was played
+# {hours} (number) — how many hours has been played by the player
+OWPROFILEPLUGIN_HOURSPLAYED: "Time played: {hours, plural, one {one hour} other {# hours}}"
+
+# Used in the message during setup
+OWPROFILEPLUGIN_LOADING: "**Loading…**"
+
+# Used in the embedded profile plugin to display current user's level in the game
+# {level} (number) — which level user on (every received star counts as 100: ⭐⭐ [50] → 250LVL)
+# ℹ “LVL” is stands for “Level”, you can safely translate it into your language
+OWPROFILEPLUGIN_LEVEL: "{level}LVL"
+
+# Used in the embedded profile plugin as a placeholder when there are no stats to display
+OWPROFILEPLUGIN_PLACEHOLDER: "- *no statistic* -"
+
+# Used in the embedded profile plugin to display current user's rating in competitive play
+# ℹ “SR” stands for “Skill Rating”, you can see in-game translation in the Overwatch game
+OWPROFILEPLUGIN_RATING: "{tier_emoji} {rank}SR"
+
+# Used as a header for “Quick Play” section in the embedded plugin
+OWPROFILEPLUGIN_QUICKPLAY: "QUICK PLAY"
+
+# Used in the embedded profile plugin to display how many games were lost
+# TODO: change this string to “Losses: {lostGames, number}”
+OWPROFILEPLUGIN_STAT_LOSS: "Losses"
+
+# Used in the embedded profile plugin to display how many games were drawn
+# TODO: change this string to “Draws: {drawnGames, number}”
+OWPROFILEPLUGIN_STAT_TIE: "Draws"
+
+# Used in the embedded profile plugin to display how many games were won
+# TODO: change this string to “Wins: {wonGames, number}”
+OWPROFILEPLUGIN_STAT_WIN: "Wins"
+
+# Used in the embedded profile plugin to display ration of won games against the all games, basically, winrate
+# {winrate} (number) — percent of the games won
+OWPROFILEPLUGIN_WINRATE: "{winrate, number}% winrate"
+
+# Used as a title for the “ping” command
+PING_CMDMETA_DEFAULT_DESCRIPTION: "Ping the Bot"
+
+# Used as a title for the “ping_embed” command
+PING_CMDMETA_EMBED_DESCRIPTION: "Ping the Bot (embed)"
+
+# Sent to test ping for message sending
+PING_PONG: "ℹ Pong!"
+
+# Used to display the actual pings after the message is sent
+# {ping} (number) — how many milliseconds occured since sending the message
+PING_PONG_DETAILS: "ℹ Pong · {ping} ms"
+
+# Sent when the PrefixAl' command (“prefix”) called without the arguments
+# {items} (string) — available subcommans (see “PREFIXALL_INFO_ITEMS”)
+PREFIXALL_INFO: |-
+  **Managing the bot prefixes**.
+
+  Available subcommands:
+  {items}
+
+  Type the command without the arguments to learn more.
+
+# Used in a message when the PrefixAl' command is called without the arguments to display all available subcommands
+PREFIXALL_INFO_ITEMS: |-
+  • `add` (or `+`) — add another command prefix
+  • `remove` (or `-`) — remove the prefix
+  • `list` (or `?`) — send a list of all prefixes
+
+# Sent when user calls the “prefix add/+” subcommand without the arguments
+# {prefix} (string) — prefix used to call the command
+PREFIXALL_INFO_ADD: |-
+  **Add Prefix**.
+
+  Use `{prefix} [prefix]` to add a new prefix for commands.
+
+  ⚠ Some modules may not support own prefixes yet.
+
+# Sent when user tries to add a prefix which is already added for the server
+PREFIXALL_PREFIX_ALREAYADDED: |-
+  **This prefix is already added to the server**. Use it to execute the bot commands.
+
+  ⚠ Some modules may not support own prefixes yet.
+
+# Sent when the whitelist plugin is not loaded and it is restricted to use some module functions without it
+PREFIXALL_PREFIX_INTERNALERROR: "An error occurred while checking the server whitelist entry. Report this error to the bot developers!"
+
+# Sent when user tries to add more prefixes that they allowed to
+# {limit} (number) — maximum number of prefixes for the server
+PREFIXALL_PREFIX_LIMITEXCEED: "Unfortunately, you've exceeded the allowed limit of {limit, plural, one {# prefix} other {# prefixes}}."
+
+# Sent when prefix has been added to the server.
+# {prefix} (string) — added prefix
+PREFIXALL_PREFIX_ADDED: "Prefix `{prefix}` added to the server."
+
+# Sent when user calls the “prefix remove/-” subcommand without the arguments
+# {prefix} (string) — prefix used to call the command
+PREFIXALL_INFO_REMOVE: |-
+  **Remove Prefix**.
+
+  Use `{prefix} [prefix]` to delete the prefix from the server.
+
+  :warning: The server should have at least one prefix left.
+
+# Sent when user presses “×” in the confirmation dialog
+PREFIXALL_PREFIX_CANCELED: "Operation canceled."
+
+# Sent as a confirmation for adding a new prefix
+# {prefix} (string) — prefix to add
+PREFIXALL_PREFIX_CONFIRMATION_ADD: "Are you sure you want to add the prefix `{prefix}`?"
+
+# Sent as a confirmation for deleting a prefix from the server
+# {prefix} (string) — prefix to revome
+PREFIXALL_PREFIX_CONFIRMATION_REMOVE: "Are you sure you want to delete the prefix `{prefix}`?"
+
+# Sent when user tries to remove last prefix from the server
+PREFIXALL_PREFIX_CANTREMOVELATEST: "Cannot remove the last prefix. The server should have at least one prefix left so that the commands would work."
+
+# Sent when bot fails to find user-specified prefix
+PREFIXALL_PREFIX_NOTFOUND: "Prefix not found. Cannot delete something non-existent… ✨"
+
+# Sent when bot fails to find user-specified prefix and they lost the game in Russian Roulette so you must give them an attempt star
+PREFIXALL_PREFIX_NOTFOUND_6: "But you've tried, so here's the attempt star for you ⭐"
+
+# Sent when prefix has been deleted from the server
+PREFIXALL_PREFIX_REMOVED: "Prefix `{prefix}` deleted from the server."
+
+# Sent when user calls the “prefix list/?” subcommand with the arguments
+PREFIXALL_INFO_LIST: "**List Prefixes**. This command doesn't require any arguments."
+
+# Used in a message with the prefixes list
+# {prefix} (string) — server prefix (one of)
+PREFIXALL_PREFIX_LISTITEM: "• `{prefix}`"
+
+# Sent when user calls the “prefix list/?” subcommand
+# {items} (string) — list of prefixes formatted using “PREFIXALL_PREFIX_LISTITEM” string
+PREFIXALL_PREFIX_LIST: |-
+  **The list of prefixes on this server**:
+
+  {items}
+
+# Sent when user tries to list prefixes in Direct Messages
+PREFIXALL_PREFIX_LIST_DM: "Only the prefix `{prefix}` is available in Direct Messages."
+
+# Sent when user tries to delete prefix but there's no prefixes on the server and how the hell this happened… omggg
+PREFIXALL_PREFIX_NOPREFIXES: "This server doesn't have any prefixes. Deletion is not possible."
+
+# Sent when user tries to list prefixes but ther… déjà vu's again… *sigh*
+PREFIXALL_PREFIX_LIST_NONE: "The list of prefixes for this server is empty."
+
+# Sent when user attempts to use command which works only on the servers
+PREFIXALL_WRONGCHANNELTYPE: "This command doesn't work in Direct Messages."
+
+# Used as an audit log reason when user gets assigned a role for premium subscribers
+PREMIUMCTL_AUDITLOG_PREMIUM: "Bot Premium Subscriber"
+
+# Used as an audit log reason when user gets removed a role for premium subscribers
+PREMIUMCTL_AUDITLOG_NOTPREMIUM: "Lost Bot Premium Subscription"
+
+# Sent when user mentions too many members (>1)
+PREMIUMCTL_CHECKOUT_ERR_MENTIONS: "You should mention the member whose subscription you would like to check or do not mention anyone if you would like to check the status of your subscription."
+
+# Sent when user has no permission to run the command
+PREMIUMCTL_CHECKOUT_ERR_NOTADM: "You have no permission to check other user's subscription."
+
+# Sent when user tries to check subscription status of a user that is not a premium subscriber (wow)
+PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER: "This user is not a premium subscriber."
+
+# Used to display remaining premium time in the checkout embed
+# {validTime} (string) — localized time string (see “+HUMANIZE:DURATION:…” strings)
+PREMIUMCTL_CHECKOUT_VALIDTIME: "Remaining time: {validTime}"
+
+# Sent when users presses “×” in the confirmation
+PREMIUMCTL_ERR_CANCELED: "Operation canceled."
+
+# Sent when user mentions too many members or none at all
+PREMIUMCTL_ERR_MENTIONS: "Members were mentioned incorrectly."
+
+# Sent when user has no permission to… tired of this, huh? Me too
+PREMIUMCTL_ERR_PERMS: "Insufficient permissions to run this command."
+
+# Sent when something goes wrong
+PREMIUMCTL_ERR_SMTNGWNTWRNG: "Something went wrong…"
+
+# Sent as a confirmation when user issues a new premium subscription to a member but they are already a premium subscriber
+# {untilDate} (string) — localized time string until premium lasts (see “+HUMANIZE:DURATION:…” strings)
+# {prefix} (string) — prefix used to call the command
+PREMIUMCTL_GIVE_CONFIRMATION: |-
+  This member is already premium subscriber until {untilDate}.
+
+  You can extend their subscription instead using the `{prefix} renew [mention], [time]`.
+
+  Are you sure you want to **replace** their premium?
+
+# Sent as a confirmation when user issues a new premium subscription
+# {username} (string) — display name of the user that will be issued a premium subscription
+# {untilDate} (string) — localized time string until premium lasts (see “+HUMANIZE:DURATION:…” strings)
+PREMIUMCTL_GIVE_CONFIRMATION1: "Are you sure you want to issue **{username}** a subscription until {untilDate}?"
+
+# Sent when premium subscription has been issued
+PREMIUMCTL_GIVE_DONE: "Premium subscription issued!"
+
+# Sent when bot fails to issue a new premium subscription
+PREMIUMCTL_GIVE_ERR_CONSOLE: |-
+  The issuance of the premium subscription is unsuccessful.
+  Explore the developer's console for the further details.
+
+# Sent when an unknown error occurs because either bot failed to issue a new premium subscription or it's expired when it was requesting its status
+PREMIUMCTL_GIVE_ERR_INTERNAL: "An unknown server error has occurred. Either the premium subscription has not been issued or expired during the request."
+
+# Sent as a confirmation next to premium subscription status of the member
+PREMIUMCTL_GIVE_FINALCONFIRMATION: "Please, check the subscription data and confirm if everything is fine."
+
+# Sent when bot is fetching subscription data after issuing a new subscription
+PREMIUMCTL_GIVE_LOADING: "Requesting subscription data…"
+
+# Sent when bot is issuing a new subscription
+PREMIUMCTL_GIVE_PLSWAIT: "Issuing the premium subscription…"
+
+# Sent when the “premiumctl give” subcommand was called with invalid number of arguments
+PREMIUMCTL_GIVE_USAGE: "Correct usage of the command: `{prefix} give [mention], [time]`"
+
+# Used as a title for the “premiumctl checkout” subcommand
+PREMIUMCTL_META_CHECKOUT: "Check Premium Status"
+
+PREMIUMCTL_META_CHECKOUT_ARG0_DESC: "mention of the user to check the subscription status"
+
+# Used as a title for the “premiumctl delete” subcommand
+PREMIUMCTL_META_DELETE: "Delete Subscription"
+
+PREMIUMCTL_META_DELETE_ARG0_DESC: "mention of the user to remove the subscription"
+
+# Used as a title for the “premiumctl give” subcommand
+PREMIUMCTL_META_GIVE: "Issue Subscription"
+
+PREMIUMCTL_META_GIVE_ARG0_DESC: "mention of the user to issue the subscription"
+
+PREMIUMCTL_META_GIVE_ARG1: ", subscription time"
+
+PREMIUMCTL_META_GIVE_ARG1_DESC: "duration of the subscription"
+
+PREMIUMCTL_META_MENTION: "@mention"
+
+# Used as a title for the “premiumctl renew” subcommand
+PREMIUMCTL_META_RENEW: "Renew Subscription"
+
+PREMIUMCTL_META_RENEW_ARG0_DESC: "mention of the user which subscription to renew"
+
+PREMIUMCTL_META_RENEW_ARG1: ", extension time"
+
+PREMIUMCTL_META_RENEW_ARG1_DESC: "duration to add to the subscription time"
+
+# Used as a title for the “premiumctl resync” subcommand
+PREMIUMCTL_META_RESYNC: "Run Premium Sync"
+
+# Used as a title for the “premiumctl role” subcommand
+PREMIUMCTL_META_ROLE: "Set Premium Role"
+
+PREMIUMCTL_META_ROLE_ARG0: "role"
+
+PREMIUMCTL_META_ROLE_ARG0_DESC: "name of the role to set, “none” to unset current premium role"
+
+PREMIUMCTL_META_ROLE_ARG0_VALUES0: "role-name"
+
+# Sent as a confirmation when user wants to delete someone's premium subscription
+PREMIUMCTL_REMOVE_CONFIRMATION: "Delete the subscription?"
+
+# Sent when someone's premium subscription has been deleted
+PREMIUMCTL_REMOVE_DONE: "Premium subscription deleted."
+
+# Sent when user tries to delete the premium subscription of a user which subscription was just deleted (expired)
+PREMIUMCTL_REMOVE_ERR_ALREADYUNSUBBED: "User is not a premium subscriber."
+
+# Sent when user doesn't mention any premium subscriber
+PREMIUMCTL_REMOVE_ERR_MENTION: "You must mention the user whose subscription you want to delete."
+
+# Sent when mentioned user is not a premium subscriber
+PREMIUMCTL_REMOVE_ERR_NOTPREMIUMUSER: "User is not a premium subscriber."
+
+# Sent as confirmation when user wants to extend (renew) premium subscription of another user
+# {username} (string) — display name of a user whose subscription is getting extended
+# {untilDate} (string) — localized time string until premium lasts (see “+HUMANIZE:DURATION:…” strings)
+PREMIUMCTL_RENEW_CONFIRMATION: "Renew the premium subscription of **{username}** until {untilDate}?"
+
+# Sent when someone's subscription extension is complete
+PREMIUMCTL_RENEW_DONE: "User's subscription renewed."
+
+# Sent when an unknown error occurs during the subscription extending
+PREMIUMCTL_RENEW_ERR_CONSOLE: |-
+  Unsuccessful renewing of the subscription.
+  Explore the developer's console for the further details.
+
+# Sent when user attempts to renew the subscription but somehow the new subscription time is below zero
+PREMIUMCTL_RENEW_ERR_TIMEDIFF0: "Cannot to renew the subscription: the difference between current subscription and the previous one is below zero."
+
+# Sent when an unknown error occurs because either bot failed to issue a new premium subscription or it's expired when it was requesting its status
+PREMIUMCTL_RENEW_ERR_UNKNOWN: "An unknown server error has occurred. Either the premium subscription has not been issued or expired during the request."
+
+# Sent when extending process started (saving to database)
+PREMIUMCTL_RENEW_PROGRESS_STARTED: "Renewing the subscription…"
+
+# Sent when user wants to renew someone's subscription but they are not the premium subscription and bot internally redirects the user to “give” subcommand handler because they share the arguments
+PREMIUMCTL_RENEW_REDIRECT: "The user is not a premium subscriber, redirecting you to the other handler…"
+
+# Sent when the “prefixctl renew” subcommand was called with the wrong number of arguments
+# {prefix} (string) — prefix used to call the command
+PREMIUMCTL_RENEW_USAGE: "Correct usage of the command: `{prefix} renew [mention], [time]`."
+
+# Sent when the “prefixctl role” subcommand was called without the arguments
+# {prefix} (string) — prefix used to call the command
+PREMIUMCTL_SETROLE_DESC: |-
+  This subcommand allows you to set a bot's premium role on the server.
+  All the premium subscribers to the bot will get this premium role on your server.
+
+  To set a premium role, use `{prefix} role [role name or ID]`
+
+# Sent when the premium role has been set on the server
+PREMIUMCTL_SETROLE_DONE: |-
+  Set a new role for premium subscribers. Thank you for the support!
+
+  Sync has started in the background: premium subscribers will soon receive their role.
+
+# Sent when user tries to unset the premium role but no role is already set for bot's premium subscribers
+PREMIUMCTL_SETROLE_ERR_NOTSET: "Premium role is not set on this server."
+
+# Sent when user tries to set the premium role to a role which is managed by an integration
+PREMIUMCTL_SETROLE_MANAGED: |-
+  This role is automatically managed by an integration.
+  It cannot be assigned to the members.
+
+# Sent as a confirmation when user wants to unset the premium role
+# {roleName} (string) — name of the current premium role
+PREMIUMCTL_SETROLE_NONECONFIRMATION: "Are you sure you want heartbreakingly unset the role “{roleName}” as a role for the bot's premium subscribers?"
+
+# Used when bot removes the previous premium role from all the members who have it
+PREMIUMCTL_SETROLE_NONEREMOVING: |-
+  Please wait… I'm removing the role from all the server members
+
+  (◞‸◟；) \\💔
+
+# Sent when user tries to set the premium role, but bot has no permission to Manage Roles
+PREMIUMCTL_SETROLE_NOPERMS: |-
+  Bot doesn't have the permission to Manage Roles on this server.
+  Please give the permission before using this feature.
+
+# Sent when bot fails to find any role by the specified query
+PREMIUMCTL_SETROLE_NOTFOUND: "No server roles match the search"
+
+# Sent when user tries to set the premium role, but the role is higher than the bot's highest role
+# Read more about Discord's role hierarcy here: https://support.discordapp.com/hc/en-us/articles/214836687
+PREMIUMCTL_SETROLE_ROLEHIGHER: |-
+  This role is higher in a hierarchy than the highest bot's role.
+
+  It cannot be issued to the members by the bot — please, move it below or use the other one.
+
+# Sent as a confirmation when user wants to set the premium role
+# {roleName} (string) — name of the role
+PREMIUMCTL_SETROLE_SETCONFIRMATION: "Set role `{roleName}` as a role for the bot's premium subscribers? If the server had the premium role set, it will be removed from anyone who had it."
+
+# Sent when an unknown error has occurs while executing the command (orly)
+PREMIUMCTL_STARTFAILED: "An error has occurred while executing the command."
+
+# Used to display subscription date in the checkout embed
+# {subscribedAt} (string) — subscription date-time (localized string using the Node.js Intl with latest ICU data)
+PREMIUMCTL_SUBBEDAT: "Subscription date: {subscribedAt}."
+
+# Sent when manual run synchronization is complete
+PREMIUMCTL_SYNC_DONE: Sync complete.
+
+# Used when synchronization has run manually
+PREMIUMCTL_SYNCING: "Working on people's roles… Sync in progress, please wait!"
+
+# Used to display subscription end date in the checkout embed
+# {validUntil} (string) — date-time when subscription ends (localized string using the Node.js Intl with latest ICU data)
+PREMIUMCTL_VLDUNTL: "Valid until: {validUntil}."
+
+# Used as a title for the “edit_profile” command
+PROFILES_META_EDITPROFILE: "Edit Profile Plugins"
+
+PROFILES_META_EDITPROFILE_ARG0: "operation"
+
+PROFILES_META_EDITPROFILE_ARG0_DESC: "operation to perform"
+
+PROFILES_META_EDITPROFILE_ARG1: "plugin-name/setting"
+
+PROFILES_META_EDITPROFILE_ARG1_DESC: "name of the plugin to set/remove"
+
+PROFILES_META_EDITPROFILE_ARG2: "setup arguments"
+
+PROFILES_META_EDITPROFILE_ARG2_DESC: "setup arguments (if required)"
+
+# Used as a title for the “profile” command
+PROFILES_META_PROFILE: "Show Profile"
+
+PROFILES_META_PROFILE_ARG0: "@mention"
+
+PROFILES_META_PROFILE_ARG0_DESC: "mention or username of the other member"
+
+# Used as a title for the “profile_plugins” command
+PROFILES_META_PROFILEPLUGINS: "Available Profile Plugins"
+
+# Used as a title for the “set_bio” command
+PROFILES_META_SETBIO: "Set “About me”"
+
+PROFILES_META_SETBIO_ARG0: "content"
+
+PROFILES_META_SETBIO_ARG0_DESC: "content of the “About me” field (max. 1024 chars)"
+
+# Used as a title for field “About me” in the profile embed
+PROFILES_PROFILE_ABOUTME: "About Me"
+
+# Used as a name of the argument in a helpful embed when the “set_bio” command called without the arguments
+# 💭 Also check “PROFILES_META_SETBIO_ARG0”
+PROFILES_PROFILE_ARGS_ABOUTME: "content"
+
+# Used as a value of the field “content” for the argument in a helpful embed when the “set_bio” command called without the arguments
+PROFILES_PROFILE_ARGS_ABOUTME_DEFINITON: "any information about you for other members of **this** server"
+
+# Sent when biography user wants to set exceeds 1024 characters limit
+# ℹ Emoji consumption is a reference to JavaScript Unicode Problem, you can read more about it here: https://mathiasbynens.be/notes/javascript-unicode
+PROFILES_PROFILE_ARGS_ABOUTME_INVALIDTEXT: |-
+  That's beautiful and unfortunately too lengthy!
+
+  Try to fit in 1000 characters, remember that emoji may consume a little more characters.
+
+# Used as a name of the argument in a helpful embed when the “edit_profile set/remove” subcommand called without the arguments
+# 💭 Also check “PROFILES_META_EDITPROFILE_ARG1”)
+PROFILES_PROFILE_ARGS_KEY: "plugin-name/setting"
+
+# Used as a description of the argument in a helpful embed when the “edit_profile set/remove” subcommands called without the arguments
+# 💭 Also check “PROFILES_META_EDITPROFILE_ARG1_DESC”)
+PROFILES_PROFILE_ARGS_KEY_DEFINITION: "Plugin Name or Setting."
+
+# Used as a name of the argument in a helpful embed when the ”edit_profile set” subcommand called without the arguments
+# 💭 Also check “PROFILES_META_EDITPROFILE_ARG2”)
+PROFILES_PROFILE_ARGS_VALUE: "arguments"
+
+# Used as a description of the argument in a helpful embed when the “edit_profile set” subcommand called without the arguments
+# 💭 Also check “PROFILES_META_EDITPROFILE_ARG2_DESC”)
+PROFILES_PROFILE_ARGS_VALUE_DEFINITION: |-
+  Plugin Arguments or Setting Value.
+
+# Sent when the “edit_profile” command called without the arguments
+PROFILES_PROFILE_DESCRIPTION: |-
+  You can upgrade your profile by adding or removing plugins, modifying the settings.
+
+  This command is used to do perform these upgrades.
+
+# Sent when bot is unable to download the image by provided URL
+PROFILES_PROFILE_DOWNLOAD_FAILED: "Unable to load image."
+
+# Used as a field value when embedded profile plugin fails to load
+# {msg} (string) — error message
+PROFILES_PROFILE_FAILED: |-
+  Unable to load plugin:
+  {msg}
+
+# Used when user removes the profile image using “edit_profile remove” subcommand
+PROFILES_PROFILE_IMAGE_REMOVED: "Profile Image removed."
+
+# Used when user changes the profile image using “edit_profile set” subcommand
+PROFILES_PROFILE_IMAGE_SET: "Profile Image changed."
+
+# Used when user provides invalid link to an image or no link at all to set as profile image
+PROFILES_PROFILE_INVALID_LINK: "Invalid link or no arguments provided."
+
+# Used as a placeholder when embedded profile plugin loads in the profile embed
+PROFILES_PROFILE_LOADING: "Loading plugin…"
+
+# Sent when user tries to embed too many plugins using “edit_profile set” subcommand
+# {maxPlugins} (number) — maximum number of plugins
+PROFILES_PROFILE_MAXPLUGINSERR: "You can embed up to {maxPlugins, plural, one {# plugin} other {# plugins}}."
+
+# Used in a profile embed for bot accounts (instead of time)
+PROFILES_PROFILE_BOT: "Bot"
+
+# Used as the footer text in a profile embed to display how many time last since member joined
+# {duration} (string) — localized string (see “PROFILES_PROFILE_MEMBERTIME:DURATION:…” strings)
+PROFILES_PROFILE_MEMBERTIME: "Member for {duration}"
+
+# Used as the footer text in a profile embed to display how many time last since the bot has been added
+# {duration} (string) — localized string (see “PROFILES_PROFILE_MEMBERTIME:DURATION:…” strings)
+PROFILES_PROFILE_BOTADDED: "Added {duration} ago"
+
+# Used as the footer text in a profile embed when join date is unknown
+PROFILES_PROFILE_MEMBERTIME_NOTFOUND: "Unknown Join Date"
+
+# Used to display duration how many time last since user joined the server in a profile embed
+# {minutes} (number) — how many minutes last
+PROFILES_PROFILE_MEMBERTIME:DURATION:MINUTES: "{minutes, plural, one {# minute} other {# minutes}}"
+
+# Used to display duration how many time last since user joined the server in a profile embed
+# {seconds} (number) — how many seconds last
+PROFILES_PROFILE_MEMBERTIME:DURATION:SECONDS: "{seconds, plural, one {# second} other {# seconds}}"
+
+# Used to display duration how many time last since user joined the server in a profile embed
+# {weeks} (number) — how many weeks last
+PROFILES_PROFILE_MEMBERTIME:DURATION:WEEKS: "{weeks, plural, one {# week} other {# weeks}}"
+
+# Sent when user tries to get profile of an unknown member
+PROFILES_PROFILE_NOTAMEMBER: "Mentioned user is not a member of this guild."
+
+# Sent when bot fails to find specified user
+PROFILES_PROFILE_NOTFOUND: "We've searched anywhere but unfortunately didn't find anyone. Perhaps you mistyped the name or there's no such member on the server ✨"
+
+# Used in a profile embed to display current playing status when user in game
+# {gameName} (string) — game name provided by Discord
+PROFILES_PROFILE_PLAYING: "Playing **{gameName}**"
+
+# Sent when user tries to embed an unknown profile plugin using “edit_profile set” subcommand
+PROFILES_PROFILE_PLUGIN_404: "404: Plugin Not Found."
+
+# Sent when user tries to embed a profile plugin using “edit_profile set” subcommand but it's not loaded yet
+PROFILES_PROFILE_PLUGIN_NOT_LOADED: "Plugin is not loaded. Cannot set it into profile."
+
+# Sent when user removes the profile plugin using “edit_profile remove” subcommand
+# {pluginName} (string) — name of the plugin
+PROFILES_PROFILE_PLUGIN_REMOVED: "Plugin “{pluginName}” removed from your profile."
+
+# Sent when user tries to embed too many plugins without premium using “edit_profile set” subcommand
+# {maxPlugins} (number) — maximum number of plugins for default users
+PROFILES_PROFILE_PREMIUMERR: "More plugins available to premium subscribers. You're not one of them so limited to {maxPlugins, plural, one {# plugin} other {# plugins}}."
+
+# Sent when user embeds a new profile plugin using “edit_profile set” subcommand
+PROFILES_PROFILE_SETUP_COMPLETE: "Profile got upgraded. Look how it is using the `profile` command"
+
+# Sent when an error occurs while setting up the plugin
+# (the error itself may be thrown by the plugin)
+PROFILES_PROFILE_SETUP_FAILED: "An error has occurred while we tried to set up that plugin, gosh!"
+
+# Used as a field title when an error occurs while settings up the plugin
+PROFILES_PROFILE_SETUP_FAILED:DETAILS: "Details"
+
+# Used in a profile embed to display current streaming status when user in game
+# {streamName} (string) — name of the stream
+# {url} (string) — link to the stream
+PROFILES_PROFILE_STREAMING: "Streaming **[{streamName}]({url})**"
+
+# Used in a profile embed to display current listening status when user listening to Spotify
+# {icon} (nullable string) — service icon (will be “_” for an unknown service)
+# {trackLine} (string) — line with track & artist names 
+# ℹ Examples for {trackLine}:
+# - **Edge of the World** by Karma Fields (on New Age | Dark Age (Deluxe Version))
+# - **MAYDAY** by TheFatRat, Laura Brehm
+PROFILES_PROFILE_LISTENING: |-
+  Listening to **{service}**:
+  {icon, select, _ {} other {{icon}}} {trackLine}
+
+# Used in a profile embed to generate first version of a track line for “PROFILES_PROFILE_LISTENING” string
+# ℹ If the track is put in a separate album, the second version of track line will be generated with “PROFILES_PROFILE_LISTENING_ALBUM” using this version
+PROFILES_PROFILE_LISTENING_TRACK: "**{trackName}** by {artists}"
+
+# Used in a profile embed to generate second version of a track line for “PROFILES_PROFILE_LISTENING” string
+# ℹ This version will not be generated if track is a single version of album
+# {trackLine} (string) — previous version of track line
+# {albumName} (string) — name of the album
+PROFILES_PROFILE_LISTENING_ALBUM: "{trackLine} (on {albumName})"
+
+# Used as a separator for artists names in track line
+# Examples:
+# “, ” → Calvin Harris, John Newman
+# “ & ” → Ed Sheeran & Galantis
+PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR: ", "
+
+# Used as a field value when embedded profile plugin not loading after certain amount of time
+PROFILES_PROFILE_TIMEDOUT: "Timed out"
+
+# Sent when user changes their biography using “set_bio” command
+PROFILES_PROFILE_UPDATED: "Profile updated."
+
+# Used in the profile plugins list via command “profile_plugins”
+PROFILES_PROFILEPLUGINS_ARGUMENTS: "Setup arguments: {arguments}."
+
+# Used as a placeholder in the profile plugins list when plugin doesn't require the setup arguments
+PROFILES_PROFILEPLUGINS_ARGUMENTS_EMPTY: "- not required -"
+
+# Used as a header in the profile plugins list codeblock
+PROFILES_PROFILEPLUGINS_TITLE: "Available Profile Plugins"
+
+# Used in a profile embed to display current user status of “Do Not Disturb”
+PROFILES_STATUS_DND: "busy"
+
+# Used in a profile embed to display current user status of “Idle”
+PROFILES_STATUS_IDLE: "idle"
+
+# Used in a profile embed to display current user status of “Offline”
+PROFILES_STATUS_OFFLINE: "offline"
+
+# Used in a profile embed to display current user status of “Online”
+PROFILES_STATUS_ONLINE: "online"
+
+# Used in the message sent as a confirmation when user wants to subscribe to a new channel
+# {streamerName} (string) — streaming channel name
+# {streamerId} (string) — streaming channel ID
+STREAMING_ADD_CONFIRMATION: |-
+  You're about to subscribe to channel “{streamerName}” (ID: `{streamerId}`) for notifications about their streams! (^・ω・^ )
+
+# Used in the message sent as a confirmation when user wants to subscribe to a new channel on the server
+STREAMING_ADD_CONFIRMATION_INFO_GUILD: |-
+  • Every time stream starts on this channel, related notification will be sent in the specified channel. You will be able to add @​everyone mention to it later.
+
+# Used in the message sent as a confirmation when user wants to subscribe to a new channel in Direct Messages
+# ⚠ Do not change suggestion ID
+STREAMING_ADD_CONFIRMATION_INFO_USER: |-
+  • Every time stream starts on this channel, related notifications will be sent to your Direct Messages.
+
+  • If you block the bot, or lose any mutual servers with it, bot will automatically remove your subscription. Unfortunately, you cannot add bots as friends in Discord, so you forced to have at least one mutual server with enabled Direct Messages. [Vote for idea of adding bots as friends](https://feedback.discordapp.com/forums/326712/suggestions/33019324)!
+
+# Used before end of the message sent as a confirmation when user wants to subscribe to a new channel
+STREAMING_ADD_CONFIRMATION_INFO_SHARED: |-
+  • Time for notification to come may vary depending on bot's current load or/and streaming platform.
+
+  • Bot will attempt to check if the stream is currently online immediately, after you confirm the subscription. This may not work for some platforms.
+
+  • Content of the embed is also depending on streaming platform.
+
+# Used at the end of the message sent as a confirmation when user wants to subscribe to a new channel
+STREAMING_ADD_CONFIRMATION_QUESTION: "Now, when you know all the info, wish to proceed?"
+
+# Sent when user has completely subscribed to a new channel
+STREAMING_ADD_DONE: "Subscribed to the channel. As it comes online, you'll receive the notifications."
+
+# TODO: Update strings usage
+
+# Sent when user tries to subscribe to a new channel but exceeds the maximum number for non-premium users
+STREAMING_ADD_FAULT_NOPREMIUM: "Only premium bot subscribers can have more than {limit, plural, one {# subscription} other {# subscriptions}}."
+
+# Sent when user tries to subscribe to a new channel but exceeds the maximum number for not whitelisted servers
+STREAMING_ADD_FAULT_NOPARTNER: "Only whitelisted servers can have more than {limit, plural, one {# subscription} other {# subscriptions}}."
+
+# Sent when user tries to subscribe to a new channel but exceeds the maximum number of Subscribtions to the Same Streamer
+# ℹ So for your knowledge, user can subscribe to the same streamer in multiple channels on the server, so there is such limit
+STREAMING_ADD_FAULT_SSSREACHED: |-
+  Unable to subscribe — you have too many subscriptions to the same streamer on the same server.
+
+  You can only have {sssLimit, plural, one {# subscription} other {# subscriptions}} to the same streamer per single server.
+
+# Sent when user tries to subscribe to a channel they are already subscribed to
+STREAMING_ADD_FAULT_ALREADYSUBBED: "You are already subscribed to this channel."
+
+# Sent when the main record for subscriptions to a streamer gets deleted from the database while waiting for user's confirmation
+STREAMING_ADD_FAULT_DESTROYED: "Main subscription was deleted while waited for confirmation."
+
+# Sent when user tries to use an unknown streaming platform
+STREAMING_ADD_FAULT_PROVIDERNOTFOUND: "Cannot find that streaming service available for notifications."
+
+# Sent when an unknown error has occurs with the streaming service while fetching for channel
+STREAMING_ADD_FAULT_UNKNOWN: "Unknown error has occurred."
+
+# Sent when user calls “streams add” subcommand without the arguments
+STREAMING_ADD_USAGE: "Command usage: `{prefix} add [platform], [channel name]`."
+
+# Sent when user calls “streams subscribe” subcommand without the arguments
+STREAMING_ADD_USAGE_DM: "Command usage: `{prefix} subscribe [platform], [channel name]`."
+
+# Used as a base text for either “STREAMING_ALT_CH_NOTFOUND@+ADDING” or “STREAMING_ALT_CH_NOTFOUND@+REMOVAL” string
+STREAMING_ALT_CH_NOTFOUND: "None channel on the server matches the search. Ensure you've correctly typed the name or use channel ID instead."
+
+# Sent when user tries to subscribe to a new channel but the specified Discord channel is not found
+# ℹ See also “STREAMING_ALT_CH_NOTFOUND” string is is used as {base} here
+# {base} (string) — shared string nofying about that the specified Discord channel is not found
+STREAMING_ALT_CH_NOTFOUND@+ADDING: "{base}. Subscription canceled."
+
+# Sent when user tries to unsubscribe from a channel but the specified Discord channel is not found
+# ℹ See also “STREAMING_ALT_CH_NOTFOUND” string is is used as {base} here
+# {base} (string) — shared string nofying about that the specified Discord channel is not found
+STREAMING_ALT_CH_NOTFOUND@+REMOVAL: |-
+  {base}. Subscription is not removed.
+
+  If you've deleted the channel before unsubscribing, wait some time (usually until the next stream) before the bot will remove the “broken subscriber”.
+
+# Sent when user cancels operation
+STREAMING_CANCELED: "Operation canceled."
+
+# Sent when an unknown error occurs while running a command
+STREAMING_CMD_ERROR: "An error occured while running the command."
+
+# Used as a base string for any service in the embed about a stream
+# {username} (string) — channel name
+STREAMING_DESCRIPTION: ":red_circle: {username} streaming now."
+
+# Used as a base string for any service in the embed about a stream
+# {username} (string) — channel name
+STREAMING_DESCRIPTION_OFFLINE: ":checked_flag: {username}'s stream ended."
+
+# Used as a base string for the Twitch service in the embed about the stream
+# {username} (string) — channel name
+# {type} (string) — type of the stream (“live” for a live stream, “vodcast” for the VOD plays)
+STREAMING_DESCRIPTION_TWITCH: ":red_circle: {username} {type, select, live {streaming now} other {does VODCAST}}."
+
+# Sent when user edits notification settings
+STREAMING_EDIT_DONE: "Notification Settings changed."
+
+# Sent when user tries to change an unknown settings
+STREAMING_EDIT_FAULT_INVALIDARG: "Invalid setting."
+
+# Sent when user tries to enter lovely message instead of simple boolean value “true” or “false”
+STREAMING_EDIT_FAULT_INVALIDARG0: "Invalid value — only “true” and “false” allowed."
+
+# Sent when user tries to change everyone mentions setting to its current state
+# ⚠ Beware! ZERO WIDTH SPACE (U+200B) is used between @ and everyone, you don't need to translate it, so just copy as it now
+STREAMING_EDIT_FAULT_ME_ALREADY: "@​everyone mentions already {status, select, true {enabled} other {disabled}}."
+
+# Sent when bot fails to find the specified subscription
+STREAMING_EDIT_FAULT_SUBNOTFOUND: "Subscription not found."
+
+# Sent when user calls the “streams edit” subcommand without the arguments
+STREAMING_EDIT_USAGE: "Comand usage: `{prefix} edit [platform], [channel ID]`."
+
+# Used as a name of the field “Current Game” in the embed about a stream
+STREAMING_GAME_NAME: "Game"
+
+# Used as a value of the field “Current Game” string for in the embed about a stream when no game set
+STREAMING_GAME_VALUE_UNKNOWN: "- *not set* -"
+
+# Used as a description in embed on “streams” command
+STREAMING_LIST_DESCRIPTION: |-
+  Subscriptions List.
+
+  **Page {page, number}** · {count, plural, =0 {no results} one {# result} other {# results}}"
+
+# Sent when user typed incorrect page number after the “streams” command
+STREAMING_LIST_INVALIDPAGE: "Incorrect page number."
+
+# Sent when there is no channels to display in the list by “streams” command
+STREAMING_LIST_ISEMPTY: "Empty list."
+
+# Sent when user enters invalid arguments for the “streams” command
+STREAMING_LIST_USAGE: "Command usage: `{prefix} <platform> [page]`."
+
+# Used as a list item in the channels list by “streams” command
+STREAMING_LIST_ITEM: "• {provider} · ID: {id}"
+
+# Used as a name of the field “Age restrictions” in the embed about a stream
+STREAMING_MATURE_NAME: "Age Restrictions"
+
+# Used as a value of the field “Age restrictions” in the embed about a Mixer streamer
+STREAMING_MATURE_VALUE_MIXER: "{audience, select, 18+ {18+} teen {16+} other {Family-friendly}}"
+
+# Used as a velue of the field “Age restrictions” in the embed about a Twitch streamer
+STREAMING_MATURE_VALUE_TWITCH: "{mature, select, true {18+} other {None}}"
+
+# Used as a title for the “streams add” subcommand
+STREAMING_META_ADD: "Subscribe to Channel"
+
+STREAMING_META_ADD_ARG0: "platform"
+
+STREAMING_META_ADD_ARG0_DESC: "streaming platform for the channel"
+
+STREAMING_META_ADD_ARG1: ", channel name"
+
+STREAMING_META_ADD_ARG1_DESC: "channel username or ID"
+
+STREAMING_META_REMOVE_ARG1: ", channel ID"
+
+STREAMING_META_REMOVE_ARG1_DESC: "channel ID"
+
+# Used as a title for the “streams edit” subcommand
+STREAMING_META_EDIT: "Change Notifications Settings"
+
+STREAMING_META_EDIT_ARG2: "setting"
+
+STREAMING_META_EDIT_ARG2_DESC: "setting to change"
+
+STREAMING_META_EDIT_ARG3: "value"
+
+STREAMING_META_EDIT_ARG3_DESC: "value for the setting"
+
+# Used as a title for the “streams” command
+STREAMING_META_LIST: "Subscriptions List"
+
+STREAMING_META_LIST_ARG0_DESC: "platform filter"
+
+STREAMING_META_LIST_ARG1: "page"
+
+STREAMING_META_LIST_ARG1_DESC: "page number"
+
+# Used as a title for the “streams remove” subcommand
+STREAMING_META_REMOVE: "Delete Subscription"
+
+# Used as a title for the “streams set_channel” subcommand
+STREAMING_META_SETCHANNEL: "Set Notifications Channel"
+
+STREAMING_META_SETCHANNEL_ARG0: "#channel / ID"
+
+STREAMING_META_SETCHANNEL_ARG0_DESC: "channel mention or its ID"
+
+# Used as a title for the “streams subscribe” subcommand
+STREAMING_META_SUBSCRIBE: "Subscribe to Channel (User)"
+
+# Used as a title for the “stream unsubscribe” subcommand
+STREAMING_META_UNSUBSCRIBE: "Unsubscribe from Channel (User)"
+
+# Unused string for error when bot cannot find the channel cache for the notification
+STREAMING_MIXER_CACHEFAULT: "Cannot resolve the cache."
+
+# Unused string for error when bot cannot find the channel
+STREAMING_MIXER_NOTFOUND: "Cannot find that Mixer channel."
+
+# Unused string for error when bot cannot fetch the Mixer API
+STREAMING_MIXER_SOMETHINGWRONG: "Mixer API is not available. Try again later."
+
+# Unused string for error when bot tried to fetch the Mixer API for too many times without any success
+STREAMING_MIXER_TOOMANYATTEMPTS: "Too many attempts to communicate with Mixer. Try again later."
+
+# Sent when user has no permissions to run a command
+STREAMING_NO_PERMISSIONS: "You do not have sufficient permissions to run this command."
+
+# Used in the message when a stream starts and everyone mention turned on for the channel
+STREAMING_NOTIFICATION_EVERYONE: "{username} started streaming!"
+
+# Used in the message when a stream finished and everyone mention turned on for the channel
+STREAMING_NOTIFICATION_EVERYONE_OFFLINE: "{username}'s stream ended."
+
+# Used in the message when a stream updated and everyone mention turned on for the channel
+STREAMING_NOTIFICATION_EVERYONE_UPDATED: "{username} is streaming!"
+
+# Used in the Direct Message when a stream starts to notify user about the ways to unsubscribe
+STREAMING_NOTIFICATION_DM_NOTICE: "Use the command below to unsubscribe from further notifications:"
+
+# Used in the Direct Message when a stream finishes to notify user about the ways to unsubscribe
+STREAMING_NOTIFICATION_DM_NOTICE_OFFLINE: "Use the command below to unsubscribe from these notifications:"
+
+# Used in the message sent in user's Direct Messages when a stream starts
+# ℹ See “STREAMING_NOTIFICATION_EVERYONE” because they start exactly the same way
+STREAMING_NOTIFICATION_DM_STARTED: |-
+  {username} started streaming!
+
+  {notice}
+  `{command}`
+
+# Used in the message sent in user's Direct Messages when a stream finished
+# ℹ See “STREAMING_NOTIFICATION_EVERYONE_OFFLINE” because they start exactly the same way
+STREAMING_NOTIFICATION_DM_OFFLINE: |-
+  {username}'s stream ended.
+
+  {notice}
+  `{command}`
+
+# ' (ignore this line please, it's just me fixes the VS Code YAML syntax highlighting)
+# Used in the message sent in user's Direct Messages when a stream updated
+# ℹ See “STREAMING_NOTIFICATION_EVERYONE_UPDATE” because they start exactly the same way
+STREAMING_NOTIFICATION_DM_UPDATED: |-
+  {username} is streaming!
+
+  {notice}
+  `{command}`
+
+# Sent when user cancels channel removal
+STREAMING_REMOVE_CANCELED: "Removal canceled."
+
+# Sent as a confirmation when user wants to unsubscribe from a channel
+# {streamerUsername} (string) — name of the channel
+# {streamerId} (string) — ID of the channel
+STREAMING_REMOVE_CONFIRMATION: "Unsubscribe from “{streamerUsername}” (ID: `{streamerId}`)?"
+
+# Sent when user has unsubscribed from a channel
+STREAMING_REMOVE_DONE: "Unsubscribed from the channel."
+
+# Sent when the main subscription to a channel gets deleted while waiting for the confirmation
+STREAMING_REMOVE_FAULT_SUBNOTFOUND_REFETCH: "Subscription was deleted while waited for confirmation."
+
+# Sent when the main subscription is not found
+STREAMING_REMOVE_FAULT_SUBNOTFOUND: "Cannot find the subscription."
+
+# Sent when user calls the “streams remove” subcommand with invalid number of arguments
+STREAMING_REMOVE_USAGE: "Command usage: `{prefix} remove [platform], [channel ID]`."
+
+# Sent when user has changed the notifications channel
+STREAMING_SETCHANNEL_DONE: "Notifications channel set."
+
+# Sent when bot fails to find specified channel
+STREAMING_SETCHANNEL_FAULT_CHANNELNOTFOUND: "None channels match the search — try again!"
+
+# Sent when bot finds the channel of wrong type (how did that happen)
+STREAMING_SETCHANNEL_FAULT_WRONGCHANNELTYPE: "Invalid channel: channel must be text-type."
+
+# Sent when user enters an incorrect channel ID
+STREAMING_SETCHANNEL_FAULT_WRONGIDFORMAT: "Incorrect ID."
+
+# Sent when user calls the “stream set_channel” subcommand with invalid number of arguments
+STREAMING_SETCHANNEL_USAGE: "Command usage: `{prefix} set_channel [channel]`."
+
+# Unused string for error when bot fails to find a cache for Twitch channel
+STREAMING_TWITCH_CACHEFAULT: "Cannot resolve the cache."
+
+# Unused string for error when Twitch API returns an invalid response (Internal Server Error ~love Twitch)
+STREAMING_TWITCH_INVALIDRESPONSE: "Invalid response from Twitch API."
+
+# Unused string for error when bot fails to resolve a Twitch username
+STREAMING_TWITCH_INVALIDUSERNAME: "Invalid Twitch username."
+
+# Unused string for error when bot cannot fetch Twitch API
+STREAMING_TWITCH_SOMETHINGWRONG: "Twitch API is not available. Try again later."
+
+# Unused string for error when bot tries to fetch Twitch API for too many times
+STREAMING_TWITCH_TOOMANYATTEMPTS: "Too many attempts to communicate with Twitch. Try again later."
+
+# Unused string for error when bot cannot find the channel
+STREAMING_TWITCH_USERNOTFOUND: "Cannot find that Twitch channel."
+
+# Unused string for error when bot fails to find a cache for YouTube channel
+STREAMING_YOUTUBE_CACHENOTFOUND: "Cannot resolve the channel cache."
+
+# Unused string for error when bot fails to fetch channel data from YouTube
+STREAMING_YOUTUBE_CHANNELFETCH_FAILED: "Cannot load the channel data."
+
+# Unused string for error when none channels returned from YouTube API
+STREAMING_YOUTUBE_CHANNELNOTFOUND: "Cannot find that YouTube channel."
+
+# Unused string for error when cache disappears which is not possible but still…
+STREAMING_YOUTUBE_CODEERROR: "Something wrong with the cache."
+
+# Unused string for error when YouTube reports an unhandled error by the bot
+STREAMING_YOUTUBE_UNSUCCESSFUL_RESP: "YouTube API responded with a failure code."
+
+# Unused string for error when YouTube API returns no channels
+STREAMING_YOUTUBE_USERNOTFOUND: "Cannot find that YouTube channel."
+
+# Used in the embed for a stream, sent by Twitch (beta), when channel is streaming Overwatch game
+# {name} (string) — hero name
+# {role} (string) — hero role
+STREAMING_GAME_VALUE_OVERWATCH: "Playing **{name}** ({role})"
+
+# Used in the embed for a stream, sent by Twitch (beta), when channel is streaming Hearthstone game
+# {target} (string) — for whom string is generated (streamer/opponent)
+# {name} (string) — name of the Hearthstone hero
+# {class} (string) — class of the Hearthstone hero
+# {type} (string) — type of Hearthstone hero
+STREAMING_GAME_VALUE_HEARTHSTONE: "**{target, select, broadcaster {Streamer} other {Opponent}}**: {name} ({class} / {type})"
+
+# Used as a footer text in the embed for a stream, sent by Twitch (beta)
+STREAMING_SERVICE@TWITCH_NEW: "Twitch (beta)"
+
+# Used in the embed for a stream, sent by Twitch (beta)
+# {emoji} (string) — emoji that changes depending on stream type
+# {username} (string) — channel name
+# {type} (string) — type of the stream (“live” for live streams, “vod” for vod plays)
+STREAMING_DESCRIPTION@TWITCH_NEW: "{emoji} {username} {type, select, live {streaming now} other {does VODCAST}}."
+
+# Used in the embedded profile plugin to display how many credits user has
+TATSUMAKIPROFILEPLUGIN_CREDITS: "{credits, number} credits."
+
+# Used in the embedded profile plugin to display which level user on
+TATSUMAKIPROFILEPLUGIN_LVL: "{lvl, number} level."
+
+# Used in the embedded profile plugin to display user's global rank
+TATSUMAKIPROFILEPLUGIN_RANK: "#{rank, number} global rank."
+
+# Used in the embedded profile plugin to display how many repuration user has
+TATSUMAKIPROFILEPLUGIN_REP: "{rep, plural, =0 {No reputation points} one {# reputation point} other {# reputation points}}."
+
+# Used as a title for the “voicerole set” subcommand
+VOICEROLE_META_SET: "Set Voice Role"
+
+# Used as a title for the “voicerole delete” subcommand
+VOICEROLE_META_DELETE: "Unset Voice Role"
+
+VOICEROLE_META_SET_ARG0: ", role"
+
+VOICEROLE_META_SET_ARG0_DESC: "role to set"
+
+# Used as a title for the “voicerole specific delete” subcommand
+VOICEROLE_META_SPECIFICDELETE: "Unset Specific Voice Role"
+
+VOICEROLE_META_SPECIFICDELETE_ARG0: "voice channel"
+
+VOICEROLE_META_SPECIFICDELETE_ARG0_DESC: "voice channel to unset specific role from"
+
+VOICEROLE_META_SPECIFICDELETE_ARG1_DESC: "role to unset"
+
+# Used as a title for the “voicerole specific set” subcommand
+VOICEROLE_META_SPECIFICSET: "Set Specific Voice Role"
+
+VOICEROLE_META_SPECIFICSET_ARG0: "voice channel"
+
+VOICEROLE_META_SPECIFICSET_ARG0_DESC: "voice channel to set specific role to"
+
+# Used as an audit log reason when user joins a voice channel and gets voice role assigned
+VOICEROLE_JOINED_VC: "Joined voice channel “{channelName}”"
+
+# Used as an audit log reason when user leaves a voice channel and gets voice role removed
+VOICEROLE_LEFT_VC: "Left channel “{channelName}”"
+
+# Used as an audit log reason when user joins the voice channel and gets specific role assigned
+VOICEROLE_SPECIFIC_ADDED: "Assign specific role for channel “{channelName}”"
+
+# Used as an audit log reason when user leaves the voice channel and gets specific role removed
+VOICEROLE_SPECIFIC_REMOVED: "Remove specific role for channel “{channelName}”"
+
+# Sent when user has no permission to execute the command
+VOICEROLE_NOPERMS: "⚠ Insufficient permissions to manage Voice Role on this server."
+
+# Used in the helpful message when user calls the “voicerole specific set” subcommand without the arguments
+VOICEROLE_SETTING_ARGINFO_SPECIFIC: |-
+  ◦ `channel` is a voice channel name or its ID
+  ◦ `role` is a role name or ID
+
+# Sent as a confirmation when user wants to remove a voice role
+# {role} (string) — name of the resolved role
+VOICEROLE_SETTING_CONFIRMATION_DELETE: |-
+  Unset the server voice role “{role}”?
+
+  {notice}
+
+# Sent as a confirmation when user wants to set a voice role
+# {role} (string) —  name of the resolved role
+VOICEROLE_SETTING_CONFIRMATION_SET: |-
+  Set role “{role}” as the voice role on this server?
+
+  Anyone who joins the voice channel on this server will be assigned this role. Role removed as soon as they leave any voice channel.
+
+# Used in the confirmations when unsetting a voice role (both specific and server-wide)
+VOICEROLE_SETTING_CONFIRMATIONS_NOTICE: "⚠ This role will be removed from all members."
+
+# Sent when user wants to remove voice role but it's already deleted on the server
+VOICEROLE_SETTING_FASTDELETE: "Voice Role unset immediately because it is already deleted."
+
+# Sent when user calls the “voicerole specific set” subcommand with invalid number of arguments
+VOICEROLE_SETTING_FAULT_ARGERR: "Invalid number of arguments. If role or channel names contain spaces, use IDs instead or unique part of the name."
+
+# Sent when user cancels action
+VOICEROLE_SETTING_FAULT_CANCELED: "Action canceled."
+
+# Sent when bot fails to find specified channel
+VOICEROLE_SETTING_FAULT_CHANNELERR: "Cannot find that channel. Try to use its ID or unique part of the name."
+
+# Sent when bot finds the channel of invalid type
+VOICEROLE_SETTING_FAULT_CHANNELTYPEERR: "Found a text-type channel. Specific role can be set only for voice channels."
+
+# Sent when bot fails to find the server settings
+VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND: "Cannot find guild settings in the database. Contact the bot administrator if this error persists."
+
+# Sent when bot is unable to save settings to the database
+VOICEROLE_SETTING_FAULT_DBSAVING: "Unable to save settings in the database."
+
+# Sent when user tries to remove a specific role from the voice channel but there's no role set already
+VOICEROLE_SETTING_FAULT_NOSPECIFICROLE: "No specific voice role set to that channel."
+
+# Sent when cleanup cycle fails after changing the settings
+VOICEROLE_SETTING_FAULT_ROLECLEANUP: "Cleanup cycle failure."
+
+# Sent when bot fails to find specified role
+VOICEROLE_SETTING_FAULT_ROLENOTFOUND: "Cannot find that role. Try to use its ID or unique part of the name."
+
+# Sent when bot is unable to sav… god, not again
+VOICEROLE_SETTING_FAULT_SAVING: "An error has occurred while saving the settings."
+
+# Sent when user calls the “voicerole” command without the arguments
+VOICEROLE_SETTING_HELP: |-
+  • `set [role]` — Set Voice Role
+  • `delete` — Unset Voice Role
+
+# Sent when user calls the “voicerole delete” subcommand with invalid number of arguments
+VOICEROLE_SETTING_HELP_DELETE: "• `delete` — Unset Voice Role"
+
+# Sent when user calls the “voicerole set” subcommand without the arguments
+VOICEROLE_SETTING_HELP_SET: |-
+  • `set [role]` — Set Voice Role
+    ◦ `role` — role name (unique part of it) or ID
+
+    ⚠ Only one voice role can be set for the server.
+
+# Sent when user calls the “voicerole specific” subcommand without the arguments
+VOICEROLE_SETTING_HELP_SPECIFIC: |-
+  • `specific set [channel], [role]` — Set Specific Voice Role
+  • `specific delete [channel]` — Unset Specific Voice Role
+
+# Sent when user calls the “voicerole specific delete” subcommand without the arguments
+VOICEROLE_SETTING_HELP_SPECIFIC_DELETE: "• `specific delete [channel]` — Unset Specific Voice Role"
+
+# Sent when user calls the “voicerole specific set” subcommand without the arguments
+VOICEROLE_SETTING_HELP_SPECIFIC_SET: |-
+  • `specific set [channel], [role]` — Set Specific Voice Role
+    ◦ `role` — role name (unique part of it) or ID
+
+  ⚠ Only one specific voice role can be set for the channel.
+
+# Used as a title for embed with available settings
+VOICEROLE_SETTING_HELP_TITLE: "Available settings"
+
+# Used when bot is saving the settings and cycling over the members list changing the roles
+VOICEROLE_SETTING_SAVING: "Saving settings and working on roles…"
+
+# Sent when specific voice role has been set
+VOICEROLE_SETTING_SAVING_DONE: "Specific Channel Role set."
+
+# Sent when voice role has been set
+VOICEROLE_SETTING_SETTINGDONE: "Voice Role set."
+
+# Sent as a confirmation when user wants to set a specific voice role
+# {role} (string) — name of the resolved role
+# {voiceChannel} (string) — name of the resolved voice channel
+VOICEROLE_SETTING_SPECIFIC_CONFIRMATION: |-
+  Set role “{role}” as the voice role for the channel “{voiceChannel}”?
+
+  ⚠ Anyone who joins “{voiceChannel}” will be assigned this role. Role removed as soon as they leave the channel.
+
+# Sent as a confirmation when user wants to unset the specific voice role
+# {notice} (string) — notice (see “VOICEROLE_SETTING_CONFIRMATIONS_NOTICE”)
+VOICEROLE_SETTING_SPECIFIC_DELETECONFIRMATION: |-
+  Unset role “{role}” from the channel “{voiceRole}”?
+
+  {notice}
+
+# Sent when user wants to unset the specific voice role but it is deleted already
+VOICEROLE_SETTING_SPECIFIC_FASTDELETE: "Specific Voice Role unset immediately because it is already deleted."
+
+# Sent when user has unset the specific voice role
+VOICEROLE_SETTING_SPEFIC_DELETED: "Specific Voice Role unset."
+
+# Sent when user wants to permanently whitelist a server
+# {serverId} (string) — user-specified ID of the server
+WHITELIST_ACTIVATE_CONFIRM_FOREVER: |-
+  Permanently whitelist server with the ID “{serverId}”?
+
+  You can remove this server from the whitelist whenever you want to.
+
+# Sent when user wants to whitelist a server for a limited 
+# {serverId} (string) — user-specified ID of the server
+# {timeString} (string) — until what date the server will be whitelisted (localized string using the Node.js Intl with latest ICU data)
+WHITELIST_ACTIVATE_CONFIRM_LIMITED: "Whitelist server with the ID “{serverId}” until {timeString}?"
+
+# Sent when user calls the “whitelist activate” subcommand without the arguments
+WHITELIST_ACTIVATE_USAGE: "Command usage: `!whitelist activate [server ID], [time (1y/1mth/1w/1d/1h/1m/1s)/forever]`."
+
+# Sent when user calls the “whitelist activate” subcommand with invalid server ID
+# ℹ See if the article by the link is translated to your language on Support site and change the link
+WHITELIST_ACTIVATE_WRONGID: |-
+  This doesn't look like a server ID.
+
+  May the Developer Mode help you find an ID — [click here to read how to enable and use it](https://support.discordapp.com/hc/en-us/articles/206346498).
+
+# Sent when user has whitelisted the server
+WHITELIST_ACTIVATED: "Whitelisted a server with the ID “{serverId}”."
+
+# Sent as a confirmation confirmation when user wants to ban a server
+# {serverId} (string) — user-specified ID of the server
+WHITELIST_BAN_CONFIRM: "Ban server with the ID “{serverId}”?"
+
+# Sent when user calls the “whitelist ban” subcommand without the arguments
+WHITELIST_BAN_USAGE: "Command usage: `!whitelist ban [server Id]`."
+
+# Sent when user has beaned the server
+# {serverId} (string) — user-specified ID of the server
+WHITELIST_BANNED: "Banned a server with the ID “{serverId}”."
+
+# Sent when operation is getting canceled by the user
+WHITELIST_CANCELED: "Canceled."
+
+# Sent as a confirmation when user wants to remove a server from the whitelist
+# {serverId} (string) — user-specified ID of the server
+WHITELIST_DEACTIVATE_CONFIRM: "Remove a server with the ID “{serverId}” from the whitelist?"
+
+# Sent when user calls the “whitelist deactivate” subcommand without the arguments
+WHITELIST_DEACTIVATE_USAGE: "Command usage: `!whitelist deactivate [server ID]`."
+
+# Sent when user has removed the server from the whitelist
+# {serverId} (string) — user-specified ID of the server
+WHITELIST_DEACTIVATED: "Removed a server with the ID “{serverId}” from the whitelist."
+
+# Used in the status codeblock when calling “sb_pstatus” command
+WHITELIST_INFO_HEADER: "Whitelist entry for “{guildName}”:"
+
+# Used in the status codeblock when calling “sb_pstatus” command
+WHITELIST_INFO_STATUS: "Status:"
+
+# Used in the status codeblock when calling “sb_pstatus” command for status of “Banned”
+WHITELIST_INFO_STATUS_BANNED: "Banned · Why I'm here?"
+
+# Used in the status codeblock when calling “sb_pstatus” command for status of “Whitelist disabled”
+WHITELIST_INFO_STATUS_BYPASS: "Whitelist disabled"
+
+# Used in the status codeblock when calling “sb_pstatus” command for status of “Whitelisted (config)”
+WHITELIST_INFO_STATUS_IMMORTAL: "Whitelisted · via configuration"
+
+# Used in the status codeblock when calling “sb_pstatus” command for status of “Whitelisted”
+WHITELIST_INFO_STATUS_LIMITED: "Whitelisted · for some time"
+
+# Used in the status codeblock when calling “sb_pstatus” command for status of “Trial”
+WHITELIST_INFO_STATUS_TRIAL: "Trial Period"
+
+# Used in the status codeblock when calling “sb_pstatus” command for status of “Whitelisted (permanently)”
+WHITELIST_INFO_STATUS_UNLIMITED: "Whitelisted · by the bot administrator"
+
+# Used in the status codeblock when calling “sb_pstatus” command to display the date when whitelist entry expires
+WHITELIST_INFO_UNTIL: "Bot available until {endDate}"
+
+# Sent in the available chat if the bot leaves the server because ratio of bots / users is too high
+WHITELIST_LEAVE_BOTFARM: |-
+  Uh-oh! Looks like this server is a bot farm. I don't like such type of server, so I am leaving right now.
+
+  Bye 🤖👋
+
+# Sent in the available chat if the bot leaves the server because whitelist entry expired
+WHITELIST_LEAVE_EXPIRED: |-
+  Looks like I cannot stay on this server any longer. Perhaps, whitelist entry has expired.
+
+  Please, contact the bot administrator to resolve this problem.
+
+  I was here, bye 🤖👋
+
+# Sent in the available chat after join if the bot leaves the server because whitelist entry expired
+WHITELIST_LEAVE_EXPIRED1: |-
+  Ooooh, sorry-sorry. I really cannot stay on this server any longer.
+
+  Please, contact the bot administrator to resolve the problem (if you haven't done it already).
+
+  Bye 🤖❤
+
+# Sent in the available chat if the bot leaves the server because if server has too many members
+WHITELIST_LEAVE_MANYMEMBERS: |-
+  Ouch… So many members, this can affect my performance.
+
+  Maybe I can join this later, try to contact the bot administrator by the following URL: <{formUrl}>.
+
+  Until next time 🤖👋
+
+# Sent in the available chat if the bot leaves the server because server has low number of members
+WHITELIST_LEAVE_NOMEMBERS: |-
+  Hmm… This server is so empty… like me inside.
+
+  Unfortunately, I'm not allowed to stay on the empty servers.
+
+  I was here, bye 🤖👋
+
+# Sent in the available chat if the bot leaves the server because trial time ended
+WHITELIST_LEAVE_TRIALEXPIRED: |-
+  Heya, looks like the trial time has come to an end and now I must leave this server.
+
+  If you want me to stay, contact the bot administrator by the following URL: <{formUrl}>.
+
+  Bye 🤖👋
+
+# Sent in the available chat after join if the bot leaves the server because trial time ended
+WHITELIST_LEAVE_TRIALEXPIRED1: |-
+  Nope! Sorry, I really cannot stay on this server.
+
+  Want me to stay, contact my administrator by the following URL: <{formUrl}>.
+
+  Danke 🤖❤
+
+# Used as a title for the “sb_pstatus” command
+WHITELIST_META_PSTATUS: "Show Whitelist Entry"
+
+# Used as a title for the “whitelist” command
+WHITELIST_META_WHITELIST: "Manage Whitelist"
+
+WHITELIST_META_WHITELIST_ARG0: "operation"
+
+WHITELIST_META_WHITELIST_ARG0_DESC: "entries management operation"
+
+WHITELIST_META_WHITELIST_ARG1: "arguments"
+
+WHITELIST_META_WHITELIST_ARG1_DESC: "arguments for the operation (shown by calling without arguments)"
+
+# Sent when user tries to switch mode to it's current state
+WHITELIST_MODE_ALREADY: "“{mode}” is already turned {status, select, true {on} other {off}}."
+
+# Sent when user has changed the mode state
+WHITELIST_MODE_CHANGED: "Mode “{mode}” turned {enabled, select, true {on} other {off}}."
+
+# Sent when user calls the “whitelist mode” subcommand without the arguments
+# {modes} (string) — all available modes separated by comma
+WHITELIST_MODE_USAGE: |-
+  Command usage: `!whitelist mode [on/off], [mode]`.
+
+  Used to manage any of the following whitelist modes:
+  {modes}.
