@@ -2,7 +2,7 @@ import { randomString } from "@utils/random";
 import { sleep } from "@utils/utils";
 import { setTimeout } from "timers";
 import PrefixAll from "./prefixAll/prefixAll";
-import { IModule, ModuleBase, ModuleLoadState } from "@sb-types/ModuleLoader";
+import { IModule, ModuleBase, ModuleLoadState } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Message } from "discord.js";
 import { parse as parseCmd, ICommandParseResult } from "@utils/command";
 import * as getLogger from "loggy";
@@ -58,6 +58,8 @@ export default class MessagesFlows implements IModule {
 		this._messageHandler = (msg: Message) => this._executeMessageFlow(msg);
 
 		$discordBot.on("message", this._messageHandler);
+
+		this.log("info", "MessageFlows module initialized and message event is well handled");
 	}
 
 	/**
@@ -104,6 +106,7 @@ export default class MessagesFlows implements IModule {
 	 */
 	private _normalizeTimeout(type: "check" | "handler", value: number) {
 		const val = Math.max(Math.min(value, type === "check" ? CHECK_MAXTIMEOUT : HANDLER_MAXTIMEOUT), -1);
+
 		return val === 0 ? -1 : val; // kinda hacky
 	}
 
@@ -113,6 +116,7 @@ export default class MessagesFlows implements IModule {
 
 	private _buildUnhandleWrapper(cb: () => boolean) {
 		let isUnhandled = false;
+
 		return () => {
 			if (isUnhandled) {
 				throw new Error("Already unhandled");
@@ -161,6 +165,8 @@ export default class MessagesFlows implements IModule {
 			);
 			handledEvents.push(eventName);
 		}
+
+		this.log("info", `Handling commands: ${handledEvents.join(", ")}`);
 
 		return Object.freeze({
 			commands: (<string[]> []).concat(commands),
@@ -222,6 +228,7 @@ export default class MessagesFlows implements IModule {
 				const index = this._flowUnits.findIndex((handler) => handler._id === id);
 				if (index === -1) { return false; }
 				this._flowUnits.splice(index, 1);
+
 				return true;
 			}
 		});
@@ -241,6 +248,8 @@ export default class MessagesFlows implements IModule {
 	}
 
 	private async _executeMessageFlow(msg: Message) {
+		this.log("info", `[Flow:${msg.id}] Execution started...`);
+
 		const flowUnits = this._flowUnits;
 
 		const prefix = await this._getPrefix(msg);
@@ -249,12 +258,16 @@ export default class MessagesFlows implements IModule {
 		if (prefix) { // executing command
 			const eventName = this._cmdEventName(simpleParserResult.command);
 
+			this.log("info", `[Flow:${msg.id}] Dispatching "${eventName}"...`);
+
 			this._commandDispatcher.emit(
 				eventName,
 				msg,
 				prefix,
 				simpleParserResult
 			);
+		} else {
+			this.log(`[Flow:${msg.id}] Prefix not found (${prefix})`);
 		}
 
 		// execute units
@@ -289,17 +302,20 @@ export default class MessagesFlows implements IModule {
 						return checkValue;
 					} catch (err) {
 						_checkErr = err;
+
 						return undefined;
 					}
 				})();
 
 				if (_checkErr) {
 					this.log("warn", `The flow for message '${msg.id}' has found error while running check of unit#${flowUnit._id}`, _checkErr);
+
 					return;
 				}
 
 				if (typeof checkResult !== "boolean") {
 					this.log("warn", `The check of the flow unit#${flowUnit._id} has returned invalid value`, checkResult);
+
 					return;
 				} else if (!checkResult) { return; }
 
@@ -323,6 +339,7 @@ export default class MessagesFlows implements IModule {
 						}
 					} catch (err) {
 						_handlerErr = err;
+
 						return undefined;
 					}
 				});
@@ -331,6 +348,7 @@ export default class MessagesFlows implements IModule {
 
 				if (_handlerErr) {
 					this.log("warn", `The flow for message '${msg.id}' has found error while running handler of unit#${flowUnit._id}`, _handlerErr);
+
 					return;
 				}
 
@@ -374,6 +392,7 @@ export default class MessagesFlows implements IModule {
 
 	public async unload() {
 		$discordBot.removeListener("message", this._messageHandler);
+
 		return true;
 	}
 }

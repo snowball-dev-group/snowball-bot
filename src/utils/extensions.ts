@@ -54,9 +54,11 @@ export function intlAcceptsTimezone(timezone: string): boolean {
 
 	try {
 		Intl.DateTimeFormat(undefined, { timeZone: timezone });
+
 		return true;
 	} catch (err) {
 		// intl doesn't accept our timezone
+
 		return false;
 	}
 }
@@ -66,9 +68,11 @@ export function createPropertyIterable<T>(arr: T[], prop: keyof (T)): Iterable<T
 	return {
 		[Symbol.iterator]: () => {
 			const arrIterator = arr[Symbol.iterator]();
+
 			return {
 				next: () => {
 					const arrVal = arrIterator.next();
+
 					return {
 						done: arrVal.done,
 						value: <any> (arrVal.value === undefined ? undefined : arrVal.value[prop])
@@ -89,3 +93,18 @@ export function getArrayPropertyValues<T>(arr: T[], prop: keyof(T)): Array<T[key
 
 	return rArr;
 }
+
+const CLASS_REGEXP = /^\s*class\s+/;
+
+/**
+ * Checks if passed object is ES6 class
+ * @param obj Object to check
+ */
+export function isClass(obj: any): obj is Function {
+	return typeof obj === "function" &&
+		typeof obj.toString === "function" &&
+		CLASS_REGEXP.test(obj.toString());
+}
+
+export default isClass;
+

@@ -1,9 +1,9 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
-import { command as docCmd } from "../utils/help";
-import { localizeForUser } from "../utils/ez-i18n";
-import { getMessageMemberOrAuthor, getUserDisplayName } from "@cogs/utils/utils";
+import { command as docCmd } from "@utils/help";
+import { localizeForUser } from "@utils/ez-i18n";
+import { getMessageMemberOrAuthor, getUserDisplayName } from "@utils/utils";
 
 @docCmd("HELPFUL", "embed", "loc:EMBEDME_CMDMETA_DESCRIPTION", {
 	"loc:PROFILES_META_SETBIO_ARG0": {
@@ -30,6 +30,7 @@ class EmbedME extends Plugin implements IModule {
 
 		if (msg.content === "!embed") {
 			const str = await localizeForUser(msgAuthor, "EMBEDME_INFO");
+
 			return msg.channel.send(`:information_source: ${str}`);
 		}
 
@@ -39,7 +40,7 @@ class EmbedME extends Plugin implements IModule {
 			embedContent = embedContent.slice(1).substring(0, embedContent.length - 2);
 		}
 
-		await msg.channel.send("", {
+		await msg.channel.send({
 			embed: {
 				author: {
 					icon_url: msg.author.avatarURL({ format: "webp", size: 128 }),
@@ -61,6 +62,7 @@ class EmbedME extends Plugin implements IModule {
 
 	public async unload() {
 		this.unhandleEvents();
+
 		return true;
 	}
 }

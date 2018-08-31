@@ -1,6 +1,6 @@
-import { INullableHashMap } from "../../types/Types";
+import { INullableHashMap } from "@sb-types/Types";
 import { Guild, TextChannel, DMChannel, GroupDMChannel } from "discord.js";
-import { isPromise } from "./extensions";
+import { isPromise } from "@utils/extensions";
 
 export const DEFAULT_CAPACITY = 1;
 
@@ -26,8 +26,9 @@ export default class DiscordSemaphore {
 	 * @returns `true` if number of active workers is equal to zero, otherwise false
 	 */
 	public isFree(targetId: PossibleTargets) {
-		targetId = this._normalizeTarget(targetId);
-		return this._getWorkersCount(targetId) === 0;
+		return this._getWorkersCount(
+			this._normalizeTarget(targetId)
+		) === 0;
 	}
 
 	/**
@@ -36,8 +37,9 @@ export default class DiscordSemaphore {
 	 * @returns Number of remaining tasks in the queue
 	 */
 	public queueSize(targetId: PossibleTargets) {
-		targetId = this._normalizeTarget(targetId);
-		return this._getQueue(targetId).length;
+		return this._getQueue(
+			this._normalizeTarget(targetId)
+		).length;
 	}
 
 	/**
@@ -67,7 +69,11 @@ export default class DiscordSemaphore {
 			this.take(targetId, async (leaver) => {
 				try {
 					let taskResult: any = task();
-					isPromise(taskResult) && (taskResult = await taskResult);
+
+					if (isPromise(taskResult)) {
+						taskResult = await taskResult;
+					}
+
 					return res([leaver(), taskResult]);
 				} catch (err) {
 					return rej(err);
@@ -86,12 +92,14 @@ export default class DiscordSemaphore {
 	public leave(targetId: string) {
 		const workersRemaining = this._incrementWorkersCount(targetId, true); // decrement
 		process.nextTick(() => this._proceedQueue(targetId));
+
 		return workersRemaining; // useful data I guess
 	}
 
 	private _normalizeTarget(target: PossibleTargets) {
 		if (typeof target === "string") { return target; }
 		if (target instanceof Guild) { return `g[${target.id}]`; }
+
 		return `${target.type}[${target.id}]`;
 	}
 
@@ -102,23 +110,33 @@ export default class DiscordSemaphore {
 	private _getWorkersCount(targetId: string) {
 		const workersCount = this._currentWorkers[targetId];
 		if (workersCount == null) { return this._currentWorkers[targetId] = 0; }
+
 		return workersCount;
 	}
 
 	private _incrementWorkersCount(targetId: string, invert = false) {
-		let currentWorkers = this._currentWorkers[targetId] || 0;
+		let currentWorkers = this._currentWorkers[targetId];
+
+		if (currentWorkers == null) {
+			currentWorkers = 0;
+		}
+
 		if (invert) {
 			if (currentWorkers === 0) { return currentWorkers; } // can go lower than 0
-			return this._currentWorkers[targetId] = currentWorkers--;
+
+			return this._currentWorkers[targetId] = currentWorkers - 1;
 		}
-		return this._currentWorkers[targetId] = currentWorkers++;
+
+		return this._currentWorkers[targetId] = currentWorkers + 1;
 	}
 
 	private _createSingleuseLeaver(targetId: string) {
 		let isUsed = false;
+
 		return () => {
 			// anti-smartness: storing usage and throwing an error if used
 			if (isUsed) { throw new Error("You already marked that this worker stopped working"); }
+
 			return (isUsed = true) && this.leave(targetId);
 		};
 	}

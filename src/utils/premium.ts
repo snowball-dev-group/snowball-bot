@@ -1,6 +1,6 @@
-import { getDB, createTableBySchema } from "./db";
+import { getDB, createTableBySchema } from "@utils/db";
 import { User, GuildMember } from "discord.js";
-import { INullableHashMap } from "../../types/Types";
+import { INullableHashMap } from "@sb-types/Types";
 import * as getLogger from "loggy";
 
 const PREMIUM_TABLE = "premiums";
@@ -56,16 +56,19 @@ export async function init(): Promise<boolean> {
 		} catch (err) {
 			LOG("err", "Table creation failed", err);
 			retry = false;
+
 			return false;
 		}
 	}
 	status = await db.schema.hasTable(PREMIUM_TABLE);
 	if (!status) {
 		LOG("err", "Table creation seems to be failed");
+
 		return false;
 	}
 	LOG("ok", "Table found");
 	complete = true;
+
 	return status;
 }
 
@@ -74,7 +77,9 @@ export async function isPremium(person: GuildMember | User): Promise<boolean> {
 }
 
 export async function deletePremium(person: GuildMember | User): Promise<boolean> {
-	if (!(await init())) { throw new Error("Initialization failed"); }
+	if (!(await init())) {
+		throw new Error("Initialization failed");
+	}
 
 	LOG("info", "Premium deleting action registered", {
 		person_id: person.id
@@ -218,6 +223,7 @@ export async function givePremium(person: GuildMember | User, dueTo: Date, overr
 			LOG("err", logPrefix, "Updating failed", err);
 			throw err;
 		}
+
 		return true;
 	}
 

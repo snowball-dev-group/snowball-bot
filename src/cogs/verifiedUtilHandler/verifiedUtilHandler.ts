@@ -1,6 +1,6 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
-import { messageEvent, guildMemberAddEvent, guildMemberRemoveEvent, init } from "../utils/verified";
+import { messageEvent, guildMemberAddEvent, guildMemberRemoveEvent, init } from "@utils/verified";
 import * as getLogger from "loggy";
 
 class VerifiedUtilHandler extends Plugin implements IModule {
@@ -8,7 +8,7 @@ class VerifiedUtilHandler extends Plugin implements IModule {
 		return "snowball.core_features.verified.handler";
 	}
 
-	log = getLogger("VerifiedHandler");
+	private readonly _log = getLogger("VerifiedHandler");
 
 	constructor() {
 		super({
@@ -18,17 +18,18 @@ class VerifiedUtilHandler extends Plugin implements IModule {
 		}, true);
 	}
 
-	async init() {
+	public async init() {
 		if (await init()) {
-			this.log("ok", "Initialization done, handling events");
+			this._log("ok", "Initialization done, handling events");
 			this.handleEvents();
 		} else {
-			this.log("err", "Initialization failed");
+			this._log("err", "Initialization failed");
 		}
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
+
 		return true;
 	}
 }

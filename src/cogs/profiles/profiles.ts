@@ -1,19 +1,19 @@
-import { getPreferenceValue as getUserPrefValue } from "../utils/userPrefs";
+import { getPreferenceValue as getUserPrefValue } from "@utils/userPreferences";
 import { Guild, GuildMember, Message, User } from "discord.js";
 import fetch from "node-fetch";
 import * as util from "util";
-import { Humanizer } from "../../types/Humanizer";
+import { Humanizer } from "@sb-types/Localizer/Humanizer";
 import { INullableHashMap } from "../../types/Types";
-import { convertToModulesMap, IModule, IModuleInfo, ModuleBase, ModuleLoader, ModuleLoadState } from "../../types/ModuleLoader";
+import { convertToModulesMap, IModule, IModuleInfo, ModuleBase, ModuleLoader, ModuleLoadState } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
-import { createTableBySchema, getDB } from "../utils/db";
-import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "../utils/ez-i18n";
-import { command as docCmd } from "../utils/help";
-import { isPremium } from "../utils/premium";
-import { timeDiff } from "../utils/time";
-import { EmbedType, escapeDiscordMarkdown, IEmbed, IEmbedOptionsField, resolveGuildMember, sleep } from "../utils/utils";
+import { createTableBySchema, getDB } from "@utils/db";
+import { generateLocalizedEmbed, getUserLanguage, localizeForUser } from "@utils/ez-i18n";
+import { command as docCmd } from "@utils/help";
+import { isPremium } from "@utils/premium";
+import { timeDiff } from "@utils/time";
+import { EmbedType, escapeDiscordMarkdown, IEmbed, IEmbedOptionsField, resolveGuildMember, sleep } from "@utils/utils";
 import { AddedProfilePluginType, IAddedProfilePlugin, IProfilesPlugin } from "./plugins/plugin";
-import { messageToExtra, memberToExtra, guildToExtra } from "../utils/failToDetail";
+import { messageToExtra, memberToExtra, guildToExtra } from "@utils/failToDetail";
 import * as getLogger from "loggy";
 
 export interface IProfilesModuleConfig {
@@ -62,6 +62,9 @@ const DB_PROFILE_PROPS = {
 	joined: "string",
 	status_changed: "string"
 };
+
+const MAX_PLUGINS_DEFAULT = 4;
+const MAX_PLUGINS_PREMIUM = 6;
 
 function isChat(msg: Message) {
 	return msg.channel.type === "text";
@@ -216,11 +219,13 @@ export default class Profiles extends Plugin implements IModule {
 			const mentionsCount = msg.mentions.users.size;
 			if (mentionsCount === 1) {
 				const mentioned = msg.mentions.users.first();
+
+				if (!mentioned) { return; }
+
 				if (!(profileOwner = msg.guild.members.get(mentioned.id))) {
-					await msg.channel.send({
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTAMEMBER")
 					});
-					return;
 				}
 			} else if (mentionsCount > 1) {
 				return; // as we don't show profiles fr more than one user
@@ -235,13 +240,13 @@ export default class Profiles extends Plugin implements IModule {
 						return undefined;
 					}
 				})();
+
 				this.log("info", `Resolving hook took ${(Date.now() - rst)}ms on guild ${msg.guild.id} for search '${searchTerm}'`);
 
 				if (!resolvedMember) {
-					await msg.channel.send({
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_NOTFOUND")
 					});
-					return;
 				}
 
 				profileOwner = resolvedMember;
@@ -274,10 +279,9 @@ export default class Profiles extends Plugin implements IModule {
 
 	private async cmd_edit_profile(msg: Message) {
 		if (msg.content === "!edit_profile") {
-			await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PROFILES_PROFILE_DESCRIPTION")
 			});
-			return;
 		}
 
 		let param = msg.content.slice("!edit_profile ".length);
@@ -293,19 +297,17 @@ export default class Profiles extends Plugin implements IModule {
 				const customize = JSON.parse(profile.customize);
 
 				if (arg === "" || (!arg.startsWith("http://") && !arg.startsWith("https://"))) {
-					await msg.channel.send({
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_INVALID_LINK")
 					});
-					return;
 				}
 
 				try {
 					await fetch(encodeURI(arg));
 				} catch (err) {
-					await msg.channel.send({
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_DOWNLOAD_FAILED")
 					});
-					return;
 				}
 
 				customize["image_url"] = encodeURI(arg);
@@ -317,25 +319,21 @@ export default class Profiles extends Plugin implements IModule {
 
 				profile.customize = JSON.stringify(customize);
 
-				await this.updateProfile(profile);
-
-				return;
+				return this.updateProfile(profile);
 			}
 
 			const mod = this.pluginsLoader.findKeeper<IProfilesPlugin>(param, "name");
 
 			if (!mod) {
-				await msg.channel.send({
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
 				});
-				return;
 			}
 
 			if (mod.state !== ModuleLoadState.Initialized || !mod.base) {
-				await msg.channel.send({
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_NOT_LOADED")
 				});
-				return;
 			}
 
 			const plugin = mod.base;
@@ -344,7 +342,7 @@ export default class Profiles extends Plugin implements IModule {
 			try {
 				completeInfo = await plugin.setup(arg, msg.member, msg, this);
 			} catch (err) {
-				await msg.channel.send({
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_SETUP_FAILED", {
 						fields: [{
 							name: await localizeForUser(msg.member, "PROFILES_PROFILE_SETUP_FAILED:DETAILS"),
@@ -352,7 +350,6 @@ export default class Profiles extends Plugin implements IModule {
 						}]
 					})
 				});
-				return;
 			}
 
 			const customize = JSON.parse(profile.customize);
@@ -363,17 +360,33 @@ export default class Profiles extends Plugin implements IModule {
 
 			if (completeInfo.type === AddedProfilePluginType.Embed) {
 				const embedsCount = Object.keys(customize.plugins).map(e => customize.plugins[e]).filter(e => e.type === AddedProfilePluginType.Embed).length;
-				if (embedsCount > 4 && !(await isPremium(msg.member))) {
-					await msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PREMIUMERR")
+
+				if (embedsCount > MAX_PLUGINS_DEFAULT && !(await isPremium(msg.member))) {
+					return msg.channel.send({
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member, {
+								key: "PROFILES_PROFILE_PREMIUMERR",
+								formatOptions: {
+									maxPlugins: MAX_PLUGINS_DEFAULT
+								}
+							}
+						)
 					});
-					return;
 				}
-				if (embedsCount > 9) {
-					await msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_MAXPLUGINSERR")
+
+				if (embedsCount > MAX_PLUGINS_PREMIUM) {
+					return msg.channel.send({
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member, {
+								key: "PROFILES_PROFILE_MAXPLUGINSERR",
+								formatOptions: {
+									maxPlugins: MAX_PLUGINS_DEFAULT
+								}
+							}
+						)
 					});
-					return;
 				}
 			}
 
@@ -383,7 +396,7 @@ export default class Profiles extends Plugin implements IModule {
 
 			await this.updateProfile(profile);
 
-			await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, "PROFILES_PROFILE_SETUP_COMPLETE")
 			});
 		} else if (param === "set") {
@@ -393,7 +406,8 @@ export default class Profiles extends Plugin implements IModule {
 				keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION"),
 				valueDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_VALUE_DEFINITION")
 			};
-			await msg.channel.send({
+
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(
 					EmbedType.Information,
 					msg.member, {
@@ -408,13 +422,13 @@ export default class Profiles extends Plugin implements IModule {
 					}
 				)
 			});
-			return;
 		} else if (param === "remove") {
 			const strs = {
 				key: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY"),
 				keyDef: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_KEY_DEFINITION")
 			};
-			await msg.channel.send({
+
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					custom: true,
 					string: `\`remove [${strs.key}]\``
@@ -436,10 +450,9 @@ export default class Profiles extends Plugin implements IModule {
 				delete customize.image_url;
 			} else {
 				if (!this.pluginsLoader.loadedModulesRegistry[param]) {
-					await msg.channel.send({
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_PLUGIN_404")
 					});
-					return;
 				}
 				delete customize.plugins[param];
 				doneStr = await localizeForUser(msg.member, "PROFILES_PROFILE_PLUGIN_REMOVED", {
@@ -451,7 +464,7 @@ export default class Profiles extends Plugin implements IModule {
 
 			await this.updateProfile(profile);
 
-			await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, `custom:${doneStr}`)
 			});
 		}
@@ -463,7 +476,8 @@ export default class Profiles extends Plugin implements IModule {
 				aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME"),
 				def_aboutMe: await localizeForUser(msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_DEFINITON")
 			};
-			await msg.channel.send({
+
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(
 					EmbedType.Information,
 					msg.member, {
@@ -478,22 +492,20 @@ export default class Profiles extends Plugin implements IModule {
 					}
 				)
 			});
-			return;
 		}
 
 		const newBio = msg.content.slice("!set_bio ".length);
 		if (newBio.length >= 1024) {
-			await msg.channel.send({
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PROFILES_PROFILE_ARGS_ABOUTME_INVALIDTEXT")
 			});
-			return;
 		}
 
 		const profile = await this.getOrCreateProfile(msg.member, msg.guild);
 		profile.bio = newBio;
 		await this.updateProfile(profile);
 
-		await msg.channel.send({
+		return msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PROFILES_PROFILE_UPDATED")
 		});
 	}
@@ -512,30 +524,36 @@ export default class Profiles extends Plugin implements IModule {
 	}
 
 	public guessServiceEmoji(presenceName: string) {
-		switch (presenceName) {
-			case "Spotify": { return this.config.emojis.spotify; }
-			default: { return "_"; }
+		if (presenceName === "Spotify") {
+			return this.config.emojis.spotify;
 		}
+
+		return "_";
 	}
 
 	public async getUserStatusString(activity: string, localizingFor: GuildMember | User) {
-		const localizeStatus = async (str: string) => localizeForUser(localizingFor, `PROFILES_STATUS_${str.toUpperCase()}`);
+		let key = "";
+
 		switch (activity) {
-			case "online": { return localizeStatus("online"); }
-			case "idle": { return localizeStatus("idle"); }
-			case "dnd": { return localizeStatus("dnd"); }
-			default: { return localizeStatus("offline"); }
+			case "online": { key = "online"; } break;
+			case "idle": { key = "idle"; } break;
+			case "dnd": { key = "dnd"; } break;
+			default: { key = "offline"; } break;
 		}
+
+		return localizeForUser(localizingFor, `PROFILES_STATUS_${key.toUpperCase()}`);
 	}
 
 	public serverTimeHumanize(duration: number, largest: number = 2, round: boolean = true, language: string = $localizer.defaultLanguage) {
 		let humanizer = this.customHumanizers[language];
+
 		if (!humanizer) {
 			humanizer = this.customHumanizers[language] = $localizer.createCustomHumanizer(language, {
 				w: (weeks) => $localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:WEEKS", { weeks }),
 				m: (minutes) => $localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:MINUTES", { minutes }),
 				s: (seconds) => $localizer.getFormattedString(language, "PROFILES_PROFILE_MEMBERTIME:DURATION:SECONDS", { seconds })
 			});
+
 			if (!humanizer) { throw new Error("Expected to create new humanizer, but got nothing. Is world broken?"); }
 		}
 
@@ -563,21 +581,61 @@ export default class Profiles extends Plugin implements IModule {
 					gameName: escapeDiscordMarkdown(target.presence.activity.name)
 				});
 			} else if (target.presence.activity.type === "LISTENING") {
-				statusString += `${this.getUserStatusEmoji(target)} `;
-				statusString += await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING", {
-					artists: escapeDiscordMarkdown(
-						target.presence.activity.state
-							.split(";")
-							.map(artistName => artistName.trim())
-							.join(await localizeForUser(msg.member, "PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR"))),
-					trackName: escapeDiscordMarkdown(target.presence.activity.details),
-					trackUrl: (target.presence.activity["syncID"] && `https://open.spotify.com/track/${target.presence.activity["syncID"]}`) || "_",
-					albumName: escapeDiscordMarkdown(target.presence.activity.assets.largeText),
-					service: escapeDiscordMarkdown(target.presence.activity.name),
-					icon: this.guessServiceEmoji(target.presence.activity.name)
-				});
+				const trackTitle = escapeDiscordMarkdown(target.presence.activity.details);
+				const albumTitle = escapeDiscordMarkdown(target.presence.activity.assets.largeText);
 
-				showStatusChangeTime = false; // it's kinda not works in this case :9
+				let trackLine = await localizeForUser(
+					msg.member,
+					"PROFILES_PROFILE_LISTENING_TRACK", {
+						trackName: trackTitle,
+						artists: escapeDiscordMarkdown(
+							target.presence.activity.state
+								.split(";")
+								.map(artistName => artistName.trim())
+								.join(
+									await localizeForUser(
+										msg.member,
+										"PROFILES_PROFILE_LISTENING_ARTISTS_SEPARATOR"
+									)
+								)
+						)
+					}
+				);
+
+				const serviceUrl =
+					target.presence.activity["syncID"] &&
+					`https://open.spotify.com/track/${target.presence.activity["syncID"]}`;
+
+				trackLine = serviceUrl ? `[${trackLine}](${serviceUrl})` : trackTitle;
+
+				if (albumTitle !== trackTitle) {
+					// this is quite a bad check I suppose
+					trackLine = await localizeForUser(
+						msg.member,
+						"PROFILES_PROFILE_LISTENING_ALBUM", {
+							trackLine: trackLine,
+							albumName: albumTitle
+						}
+					);
+				}
+
+				let listeningStatusString = await localizeForUser(
+					msg.member,
+					"PROFILES_PROFILE_LISTENING", {
+						service: escapeDiscordMarkdown(target.presence.activity.name),
+						icon: this.guessServiceEmoji(target.presence.activity.name),
+						trackLine
+					}
+				);
+
+				// trimming spaces if no icon provided
+				listeningStatusString = listeningStatusString
+					.replace(/^ {1,}/g, "");
+
+				statusString += `${this.getUserStatusEmoji(target)} `;
+				statusString += listeningStatusString;
+
+				showStatusChangeTime = false; // it's kinda not working in this case :9
 			}
 		} else if (dbProfile.activity) {
 			const jsonActivity = <IUserActivity> JSON.parse(dbProfile.activity);
@@ -660,6 +718,7 @@ export default class Profiles extends Plugin implements IModule {
 		const pushUpdate = async () => {
 			if (pushing) {
 				repushAfterPush = true;
+
 				return;
 			}
 
@@ -667,10 +726,12 @@ export default class Profiles extends Plugin implements IModule {
 			if (!pushedMessage) {
 				pushedMessage = <Message> await msg.channel.send({ embed: <any> embed });
 				pushing = false;
+
 				if (repushAfterPush) {
 					repushAfterPush = true;
 					pushUpdate();
 				}
+
 				return pushedMessage;
 			}
 			try {
@@ -690,8 +751,7 @@ export default class Profiles extends Plugin implements IModule {
 		};
 
 		if (dbProfile.customize === "{}") {
-			await pushUpdate();
-			return;
+			return pushUpdate();
 		}
 
 		const customize = JSON.parse(dbProfile.customize);
@@ -705,8 +765,7 @@ export default class Profiles extends Plugin implements IModule {
 		}
 
 		if (!customize.plugins) {
-			await pushUpdate();
-			return;
+			return pushUpdate();
 		}
 
 		for (const pluginName of Object.keys(customize.plugins)) {
@@ -799,6 +858,7 @@ export default class Profiles extends Plugin implements IModule {
 
 	public async createProfile(member: GuildMember, guild: Guild) {
 		member = await member.guild.members.fetch(member.id);
+
 		return this.db(TABLE_NAME).insert({
 			uid: member.id,
 			real_name: null,
@@ -833,9 +893,11 @@ export default class Profiles extends Plugin implements IModule {
 		} else {
 			return currentUser;
 		}
+
 		if (!currentUser) {
 			throw new Error("User cannot be created at current moment.");
 		}
+
 		return currentUser;
 	}
 
@@ -853,6 +915,7 @@ export default class Profiles extends Plugin implements IModule {
 		} catch (err) {
 			$snowball.captureException(err);
 			this.log("err", "Can't check table status: ", err);
+
 			return;
 		}
 
@@ -864,6 +927,7 @@ export default class Profiles extends Plugin implements IModule {
 			} catch (err) {
 				$snowball.captureException(err);
 				this.log("err", "Cannot create table right now", err);
+
 				return;
 			}
 		}
@@ -884,7 +948,9 @@ export default class Profiles extends Plugin implements IModule {
 
 	public async unload() {
 		await this.pluginsLoader.unload(Object.getOwnPropertyNames(this.pluginsLoader.loadedModulesRegistry));
+
 		this.unhandleEvents();
+
 		return true;
 	}
 }

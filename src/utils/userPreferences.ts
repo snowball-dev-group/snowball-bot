@@ -1,4 +1,4 @@
-import { getDB } from "./db";
+import { getDB } from "@utils/db";
 import { GuildMember, User } from "discord.js";
 import * as getLogger from "loggy";
 
@@ -35,6 +35,7 @@ type userIndx = GuildMember | User;
 
 async function createPreference(member: userIndx, preference: string, value: string) {
 	if (!initDone) { await init(); }
+
 	return DB(TABLE_NAME).insert({
 		gid: member instanceof GuildMember ? member.guild.id : "global",
 		uid: member.id,
@@ -44,6 +45,7 @@ async function createPreference(member: userIndx, preference: string, value: str
 
 export async function getPreferenceRow(member: userIndx, preference: string): Promise<IUserPreference> {
 	if (!initDone) { await init(); }
+
 	return DB(TABLE_NAME).where({
 		gid: member instanceof GuildMember ? member.guild.id : "global",
 		uid: member.id,
@@ -53,6 +55,7 @@ export async function getPreferenceRow(member: userIndx, preference: string): Pr
 
 async function updatePreferenceRow(row: IUserPreference) {
 	if (!initDone) { await init(); }
+
 	return DB(TABLE_NAME).where({
 		gid: row.gid,
 		uid: row.uid,
@@ -78,15 +81,18 @@ export async function init(): Promise<boolean> {
 				});
 			} catch (err) {
 				LOG("err", "Can't create table", err);
+			
 				return false;
 			}
 		}
 	} catch (err) {
 		LOG("err", "Can't check table status", err);
+	
 		return false;
 	}
 
 	initDone = true;
+
 	return true;
 }
 
@@ -103,6 +109,7 @@ export async function getPreferenceValue(u: userIndx, preference: string, json =
 	if (!initDone) { await init(); }
 	const r = (await getPreferenceRow(u, preference));
 	const v = r ? r.value : undefined;
+
 	return json && v ? JSON.parse(v) : v;
 }
 

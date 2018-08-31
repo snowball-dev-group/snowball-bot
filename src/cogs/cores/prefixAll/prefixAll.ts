@@ -1,4 +1,4 @@
-import { IModule } from "../../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Message, Guild } from "discord.js";
 import { INullableHashMap } from "../../../types/Types";
 import { PrefixAllDBController } from "./dbController";
@@ -55,8 +55,10 @@ export default class PrefixAll implements IModule {
 			if (!cached.destructTimer) {
 				// okay, it's borked, let's re-cache it
 				delete this._messagesCache[ctx.id];
+
 				return this._cacheMessage(ctx, cachedResult);
 			}
+
 			return cachedResult;
 		}
 
@@ -76,6 +78,7 @@ export default class PrefixAll implements IModule {
 		};
 
 		// returning caching result
+
 		return cached.result;
 	}
 
@@ -100,15 +103,14 @@ export default class PrefixAll implements IModule {
 		if (cached) { // slight optimization
 			return cached.result;
 		}
-		
+
 		// no cached version
 		if (!message.content || message.content.length === 0) {
 			// that's absolutely no-no
 			return this._cacheMessage(message, false);
 		}
 
-		if (!message.guild) {
-			// only default prefix
+		if (!message.guild) { // only default prefix
 			return this._cacheMessage(message, message.content.startsWith(this._defaultPrefix) && this.defaultPrefix);
 		}
 
@@ -130,6 +132,7 @@ export default class PrefixAll implements IModule {
 
 	public async getPrefixes(guild: Guild) {
 		if (!guild) { return [this.defaultPrefix]; }
+
 		return this._getGuildPrefix(guild);
 	}
 
@@ -137,11 +140,13 @@ export default class PrefixAll implements IModule {
 		await this._dbController.setPrefixes(guild, prefixes);
 		const newPrefixes = await this._dbController.getPrefixes(guild);
 		if (!newPrefixes) { return this._prefixesCache[guild.id] = null; }
+
 		return this._prefixesCache[guild.id] = newPrefixes;
 	}
 
 	public async unload() {
 		coreInitialized = false;
+
 		return true;
 	}
 }

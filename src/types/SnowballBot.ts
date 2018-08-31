@@ -1,10 +1,10 @@
-import { EventEmitter } from "events";
-import { ModuleLoader, IModuleInfo, convertToModulesMap, SCHEMA_MODULEINFO } from "./ModuleLoader";
-import { ILocalizerOptions, Localizer, SCHEMA_LOCALIZEROPTIONS } from "./Localizer";
-import * as logger from "loggy";
+import * as Localization from "@sb-types/Localizer/Localizer";
+import { IModuleInfo } from "@sb-types/ModuleLoader/Interfaces";
+import * as ModLoader from "@sb-types/ModuleLoader/ModuleLoader";
 import * as djs from "discord.js";
-import { ISchema, Typer } from "./Typer";
+import * as logger from "loggy";
 import * as Raven from "raven";
+import { ISchema, Typer } from "./Typer";
 
 export interface IBotConfig {
 	/**
@@ -34,7 +34,7 @@ export interface IBotConfig {
 	/**
 	 * Localizator options
 	 */
-	localizerOptions: ILocalizerOptions;
+	localizerOptions: Localization.ILocalizerOptions;
 	/**
 	 * Sharding options
 	 */
@@ -106,12 +106,12 @@ declare global {
 	/**
 	 * Localizer
 	 */
-	const $localizer: Localizer;
+	const $localizer: Localization.Localizer;
 
 	/**
 	 * Module Loader
 	 */
-	const $modLoader: ModuleLoader;
+	const $modLoader: ModLoader.ModuleLoader;
 
 	/**
 	 * Snowball bot instance
@@ -129,12 +129,12 @@ const SCHEMA_CONFIG: ISchema = {
 	},
 	"modules": {
 		type: "object", isArray: true,
-		elementSchema: SCHEMA_MODULEINFO
+		elementSchema: ModLoader.SCHEMA_MODULEINFO
 	},
 	"djsConfig": { type: "any" },
 	"localizerOptions": {
 		type: "object",
-		schema: SCHEMA_LOCALIZEROPTIONS
+		schema: Localization.SCHEMA_LOCALIZEROPTIONS
 	},
 	"shardingOptions": {
 		type: "object",
@@ -147,11 +147,11 @@ const SCHEMA_CONFIG: ISchema = {
 	"ravenUrl": { type: "string", optional: true }
 };
 
-export class SnowballBot extends EventEmitter {
+export class SnowballBot {
 	/**
 	 * Module loader
 	 */
-	public modLoader: ModuleLoader;
+	public modLoader: ModLoader.ModuleLoader;
 	
 	/**
 	 * Discord Bot
@@ -178,9 +178,6 @@ export class SnowballBot extends EventEmitter {
 		 */
 		private readonly _internalConfiguration: IInternalBotConfig
 	) {
-
-		super();
-		
 		// Check everything
 		Typer.checkObjectBySchema(SCHEMA_CONFIG, _config);
 
@@ -200,11 +197,11 @@ export class SnowballBot extends EventEmitter {
 	public async prepareModLoader() {
 		if (this.modLoader) { throw new Error("ModLoader is already prepared"); }
 
-		this.modLoader = new ModuleLoader({
+		this.modLoader = new ModLoader.ModuleLoader({
 			basePath: "./cogs/",
 			name: `${this._config.name}:ModLoader`,
 			defaultSet: this._config.autoLoad,
-			registry: convertToModulesMap(this._config.modules)
+			registry: ModLoader.convertToModulesMap(this._config.modules)
 		});
 
 		// Public module loader
@@ -388,7 +385,7 @@ export class SnowballBot extends EventEmitter {
 	public async prepareLocalizator() {
 		if (global["$localizer"]) { throw new Error("Localizer is already prepared"); }
 
-		const localizer = new Localizer(`${this._config.name}:Localizer`, this._config.localizerOptions);
+		const localizer = new Localization.Localizer(`${this._config.name}:Localizer`, this._config.localizerOptions);
 
 		await localizer.init();
 
@@ -418,6 +415,6 @@ export class SnowballBot extends EventEmitter {
 	public async shutdown(reason = "unknown") {
 		this._log("info", `Shutting down with the reason: "${reason}"`);
 		await this.modLoader.unload(Object.keys(this.modLoader.loadedModulesRegistry));
-		await this._discordClient.destroy();
+		this._discordClient.destroy();
 	}
 }

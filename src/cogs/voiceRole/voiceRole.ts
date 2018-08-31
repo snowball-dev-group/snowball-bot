@@ -1,15 +1,15 @@
-import { generateLocalizedEmbed, localizeForGuild, localizeForUser } from "../utils/ez-i18n";
-import { IModule } from "../../types/ModuleLoader";
+import { generateLocalizedEmbed, localizeForGuild, localizeForUser } from "@utils/ez-i18n";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, Role, GuildMember, VoiceChannel, Collection } from "discord.js";
-import { getDB } from "../utils/db";
-import { EmbedType, resolveGuildRole, resolveGuildChannel, getMessageMember } from "../utils/utils";
-import { isVerified, isInitializated as isVerifiedEnabled } from "../utils/verified";
+import { getDB } from "@utils/db";
+import { EmbedType, resolveGuildRole, resolveGuildChannel, getMessageMember } from "@utils/utils";
+import { isVerified, isInitializated as isVerifiedEnabled } from "@utils/verified";
 import * as knex from "knex";
-import { replaceAll } from "../utils/text";
-import { messageToExtra } from "../utils/failToDetail";
-import { command } from "../utils/help";
-import { createConfirmationMessage } from "../utils/interactive";
+import { replaceAll } from "@utils/text";
+import { messageToExtra } from "@utils/failToDetail";
+import { command } from "@utils/help";
+import { createConfirmationMessage } from "@utils/interactive";
 import MessagesFlows, { IMessageFlowContext, IPublicFlowCommand } from "../cores/messagesFlows";
 import * as getLogger from "loggy";
 
@@ -88,6 +88,7 @@ class VoiceRole extends Plugin implements IModule {
 		} catch (err) {
 			$snowball.captureException(err);
 			this._log("err", "Asking for DB failed:", err);
+
 			return;
 		}
 		this._log("ok", "Asking for DB has done");
@@ -99,6 +100,7 @@ class VoiceRole extends Plugin implements IModule {
 		} catch (err) {
 			$snowball.captureException(err);
 			this._log("err", "Error checking if table is created");
+
 			return;
 		}
 
@@ -107,6 +109,7 @@ class VoiceRole extends Plugin implements IModule {
 			const creationStatus = await this._createTable();
 			if (!creationStatus) {
 				this._log("err", "Table creation failed.");
+
 				return;
 			}
 		}
@@ -118,6 +121,7 @@ class VoiceRole extends Plugin implements IModule {
 		} catch (err) {
 			$snowball.captureException(err);
 			this._log("err", "Error checking if specific table is created");
+
 			return;
 		}
 
@@ -126,6 +130,7 @@ class VoiceRole extends Plugin implements IModule {
 			const creationStatus = await this._createSpecificTable();
 			if (!creationStatus) {
 				this._log("err", "Specific table creation failed.");
+
 				return;
 			}
 		}
@@ -145,6 +150,7 @@ class VoiceRole extends Plugin implements IModule {
 		for (const guild of $discordBot.guilds.values()) {
 			if (!guild.available) {
 				this._log("warn", `Cleanup ignored at Guild: "${guild.name}" because it isnt' available at the moment`);
+
 				return;
 			}
 			this._log("info", `Cleanup started at Guild: "${guild.name}"`);
@@ -161,10 +167,12 @@ class VoiceRole extends Plugin implements IModule {
 				tb.string("voice_role").defaultTo("-");
 			});
 			this._log("ok", "Created table for 'voice roles'");
+
 			return true;
 		} catch (err) {
 			$snowball.captureException(err);
 			this._log("err", "Failed to create table. An error occured:", err);
+
 			return false;
 		}
 	}
@@ -177,10 +185,12 @@ class VoiceRole extends Plugin implements IModule {
 				tb.string("voice_role").notNullable();
 			});
 			this._log("ok", "Created table for specific 'voice roles'");
+
 			return true;
 		} catch (err) {
 			$snowball.captureException(err);
 			this._log("err", "Failed to create table for specific 'voice roles'");
+
 			return false;
 		}
 	}
@@ -210,8 +220,8 @@ class VoiceRole extends Plugin implements IModule {
 			// not going to do anything if user isn't verified
 			return;
 		}
-		if (oldMember.voiceChannel && newMember.voiceChannel) {
-			if (oldMember.voiceChannel.guild.id !== newMember.voiceChannel.guild.id) {
+		if (oldMember.voice.channel && newMember.voice.channel) {
+			if (oldMember.voice.channel.guild.id !== newMember.voice.channel.guild.id) {
 				// moved from one server to another (╯°□°）╯︵ ┻━┻
 				// better not to wait this
 				this._doRemoveRoles(oldMember);
@@ -221,9 +231,9 @@ class VoiceRole extends Plugin implements IModule {
 				this._doRemoveRoles(oldMember, newMember);
 				this._doGiveRoles(newMember);
 			}
-		} else if (oldMember.voiceChannel && !newMember.voiceChannel) {
+		} else if (oldMember.voice.channel && !newMember.voice.channel) {
 			this._doRemoveRoles(oldMember);
-		} else if (!oldMember.voiceChannel && newMember.voiceChannel) {
+		} else if (!oldMember.voice.channel && newMember.voice.channel) {
 			this._doGiveRoles(newMember);
 		}
 	}
@@ -283,6 +293,7 @@ class VoiceRole extends Plugin implements IModule {
 		const current = await this._getSpecificRow(row.channel_id);
 		if (!current) {
 			await this._db(SPECIFIC_TABLE_NAME).insert(row);
+
 			return;
 		}
 		await this._db(SPECIFIC_TABLE_NAME).where({
@@ -318,10 +329,7 @@ class VoiceRole extends Plugin implements IModule {
 
 		// slight optimization
 		const checkRow = async (s: ISpecificRoleRow) => {
-			if (!guild.channels.has(s.channel_id)) {
-				changes = true;
-				await this._deleteSpecificRow(s);
-			} else if (!guild.roles.has(s.voice_role)) {
+			if (!guild.channels.has(s.channel_id) || !guild.roles.has(s.voice_role)) {
 				changes = true;
 				await this._deleteSpecificRow(s);
 			}
@@ -346,11 +354,12 @@ class VoiceRole extends Plugin implements IModule {
 			members = await guild.members.fetch();
 		} catch (err) {
 			this._log("err", "Could not fetch guild members", err);
+
 			return;
 		}
 
 		for (const member of members.values()) {
-			let voiceChannelOfMember: VoiceChannel | undefined = member.voiceChannel;
+			let voiceChannelOfMember: VoiceChannel | undefined = member.voice.channel;
 			if (voiceChannelOfMember && voiceChannelOfMember.guild.id !== guild.id) {
 				voiceChannelOfMember = undefined;
 			}
@@ -419,10 +428,10 @@ class VoiceRole extends Plugin implements IModule {
 
 	private async _doGiveRoles(member: GuildMember) {
 		const row = await this._getGuildRow(member.guild);
-		const specificRow = member.voiceChannel ? await this._getSpecificRow(member.voiceChannel) : undefined;
+		const specificRow = member.voice.channel ? await this._getSpecificRow(member.voice.channel) : undefined;
 		if (!row && !specificRow) { return; }
 
-		if (row && member.voiceChannel && row.voice_role !== "-") {
+		if (row && member.voice.channel && row.voice_role !== "-") {
 			// we have row & user in voice channel
 			// let's check everything
 			if (member.guild.roles.has(row.voice_role)) {
@@ -431,7 +440,7 @@ class VoiceRole extends Plugin implements IModule {
 				if (!member.roles.has(row.voice_role)) {
 					// yep, take this role, my dear
 					await member.roles.add(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_JOINED_VC", {
-						channelName: member.voiceChannel.name
+						channelName: member.voice.channel.name
 					}));
 				} // nop, you have this role, next time.. next time...
 			} else {
@@ -452,7 +461,7 @@ class VoiceRole extends Plugin implements IModule {
 			} else if (!member.roles.has(specificRow.voice_role)) {
 				// dear, why don't you have this specific role?
 				await member.roles.add(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_ADDED", {
-					channelName: member.voiceChannel.name
+					channelName: member.voice.channel!.name
 				}));
 			}
 		}
@@ -460,11 +469,11 @@ class VoiceRole extends Plugin implements IModule {
 
 	private async _doRemoveRoles(member: GuildMember, newMember?: GuildMember) {
 		const row = await this._getGuildRow(member.guild);
-		const specificRow = member.voiceChannel ? await this._getSpecificRow(member.voiceChannel) : undefined;
+		const specificRow = member.voice.channel ? await this._getSpecificRow(member.voice.channel) : undefined;
 
 		if (!row && !specificRow) { return; }
 
-		if (!newMember || !newMember.voiceChannel) {
+		if (!newMember || !newMember.voice.channel) {
 			// checking IF user not in voice channel anymore
 			// OR if we have no 'newMember' (means user left from any channel on guild)
 			// THEN deleting role
@@ -474,9 +483,11 @@ class VoiceRole extends Plugin implements IModule {
 					// but let's check if user HAS this role
 					if (member.roles.has(row.voice_role)) {
 						// yes, he has it, can remove
-						await member.roles.remove(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_LEFT_VC", {
-							channelName: member.voiceChannel.name
-						}));
+						await member.roles.remove(row.voice_role, await localizeForGuild(
+							member.guild, "VOICEROLE_LEFT_VC", {
+								channelName: member.voice.channel!.name
+							}
+						));
 					} // else we doing nothin'
 				} else {
 					// wowee, role got deleted
@@ -488,7 +499,7 @@ class VoiceRole extends Plugin implements IModule {
 		}
 
 		// tslint:disable-next-line:early-exit
-		if (specificRow && member.voiceChannel) {
+		if (specificRow && member.voice.channel) {
 			// we had specific role for old channel
 			// time to test if everything is OK
 			if (!member.guild.roles.has(specificRow.voice_role)) {
@@ -500,7 +511,7 @@ class VoiceRole extends Plugin implements IModule {
 				// there we got good answer means everything is OK
 				// we can remove old specific role
 				await member.roles.remove(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_REMOVED", {
-					channelName: member.voiceChannel.name
+					channelName: member.voice.channel.name
 				}));
 			}
 		}
@@ -520,6 +531,7 @@ class VoiceRole extends Plugin implements IModule {
 
 		if (!hasPermissionToChange) {
 			msg.channel.send(await localizeForUser(msgMember, "VOICEROLE_NOPERMS"));
+
 			return;
 		}
 
@@ -538,7 +550,7 @@ class VoiceRole extends Plugin implements IModule {
 
 		if (subcmd === "set") {
 			if (!parsed.arguments) {
-				return msg.channel.send("", {
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, {
 						custom: true,
 						string: replaceAll(await localizeForUser(msgMember, "VOICEROLE_SETTING_HELP_SET"), "\n", "\n\t")
@@ -548,7 +560,7 @@ class VoiceRole extends Plugin implements IModule {
 
 			const resolvedRole = resolveGuildRole(parsed.arguments[0].raw, msg.guild, false);
 			if (!resolvedRole) {
-				return msg.channel.send("", {
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
 				});
 			}
@@ -556,7 +568,7 @@ class VoiceRole extends Plugin implements IModule {
 			const row = await this._getGuildRow(msg.guild);
 
 			if (!row) {
-				return msg.channel.send("", {
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND")
 				});
 			}
@@ -568,7 +580,8 @@ class VoiceRole extends Plugin implements IModule {
 						...messageToExtra(msg)
 					}
 				});
-				return msg.channel.send("", {
+
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_ROLECLEANUP")
 				});
 			};
@@ -581,7 +594,7 @@ class VoiceRole extends Plugin implements IModule {
 			}), msg);
 
 			if (!confirmation) {
-				return msg.channel.send("", {
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_CANCELED")
 				});
 			}
@@ -607,7 +620,8 @@ class VoiceRole extends Plugin implements IModule {
 				$snowball.captureException(err, {
 					extra: { row, newRole: resolvedRole, ...messageToExtra(msg) }
 				});
-				return msg.channel.send("", {
+
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_SAVING")
 				});
 			}
@@ -625,7 +639,7 @@ class VoiceRole extends Plugin implements IModule {
 			const row = await this._getGuildRow(msg.guild);
 
 			if (!row) {
-				return msg.channel.send("", {
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_DBGUILDNOTFOUND")
 				});
 			}
@@ -637,13 +651,14 @@ class VoiceRole extends Plugin implements IModule {
 						...messageToExtra(msg)
 					}
 				});
-				return msg.channel.send("", {
+
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_ROLECLEANUP")
 				});
 			};
 
 			if (row.voice_role === "-") {
-				return msg.channel.send("", {
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Warning, msgMember, "VOICEROLE_SETTING_FAULT_VRNOTSET")
 				});
 			}
@@ -651,14 +666,16 @@ class VoiceRole extends Plugin implements IModule {
 			const updateRow = async () => {
 				try {
 					await this._updateGuildRow(row);
+
 					return true;
 				} catch (err) {
 					$snowball.captureException(err, {
 						extra: { ...messageToExtra(msg), row, voiceRoleDeleted: true }
 					});
-					msg.channel.send("", {
+					msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_DBSAVING")
 					});
+
 					return false;
 				}
 			};
@@ -668,10 +685,11 @@ class VoiceRole extends Plugin implements IModule {
 			if (!resolvedRole) {
 				row.voice_role = "-";
 				if (await updateRow()) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, "VOICEROLE_SETTING_FASTDELETE")
 					});
 				}
+
 				return;
 			}
 
@@ -684,7 +702,7 @@ class VoiceRole extends Plugin implements IModule {
 			}), msg);
 
 			if (!confirmation) {
-				return msg.channel.send("", {
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_CANCELED")
 				});
 			}
@@ -726,7 +744,7 @@ class VoiceRole extends Plugin implements IModule {
 
 			if (specSubCmd === "set") {
 				if (specArgs.length === 0) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, {
 							key: "VOICEROLE_SETTING_HELP_SPECIFIC_SET",
 							formatOptions: {
@@ -735,21 +753,21 @@ class VoiceRole extends Plugin implements IModule {
 						})
 					});
 				} else if (specArgs.length !== 2) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_ARGERR")
 					});
 				}
 
 				const resolvedChannel = resolveGuildChannel(specArgs[0], msg.guild, false, false, false, ["voice"]);
 				if (!resolvedChannel) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_CHANNELERR")
 					});
 				}
 
 				const resolvedRole = resolveGuildRole(specArgs[1], msg.guild, false);
 				if (!resolvedRole) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
 					});
 				}
@@ -763,7 +781,7 @@ class VoiceRole extends Plugin implements IModule {
 				}), msg);
 
 				if (!confirmation) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_CANCELED")
 					});
 				}
@@ -776,7 +794,7 @@ class VoiceRole extends Plugin implements IModule {
 					const oldRole = currentSpecVR.voice_role;
 					currentSpecVR.voice_role = resolvedRole.id;
 
-					const statusMessage = <Message> await msg.channel.send("", {
+					const statusMessage = <Message> await msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Progress, msgMember, "VOICEROLE_SETTING_SAVING")
 					});
 
@@ -787,7 +805,8 @@ class VoiceRole extends Plugin implements IModule {
 								...messageToExtra(msg)
 							}
 						});
-						return msg.channel.send("", {
+
+						return msg.channel.send({
 							embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, specialMsgStr || "VOICEROLE_SETTING_FAULT_ROLECLEANUP")
 						});
 					};
@@ -827,7 +846,7 @@ class VoiceRole extends Plugin implements IModule {
 					voice_role: resolvedRole.id
 				};
 
-				const statusMessage = <Message> await msg.channel.send("", {
+				const statusMessage = <Message> await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, "VOICEROLE_SETTING_SAVING")
 				});
 
@@ -855,7 +874,7 @@ class VoiceRole extends Plugin implements IModule {
 				});
 			} else if (specSubCmd === "delete") {
 				if (specArgs.length !== 1) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, {
 							key: "VOICEROLE_SETTING_HELP_SPECIFIC_DELETE",
 							formatOptions: {
@@ -867,7 +886,7 @@ class VoiceRole extends Plugin implements IModule {
 
 				const resolvedChannel = resolveGuildChannel(specArgs[0], msg.guild, false, false, false, ["voice"]);
 				if (!resolvedChannel) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_CHANNELERR")
 					});
 				}
@@ -875,7 +894,7 @@ class VoiceRole extends Plugin implements IModule {
 				const current = await this._getSpecificRow(<VoiceChannel> resolvedChannel);
 
 				if (!current) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, "VOICEROLE_SETTING_FAULT_NOSPECIFICROLE")
 					});
 				}
@@ -893,11 +912,12 @@ class VoiceRole extends Plugin implements IModule {
 							}
 						});
 
-						return msg.channel.send("", {
+						return msg.channel.send({
 							embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_DBSAVING")
 						});
 					}
-					return msg.channel.send("", {
+
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Information, msgMember, "VOICEROLE_SETTING_SPECIFIC_FASTDELETE")
 					});
 				}
@@ -912,12 +932,12 @@ class VoiceRole extends Plugin implements IModule {
 				}), msg);
 
 				if (!confirmation) {
-					return msg.channel.send("", {
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_CANCELED")
 					});
 				}
 
-				const statusMessage = <Message> await msg.channel.send("", {
+				const statusMessage = <Message> await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Progress, msgMember, "VOICEROLE_SETTING_SAVING")
 				});
 
@@ -930,7 +950,8 @@ class VoiceRole extends Plugin implements IModule {
 							...messageToExtra(msg)
 						}
 					});
-					return msg.channel.send("", {
+
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_DBSAVING")
 					});
 				}
@@ -949,7 +970,8 @@ class VoiceRole extends Plugin implements IModule {
 							...messageToExtra(msg)
 						}
 					});
-					return msg.channel.send("", {
+
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_ROLECLEANUP")
 					});
 				}
@@ -966,6 +988,7 @@ class VoiceRole extends Plugin implements IModule {
 	public async unload() {
 		this._flowHandler && this._flowHandler.unhandle();
 		this.unhandleEvents();
+
 		return true;
 	}
 }

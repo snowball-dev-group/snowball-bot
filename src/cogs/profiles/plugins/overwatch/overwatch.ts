@@ -2,7 +2,7 @@ import * as getLogger from "loggy";
 import { default as fetch } from "node-fetch";
 import { IBlobResponse, IRegionalProfile } from "./owApiInterfaces";
 import { INullableHashMap, DetailedError } from "../../../../types/Types";
-import { get, storeValue } from "../../../utils/cache";
+import { get, storeValue } from "@utils/cache";
 
 const CACHE_OWNER = "owapi-profile";
 const LOG = getLogger("OWApi");
@@ -42,6 +42,7 @@ export async function fetchBlobProfile(battletag: string, platform?: string): Pr
 			return <IBlobResponse> await resp.json();
 		} catch (err) {
 			LOG("err", logPrefix, "Failed to parse response", err);
+
 			return undefined;
 		}
 	})();

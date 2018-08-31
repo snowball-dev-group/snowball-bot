@@ -1,4 +1,4 @@
-import { getDB } from "../../utils/db";
+import { getDB } from "@utils/db";
 import { Guild } from "discord.js";
 import * as getLogger from "loggy";
 
@@ -47,6 +47,7 @@ export class PrefixAllDBController {
 		if (!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
 		const row = await this._getGuildRow(this._normalizeGuildId(guild));
 		if (!row) { return null; }
+
 		return row.prefix ? JSON.parse(row.prefix) : undefined;
 	}
 

@@ -1,6 +1,6 @@
 import { Guild, GuildMember, GuildEmojiStore, Message, DiscordAPIError, User } from "discord.js";
-import { replaceAll } from "./text";
-import { INullableHashMap } from "../../types/Types";
+import { replaceAll } from "@utils/text";
+import { INullableHashMap } from "@sb-types/Types";
 import * as getLogger from "loggy";
 
 export function stringifyError(err: Error, filter = null, space = 2) {
@@ -8,12 +8,14 @@ export function stringifyError(err: Error, filter = null, space = 2) {
 	for (const key of Object.getOwnPropertyNames(err)) {
 		plainObject[key] = err[key];
 	}
+
 	return JSON.stringify(plainObject, filter, space);
 }
 
 export function colorNumberToHex(color) {
 	let hex = color.toString(16);
 	while (hex.length < 6) { hex = `0${hex}`; }
+
 	return `${hex}`.toUpperCase();
 }
 
@@ -22,6 +24,7 @@ export function objectToMap<T>(obj) {
 	for (const key of Object.keys(obj)) {
 		map.set(key, obj[key]);
 	}
+
 	return map;
 }
 
@@ -37,6 +40,7 @@ export function escapeDiscordMarkdown(str: string, usernames: boolean = false) {
 		str = replaceAll(str, " _", " \\_");
 		str = replaceAll(str, "_ ", "\\_ ");
 	}
+
 	return str;
 }
 
@@ -357,6 +361,7 @@ export function generateEmbed(type: EmbedType, description: string | undefined, 
 			embed.timestamp = options.ts.toISOString();
 		}
 	}
+
 	return embed;
 }
 
@@ -463,6 +468,7 @@ export async function safeMemberFetch(guild: Guild, id: string, errCallback?: (e
 		return guild.members.get(id) || await guild.members.fetch(id);
 	} catch (err) {
 		if (errCallback) { errCallback(err); }
+
 		return undefined;
 	}
 }
@@ -573,7 +579,7 @@ export function sleep<T>(delay: number = 1000, value?: T): Promise<T> {
 	});
 }
 
-export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEmojiStore, strict = true) : INullableHashMap<string> {
+export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEmojiStore, strict = true): INullableHashMap<string> {
 	const resolvedEmojisMap = Object.create(null);
 	for (const emojiKey in emojis) {
 		const emojiId = emojis[emojiKey]!;
@@ -605,7 +611,7 @@ export function resolveEmojiMap(emojis: INullableHashMap<string>, store: GuildEm
 
 const MESSAGES_LOG = getLogger("Utils:Utils#getMessageMember");
 
-export async function getMessageMember(msg: Message) : Promise<GuildMember | undefined> {
+export async function getMessageMember(msg: Message): Promise<GuildMember | undefined> {
 	if (msg.channel.type !== "text") { return undefined; }
 	if (msg.webhookID) { return undefined; } // webhooks
 
@@ -619,11 +625,17 @@ export async function getMessageMember(msg: Message) : Promise<GuildMember | und
 			} catch (err) {
 				if (err instanceof DiscordAPIError) {
 					switch (err.code) {
-						case 10007: { MESSAGES_LOG("err", `User with ID "${msg.author.id}" is not member of the server`); } return;
-						case 10013: { MESSAGES_LOG("err", `User with ID "${msg.author.id}" is not real Discord user`); } return;
+						case 10007: 
+							MESSAGES_LOG("err", `User with ID "${msg.author.id}" is not member of the server`);
+						case 10013: 
+							MESSAGES_LOG("err", `User with ID "${msg.author.id}" is not real Discord user`);
 					}
+
+					return undefined;
 				}
+
 				MESSAGES_LOG("err", "Unknown error while fetching", err);
+
 				return undefined;
 			}
 			MESSAGES_LOG("ok", `Found member with ID "${msg.author.id}"`);
@@ -633,7 +645,7 @@ export async function getMessageMember(msg: Message) : Promise<GuildMember | und
 	return member;
 }
 
-export async function getMessageMemberOrAuthor(msg: Message) : Promise<GuildMember | User | undefined> {
+export async function getMessageMemberOrAuthor(msg: Message): Promise<GuildMember | User | undefined> {
 	if (msg.channel.type !== "text") { return msg.author; }
 	else if (msg.webhookID) { return undefined; }
 

@@ -1,5 +1,5 @@
 import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError, StreamStatusChangedAction } from "../baseService";
-import { IEmbed, sleep, escapeDiscordMarkdown } from "../../utils/utils";
+import { IEmbed, sleep, escapeDiscordMarkdown } from "@utils/utils";
 import { default as fetch } from "node-fetch";
 import { chunk } from "lodash";
 import { EventEmitter } from "events";
@@ -62,6 +62,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		if (Date.now() > 1546102800000) {
 			throw new Error("You cannot use this module anymore. Twitch API v5 is retired");
 		}
+
 		return false;
 	}
 
@@ -76,6 +77,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		if (this.isSubscribed(streamer.uid)) {
 			throw new Error(`Already subscribed to ${streamer.uid}`);
 		}
+
 		return this.subscriptions.push(streamer);
 	}
 
@@ -152,11 +154,13 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				streamsResp = (await this.makeRequest(this.getAPIURL_Streams(chunk.map(s => s.uid))));
 			} catch (err) {
 				this.log("err", "Error has been received from Twitch, chunk processing failed", err);
+
 				return;
 			}
 
 			if (!streamsResp.streams) {
 				this.log("warn", "Got empty response from Twitch", streamsResp);
+
 				return;
 			}
 
@@ -240,6 +244,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		const stream = <ITwitchStream> status.payload;
 		if (!stream) { throw new StreamingServiceError("TWITCH_CACHEFAULT", "Failure"); }
 		const gameName = stream.game ? stream.game : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
+
 		return {
 			footer: {
 				icon_url: TWITCH_ICON,
@@ -292,6 +297,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	private getAPIURL_User(username: string | string[]) {
 		const uidsStr = username instanceof Array ? username.join(",") : username;
+
 		return `https://api.twitch.tv/kraken/users?login=${uidsStr}&client_id=${this.options.clientId}&api_version=5`;
 	}
 
@@ -331,6 +337,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				const delay = parseInt(resp.headers.get("retry-after") || "5000", 10);
 				this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 				await sleep(delay);
+
 				return loop(attempt + 1);
 			} else if (resp.status !== 200) {
 				throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch", {
@@ -338,8 +345,10 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 					body: (await resp.text())
 				});
 			}
+
 			return resp.json();
 		};
+
 		return loop();
 	}
 
@@ -355,6 +364,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		for (const key in this.streamsMap) {
 			delete this.streamsMap[key];
 		}
+
 		return true;
 	}
 }

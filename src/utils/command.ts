@@ -1,5 +1,5 @@
-import { stripEmptyChars, escapeRegExp } from "./text";
-import { INullableHashMap } from "../../types/Types";
+import { stripEmptyChars, escapeRegExp } from "@utils/text";
+import { INullableHashMap } from "../types/Types";
 import { slice } from "lodash";
 
 export const CMDPARSER_ARGUMENTS_SEPARATOR = ",";

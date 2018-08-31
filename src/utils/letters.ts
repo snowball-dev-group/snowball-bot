@@ -23,14 +23,17 @@ export function toRegionalIndicators(str: string, stances?: Stances, unknownChar
 		}
 		if (/^[a-z]{1}$/.test(s)) {
 			const letPos = s.charCodeAt(0) - 97;
+
 			return `${REGIONAL_CHAR}${String.fromCharCode(REGIONAL_SUBCHAR_START + letPos)}`;
 		} else if (numbersConversion && /^[0-9]{1}$/.test(s)) {
 			return convertNumbers(s);
 		} else if (unknownCharReplacer) {
 			return unknownCharReplacer(s);
 		}
+
 		return oS;
 	});
+
 	return arr.join("");
 }
 
@@ -42,7 +45,9 @@ export function convertNumbers(num: string | number, unknownCharReplacer?: (s: s
 		} else if (unknownCharReplacer) {
 			return unknownCharReplacer(s);
 		}
+
 		return s;
 	});
+
 	return str;
 }

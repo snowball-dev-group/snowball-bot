@@ -1,9 +1,9 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from ".././plugin";
 import { Message, GuildMember, TextChannel } from "discord.js";
-import { EmbedType, generateEmbed, getMessageMemberOrAuthor } from "../utils/utils";
-import { command } from "../utils/help";
-import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
+import { EmbedType, generateEmbed, getMessageMemberOrAuthor } from "@utils/utils";
+import { command } from "@utils/help";
+import { generateLocalizedEmbed, localizeForUser } from "@utils/ez-i18n";
 import * as getLogger from "loggy";
 
 const FL_COLOR = 0x1E88E5;
@@ -24,13 +24,17 @@ class ReverseLayout extends Plugin implements IModule {
 
 	private static _reverse(content: string, firstLine: string, secondLine: string): string {
 		if (!content) { return ""; }
+
 		let result = "";
+
 		const lineFrom = firstLine + secondLine;
 		const lineTo = secondLine + firstLine;
+
 		for (let i = 0, cl = content.length; i < cl; i++) {
 			const pos = lineFrom.indexOf(content[i]);
 			result = result + ((pos < 0) ? content[i] : lineTo[pos]);
 		}
+
 		return result;
 	}
 
@@ -52,7 +56,7 @@ class ReverseLayout extends Plugin implements IModule {
 		}
 
 		if (await localizeForUser(author, "+FL_SUPPORTED") === "false") {
-			return msg.channel.send("", {
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, author, "FL_ERR_NOTSUPPORTED")
 			});
 		}
@@ -60,7 +64,7 @@ class ReverseLayout extends Plugin implements IModule {
 		// fetch last messages in channel
 		const messages = await msg.channel.messages.fetch();
 		if (!messages) {
-			return msg.channel.send("", {
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, author, "FL_ERR_CANTFETCH")
 			});
 		}
@@ -68,13 +72,13 @@ class ReverseLayout extends Plugin implements IModule {
 		// find last message by this author
 		const originalMessage = messages.find(x => (x.member || x.author).id === author.id);
 		if (!originalMessage) {
-			return msg.channel.send("", {
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, author, "FL_ERR_NOMESSAGES")
 			});
 		}
 
 		if (!originalMessage.content) {
-			return msg.channel.send("", {
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, author, "FL_ERR_EMPTYMESSAGE")
 			});
 		}
@@ -101,7 +105,7 @@ class ReverseLayout extends Plugin implements IModule {
 
 		// send reversed message
 		try {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateEmbed(EmbedType.Empty, reversed, {
 					author: {
 						name: author instanceof GuildMember ? author.displayName : author.username,
@@ -119,6 +123,7 @@ class ReverseLayout extends Plugin implements IModule {
 			});
 		} catch (err) {
 			ReverseLayout._log("err", "Failed to send message with changed layout", err);
+
 			return;
 		}
 
@@ -131,6 +136,7 @@ class ReverseLayout extends Plugin implements IModule {
 
 	public async unload() {
 		this.unhandleEvents();
+
 		return true;
 	}
 }

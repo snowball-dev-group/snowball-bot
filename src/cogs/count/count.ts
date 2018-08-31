@@ -1,10 +1,10 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, TextChannel } from "discord.js";
-import { getDB } from "../utils/db";
-import { convertNumbers } from "../utils/letters";
-import { getMessageMember, resolveEmojiMap } from "@cogs/utils/utils";
-import { localizeForGuild, extendAndBind } from "@cogs/utils/ez-i18n";
+import { getDB } from "@utils/db";
+import { convertNumbers } from "@utils/letters";
+import { getMessageMember, resolveEmojiMap } from "@utils/utils";
+import { localizeForGuild, extendAndBind } from "@utils/ez-i18n";
 import * as logger from "loggy";
 
 const DEFAULT_TABLE_NAME = "count";

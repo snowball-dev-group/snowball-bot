@@ -1,13 +1,13 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, DiscordAPIError } from "discord.js";
-import { command } from "../utils/help";
-import { init, checkPremium, givePremium, deletePremium, getPremium } from "../utils/premium";
-import { EmbedType, escapeDiscordMarkdown, resolveGuildRole } from "../utils/utils";
-import { generateLocalizedEmbed, localizeForUser, humanizeDurationForUser, localizeForGuild, toUserLocaleString } from "../utils/ez-i18n";
-import { setPreferenceValue as setGuildPref, getPreferenceValue as getGuildPref, removePreference as delGuildPref } from "../utils/guildPrefs";
-import { createConfirmationMessage } from "../utils/interactive";
-import { messageToExtra } from "../utils/failToDetail";
+import { command } from "@utils/help";
+import * as Premium from "@utils/premium";
+import * as Utils from "@utils/utils";
+import * as i18n from "@utils/ez-i18n";
+import * as GuildPreferences from "@utils/guildPreferences";
+import * as Interactive from "@utils/interactive";
+import { messageToExtra } from "@utils/failToDetail";
 import { DateTime } from "luxon";
 import * as timestring from "timestring";
 import * as getLogger from "loggy";
@@ -117,8 +117,8 @@ class PremiumControl extends Plugin implements IModule {
 			
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
 
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_STARTFAILED")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_STARTFAILED")
 			});
 		}
 	}
@@ -130,6 +130,7 @@ class PremiumControl extends Plugin implements IModule {
 	private async cmd_role(msg: Message, args: string[]) {
 		if (!serverAdminCheck(msg)) {
 			// NO PERMISSIONS
+
 			return;
 		}
 
@@ -140,70 +141,67 @@ class PremiumControl extends Plugin implements IModule {
 		}
 
 		if (!botMember.permissions.has("MANAGE_ROLES")) {
-			msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOPERMS")
+			return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOPERMS")
 			});
-			return;
 		}
 
 		if (args.length === 0) {
-			msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, {
 					key: "PREMIUMCTL_SETROLE_DESC",
 					formatOptions: {
 						prefix: PREMIUMCTRL_PREFIX
 					}
 				})
 			});
-			return;
 		}
 
 		// premiumctl:role
 		if (args[0].toLowerCase() !== "none") {
-			const role = resolveGuildRole(args[0], msg.guild, false);
+			const role = Utils.resolveGuildRole(args[0], msg.guild, false);
 			if (!role) {
-				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOTFOUND")
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOTFOUND")
 				});
-				return;
 			}
 
 			if (role.managed) {
-				msg.channel.send("" , {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_MANAGED")
+				return msg.channel.send("" , {
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_MANAGED")
 				});
-				return;
 			}
 
 			if (role.position > botMember.roles.highest.position) {
-				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_ROLEHIGHER")
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_ROLEHIGHER")
 				});
-				return;
 			}
 
-			const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+			const confirmationEmbed = await i18n.generateLocalizedEmbed(Utils.EmbedType.Question, msg.member, {
 				key: "PREMIUMCTL_SETROLE_SETCONFIRMATION",
 				formatOptions: {
-					roleName: escapeDiscordMarkdown(role.name, true)
+					roleName: Utils.escapeDiscordMarkdown(role.name, true)
 				}
 			});
-			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+			const confirmation = await Interactive.createConfirmationMessage(confirmationEmbed, msg);
 
 			if (!confirmation) {
-				msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
 				});
-				return;
 			}
 
-			const currentPremiumRole = await getGuildPref(msg.guild, "premiumctl:role");
+			const currentPremiumRole = await GuildPreferences.getPreferenceValue(msg.guild, "premiumctl:role");
+
 			if (currentPremiumRole) {
 				const premiumRole = msg.guild.roles.get(currentPremiumRole);
+
 				if (premiumRole) {
-					const progMsg = <Message> await msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_SETROLE_NONEREMOVING")
+					const progMsg = <Message> await msg.channel.send({
+						embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_SETROLE_NONEREMOVING")
 					});
+
 					for (const member of msg.guild.members.values()) {
 						try {
 							await member.roles.remove(premiumRole);
@@ -211,43 +209,44 @@ class PremiumControl extends Plugin implements IModule {
 							this.log("err", `Failed to unassign current premium role from user "${member.displayName}" on guild "${msg.guild.name}"`);
 						}
 					}
+
 					await progMsg.delete();
 				}
 			}
 
-			await setGuildPref(msg.guild, "premiumctl:role", role.id);
+			await GuildPreferences.setPreferenceValue(msg.guild, "premiumctl:role", role.id);
 
-			msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_SETROLE_DONE")
+			msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_SETROLE_DONE")
 			});
 
 			return this.performGuildSync(msg.guild);
 		} else {
-			const currentPremiumRole = await getGuildPref(msg.guild, "premiumctl:role");
+			const currentPremiumRole = await GuildPreferences.getPreferenceValue(msg.guild, "premiumctl:role");
 			if (!currentPremiumRole) {
-				return msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_SETROLE_ERR_NOTSET")
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, "PREMIUMCTL_SETROLE_ERR_NOTSET")
 				});
 			}
 
 			const premiumRole = msg.guild.roles.get(currentPremiumRole);
 			if (premiumRole) {
-				const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+				const confirmationEmbed = await i18n.generateLocalizedEmbed(Utils.EmbedType.Question, msg.member, {
 					key: "PREMIUMCTL_SETROLE_SETCONFIRMATION",
 					formatOptions: {
-						roleName: escapeDiscordMarkdown(premiumRole.name, true)
+						roleName: Utils.escapeDiscordMarkdown(premiumRole.name, true)
 					}
 				});
 
-				const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+				const confirmation = await Interactive.createConfirmationMessage(confirmationEmbed, msg);
 				if (!confirmation) {
-					return msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
+					return msg.channel.send({
+						embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
 					});
 				}
 
-				const removingMsg = <Message> await msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_SETROLE_NONEREMOVING")
+				const removingMsg = <Message> await msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_SETROLE_NONEREMOVING")
 				});
 
 				for (const member of msg.guild.members.values()) {
@@ -261,35 +260,36 @@ class PremiumControl extends Plugin implements IModule {
 				await removingMsg.delete();
 			}
 
-			return delGuildPref(msg.guild, "premiumctl:role");
+			return GuildPreferences.removePreference(msg.guild, "premiumctl:role");
 		}
 	}
 
 	private async cmd_resync(msg: Message) {
-		const _pgMsg = <Message> await msg.channel.send("", {
-			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_SYNCING")
+		const _pgMsg = <Message> await msg.channel.send({
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_SYNCING")
 		});
 
 		await this.performGuildsSync();
 
 		return _pgMsg.edit("", {
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_SYNC_DONE")
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_SYNC_DONE")
 		});
 	}
 
 	private async cmd_give(msg: Message, args: string[], internalCall = false) {
 		if (!isPluginAdmin(msg)) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_PERMS")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_ERR_PERMS")
 			});
 		}
 
 		// args: ["<#12345678901234>,", "1mth"]
 		if (!internalCall) {
 			args = args.join(" ").split(",").map(arg => arg.trim()); // args: ["<#12345678901234>", "1mth"]
+
 			if (args.length !== 2) {
-				return msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, {
 						key: "PREMIUMCTL_GIVE_USAGE",
 						formatOptions: {
 							prefix: PREMIUMCTRL_PREFIX
@@ -297,28 +297,36 @@ class PremiumControl extends Plugin implements IModule {
 					})
 				});
 			}
+
 			if (msg.mentions.users.size !== 1) {
-				return msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_MENTIONS")
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_MENTIONS")
 				});
 			}
 		}
 
-		const subscriber = msg.mentions.users.first();
-		let currentPremium = await checkPremium(subscriber);
+		// we have already checked if message contains at least one mention
+		// FIXME: still add additional check in case, more handling is nice
+		const subscriber = msg.mentions.users.first()!;
+
+		let currentPremium = await Premium.checkPremium(subscriber);
+
 		if (currentPremium) {
-			const dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
-			const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+			const dtString = await i18n.toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
+
+			const confirmationEmbed = await i18n.generateLocalizedEmbed(Utils.EmbedType.Question, msg.member, {
 				key: "PREMIUMCTL_GIVE_CONFIRMATION",
 				formatOptions: {
 					untilDate: dtString,
 					prefix: PREMIUMCTRL_PREFIX
 				}
 			});
-			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+
+			const confirmation = await Interactive.createConfirmationMessage(confirmationEmbed, msg);
+
 			if (!confirmation) {
-				return msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
 				});
 			}
 		}
@@ -327,88 +335,96 @@ class PremiumControl extends Plugin implements IModule {
 			seconds: timestring(args[1])
 		});
 
-		let dtString = await toUserLocaleString(msg.member, cDate, DateTime.DATETIME_FULL);
-		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+		let dtString = await i18n.toUserLocaleString(msg.member, cDate, DateTime.DATETIME_FULL);
+
+		let confirmationEmbed = await i18n.generateLocalizedEmbed(Utils.EmbedType.Question, msg.member, {
 			key: "PREMIUMCTL_GIVE_CONFIRMATION1",
 			formatOptions: {
-				username: escapeDiscordMarkdown(subscriber.username),
+				username: Utils.escapeDiscordMarkdown(subscriber.username),
 				untilDate: dtString
 			}
 		});
 
-		let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+		let confirmation = await Interactive.createConfirmationMessage(confirmationEmbed, msg);
+
 		if (!confirmation) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
 			});
 		}
 
-		const _cMsg = <Message> await msg.channel.send("", {
-			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_PLSWAIT")
+		const _cMsg = <Message> await msg.channel.send({
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_PLSWAIT")
 		});
 
-		const complete = await givePremium(subscriber, cDate.toJSDate(), true);
+		const complete = await Premium.givePremium(subscriber, cDate.toJSDate(), true);
 
 		if (!complete) {
 			return _cMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_GIVE_ERR_CONSOLE")
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_GIVE_ERR_CONSOLE")
 			});
 		}
 
 		await _cMsg.edit("", {
-			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_LOADING")
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_LOADING")
 		});
 
-		currentPremium = await checkPremium(subscriber);
+		currentPremium = await Premium.checkPremium(subscriber);
 
 		if (!currentPremium) {
 			return _cMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_GIVE_ERR_INTERNAL")
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_GIVE_ERR_INTERNAL")
 			});
 		}
 
-		dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
-		const dtSubString = await toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
+		dtString = await i18n.toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
 
-		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
-		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
+		const dtSubString = await i18n.toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
+
+		let msgStr = `${Utils.escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
+
+		msgStr += `${await i18n.localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
 		})}\n`;
-		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
+
+		msgStr += await i18n.localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
 			validUntil: dtString
 		});
 
 		await _cMsg.edit("", {
-			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_FINALCONFIRMATION")
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_FINALCONFIRMATION")
 		});
 
-		confirmationEmbed = await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+		confirmationEmbed = await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, {
 			custom: true,
 			string: msgStr
 		});
-		confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+
+		confirmation = await Interactive.createConfirmationMessage(confirmationEmbed, msg);
+
 		if (!confirmation) {
 			return _cMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_SMTNGWNTWRNG")
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_SMTNGWNTWRNG")
 			});
 		}
 		
+
 		return _cMsg.edit("", {
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_GIVE_DONE")
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_GIVE_DONE")
 		});
 	}
 
 	private async cmd_renew(msg: Message, args: string[]) {
 		if (!isPluginAdmin(msg)) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_PERMS")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_PERMS")
 			});
 		}
 		// args: ["<#12345678901234>,", "1mth"]
 		args = args.join(" ").split(",").map(arg => arg.trim()); // args: ["<#12345678901234>", "1mth"]
 		if (args.length !== 2) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, {
 					key: "PREMIUMCTL_RENEW_USAGE",
 					formatOptions: {
 						prefix: PREMIUMCTRL_PREFIX
@@ -417,19 +433,21 @@ class PremiumControl extends Plugin implements IModule {
 			});
 		}
 		if (msg.mentions.users.size !== 1) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_MENTIONS")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_MENTIONS")
 			});
 		}
 
-		const subscriber = msg.mentions.users.first();
-		let currentPremium = await checkPremium(subscriber);
+		const subscriber = msg.mentions.users.first()!;
+		let currentPremium = await Premium.checkPremium(subscriber);
 
 		if (!currentPremium) {
-			const _redirectMsg = <Message> await msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_GIVE_REDIRECT")
+			const _redirectMsg = <Message> await msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, "PREMIUMCTL_GIVE_REDIRECT")
 			});
+
 			setTimeout(() => _redirectMsg.delete(), 5000);
+
 			return this.cmd_give(msg, args, true);
 		}
 
@@ -437,125 +455,130 @@ class PremiumControl extends Plugin implements IModule {
 			seconds: timestring(args[1])
 		});
 
-		let dtString = await toUserLocaleString(msg.member, cDate, DateTime.DATETIME_FULL);
+		let dtString = await i18n.toUserLocaleString(msg.member, cDate, DateTime.DATETIME_FULL);
 
-		let confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+		let confirmationEmbed = await i18n.generateLocalizedEmbed(Utils.EmbedType.Question, msg.member, {
 			key: "PREMIUMCTL_RENEW_CONFIRMATION",
 			formatOptions: {
-				username: escapeDiscordMarkdown(subscriber.username),
+				username: Utils.escapeDiscordMarkdown(subscriber.username),
 				untilDate: dtString
 			}
 		});
 
-		let confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+		let confirmation = await Interactive.createConfirmationMessage(confirmationEmbed, msg);
 		if (!confirmation) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_CANCELED")
 			});
 		}
 
 		let complete = false;
+
 		try {
-			complete = await givePremium(subscriber, cDate.toJSDate(), false);
+			complete = await Premium.givePremium(subscriber, cDate.toJSDate(), false);
 		} catch (err) {
 			if ((<Error> err).name === "ERR_PREMIUM_DIFFLOW") {
-				return msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_TIMEDIFF0")
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_TIMEDIFF0")
 				});
 			}
+
 			return;
 		}
 
-		const _cMsg = <Message> await msg.channel.send("", {
-			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_RENEW_PROGRESS_STARTED")
+		const _cMsg = <Message> await msg.channel.send({
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_RENEW_PROGRESS_STARTED")
 		});
 
 		if (!complete) {
 			return _cMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_CONSOLE")
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_CONSOLE")
 			});
 		}
 
 		await _cMsg.edit("", {
-			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_LOADING")
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_LOADING")
 		});
 
-		currentPremium = await checkPremium(subscriber);
+		currentPremium = await Premium.checkPremium(subscriber);
 
 		if (!currentPremium) {
 			return _cMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_UNKNOWN")
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_RENEW_ERR_UNKNOWN")
 			});
 		}
 
-		dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
-		const dtSubString = await toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
+		dtString = await i18n.toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
+		const dtSubString = await i18n.toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
 
-		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
-		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
+		let msgStr = `${Utils.escapeDiscordMarkdown(subscriber.username)}\n----------------\n`;
+		msgStr += `${await i18n.localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
 		})}\n`;
-		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
+		msgStr += await i18n.localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
 			validUntil: dtString
 		});
 
 		await _cMsg.edit("", {
-			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_FINALCONFIRMATION")
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Progress, msg.member, "PREMIUMCTL_GIVE_FINALCONFIRMATION")
 		});
-		confirmationEmbed = await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+		confirmationEmbed = await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, {
 			custom: true,
 			string: msgStr
 		});
-		confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+		confirmation = await Interactive.createConfirmationMessage(confirmationEmbed, msg);
 		if (!confirmation) {
 			return _cMsg.edit("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_SMTNGWNTWRNG")
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_SMTNGWNTWRNG")
 			});
 		}
 		
+
 		return _cMsg.edit("", {
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_RENEW_DONE")
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_RENEW_DONE")
 		});
 	}
 
 	private async cmd_checkout(msg: Message) {
 		if (isPluginAdmin(msg) && msg.mentions.users.size > 1) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_CHECKOUT_ERR_MENTIONS")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, "PREMIUMCTL_CHECKOUT_ERR_MENTIONS")
 			});
 		} else if (!isPluginAdmin(msg) && msg.mentions.users.size !== 0) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_CHECKOUT_ERR_NOTADM")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, "PREMIUMCTL_CHECKOUT_ERR_NOTADM")
 			});
 		}
 
 		const subscriber = msg.mentions.users.size === 0 ? msg.author : msg.mentions.users.first();
 
-		const currentPremium = await checkPremium(subscriber);
+		if (!subscriber) { return; }
+
+		const currentPremium = await Premium.checkPremium(subscriber);
 
 		if (!currentPremium) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_CHECKOUT_ERR_NOTPREMIUMUSER")
 			});
 		}
 
-		const dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
-		const dtSubString = await toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
-		const durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
+		const dtString = await i18n.toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
+		const dtSubString = await i18n.toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
+		const durString = await i18n.humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
 		let msgStr = "";
-		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
+		msgStr += `${await i18n.localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
 		})}\n`;
-		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
+		msgStr += `${await i18n.localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
 			validUntil: dtString
 		})}\n`;
-		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_CHECKOUT_VALIDTIME", {
+		msgStr += await i18n.localizeForUser(msg.member, "PREMIUMCTL_CHECKOUT_VALIDTIME", {
 			validTime: durString
 		});
 
-		msg.channel.send("", {
-			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
+		msg.channel.send({
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, {
 				custom: true,
 				string: msgStr
 			}, { author: { name: subscriber.tag } })
@@ -564,68 +587,71 @@ class PremiumControl extends Plugin implements IModule {
 
 	private async cmd_remove(msg: Message) {
 		if (!isPluginAdmin(msg)) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "PREMIUMCTL_ERR_PERMS")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_ERR_PERMS")
 			});
 		}
 		if (msg.mentions.users.size !== 1) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_MENTION")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_MENTION")
 			});
 		}
 
 		const subscriber = msg.mentions.users.first();
 
-		const currentPremium = await checkPremium(subscriber);
+		if (!subscriber) { return; }
+
+		const currentPremium = await Premium.checkPremium(subscriber);
 		if (!currentPremium) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_NOTPREMIUMUSER")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_NOTPREMIUMUSER")
 			});
 		}
 
-		const dtString = await toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
-		const dtSubString = await toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
-		const durString = await humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
+		const dtString = await i18n.toUserLocaleString(msg.member, currentPremium.due_to, DateTime.DATETIME_FULL);
+		const dtSubString = await i18n.toUserLocaleString(msg.member, currentPremium.subscribed_at, DateTime.DATETIME_FULL);
+		const durString = await i18n.humanizeDurationForUser(msg.member, currentPremium.due_to.getTime() - Date.now());
 
 		const sep = "----------------";
-		let msgStr = `${escapeDiscordMarkdown(subscriber.username)}\n${sep}\n`;
-		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
+		let msgStr = `${Utils.escapeDiscordMarkdown(subscriber.username)}\n${sep}\n`;
+		msgStr += `${await i18n.localizeForUser(msg.member, "PREMIUMCTL_SUBBEDAT", {
 			subscribedAt: dtSubString
 		})}\n`;
-		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
+		msgStr += `${await i18n.localizeForUser(msg.member, "PREMIUMCTL_VLDUNTL", {
 			validUntil: dtString
 		})}\n`;
-		msgStr += `${await localizeForUser(msg.member, "PREMIUMCTL_CHECKOUT_VALIDTIME", {
+		msgStr += `${await i18n.localizeForUser(msg.member, "PREMIUMCTL_CHECKOUT_VALIDTIME", {
 			validTime: durString
 		})}\n`;
 		msgStr += `${sep}\n`;
-		msgStr += await localizeForUser(msg.member, "PREMIUMCTL_REMOVE_CONFIRMATION");
+		msgStr += await i18n.localizeForUser(msg.member, "PREMIUMCTL_REMOVE_CONFIRMATION");
 
-		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
+		const confirmationEmbed = await i18n.generateLocalizedEmbed(Utils.EmbedType.Question, msg.member, {
 			custom: true,
 			string: msgStr
 		});
-		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+		const confirmation = await Interactive.createConfirmationMessage(confirmationEmbed, msg);
 
 		if (!confirmation) {
-			return msg.channel.send("", {
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_ERR_CANCELED")
 			});
 		}
 
 		try {
-			await deletePremium(subscriber);
+			await Premium.deletePremium(subscriber);
 		} catch (err) {
 			if ((<Error> err).name === "PREMIUM_ALRDYNTSUB") {
-				return msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_ALREADYUNSUBBED")
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Information, msg.member, "PREMIUMCTL_REMOVE_ERR_ALREADYUNSUBBED")
 				});
 			}
+
 			return;
 		}
 
-		msg.channel.send("", {
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "PREMIUMCTL_REMOVE_DONE")
+		msg.channel.send({
+			embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.OK, msg.member, "PREMIUMCTL_REMOVE_DONE")
 		});
 	}
 
@@ -638,10 +664,11 @@ class PremiumControl extends Plugin implements IModule {
 
 		if (!guild.available) {
 			this.log("warn", logPrefix, `Guild "${guild.name}" is unavailable`);
+
 			return;
 		}
 
-		const guildPremiumRole = await getGuildPref(guild, "premiumctl:role");
+		const guildPremiumRole = await GuildPreferences.getPreferenceValue(guild, "premiumctl:role");
 		if (!guildPremiumRole) {
 			return {
 				done: false,
@@ -661,24 +688,28 @@ class PremiumControl extends Plugin implements IModule {
 
 		if (!premiumRole) {
 			this.log("warn", logPrefix, "Premium role was deleted on guild", guild.id);
-			return delGuildPref(guild, "premiumctl:role");
+
+			return GuildPreferences.removePreference(guild, "premiumctl:role");
 		}
 
 		if (!guild.me.permissions.has("MANAGE_ROLES")) {
 			this.log("warn", logPrefix, "Bot has no permission to manage roles on guild", guild.id);
-			return delGuildPref(guild, "premiumctl:role");
+
+			return GuildPreferences.removePreference(guild, "premiumctl:role");
 		}
 
 		if (premiumRole.managed) {
 			this.log("warn", logPrefix, "Premium role is managed, means controlled by integration", guild.id);
-			return delGuildPref(guild, "premiumctl:role");
+
+			return GuildPreferences.removePreference(guild, "premiumctl:role");
 		}
 
 		const highestBotsRole = guild.me.roles.highest;
 
 		if (premiumRole.position >= highestBotsRole.position) {
 			this.log("warn", logPrefix, "Premium role is above bot's one, so bot can't give it");
-			return delGuildPref(guild, "premiumctl:role");
+
+			return GuildPreferences.removePreference(guild, "premiumctl:role");
 		}
 
 		// sync
@@ -691,22 +722,26 @@ class PremiumControl extends Plugin implements IModule {
 				continue;
 			}
 
-			const premiumResponse = await getPremium(member);
+			const premiumResponse = await Premium.getPremium(member);
 
 			// counting
-			if (premiumResponse.source === "db") { fetched++; } else { reused++; }
+			if (premiumResponse.source === "db") {
+				fetched++;
+			} else {
+				reused++;
+			}
 
 			if (premiumResponse.result && !member.roles.has(guildPremiumRole)) {
 				try {
 					if (!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has no premium role, adding...`); }
-					await member.roles.add(premiumRole, await localizeForGuild(member.guild, "PREMIUMCTL_AUDITLOG_PREMIUM"));
+					await member.roles.add(premiumRole, await i18n.localizeForGuild(member.guild, "PREMIUMCTL_AUDITLOG_PREMIUM"));
 				} catch (err) {
 					if (err instanceof DiscordAPIError) {
 						let breakSync = false;
 						switch (err.code) {
 							case 10011: {
 								// role was deleted, deleting ctl pref
-								await delGuildPref(guild, "permiumctl:role");
+								await GuildPreferences.removePreference(guild, "permiumctl:role");
 								breakSync = true;
 							} break;
 						}
@@ -719,7 +754,7 @@ class PremiumControl extends Plugin implements IModule {
 			} else if (!premiumResponse.result && member.roles.has(guildPremiumRole)) {
 				try {
 					if (!noLog) { this.log("info", logPrefix, `${member.id} (${member.user.tag}) has premium role without premium, removing...`); }
-					await member.roles.remove(premiumRole, await localizeForGuild(member.guild, "PREMIUMCTL_AUDITLOG_NOTPREMIUM"));
+					await member.roles.remove(premiumRole, await i18n.localizeForGuild(member.guild, "PREMIUMCTL_AUDITLOG_NOTPREMIUM"));
 					done++;
 				} catch (err) {
 					this.log("err", logPrefix, `Failed to unassign premium role from member "${member.displayName}"...`);
@@ -732,6 +767,7 @@ class PremiumControl extends Plugin implements IModule {
 		const donePerc = (done / guild.members.size) * 100;
 		if (donePerc < 50) {
 			if (!noLog) { this.log("warn", logPrefix, "Errors due syncing for more than 50% members of guild"); }
+
 			return {
 				done: false,
 				err: "moreThan50PercFailed"
@@ -739,6 +775,7 @@ class PremiumControl extends Plugin implements IModule {
 		}
 
 		if (!noLog) { this.log("ok", logPrefix, `Sync complete without errors: ${fetched} fetched, ${reused} reused`); }
+
 		return {
 			done: true,
 			err: undefined
@@ -769,9 +806,10 @@ class PremiumControl extends Plugin implements IModule {
 	private roleSyncInterval: NodeJS.Timer;
 
 	public async init() {
-		const subpluginInit = await init();
+		const subpluginInit = await Premium.init();
 		if (!subpluginInit) {
 			this.log("err", "Subplugin initalization failed");
+
 			return;
 		}
 		this.roleSyncInterval = setInterval(() => this.performGuildsSync(true), 3600000);
@@ -782,6 +820,7 @@ class PremiumControl extends Plugin implements IModule {
 	public async unload() {
 		clearInterval(this.roleSyncInterval);
 		this.unhandleEvents();
+
 		return true;
 	}
 }

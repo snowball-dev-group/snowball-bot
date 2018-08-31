@@ -1,5 +1,5 @@
 import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError } from "../baseService";
-import { IEmbed, escapeDiscordMarkdown } from "../../utils/utils";
+import { IEmbed, escapeDiscordMarkdown } from "@utils/utils";
 import { default as fetch } from "node-fetch";
 import { EventEmitter } from "events";
 import { IHashMap } from "../../../types/Types";
@@ -47,6 +47,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 		if (this.isSubscribed(streamer.uid)) {
 			throw new Error(`Already subscribed to ${streamer.uid}`);
 		}
+
 		return this.subscriptions.push(streamer);
 	}
 
@@ -237,6 +238,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 		str += "&type=video";
 		str += "&eventType=live";
 		str += `&key=${this.options.apiKey}`;
+
 		return str;
 	}
 
@@ -245,6 +247,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 		str += isUsername ? `?forUsername=${id}` : `?id=${id}`;
 		str += "&part=snippet";
 		str += `&key=${this.options.apiKey}`;
+
 		return str;
 	}
 
@@ -289,6 +292,7 @@ class YouTubeStreamingService extends EventEmitter implements IStreamingService 
 		for (const key in this.channelCache) {
 			delete this.channelCache[key];
 		}
+
 		return true;
 	}
 }

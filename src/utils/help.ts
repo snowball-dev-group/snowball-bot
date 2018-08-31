@@ -1,6 +1,9 @@
 
 import { Message } from "discord.js";
-import { localizeForUser } from "./ez-i18n";
+import { localizeForUser } from "@utils/ez-i18n";
+import * as getLogger from "loggy";
+
+const log = getLogger("utils:help");
 
 export interface IArgumentInfo {
 	description: string;
@@ -33,6 +36,7 @@ let dict: ICategories | undefined = undefined;
 
 function init(): ICategories {
 	if (!dict) { dict = <{}> Object.create(null); }
+
 	return dict;
 }
 
@@ -65,9 +69,19 @@ export function addCommand(category: string, command: string, description: strin
 	};
 }
 
+let _depWarningTriggered = false;
+// /**
+//  * @deprecated
+//  */
 export function command(category: string, command: string, description: string, args?: IArgumentsMap, specialCheck?: (msg: Message) => boolean) {
+	if (!_depWarningTriggered) {
+		log("warn_trace", "`command` decorator is deprecated and will be removed in future. Please, use `addCommand` instead");
+		_depWarningTriggered = true;
+	}
+
 	return (target) => {
 		addCommand(category, command, description, args, specialCheck);
+
 		return target;
 	};
 }

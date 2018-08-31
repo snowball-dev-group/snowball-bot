@@ -1,7 +1,7 @@
-import { INullableHashMap } from "../../types/Types";
+import { INullableHashMap } from "@sb-types/Types";
 import { Guild, TextChannel, DMChannel, GroupDMChannel } from "discord.js";
 import { EventEmitter } from "events";
-import { isPromise } from "./extensions";
+import { isPromise } from "@utils/extensions";
 
 type PossibleTargets = string | Guild | TextChannel | DMChannel | GroupDMChannel;
 type EmptyVoid = () => void;
@@ -41,6 +41,7 @@ export default class DiscordLocker {
 	 */
 	public isLocked(targetId: PossibleTargets) {
 		targetId = this._normalizeTarget(targetId);
+
 		return this._lockStates[targetId] || false;
 	}
 
@@ -55,10 +56,12 @@ export default class DiscordLocker {
 		targetId = this._normalizeTarget(targetId);
 		if (this._lockStates[targetId]) {
 			lockFailed && process.nextTick(lockFailed);
+
 			return false;
 		}
 		this._lockStates[targetId] = true;
 		process.nextTick(() => onLock(this._createSingletimeUnlocker(<string> targetId)));
+
 		return true;
 	}
 
@@ -71,11 +74,13 @@ export default class DiscordLocker {
 	 */
 	public lockAwait<T = void>(targetId: PossibleTargets, onLock: () => T, lockFailed?: EmptyVoid) : Promise<T> {
 		targetId = this._normalizeTarget(targetId);
+
 		return new Promise((res, rej) => {
 			const isLocked = this.lock(targetId, async (unlock) => {
 				let onLockResult = onLock();
 				isPromise<T>(onLockResult) && (onLockResult = await onLockResult);
-				res(onLockResult); unlock();
+				res(onLockResult);
+				unlock();
 			}, lockFailed);
 
 			if (isLocked) { return; }
@@ -121,13 +126,16 @@ export default class DiscordLocker {
 		if (!this._lockStates[targetId]) { return false; }
 		this._lockStates[targetId] = false;
 		this._dispatcher.emit(`${targetId}:unlock`);
+
 		return true;
 	}
 
 	private _createSingletimeUnlocker(targetId: string) {
 		let isUsed = false;
+
 		return () => {
 			if (isUsed) { throw new Error("This target is already unlocked"); }
+
 			return (isUsed = true) && this.unlock(targetId);
 		};
 	}
@@ -135,6 +143,7 @@ export default class DiscordLocker {
 	private _normalizeTarget(target: PossibleTargets) {
 		if (typeof target === "string") { return target; }
 		if (target instanceof Guild) { return `g[${target.id}]`; }
+
 		return `${target.type}[${target.id}]`;
 	}
 }

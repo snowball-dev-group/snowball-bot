@@ -1,10 +1,10 @@
-import { isPremium } from "../utils/premium";
+import { isPremium } from "@utils/premium";
 import { Plugin } from "../plugin";
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { GuildMember, Message, Role, TextChannel } from "discord.js";
-import { EmbedType, resolveGuildRole, escapeDiscordMarkdown } from "../utils/utils";
-import { generateLocalizedEmbed, localizeForUser } from "../utils/ez-i18n";
-import { randomPick } from "../utils/random";
+import { EmbedType, resolveGuildRole, escapeDiscordMarkdown } from "@utils/utils";
+import { generateLocalizedEmbed, localizeForUser } from "@utils/ez-i18n";
+import { randomPick } from "@utils/random";
 import * as Random from "random-js";
 import * as getLogger from "loggy";
 
@@ -76,36 +76,46 @@ class FanServerThings extends Plugin implements IModule {
 			"guildMemberAdd": (member: GuildMember) => this._onNewMember(member),
 			"message": (msg: Message) => this._onMessage(msg)
 		}, true);
-		
+
 		this._nickRegexp = new RegExp(options.nickRegexp, "i");
+
 		const fsGuild = $discordBot.guilds.get(options.fsGuildId);
+
 		if (!fsGuild) {
 			this._log("err", "Fan Server's guild not found");
+
 			return;
 		}
 
 		for (const roleId of options.subRoles) {
 			const subRole = fsGuild.roles.get(roleId);
+
 			if (!subRole) {
 				this._log("err", "One of the subroles is not found:", roleId);
+
 				throw new Error(`Invalid subscriber role reference: ${roleId}`);
 			}
+
 			this._log("ok", `Found subscriber role: ${subRole.id} - ${subRole.name}`);
 		}
 
 		const oneSubRole = fsGuild.roles.get(options.oneSubRole);
+
 		if (!oneSubRole) {
 			this._log("err", `Could not find general subscribers role: ${options.oneSubRole}`);
+
 			throw new Error(`Invalid general role reference: ${options.oneSubRole}`);
 		}
 
 		this._log("ok", `Found general subscriber role: ${oneSubRole.id} - ${oneSubRole.name}`);
 
 		if (typeof options.syncInterval !== "number") {
-			this._log("info", `Sync interval set to minimal value - ${SYNC_INTERVAL_MIN}`);
 			options.syncInterval = SYNC_INTERVAL_MIN;
+
+			this._log("info", `Sync interval set to minimal value - ${SYNC_INTERVAL_MIN}`);
 		} else {
 			options.syncInterval = Math.max(SYNC_INTERVAL_MIN, options.syncInterval);
+
 			this._log("info", `Sync interval set to the value - ${options.syncInterval}`);
 		}
 
@@ -116,24 +126,36 @@ class FanServerThings extends Plugin implements IModule {
 
 	private _syncInterval: NodeJS.Timer;
 
+	
 	public async init() {
 		await this._sync();
+
+		// tslint:disable-next-line:early-exit
 		if (!this._syncInterval) {
-			this._syncInterval = setInterval(async () => this._sync(false), this._options.syncInterval);
+			this._syncInterval = setInterval(
+				async () => this._sync(false),
+				this._options.syncInterval
+			);
 		}
 	}
 
 	private async _sync(log = true) {
 		const fsGuild = $discordBot.guilds.get(this._options.fsGuildId);
+
 		if (!fsGuild) {
 			this._log("err", "Fan Server's guild not found, skipping init cycle");
+
 			return;
 		}
+
 		log && this._log("info", "Synchronization started");
+
 		const startedAt = Date.now();
+
 		for (const member of fsGuild.members.values()) {
-			await this._onUpdate(member, member);
+			await this._onFSUpdate(member, member);
 		}
+
 		log && this._log("ok", `Synchronization done in ${(Date.now() - startedAt)}ms!`);
 	}
 
@@ -144,13 +166,28 @@ class FanServerThings extends Plugin implements IModule {
 	}
 
 	private async _onMessage(msg: Message) {
-		if (!msg.member || msg.channel.type !== "text") { return undefined; }
-		if (msg.guild.id !== this._options.fsGuildId && msg.author.id !== $botConfig.botOwner) { return undefined; }
-		const cmd = acceptedCommands.find(c => msg.content.startsWith(`!${c}`));
+		if (!msg.member || msg.channel.type !== "text") {
+			return undefined;
+		}
+
+		if (
+			msg.guild.id !== this._options.fsGuildId &&
+			msg.author.id !== $botConfig.botOwner
+		) {
+			return undefined;
+		}
+
+		const cmd = acceptedCommands.find(
+			c => msg.content.startsWith(`!${c}`)
+		);
+
 		if (!cmd) { return undefined; }
+
 		switch (cmd) {
-			case "choose": case "pick": return this._chooseCmd(msg, cmd);
-			default: { return undefined; }
+			case "choose": case "pick":
+				return this._chooseCmd(msg, cmd);
+			default: 
+				return undefined;
 		}
 	}
 
@@ -159,7 +196,9 @@ class FanServerThings extends Plugin implements IModule {
 		if (!msg.member.permissions.has("ADMINISTRATOR")) { return; }
 
 		let role: Role | undefined = msg.mentions.roles.first();
+
 		const roleName = msg.content.slice(`!${cmd} `.length);
+
 		if (roleName.length === 0 && !role) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "FSTHINGS_CHOOSE_NOROLENAME")
@@ -175,8 +214,10 @@ class FanServerThings extends Plugin implements IModule {
 		}
 
 		let members = role.members.array();
+
 		// filtering bots out
 		members = members.filter(m => !m.user.bot);
+
 		if (members.length === 0) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, "FSTHINGS_CHOOSE_EMPTYROLE")
@@ -184,6 +225,7 @@ class FanServerThings extends Plugin implements IModule {
 		}
 
 		const pickedMember = randomPick(members);
+
 		if (!pickedMember) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
@@ -257,6 +299,7 @@ class FanServerThings extends Plugin implements IModule {
 
 		if (!oldMember) {
 			member.setNickname(this._options.wrongNickFallback);
+
 			return;
 		}
 
@@ -290,7 +333,10 @@ class FanServerThings extends Plugin implements IModule {
 
 			// not going to search channel if none of the subscriber roles is NEW
 			if (newSubRoles.size > 0) {
-				const announceChannel = newMember.guild.channels.find("id", this._options.subAncChannel);
+				const announceChannel = newMember.guild.channels.find(
+					(m) => m.id === this._options.subAncChannel
+				);
+
 				if (announceChannel) {
 					for (const newSubscriberRole of newSubRoles.keys()) {
 						const texts = this._options.texts.filter(r => r.roleId === newSubscriberRole);
@@ -313,7 +359,9 @@ class FanServerThings extends Plugin implements IModule {
 		if (this._syncInterval) {
 			clearInterval(this._syncInterval);
 		}
+
 		this.unhandleEvents();
+
 		return true;
 	}
 }

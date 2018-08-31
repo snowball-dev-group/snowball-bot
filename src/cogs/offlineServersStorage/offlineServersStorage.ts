@@ -1,10 +1,10 @@
-import { IModule } from "@sb-types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "@cogs/plugin";
 import { Guild } from "discord.js";
 import { INullableHashMap } from "@sb-types/Types";
 import * as getLogger from "loggy";
 
-export default class OfflineServersStorage extends Plugin implements IModule {
+export default class OfflineGuildsStorage extends Plugin implements IModule {
 	public get signature() {
 		return "snowball.core_features.offline_servers_storage";
 	}
@@ -44,6 +44,8 @@ export default class OfflineServersStorage extends Plugin implements IModule {
 		if (this._offlineGuilds[guildId]) { return; }
 
 		this._offlineGuilds[guild.id] = true;
+
+		OfflineGuildsStorage._log("warn", `Guild is not available - ${guildId}`);
 	}
 
 	private _onGuildCreated(guild: Guild) {
@@ -51,7 +53,7 @@ export default class OfflineServersStorage extends Plugin implements IModule {
 
 		if (!this._offlineGuilds[guildId]) {
 			if (!guild.available) {
-				OfflineServersStorage._log(
+				OfflineGuildsStorage._log(
 					"info",
 					`Reported that guild is available, but it is offline`,
 					guildId
@@ -64,7 +66,7 @@ export default class OfflineServersStorage extends Plugin implements IModule {
 
 		this._offlineGuilds[guildId] = false;
 
-		OfflineServersStorage._log("ok", `Guild is available - ${guildId}`);
+		OfflineGuildsStorage._log("ok", `Guild is available - ${guildId}`);
 	}
 
 	public async unload() {

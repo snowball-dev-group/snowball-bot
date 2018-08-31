@@ -1,7 +1,7 @@
 import { default as fetch, Response } from "node-fetch";
 import * as getLogger from "loggy";
 import { DetailedError } from "../../../../types/Types";
-import { get, storeValue } from "../../../utils/cache";
+import { get, storeValue } from "@utils/cache";
 
 export interface IUserInfo {
 	/**
@@ -79,6 +79,7 @@ export async function fetchTatsuProfile(uid: string, apiKey: string): Promise<IU
 			return await resp.json();
 		} catch (err) {
 			LOG("err", logPrefix, "Could not parse JSON", err);
+
 			return undefined;
 		}
 	})();

@@ -1,15 +1,12 @@
-import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
-import { Message, GuildMember } from "discord.js";
-import { generateEmbed, EmbedType, IEmbedOptionsField } from "../../../utils/utils";
-import { localizeForUser } from "../../../utils/ez-i18n";
-import { IRegionalProfile } from "./owApiInterfaces";
-import { getProfile, IOverwatchProfilePluginInfo } from "./overwatch";
-import { DetailedError } from "../../../../types/Types";
+import * as SharedTypes from "@cogs/profiles/plugins/overwatch/shared";
+import * as ProfilePlugin from "@cogs/profiles/plugins/plugin";
+import { DetailedError } from "@sb-types/Types";
+import * as i18n from "@utils/ez-i18n";
+import * as utils from "@utils/utils";
+import { GuildMember, Message } from "discord.js";
 import * as getLogger from "loggy";
-
-const ACCEPTED_REGIONS = [ "eu", "kr", "us" ];
-const ACCEPTED_PLATFORMS = [ "pc", "xbl", "psn" ];
-const LOG = getLogger("OWRatingPlugin");
+import * as API from "./overwatch";
+import * as OWAPIInterfaces from "./owApiInterfaces";
 
 export interface IOWStatsPluginConfig {
 	emojis: {
@@ -27,52 +24,64 @@ export interface IOWStatsPluginConfig {
 	};
 }
 
-export class OWStatsProfilePlugin implements IProfilesPlugin {
+export class OWStatsProfilePlugin implements ProfilePlugin.IProfilesPlugin {
 	public get signature() {
 		return "snowball.features.profile.plugins.overwatch.stats";
 	}
 
 	private readonly _config: IOWStatsPluginConfig;
+	private static readonly _log = getLogger("OWStatsProfilePlugin");
 
 	constructor(config: IOWStatsPluginConfig) {
 		if (!config) {
 			throw new Error("No config passed");
 		}
 
-		for (const emojiName of Object.keys(config.emojis)) {
-			const emojiId = config.emojis[emojiName];
-			const emoji = $discordBot.emojis.get(emojiId);
-			if (!emoji) { throw new Error(`Emoji "${emojiName}" by ID "${emojiId}" wasn't found`); }
-			config.emojis[emojiName] = emoji.toString();
-		}
+		config.emojis = <any> utils.resolveEmojiMap(
+			config.emojis,
+			$discordBot.emojis,
+			true
+		);
 
 		this._config = Object.freeze(config);
 	}
 
 	public async getSetupArgs(caller: GuildMember) {
-		return localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
+		return i18n.localizeForUser(caller, "OWPROFILEPLUGIN_DEFAULT_ARGS");
 	}
 
 	public async setup(str: string, member: GuildMember, msg: Message) {
-		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
+		let status = await i18n.localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
-		let statusMsg = <Message> await msg.channel.send("", {
-			embed: generateEmbed(EmbedType.Progress, status)
+		let statusMsg = <Message> await msg.channel.send({
+			embed: utils.generateEmbed(utils.EmbedType.Progress, status)
 		});
 
 		const postStatus = async () => {
-			statusMsg = await statusMsg.edit("", {
-				embed: generateEmbed(EmbedType.Progress, `${statusMsg.content}`)
+			statusMsg = await statusMsg.edit({
+				embed: utils.generateEmbed(
+					utils.EmbedType.Progress,
+					`${statusMsg.content}`
+				)
 			});
 		};
 
-		const args = str.split(";").map(arg => arg.trim());
+		const args = str
+			.split(";")
+			.map(arg => arg.trim());
 
 		if (args.length === 0) {
-			await statusMsg.edit("", {
-				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_ARGS"))
+			await statusMsg.edit({
+				embed: utils.generateEmbed(
+					utils.EmbedType.Error,
+					await i18n.localizeForUser(
+						member,
+						"OWPROFILEPLUGIN_ERR_ARGS"
+					)
+				)
 			});
-			throw new Error("Invalid argumentation");
+
+			throw new Error("No arguments were provided");
 		}
 
 		const info = {
@@ -82,55 +91,104 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			verifed: false
 		};
 
-		if (ACCEPTED_REGIONS.indexOf(info.region) === -1) {
-			await statusMsg.edit("", {
-				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGREGION"), {
-					fields: [ {
-						inline: false,
-						name: await localizeForUser(member, "OWPROFILEPLUGIN_AVAILABLE_REGIONS"),
-						value: ACCEPTED_REGIONS.join("\n")
-					} ]
-				})
+		if (!SharedTypes.ACCEPTED_REGIONS.includes(info.region)) {
+			await statusMsg.edit({
+				embed: utils.generateEmbed(
+					utils.EmbedType.Error,
+					await i18n.localizeForUser(
+						member,
+						"OWPROFILEPLUGIN_ERR_WRONGREGION"
+					), {
+						fields: [{
+							inline: false,
+							name: await i18n.localizeForUser(
+								member,
+								"OWPROFILEPLUGIN_AVAILABLE_REGIONS"
+							),
+							value: SharedTypes.ACCEPTED_REGIONS.join("\n")
+						}]
+					}
+				)
 			});
-			throw new Error("Invalid argumentation");
+
+			throw new Error("The region argument doesn't contain any valid region");
 		}
 
-		if (ACCEPTED_PLATFORMS.indexOf(info.platform)) {
-			await statusMsg.edit("", {
-				embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_WRONGPLATFORM"), {
-					fields: [ {
-						inline: false,
-						name: await localizeForUser(member, "OWPROFILEPLUGIN_AVAILABLE_PLATFORMS"),
-						value: ACCEPTED_PLATFORMS.join("\n")
-					} ]
-				})
+		if (!SharedTypes.ACCEPTED_PLATFORMS.includes(info.platform)) {
+			await statusMsg.edit({
+				embed: utils.generateEmbed(
+					utils.EmbedType.Error,
+					await i18n.localizeForUser(
+						member,
+						"OWPROFILEPLUGIN_ERR_WRONGPLATFORM"
+					), {
+						fields: [{
+							inline: false,
+							name: await i18n.localizeForUser(
+								member,
+								"OWPROFILEPLUGIN_AVAILABLE_PLATFORMS"
+							),
+							value: SharedTypes.ACCEPTED_PLATFORMS.join("\n")
+						}]
+					}
+				)
 			});
-			throw new Error("Invalid argumentantion");
+
+			throw new Error("The platform argument doesn't contain any valid platform");
 		}
 
 		if (!info.battletag) {
-			throw new Error("Invalid argumentation");
+			await statusMsg.edit({
+				embed: utils.generateEmbed(
+					utils.EmbedType.Error,
+					await i18n.localizeForUser(
+						member,
+						"OWPROFILEPLUGIN_ERR_NOBTAG"
+					)
+				)
+			});
+
+			throw new Error("No BattleTag provided");
 		}
 
-		status = await localizeForUser(msg.member, "OWPROFILEPLUGIN_FETCHINGPROFILE");
-		postStatus();
+		status = await i18n.localizeForUser(
+			msg.member,
+			"OWPROFILEPLUGIN_FETCHINGPROFILE"
+		);
+
+		await postStatus();
+
 		try {
-			await getProfile(info.battletag, info.region, info.platform);
+			await API.getProfile(
+				info.battletag,
+				info.region,
+				info.platform
+			);
 		} catch (err) {
 			if (err instanceof DetailedError) {
-				switch (err.code) {
-					case "OWAPI_FETCH_ERR_PROFILE_NOTFOUND": {
-						await statusMsg.edit("", {
-							embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED"))
-						});
-					} break;
-					default: {
-						await statusMsg.edit("", {
-							embed: generateEmbed(EmbedType.Error, await localizeForUser(member, "OWPROFILEPLUGIN_ERR_FETCHINGFAILED_API"))
-						});
-					} break;
+				if (err.code === "OWAPI_FETCH_ERR_PROFILE_NOTFOUND") {
+					await statusMsg.edit({
+						embed: utils.generateEmbed(
+							utils.EmbedType.Error,
+							await i18n.localizeForUser(
+								member,
+								"OWPROFILEPLUGIN_ERR_FETCHINGFAILED"
+							)
+						)
+					});
+				} else {
+					await statusMsg.edit({
+						embed: utils.generateEmbed(
+							utils.EmbedType.Error,
+							await i18n.localizeForUser(
+								member,
+								"OWPROFILEPLUGIN_ERR_FETCHINGFAILED_API"
+							)
+						)
+					});
 				}
 			}
+
 			throw new Error("Could not get the profile");
 		}
 
@@ -140,65 +198,103 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 
 		return {
 			json: json,
-			type: AddedProfilePluginType.Embed
+			type: ProfilePlugin.AddedProfilePluginType.Embed
 		};
 	}
 
-	public async getEmbed(info: string | IOverwatchProfilePluginInfo, caller: GuildMember): Promise<IEmbedOptionsField> {
+	public async getEmbed(info: string | API.IOverwatchProfilePluginInfo, caller: GuildMember): Promise<utils.IEmbedOptionsField> {
 		if (typeof info !== "object") {
-			info = <IOverwatchProfilePluginInfo> JSON.parse(info);
+			info = <API.IOverwatchProfilePluginInfo> JSON.parse(info);
 		}
 
-		let profile: IRegionalProfile | undefined = undefined;
+		let profile: OWAPIInterfaces.IRegionalProfile | undefined = undefined;
 		try {
-			profile = await getProfile(info.battletag, info.region, info.platform);
+			profile = await API.getProfile(
+				info.battletag,
+				info.region,
+				info.platform
+			);
 		} catch (err) {
-			LOG("err", "Error during getting profile", err, info);
-			throw new Error("Can't get profile");
+			OWStatsProfilePlugin._log(
+				"err", "Error during getting profile",
+				err, info
+			);
+
+			throw new Error("Cannot fetch the profile, API is possibly offline or did not respond at time");
 		}
 
 		if (!profile) {
-			LOG("err", "Can't get profile: ", info);
-			throw new Error("Exception not catched, but value not present.");
+			OWStatsProfilePlugin._log(
+				"err", "Failed to fetch the profile: ",
+				info
+			);
+
+			throw new Error("Unexpected behaviour while trying to get the profile");
 		}
 
 		let str = "";
 
-		str += `**${await localizeForUser(caller, "OWPROFILEPLUGIN_LEVEL", {
-			level: (100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.quickplay.overall_stats.level
-		})}**\n`;
+		str += `**${await i18n.localizeForUser(
+			caller,
+			"OWPROFILEPLUGIN_LEVEL", {
+				level: (100 * profile.stats.quickplay.overall_stats.prestige) + profile.stats.quickplay.overall_stats.level
+			}
+		)}**\n`;
 
-		const atStrs = {
-			win: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_WIN"),
-			loss: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_LOSS"),
-			tie: await localizeForUser(caller, "OWPROFILEPLUGIN_STAT_TIE")
+		const matchResultStr = {
+			win: await i18n.localizeForUser(caller, "OWPROFILEPLUGIN_STAT_WIN"),
+			loss: await i18n.localizeForUser(caller, "OWPROFILEPLUGIN_STAT_LOSS"),
+			tie: await i18n.localizeForUser(caller, "OWPROFILEPLUGIN_STAT_TIE")
 		};
 
-		str += `${this._config.emojis.norating} __**${await localizeForUser(caller, "OWPROFILEPLUGIN_COMPETITIVE")}**__\n`;
+		str += `${this._config.emojis.norating}`;
+		str += ` __**${await i18n.localizeForUser(
+			caller,
+			"OWPROFILEPLUGIN_COMPETITIVE"
+		)}**__\n`;
 
-		if (!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank) {
+		if (
+			!profile.stats.competitive || !profile.stats.competitive.overall_stats.comprank
+		) {
 			str += this._getTierEmoji(null);
-			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
+			str += await i18n.localizeForUser(
+				caller,
+				"OWPROFILEPLUGIN_PLACEHOLDER"
+			);
 		} else {
 			const compOveral = profile.stats.competitive.overall_stats;
-			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_RATING", {
-				tier_emoji: this._getTierEmoji(compOveral.tier),
-				rank: compOveral.comprank
-			})}\n`;
-			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
-				games: compOveral.games
-			})}\n`;
+			str += `${await i18n.localizeForUser(
+				caller, "OWPROFILEPLUGIN_RATING", {
+					tier_emoji: this._getTierEmoji(compOveral.tier),
+					rank: compOveral.comprank
+				}
+			)}\n`;
 
-			str += ` ${atStrs.win}: ${compOveral.wins}.\n ${atStrs.loss}: ${compOveral.losses}.\n ${atStrs.tie}: ${compOveral.ties}.\n`;
-			str += `  (${await localizeForUser(caller, "OWPROFILEPLUGIN_WINRATE", {
-				winrate: compOveral.win_rate
-			})})`;
+			str += `${await i18n.localizeForUser(
+				caller, "OWPROFILEPLUGIN_GAMESPLAYED", {
+					games: compOveral.games
+				}
+			)}\n`;
+
+			str += ` ${matchResultStr.win}: ${compOveral.wins}.\n`;
+			str += ` ${matchResultStr.loss}: ${compOveral.losses}.\n`;
+			str += ` ${matchResultStr.tie}: ${compOveral.ties}.\n`;
+
+			str += `  (${await i18n.localizeForUser(
+				caller, "OWPROFILEPLUGIN_WINRATE", {
+					winrate: compOveral.win_rate
+				}
+			)})`;
 		}
 
-		str += `\n${this._config.emojis.quickplay} __**${await localizeForUser(caller, "OWPROFILEPLUGIN_QUICKPLAY")}**__\n`;
+		str += `\n${this._config.emojis.quickplay}`;
+		str += ` __**${await i18n.localizeForUser(
+			caller,
+			"OWPROFILEPLUGIN_QUICKPLAY"
+		)}**__\n`;
 
 		if (!profile.stats.quickplay) {
-			str += await localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
+			str += await i18n.localizeForUser(caller, "OWPROFILEPLUGIN_PLACEHOLDER");
 		} else {
 			const qpOveral = profile.stats.quickplay.overall_stats;
 
@@ -210,12 +306,20 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 			// str += (await localizeForUser(caller, "OWPROFILEPLUGIN_WINRATE", {
 			// 	winrate: qpOveral.win_rate
 			// })) + ")";
-			str += `${await localizeForUser(caller, "OWPROFILEPLUGIN_HOURSPLAYED", {
-				hours: profile.stats.quickplay.game_stats.time_played
-			})}\n`;
-			str += await localizeForUser(caller, "OWPROFILEPLUGIN_GAMESWON", {
-				gamesWon: qpOveral.wins
-			});
+
+			str += `${await i18n.localizeForUser(
+				caller,
+				"OWPROFILEPLUGIN_HOURSPLAYED", {
+					hours: profile.stats.quickplay.game_stats.time_played
+				}
+			)}\n`;
+
+			str += await i18n.localizeForUser(
+				caller,
+				"OWPROFILEPLUGIN_GAMESWON", {
+					gamesWon: qpOveral.wins
+				}
+			);
 		}
 
 		return {
@@ -225,8 +329,9 @@ export class OWStatsProfilePlugin implements IProfilesPlugin {
 		};
 	}
 
-	private _getTierEmoji(tier: "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master" | "grandmaster" | null) {
+	private _getTierEmoji(tier: SharedTypes.Tier | null) {
 		if (!tier) { return this._config.emojis.norating; }
+
 		return this._config.emojis[tier];
 	}
 

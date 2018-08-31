@@ -1,6 +1,6 @@
 import { default as fetch } from "node-fetch";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
-import { get, storeValue } from "../../../utils/cache";
+import { get, storeValue } from "@utils/cache";
 import { DetailedError } from "../../../../types/Types";
 import * as getLogger from "loggy";
 
@@ -25,6 +25,7 @@ export async function getRecents(username: string, apiKey: string): Promise<IRec
 			return await resp.json();
 		} catch (err) {
 			LOG("err", logPrefix, "JSON parsing failed", err);
+
 			return undefined;
 		}
 	})();

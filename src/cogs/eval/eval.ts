@@ -1,11 +1,11 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, GuildMember, User } from "discord.js";
 import { Context } from "vm";
-import { EmbedType } from "../utils/utils";
-import { generateLocalizedEmbed, localizeForUser, UserIdentify } from "../utils/ez-i18n";
-import { replaceAll } from "../utils/text";
-import { isPromise } from "../utils/extensions";
+import { EmbedType } from "@utils/utils";
+import { generateLocalizedEmbed, localizeForUser, UserIdentify } from "@utils/ez-i18n";
+import { replaceAll } from "@utils/text";
+import { isPromise } from "@utils/extensions";
 import * as util from "util";
 import * as VM from "vm";
 import * as Bluebird from "bluebird";
@@ -30,6 +30,7 @@ class EvalJS extends Plugin implements IModule {
 	private static _safeEval(script: string, context: Context) {
 		const vmScript = new VM.Script(script);
 		const vmContext = VM.createContext(context);
+
 		return vmScript.runInContext(vmContext, {
 			timeout: 5000,
 			displayErrors: true
@@ -70,13 +71,14 @@ class EvalJS extends Plugin implements IModule {
 
 		let resultMsg: Message;
 		try {
-			resultMsg = <Message> await message.channel.send("", {
+			resultMsg = <Message> await message.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, user, "EVAL_EXECUTION_PROGRESS_TEXT", {
 						informationTitle: await localizeForUser(i18nTarget, "EVAL_EXECUTION_PROGRESS_TITLE")
 				})
 			});
 		} catch (err) {
 			EvalJS._log("err", "Can't send message with output:", err);
+
 			return;
 		}
 
@@ -149,6 +151,7 @@ class EvalJS extends Plugin implements IModule {
 			await resultMsg.edit(undefined, {
 				embed: await generateLocalizedEmbed(EmbedType.Error, member, "EVAL_EXECUTION_LONGTEXT_DESC", { errorTitle: await localizeForUser(i18nTarget, "EVAL_EXECUTION_LONGTEXT_TITLE") })
 			});
+
 			return;
 		}
 	}
@@ -162,11 +165,13 @@ class EvalJS extends Plugin implements IModule {
 		if (outputInsp.length > 2000) {
 			throw new Error("Large output");
 		}
+
 		return outputInsp;
 	}
 
 	public async unload() {
 		this.unhandleEvents();
+
 		return true;
 	}
 }

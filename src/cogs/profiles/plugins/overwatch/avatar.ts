@@ -1,9 +1,9 @@
 import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { Message, GuildMember } from "discord.js";
-import { generateEmbed, EmbedType } from "../../../utils/utils";
+import { generateEmbed, EmbedType } from "@utils/utils";
 import { IRegionalProfile } from "./owApiInterfaces";
 import { getProfile, IOverwatchProfilePluginInfo } from "./overwatch";
-import { localizeForUser } from "../../../utils/ez-i18n";
+import { localizeForUser } from "@utils/ez-i18n";
 import { DetailedError } from "../../../../types/Types";
 import * as getLogger from "loggy";
 
@@ -23,7 +23,7 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 	public async setup(str: string, member: GuildMember, msg: Message) {
 		let status = await localizeForUser(member, "OWPROFILEPLUGIN_LOADING");
 
-		let statusMsg = <Message> await msg.channel.send("", {
+		let statusMsg = <Message> await msg.channel.send({
 			embed: generateEmbed(EmbedType.Progress, status)
 		});
 
@@ -82,7 +82,9 @@ export class ImageProfilePlugin implements IProfilesPlugin {
 		}
 
 		status = await localizeForUser(msg.member, "OWPROFILEPLUGIN_FETCHINGPROFILE");
+
 		postStatus();
+
 		try {
 			await getProfile(info.battletag, info.region, info.platform);
 		} catch (err) {

@@ -1,8 +1,8 @@
 import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { GuildMember } from "discord.js";
-import { IEmbedOptionsField, escapeDiscordMarkdown } from "../../../utils/utils";
+import { IEmbedOptionsField, escapeDiscordMarkdown } from "@utils/utils";
 import { getTatsuProfile, IUserInfo } from "./tatsumaki";
-import { localizeForUser } from "../../../utils/ez-i18n";
+import { localizeForUser } from "@utils/ez-i18n";
 import * as getLogger from "loggy";
 
 const LOG = getLogger("TatsuPlugin");

@@ -1,4 +1,4 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 
@@ -9,25 +9,32 @@ class SHIBCHANNEL extends Plugin implements IModule {
 
 	constructor() {
 		super({
-			"message": (msg: Message) => this.onMessage(msg),
-			"messageUpdate": (old, newMsg: Message) => this.onMessageUpdated(old, newMsg)
+			"message": (msg: Message) => this._onMessage(msg),
+			"messageUpdate": (old, newMsg: Message) => this._onMessageUpdated(old, newMsg)
 		});
 	}
 
-	async onMessageUpdated(oldMessage: Message, newMessage: Message) {
+	private async _onMessageUpdated(oldMessage: Message, newMessage: Message) {
 		if (oldMessage.channel.id !== "300019335055802368") { return; }
-		return this.onMessage(newMessage);
+
+		return this._onMessage(newMessage);
 	}
 
-	async onMessage(msg: Message) {
+	private async _onMessage(msg: Message) {
 		if (msg.channel.id !== "300019335055802368") { return; }
-		if (!msg.author) { msg.delete(); return; }
+		if (!msg.author) {
+			return msg.delete();
+		}
+
 		if (msg.author.id === "235849760253280257") { return; }
-		if (msg.content !== "!shib" && msg.attachments.size < 1) { msg.delete(); }
+		if (msg.content !== "!shib" && msg.attachments.size < 1) {
+			return msg.delete();
+		}
 	}
 
-	async unload() {
+	public async unload() {
 		this.unhandleEvents();
+
 		return true;
 	}
 }

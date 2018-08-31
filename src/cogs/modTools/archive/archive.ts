@@ -1,16 +1,16 @@
-import { messageToExtra } from "../../utils/failToDetail";
+import { messageToExtra } from "@utils/failToDetail";
 import { IHashMap } from "../../../types/Types";
-import { IModule } from "../../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../../plugin";
 import { Message, Guild, TextChannel, User, GuildMember } from "discord.js";
-import { EmbedType, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "../../utils/utils";
-import { generateLocalizedEmbed, getUserLanguage, localizeForUser, getUserTimezone } from "../../utils/ez-i18n";
+import { EmbedType, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "@utils/utils";
+import { generateLocalizedEmbed, getUserLanguage, localizeForUser, getUserTimezone } from "@utils/ez-i18n";
 import { ArchiveDBController, convertToDBMessage, IDBMessage, IEmulatedContents } from "./dbController";
-import { getPreferenceValue, setPreferenceValue } from "../../utils/guildPrefs";
-import { createConfirmationMessage } from "../../utils/interactive";
-import { parse as parseCmd, ICommandParseResult } from "../../utils/command";
+import { getPreferenceValue, setPreferenceValue } from "@utils/guildPreferences";
+import { createConfirmationMessage } from "@utils/interactive";
+import { parse as parseCmd, ICommandParseResult } from "@utils/command";
 import * as getLogger from "loggy";
-import { replaceAll } from "../../utils/text";
+import { replaceAll } from "@utils/text";
 import { DateTime } from "luxon";
 
 const PREFIX = "!archive";
@@ -174,7 +174,11 @@ class ModToolsArchive extends Plugin implements IModule {
 		}
 
 		const originalMessage = await (async () => {
-			try { return await channel.messages.fetch(message.messageId); } catch (err) { return undefined; }
+			try {
+				return channel.messages.fetch(message.messageId);
+			} catch (err) {
+				return undefined;
+			}
 		})();
 
 		if (!originalMessage && !msg.member.permissions.has("MANAGE_MESSAGES", true) && !channel.permissionsFor(msg.member).has("MANAGE_MESSAGES", true)) {
@@ -227,6 +231,7 @@ class ModToolsArchive extends Plugin implements IModule {
 										fileName: attachment.file.name
 									})}\n`;
 								}
+
 								return str;
 							})()
 						});
@@ -440,6 +445,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			} break;
 			default: {
 				this._log("err", "Unknown target found", target);
+
 				return;
 			}
 		}
@@ -447,11 +453,14 @@ class ModToolsArchive extends Plugin implements IModule {
 		if (foundMessages && foundMessages.length > 0) { // easy filtering from sniffing other channels
 			foundMessages = foundMessages.filter((m) => {
 				const cachedChannel = (caches.channels[m.channelId] !== undefined ? caches.channels[m.channelId] : undefined);
+
 				const channel = cachedChannel === undefined ? (caches.channels[m.channelId] = <TextChannel> msg.guild.channels.get(m.channelId) || null) : undefined;
+
 				if (channel === null || channel === undefined) {
 					return true;
 				}
-					return channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
+
+				return channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
 			});
 		} else {
 			return msg.channel.send({
@@ -525,7 +534,11 @@ class ModToolsArchive extends Plugin implements IModule {
 			let author = cache[messageEntry.authorId];
 			if (author === undefined) {
 				author = cache[messageEntry.authorId] = await (async () => {
-					try { return await $discordBot.users.fetch(messageEntry.authorId); } catch (err) { return null; }
+					try {
+						return $discordBot.users.fetch(messageEntry.authorId);
+					} catch (err) {
+						return null;
+					}
 				})();
 			}
 
@@ -641,6 +654,7 @@ class ModToolsArchive extends Plugin implements IModule {
 	private async _recordMessage(msg: Message) {
 		if (!(await this._isEnabledAt(msg.channel.type === "dm" ? "dm" : msg.guild))) { return; }
 		const payload = convertToDBMessage(msg);
+
 		return this._controller.insertMessage(payload);
 	}
 
@@ -652,6 +666,7 @@ class ModToolsArchive extends Plugin implements IModule {
 
 	public async unload() {
 		this.unhandleEvents();
+
 		return true;
 	}
 }

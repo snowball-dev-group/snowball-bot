@@ -1,10 +1,10 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
-import { generateLocalizedEmbed } from "../utils/ez-i18n";
-import { EmbedType, escapeDiscordMarkdown, getMessageMemberOrAuthor } from "../utils/utils";
+import { generateLocalizedEmbed } from "@utils/ez-i18n";
+import { EmbedType, escapeDiscordMarkdown, getMessageMemberOrAuthor } from "@utils/utils";
 import { default as fetch } from "node-fetch";
-import { parse, commandRedirect } from "../utils/command";
+import { parse, commandRedirect } from "@utils/command";
 import * as logger from "loggy";
 
 class OwnerCommands extends Plugin implements IModule {
@@ -37,8 +37,9 @@ class OwnerCommands extends Plugin implements IModule {
 					const newUser = await $discordBot.user.setUsername(
 						parsed.content
 					);
-					msg.react("✅");
-					return msg.channel.send("", {
+					await msg.react("✅");
+
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(
 							EmbedType.OK, caller, {
 								key: "OWNERCMDS_CHANGENAME_DONE",
@@ -49,8 +50,9 @@ class OwnerCommands extends Plugin implements IModule {
 							})
 					});
 				} catch (err) {
-					msg.react("🚫");
-					return msg.channel.send("", {
+					await msg.react("🚫");
+
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(
 							EmbedType.Error, caller, {
 								key: "OWNERCMDS_CHANGENAME_FAULT",
@@ -63,10 +65,22 @@ class OwnerCommands extends Plugin implements IModule {
 			},
 			"!change_pfp": async () => {
 				try {
-					const resp = await fetch(msg.attachments.first().url);
+					const attachment = msg.attachments.first();
+
+					if (!attachment) {
+						return msg.channel.send({
+							embed: await generateLocalizedEmbed(
+								EmbedType.Error,
+								caller,
+								"OWNERCMDS_CHANGEAVY_NOATTACHMENT"
+							)
+						});
+					}
+
+					const resp = await fetch(attachment.url);
 
 					if (resp.status !== 200) {
-						return msg.channel.send("", {
+						return msg.channel.send({
 							embed: await generateLocalizedEmbed(
 								EmbedType.Progress, caller,
 								"OWNERCMDS_CHANGEAVY_FAULT_RESPERR"
@@ -77,7 +91,7 @@ class OwnerCommands extends Plugin implements IModule {
 					try {
 						const newUser = await $discordBot.user.setAvatar(await resp.buffer());
 
-						return msg.channel.send("", {
+						return msg.channel.send({
 							embed: await generateLocalizedEmbed(
 								EmbedType.OK, caller, "OWNERCMDS_CHANGEAVY_DONE", {
 									imageUrl: newUser.displayAvatarURL({ format: "png", size: 1024 })
@@ -85,7 +99,7 @@ class OwnerCommands extends Plugin implements IModule {
 							)
 						});
 					} catch (err) {
-						return msg.channel.send("", {
+						return msg.channel.send({
 							embed: await generateLocalizedEmbed(
 								EmbedType.Error, caller, {
 									key: "OWNERCMDS_CHANGEAVY_FAULT_SETFAILED",
@@ -97,7 +111,8 @@ class OwnerCommands extends Plugin implements IModule {
 					}
 				} catch (err) {
 					this._log("err", "Error changing/downloading profile picture");
-					return msg.channel.send("", {
+
+					return msg.channel.send({
 						embed: await generateLocalizedEmbed(
 							EmbedType.Error, caller, {
 								key: "OWNERCMDS_CHANGEAVY_FAULT_REQERROR",
@@ -117,6 +132,7 @@ class OwnerCommands extends Plugin implements IModule {
 		}
 
 		this.unhandleEvents();
+
 		return true;
 	}
 }

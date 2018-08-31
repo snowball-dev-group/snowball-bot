@@ -1,4 +1,4 @@
-import { IModule } from "@sb-types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { IPCMessage, INullableHashMap } from "@sb-types/Types";
 import { profilePicture, ProfilePictureFormat, ProfilePictureAnimatedBehavior } from "@utils/avatar";
 import { localizeForUser, generateLocalizedEmbed, localizeForGuild } from "@utils/ez-i18n";
@@ -10,8 +10,8 @@ import { replaceAll, startsWith, removeEveryoneMention } from "@utils/text";
 import { EmbedType, IEmbedOptionsField, resolveGuildRole, escapeDiscordMarkdown, resolveEmojiMap, getUserDisplayName } from "@utils/utils";
 import { Plugin } from "@cogs/plugin";
 import { GuildsDBController, IGuildRow, IGuildCustomize } from "@cogs/guilds/dbController";
-import { GUILD_HELP_KEYS, SHARDING_MESSAGE_TYPE, isHostBanned } from "@cogs/guilds/consts";
-import { Message, Guild, GuildMember, Role, TextChannel, DMChannel, DiscordAPIError, Emoji } from "discord.js";
+import { GUILD_HELP_KEYS, SHARDING_MESSAGE_TYPE, isHostBanned, EDITABLE_PARAMS, RESERVER_GUILD_NAMES, GUILDS_PER_PAGE } from "@cogs/guilds/consts";
+import { Message, GuildMember, Role, TextChannel, DMChannel, DiscordAPIError, Emoji, MessageAttachment, AvatarOptions } from "discord.js";
 import { parse as parseURI } from "url";
 import { default as fetch } from "node-fetch";
 import * as ua from "universal-analytics";
@@ -22,6 +22,8 @@ const DEFAULT_TABLE_NAME = "guilds";
 const EMOJI_NAME_REGEXP = /[a-z0-9\_\-]{2,36}/i;
 const EMOJI_ACCESSIBLE_FORMATS = [".png", ".webp", ".jpg", ".gif"];
 const EMOJI_MAXSIZE = 262144; // bytes
+
+const MAX_MEMBERSCONTROL_MENTIONS = 10;
 
 export interface IGuildsModuleConfig {
 	emojis: {
@@ -128,7 +130,7 @@ function defHelpCheck(msg: Message) {
 @command(HELP_CATEGORY, CMD_GUILDS_LIST.slice(1), GUILD_HELP_KEYS.listDesc, {
 	[GUILD_HELP_KEYS.listArg0]: {
 		optional: true,
-		description: GUILD_HELP_KEYS.listArg0Desc
+		description: `${GUILD_HELP_KEYS.listArg0Desc}`
 	}
 }, defHelpCheck)
 @command(HELP_CATEGORY, CMD_GUILDS_INFO.slice(1), GUILD_HELP_KEYS.infoDesc, {
@@ -138,18 +140,20 @@ function defHelpCheck(msg: Message) {
 	}
 }, defHelpCheck)
 class Guilds extends Plugin implements IModule {
+	// FIXME: insert new lines anywhere UwU @done
+	// FIXME: add flows support
+
 	public get signature() {
 		return "snowball.features.guilds";
 	}
 
+	// Sharded invites handling
+	private _processMessageListener?: ((msg: any) => void);
 	private readonly log = getLogger("Guilds");
-
 	private readonly _config: IGuildsModuleConfig;
 
-	private _processMessageListener?: ((msg: any) => void);
-	private readonly _pendingInvites: INullableHashMap<{ code: string; }> = Object.create(null);
-
 	private readonly _dbController: GuildsDBController;
+	private readonly _pendingInvites: INullableHashMap<{ code: string; }> = Object.create(null);
 
 	constructor(config: IGuildsModuleConfig) {
 		super({
@@ -214,6 +218,7 @@ class Guilds extends Plugin implements IModule {
 
 	private async _onMessage(msg: Message) {
 		if (msg.channel.type === "dm") { return this._handleDMCode(msg); }
+
 		try {
 			if (msg.content.startsWith(BASE_PREFIX)) {
 				if (msg.content === BASE_PREFIX) {
@@ -233,11 +238,13 @@ class Guilds extends Plugin implements IModule {
 				} else if (startsWith(msg.content, CMD_GUILDS_MEMBERS)) {
 					return await this._membersControl(msg);
 				}
+
 				return await this._joinLeaveGuild(msg);
 			}
 		} catch (err) {
 			this.log("err", "Error at running cmd", msg.content, "\n", err);
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
+
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_RUNNINGFAILED")
 			});
@@ -271,44 +278,41 @@ class Guilds extends Plugin implements IModule {
 		}
 	}
 
-	private async _sendHelp(channel: TextChannel, article: string = "guilds", member: GuildMember) {
-		let str = "";
-		switch (article) {
-			case "guilds": {
-				str = await localizeForUser(member, "GUILDS_ARTICLE_GENERAL", {
-					prefix: BASE_PREFIX
-				});
-			} break;
+	private async _sendHelp(channel: TextChannel, cmd: string = BASE_PREFIX, member: GuildMember) {
+		let key: string | undefined;
+
+		switch (cmd) {
 			case CMD_GUILDS_CREATE: {
-				str = await localizeForUser(member, "GUILDS_ARTICLE_CREATE", {
-					prefix: CMD_GUILDS_CREATE
-				});
+				key = "GUILDS_ARTICLE_CREATE";
 			} break;
 			case CMD_GUILDS_EDIT: {
-				str = await localizeForUser(member, "GUILDS_ARTICLE_EDIT", {
-					prefix: CMD_GUILDS_EDIT
-				});
+				key = "GUILDS_ARTICLE_EDIT";
 			} break;
 			case CMD_GUILDS_INFO: {
-				str = await localizeForUser(member, "GUILDS_ARTICLE_INFO", {
-					prefix: CMD_GUILDS_INFO
-				});
+				key = "GUILDS_ARTICLE_INFO";
 			} break;
 			case CMD_GUILDS_LIST: {
-				str = await localizeForUser(member, "GUILDS_ARTICLE_LIST", {
-					prefix: CMD_GUILDS_LIST
-				});
+				key = "GUILDS_ARTICLE_LIST";
 			} break;
 			case CMD_GUILDS_DELETE: {
-				str = await localizeForUser(member, "GUILDS_ARTICLE_DELETE", {
-					prefix: CMD_GUILDS_DELETE
-				});
+				key = "GUILDS_ARTICLE_DELETE";
 			} break;
+			case BASE_PREFIX: {
+				key = "GUILDS_ARTICLE_GENERAL";
+			} break;
+			default: {
+				throw new Error(
+					`Article for command "${cmd}" not found`
+				);
+			}
 		}
+
 		return channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Information, member, {
-				custom: true,
-				string: str
+				key,
+				formatOptions: {
+					prefix: cmd
+				}
 			})
 		});
 	}
@@ -320,76 +324,130 @@ class Guilds extends Plugin implements IModule {
 	private async _createGuild(msg: Message) {
 		// !guilds create Overwatch, !Overwatch
 		if (msg.content === CMD_GUILDS_CREATE) {
-			return this._sendHelp(<TextChannel> msg.channel, CMD_GUILDS_CREATE, msg.member);
+			return this._sendHelp(
+				<TextChannel> msg.channel,
+				CMD_GUILDS_CREATE,
+				msg.member
+			);
 		}
 
 		if (!isGuildManager(msg.member)) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_NOPERMISSIONS"
+				)
 			});
 		}
 
-		const args = msg.content.slice(CMD_GUILDS_CREATE.length).split(",").map(arg => arg.trim());
+		const args = msg.content
+			.slice(CMD_GUILDS_CREATE.length)
+			.split(",")
+			.map(arg => arg.trim());
+
 		if (args.length > 2) {
 			// Overwatch, Overwatch, friends!
 			const fields: IEmbedOptionsField[] = [];
 			if ((msg.content.match(/\,/g) || []).length > 1) {
 				fields.push({
-					name: await localizeForUser(msg.member, "GUILDS_CREATE_FIELD_TIP"),
-					value: await localizeForUser(msg.member, "GUILDS_CREATE_FILED_TIP_TEXT"),
+					name: await localizeForUser(
+						msg.member,
+						"GUILDS_CREATE_FIELD_TIP"
+					),
+					value: await localizeForUser(
+						msg.member,
+						"GUILDS_CREATE_FILED_TIP_TEXT"
+					),
 				});
 			}
 			fields.push({
-				name: await localizeForUser(msg.member, "GUILDS_CREATE_FIELDS_USAGE"),
-				value: await localizeForUser(msg.member, "GUILDS_CREATE_FIELDS_USAGE_TEXT", {
-					prefix: CMD_GUILDS_CREATE
-				})
+				name: await localizeForUser(
+					msg.member, "GUILDS_CREATE_FIELDS_USAGE"
+				),
+				value: await localizeForUser(
+					msg.member,
+					"GUILDS_CREATE_FIELDS_USAGE_TEXT", {
+						prefix: CMD_GUILDS_CREATE
+					}
+				)
 			});
+
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_WRONGARGSCOUNT", {
-					fields: []
-				})
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_CREATE_WRONGARGSCOUNT", {
+						fields
+					}
+				)
 			});
 		}
 
-		if (["create", "edit", "invite", "delete", "list", "info"].includes(args[0].toLowerCase())) {
+		if (RESERVER_GUILD_NAMES.includes(args[0].toLowerCase())) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_RESERVEDNAME")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_CREATE_RESERVEDNAME"
+				)
 			});
 		}
 
 		// search if we already having role with this name
-		let dbRow: IGuildRow | undefined = await this._getGuildRow(msg.guild, args[0]);
+		let dbRow = await this._dbController.getGuild(
+			msg.guild,
+			args[0]
+		);
 
 		if (dbRow) {
 			if (!msg.guild.roles.has(dbRow.roleId)) {
 				return msg.channel.send({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_ALREADYFOUND_NOROLE")
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member,
+						"GUILDS_CREATE_ALREADYFOUND_NOROLE"
+					)
 				});
 			}
+
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_ALREADYFOUND_ROLE")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_CREATE_ALREADYFOUND_ROLE"
+				)
 			});
 		}
 
-		let role: Role | undefined = undefined;
+		let role: Role | undefined;
 
 		if (args.length === 1) {
 			const roleName = `${DEFAULT_ROLE_PREFIX}${args[0]}`;
 
 			// creating role
-			const _confirmationEmbed = await generateLocalizedEmbed(EmbedType.Progress, msg.member, {
-				key: "GUILDS_CREATE_ROLECREATING_CONFIRMATION",
-				formatOptions: {
-					roleName
+			const _confirmationEmbed = await generateLocalizedEmbed(
+				EmbedType.Progress,
+				msg.member, {
+					key: "GUILDS_CREATE_ROLECREATING_CONFIRMATION",
+					formatOptions: {
+						roleName
+					}
 				}
-			});
+			);
 
-			const confirmation = await createConfirmationMessage(_confirmationEmbed, msg);
+			const confirmation = await createConfirmationMessage(
+				_confirmationEmbed,
+				msg
+			);
 
 			if (!confirmation) {
 				return msg.channel.send({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CANCELED")
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member,
+						"GUILDS_CANCELED"
+					)
 				});
 			}
 
@@ -399,44 +457,77 @@ class Guilds extends Plugin implements IModule {
 					hoist: false, mentionable: false,
 					name: roleName
 				},
-				reason: await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_ROLE_CREATED", {
-					initiator: msg.author.tag,
-					guildName: args[0]
-				})
+				reason: await localizeForGuild(
+					msg.guild, "GUILDS_AUDITLOG_ROLE_CREATED", {
+						initiator: msg.author.tag,
+						guildName: args[0]
+					}
+				)
 			});
 		} else {
-			role = resolveGuildRole(args[1], msg.guild, false, false);
+			role = resolveGuildRole(args[1],
+				msg.guild,
+				false, false
+			);
+
 			if (!role) {
 				return msg.channel.send({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_RESOLVINGFAILED")
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member,
+						"GUILDS_CREATE_RESOLVINGFAILED"
+					)
 				});
 			}
 		}
 
 		try {
-			await msg.member.roles.add(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_CREATED_OWNER", {
-				guildName: args[0]
-			}));
+			await msg.member.roles.add(
+				role,
+				await localizeForGuild(
+					msg.guild,
+					"GUILDS_AUDITLOG_CREATED_OWNER", {
+						guildName: args[0]
+					}
+				)
+			);
 		} catch (err) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_ROLEASSIGNATIONFAILED")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_CREATE_ROLEASSIGNATIONFAILED"
+				)
 			});
 		}
 
-		await this._createGuildRow(msg.guild, args[0], msg.member.id, role.id);
+		await this._dbController.createGuild(
+			msg.guild,
+			args[0],
+			msg.member.id,
+			role.id
+		);
 
-		dbRow = await this._getGuildRow(msg.guild, args[0]);
+		dbRow = await this._dbController.getGuild(
+			msg.guild, args[0]
+		);
 
 		if (!dbRow) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CREATE_DBERROR")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_CREATE_DBERROR"
+				)
 			});
 		}
 
-		await this._updateGuildRow(dbRow);
-
 		return msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CREATE_DONE")
+			embed: await generateLocalizedEmbed(
+				EmbedType.OK,
+				msg.member,
+				"GUILDS_CREATE_DONE"
+			)
 		});
 	}
 
@@ -448,7 +539,7 @@ class Guilds extends Plugin implements IModule {
 
 		const args = msg.content.slice(CMD_GUILDS_EDIT.length).split(",");
 
-		let guildName = "", editableParam = "", content = "";
+		let guildName = "", editParam = "", content = "";
 		// due to issues w/ typescript I made them ""
 
 		{
@@ -463,305 +554,529 @@ class Guilds extends Plugin implements IModule {
 						guildName = currentElem.trim();
 					} break;
 					case 2: {
-						editableParam = currentElem.trim();
+						editParam = currentElem.trim();
 						content = args.join(",").trim();
 					} break;
 				}
 			}
 		}
 
-		if (["image", "description", "rules", "welcome_msg_channel", "welcome_msg", "icon", "owner", "google-ua", "private", "invite_only", "add_admin", "add_adm", "remove_admin", "rm_admin", "delete_admin", "add_emoji"].indexOf(editableParam) === -1) {
+		if (EDITABLE_PARAMS.indexOf(editParam) === -1) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDPARAM")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_EDIT_INVALIDPARAM"
+				)
 			});
 		}
 
-		let dbRow: IGuildRow | undefined = undefined;
-		try {
-			dbRow = await this._getGuildRow(msg.guild, guildName);
-		} catch (err) {
-			this.log("err", "Failed to get guild", err);
-			dbRow = undefined;
-		}
+		let dbRow: IGuildRow | undefined | null;
+
+		dbRow = await this._dbController.getGuild(
+			msg.guild, guildName
+		);
 
 		if (!dbRow) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_EDIT_GUILDNOTFOUND")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Information,
+					msg.member,
+					"GUILDS_EDIT_GUILDNOTFOUND"
+				)
 			});
 		}
 
 		if (!isGuildManager(msg.member, dbRow)) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_NOPERMISSIONS"
+				)
 			});
 		}
 
 		const customize = <IGuildCustomize> JSON.parse(dbRow.customize);
 
-		const isCalledByAdmin = !isGuildManager(msg.member, dbRow, true);
+		const isCalledByAdmin = !isGuildManager(
+			msg.member, dbRow, true
+		);
 
 		let doneString = "";
 
-		switch (editableParam) {
+		switch (editParam) {
 			case "image": case "icon": {
 				// fetching first
-				if (!content.startsWith("http://") && !content.startsWith("https://")) {
+
+				const isInvalidLink =
+					!content.startsWith("http://") &&
+					!content.startsWith("https://");
+
+				if (isInvalidLink) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDLINK")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_INVALIDLINK"
+						)
 					});
 				}
+
 				const resolved = parseURI(content);
-				if (resolved.hostname && isHostBanned(resolved.hostname)) {
+
+				const hostBanned =
+					!resolved.hostname ||
+					isHostBanned(resolved.hostname);
+
+				if (hostBanned) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDLINK")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_INVALIDLINK"
+						)
 					});
 				}
+
 				try {
-					await fetch(encodeURI(content), {
-						method: "GET"
-					});
+					// FIXME: strictly avoid fetching because it may leak the bot's IP
+					await fetch(
+						encodeURI(content), {
+							method: "GET"
+						}
+					);
 				} catch (err) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_IMAGELOADINGFAILED")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_IMAGELOADINGFAILED"
+						)
 					});
 				}
-				if (editableParam === "image") {
-					customize.image_url = content;
-				} else {
-					customize.icon_url = content;
-				}
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_IMAGESET");
+
+				customize[editParam === "image" ? "image_url" : "icon_url"] =
+					content;
+
+				doneString = await localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_IMAGESET"
+				);
 			} break;
 			case "rules": {
 				content = removeEveryoneMention(content);
 				customize.rules = content;
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_RULESSET");
+
+				doneString = await localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_RULESSET"
+				);
 			} break;
 			case "welcome_msg_channel": {
 				const channel = $discordBot.channels.get(content);
+
 				if (!channel) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_CHANNELNOTFOUND")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_CHANNELNOTFOUND"
+						)
 					});
 				}
+
 				if (channel.type !== "text") {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_WRONGCHANNEL")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_WRONGCHANNEL"
+						)
 					});
 				}
+
 				if ((<TextChannel> channel).guild.id !== msg.guild.id) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_OTHERCHANNEL")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_OTHERCHANNEL"
+						)
 					});
 				}
+
 				customize.welcome_msg_channel = content;
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_WELCOMECHANNELSET");
+
+				doneString = await localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_WELCOMECHANNELSET"
+				);
 			} break;
 			case "welcome_msg": {
 				content = removeEveryoneMention(content);
-				if (!content.includes("{usermention}") && !content.includes("{username}")) {
+
+				const noMentions =
+					!content.includes("{usermention}") &&
+					!content.includes("{username}");
+
+				if (noMentions) {
 					let confirmation = false;
+
 					try {
-						confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOUSERMENTION"), msg);
+						confirmation = await createConfirmationMessage(
+							await generateLocalizedEmbed(
+								EmbedType.Error,
+								msg.member,
+								"GUILDS_EDIT_NOUSERMENTION"
+							), msg
+						);
 					} catch (err) {
 						confirmation = false;
 					}
 
 					if (confirmation) {
 						return msg.channel.send({
-							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_CANCELED")
+							embed: await generateLocalizedEmbed(
+								EmbedType.Error,
+								msg.member,
+								"GUILDS_CANCELED"
+							)
 						});
 					}
 				}
+
 				customize.welcome_msg = content;
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_WELCOMEMSGSET");
+
+				doneString = await localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_WELCOMEMSGSET"
+				);
 			} break;
 			case "description": {
 				content = removeEveryoneMention(content);
+
 				dbRow.description = content;
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_DESCRIPTIONSET");
+
+				doneString = await localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_DESCRIPTIONSET"
+				);
 			} break;
 			case "owner": {
 				if (isCalledByAdmin) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_OWNERERR")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_OWNERERR"
+						)
 					});
 				}
+
 				const serverAdmin = isServerAdmin(msg.member);
+
 				if (content.startsWith("<@") && content.endsWith(">")) {
 					content = content.slice(2).slice(0, -1);
+
 					if (content.startsWith("!")) {
 						content = content.slice(1);
 					}
 				}
+
 				const member = msg.guild.members.get(content);
+
 				if (!member) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_MEMBERNOTFOUND")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_MEMBERNOTFOUND"
+						)
 					});
 				}
+
 				if (member.id === dbRow.ownerId) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
-							key: "GUILDS_EDIT_TRANSFEROWNERSHIPTOOWNER",
-							formatOptions: {
-								serverAdmin
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member, {
+								key: "GUILDS_EDIT_TRANSFEROWNERSHIPTOOWNER",
+								formatOptions: {
+									serverAdmin
+								}
 							}
-						})
+						)
 					});
 				}
-				const confirmation = await createConfirmationMessage(await generateLocalizedEmbed(EmbedType.Question, msg.member, {
-					key: "GUILDS_EDIT_TRANSFERCONFIRMATION",
-					formatOptions: {
-						username: escapeDiscordMarkdown(member.displayName, true)
-					}
-				}), msg);
+
+				const confirmation = await createConfirmationMessage(
+					await generateLocalizedEmbed(
+						EmbedType.Question,
+						msg.member, {
+							key: "GUILDS_EDIT_TRANSFERCONFIRMATION",
+							formatOptions: {
+								username: escapeDiscordMarkdown(
+									member.displayName, true
+								)
+							}
+						}
+					), msg
+				);
+
 				if (!confirmation) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CANCELED")
+						embed: await generateLocalizedEmbed(
+							EmbedType.OK,
+							msg.member,
+							"GUILDS_CANCELED"
+						)
 					});
 				}
+
 				dbRow.ownerId = member.id;
-				if (customize.admins && customize.admins.includes(member.id)) {
+
+				const admIndex = customize.admins ?
+					customize.admins.indexOf(member.id) :
+					-2;
+
+				if (admIndex >= 0) {
 					customize.admins.splice(customize.admins.indexOf(member.id), 1);
 				}
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_TRANSFERDONE", {
-					serverAdmin
-				});
+
+				doneString = await localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_TRANSFERDONE", {
+						serverAdmin
+					}
+				);
 			} break;
 			case "google-ua": {
 				if (isCalledByAdmin) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOPERMS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_NOPERMS"
+						)
 					});
 				}
+
 				if (!content.startsWith("UA-")) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_GOOGLEUAWRONGCODE")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_GOOGLEUAWRONGCODE"
+						)
 					});
 				}
+
 				customize.ua = content;
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_GOOGLEUADONE");
+
+				doneString = await localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_GOOGLEUADONE"
+				);
 			} break;
 			case "invite_only": case "private": {
 				if (isCalledByAdmin) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOPERMS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_NOPERMS"
+						)
 					});
 				}
 
 				if (!["true", "false"].includes(content)) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_TRUEFALSEERR")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_TRUEFALSEERR"
+						)
 					});
 				}
 
 				if (content === "true" && customize.invite_only) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
-							key: "GUILDS_EDIT_IOALREADY",
-							formatOptions: {
-								ioAlreadyEnabled: true
+						embed: await generateLocalizedEmbed(
+							EmbedType.OK, msg.member, {
+								key: "GUILDS_EDIT_IOALREADY",
+								formatOptions: {
+									ioAlreadyEnabled: true
+								}
 							}
-						})
+						)
 					});
 				} else if (content === "false" && !customize.invite_only) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
-							key: "GUILDS_EDIT_IOALREADY",
-							formatOptions: {
-								ioAlreadyEnabled: false
+						embed: await generateLocalizedEmbed(
+							EmbedType.OK, msg.member, {
+								key: "GUILDS_EDIT_IOALREADY",
+								formatOptions: {
+									ioAlreadyEnabled: false
+								}
 							}
-						})
+						)
 					});
 				}
 
 				customize.invite_only = content === "true";
 
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_IOCHANGED", {
-					ioEnabled: customize.invite_only
-				});
+				doneString = await localizeForUser(
+					msg.member, "GUILDS_EDIT_IOCHANGED", {
+						ioEnabled: customize.invite_only
+					}
+				);
 			} break;
 			case "add_admin": case "add_adm": {
 				if (isCalledByAdmin) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_ADDADMPERMS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_ADDADMPERMS"
+						)
 					});
 				}
+
 				if (msg.mentions.members.size === 0) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_ADDADMNOMENTIONS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_ADDADMNOMENTIONS"
+						)
 					});
 				}
+
 				if (msg.mentions.members.size > 1) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_ADDADMSINGLEMENTION")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_ADDADMSINGLEMENTION"
+						)
 					});
 				}
-				if (!customize.admins) { customize.admins = []; }
-				const mention = msg.mentions.members.first().id;
+
+				if (!customize.admins) {
+					customize.admins = [];
+				}
+
+				const mention = msg.mentions.members.first()!.id;
+
 				if (customize.admins.includes(mention)) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_ADDADMNOTGUILDMEMBER")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_ADDADMNOTGUILDMEMBER"
+						)
 					});
 				}
+
 				customize.admins.push(mention);
 			} break;
 			case "remove_admin": case "rm_admin": case "delete_admin": case "rm_adm": {
 				if (isCalledByAdmin) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_RMADMPERMS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_RMADMPERMS"
+						)
 					});
 				}
+
 				if (msg.mentions.members.size === 0) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOMENTIONS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_NOMENTIONS"
+						)
 					});
 				}
+
 				if (msg.mentions.members.size > 1) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_SINGLEMENTION")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_SINGLEMENTION"
+						)
 					});
 				}
+
 				if (!customize.admins) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_RMNOADMINS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_RMNOADMINS"
+						)
 					});
 				}
-				const mention = msg.mentions.members.first().id;
+
+				const mention = msg.mentions.members.first()!.id;
+
 				customize.admins.splice(customize.admins.indexOf(mention), 1);
 			} break;
 			case "add_emoji": {
 				if (!EMOJI_NAME_REGEXP.test(content)) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDEMOJINAME")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_INVALIDEMOJINAME"
+						)
 					});
 				}
+
 				if (msg.attachments.size === 0) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_NOATTACHMENT")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_NOATTACHMENT"
+						)
 					});
 				} else if (msg.attachments.size > 1) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_TOOMANYATTACHMENTS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_TOOMANYATTACHMENTS"
+						)
 					});
 				}
 
-				const attachment = msg.attachments.first();
+				const attachment = msg.attachments.first()!;
 
 				if (!EMOJI_ACCESSIBLE_FORMATS.find(t => attachment.url.endsWith(t))) {
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_INVALIDTYPE")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_EDIT_INVALIDTYPE"
+						)
 					});
 				} else if ((<number> attachment["size"]) > EMOJI_MAXSIZE) {
 					// by some reason discord.js has no typedefs for `size`
 					return msg.channel.send({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
-							key: "GUILDS_EDIT_INVALIDSIZE",
-							formatOptions: {
-								maxSizeKB: EMOJI_MAXSIZE / 1024
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member, {
+								key: "GUILDS_EDIT_INVALIDSIZE",
+								formatOptions: {
+									maxSizeKB: EMOJI_MAXSIZE / 1024
+								}
 							}
-						})
+						)
 					});
 				}
 
@@ -769,66 +1084,105 @@ class Guilds extends Plugin implements IModule {
 
 				let emoji: Emoji;
 				try {
-					emoji = await msg.guild.emojis.create(attachment.url, content, {
-						roles: [dbRow.roleId, botsRole]
-					});
+					emoji = await msg.guild.emojis.create(
+						attachment.url,
+						content, {
+							roles: [
+								dbRow.roleId,
+								botsRole
+							]
+						}
+					);
 				} catch (err) {
 					if (err instanceof DiscordAPIError) {
-						let key = "GUILDS_EDIT_EMOJIOTHERERR";
-						switch (err.code) {
-							case 50013: { key = "GUILDS_EDIT_NOEMOJIPERMISSIONS"; } break;
-							case 30008: { key = "GUILDS_EDIT_NOSLOTS"; } break;
-							case 20001: { key = "GUILDS_EDIT_BADFORBOT"; } break;
-							case 50035: { key = `GUILDS_EDIT_INVALIDFORM_${err.message.includes("File cannot be larger than") ? "SIZE" : "OTHER"}`; }
-							default: {
-								$snowball.captureException(new Error("Can't add emoji"), {
-									extra: {
-										err, name: content, uri: attachment.url
-									}
-								});
-							} break;
-						}
-
 						return msg.channel.send({
-							embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, key)
+							embed: await generateLocalizedEmbed(
+								EmbedType.Error,
+								msg.member,
+								Guilds._emojiAPIErrorStr(
+									err, content, attachment
+								)
+							)
 						});
 					}
 
-					// ???
 					$snowball.captureException(err);
+
 					return;
 				}
 
 				if (!emoji) { return; }
 
-				doneString = await localizeForUser(msg.member, "GUILDS_EDIT_EMOJICREATED", {
-					name: emoji.name,
-					emoji: botsRole ? emoji.toString() : ""
-				});
+				doneString = await localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_EMOJICREATED", {
+						name: emoji.name,
+						emoji: botsRole ? emoji.toString() : ""
+					}
+				);
 			} break;
 		}
 
 		dbRow.customize = JSON.stringify(customize);
 
-		await this._updateGuildRow(dbRow);
+		await this._dbController.updateGuild(dbRow);
 
 		return msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
-				custom: true,
-				string: doneString
-			})
+			embed: await generateLocalizedEmbed(
+				EmbedType.OK, msg.member, {
+					custom: true,
+					string: doneString
+				}
+			)
 		});
+	}
+
+	private static _emojiAPIErrorStr(err: DiscordAPIError, content: string, attachment: MessageAttachment) {
+		switch (err.code) {
+			case 50013:
+				return "GUILDS_EDIT_NOEMOJIPERMISSIONS";
+			case 30008:
+				return "GUILDS_EDIT_NOSLOTS";
+			case 20001:
+				return "GUILDS_EDIT_BADFORBOT";
+			case 50035: {
+				const isSize = err.message.includes("File cannot be larger than");
+
+				return `GUILDS_EDIT_INVALIDFORM_${
+					isSize ? "SIZE" : "OTHER"
+				}`;
+			}
+		}
+
+		$snowball.captureException(
+			new Error("Can't add emoji"), {
+				extra: {
+					err, name: content,
+					uri: attachment
+				}
+			}
+		);
+
+		return "GUILDS_EDIT_EMOJIOTHERERR";
 	}
 
 	private async _deleteGuild(msg: Message) {
 		const guildName = msg.content.slice(CMD_GUILDS_DELETE.length).trim();
+
 		if (guildName === "") {
-			return this._sendHelp(<TextChannel> msg.channel, CMD_GUILDS_DELETE, msg.member);
+			return this._sendHelp(
+				<TextChannel> msg.channel,
+				CMD_GUILDS_DELETE,
+				msg.member
+			);
 		}
 
-		let dbRow: IGuildRow | undefined = undefined;
+		let dbRow: IGuildRow | undefined | null;
+
 		try {
-			dbRow = await this._getGuildRow(msg.guild, guildName);
+			dbRow = await this._dbController.getGuild(
+				msg.guild, guildName
+			);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			dbRow = undefined;
@@ -836,42 +1190,71 @@ class Guilds extends Plugin implements IModule {
 
 		if (!dbRow) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_EDIT_GUILDNOTFOUND")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Information,
+					msg.member,
+					"GUILDS_EDIT_GUILDNOTFOUND"
+				)
 			});
 		}
 
 		if (!isGuildManager(msg.member, dbRow, true)) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_NOPERMISSIONS"
+				)
 			});
 		}
 
-		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, "GUILDS_DELETE_CONFIRMATION");
-		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
+		const confirmation = await createConfirmationMessage(
+			await generateLocalizedEmbed(
+				EmbedType.Question,
+				msg.member,
+				"GUILDS_DELETE_CONFIRMATION"
+			), msg
+		);
 
 		if (!confirmation) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CANCELED")
+				embed: await generateLocalizedEmbed(
+					EmbedType.OK,
+					msg.member,
+					"GUILDS_CANCELED"
+				)
 			});
 		}
 
-		await this._deleteGuildRow(dbRow);
+		await this._dbController.deleteGuild(dbRow);
 
 		return msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_DELETE_DONE")
+			embed: await generateLocalizedEmbed(
+				EmbedType.OK,
+				msg.member,
+				"GUILDS_DELETE_DONE"
+			)
 		});
 	}
 
 	private async _joinLeaveGuild(msg: Message) {
 		// !guilds Overwatch
 		const guildName = msg.content.slice(BASE_PREFIX.length).trim();
+
 		if (guildName.length === 0) {
-			return this._sendHelp(<TextChannel> msg.channel, undefined, msg.member);
+			return this._sendHelp(
+				<TextChannel> msg.channel,
+				undefined,
+				msg.member
+			);
 		}
 
-		let dbRow: IGuildRow | undefined = undefined;
+		let dbRow: IGuildRow | undefined | null;
+
 		try {
-			dbRow = await this._getGuildRow(msg.guild, guildName);
+			dbRow = await this._dbController.getGuild(
+				msg.guild, guildName
+			);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			dbRow = undefined;
@@ -879,7 +1262,11 @@ class Guilds extends Plugin implements IModule {
 
 		if (!dbRow) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_GUILDNOTFOUND")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_EDIT_GUILDNOTFOUND"
+				)
 			});
 		}
 
@@ -887,61 +1274,97 @@ class Guilds extends Plugin implements IModule {
 
 		if (!role) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_LEAVE_NOROLE")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_LEAVE_NOROLE"
+				)
 			});
 		}
 
 		if (!msg.member.roles.has(dbRow.roleId)) {
-			await this._joinGuild(msg, dbRow, role, guildName);
+			await this._joinGuild(
+				msg, dbRow,
+				role,
+				guildName
+			);
 		} else {
-			await this._leaveGuild(msg, dbRow, role, guildName);
+			await this._leaveGuild(
+				msg, dbRow,
+				role,
+				guildName
+			);
 		}
 	}
 
-	private async _leaveGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
+	private async _leaveGuild(msg: Message, dbRow: IGuildRow | undefined | null, role: Role | undefined, guildName: string) {
 		if (!dbRow || !role) { return; }
 
 		const cz = <IGuildCustomize> JSON.parse(dbRow.customize);
 
-		if (dbRow.ownerId === msg.member.id || (cz.admins && cz.admins.includes(msg.member.id))) {
+		if (isGuildManager(msg.member, dbRow)) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_LEAVE_ADMIN")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_LEAVE_ADMIN"
+				)
 			});
 		}
 
-		let visitor: ua.Visitor | undefined = undefined;
+		let visitor: ua.Visitor | undefined;
+
 		if (cz.ua) {
-			visitor = ua(cz.ua, msg.guild.id, {
-				strictCidFormat: false,
-				https: true,
-				uid: msg.member.id
-			});
+			visitor = ua(
+				cz.ua,
+				msg.guild.id, {
+					strictCidFormat: false,
+					https: true,
+					uid: msg.member.id
+				}
+			);
 		}
 
-		let str = await localizeForUser(msg.member, "GUILDS_LEAVE_CONFIRMATION", {
-			guildName: escapeDiscordMarkdown(dbRow.name, true)
-		});
+		let str = await localizeForUser(
+			msg.member,
+			"GUILDS_LEAVE_CONFIRMATION", {
+				guildName: escapeDiscordMarkdown(dbRow.name, true)
+			}
+		);
 
 		if (cz.invite_only) {
 			str += "\n";
-			str += await localizeForUser(msg.member, "GUILDS_LEAVE_INVITEWARNING");
+			str += await localizeForUser(
+				msg.member,
+				"GUILDS_LEAVE_INVITEWARNING"
+			);
 		}
 
-		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, msg.member, {
-			custom: true,
-			string: str
-		});
+		const confirmationEmbed = await generateLocalizedEmbed(
+			EmbedType.Question,
+			msg.member, {
+				custom: true,
+				string: str
+			}
+		);
 
 		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 		if (!confirmation) {
 			visitor && visitor.event("Members", "Saved from leave", msg.member.id).send();
+
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_CANCELED")
+				embed: await generateLocalizedEmbed(
+					EmbedType.OK,
+					msg.member,
+					"GUILDS_CANCELED"
+				)
 			});
 		}
 
 		try {
-			dbRow = await this._getGuildRow(msg.guild, guildName);
+			dbRow = await this._dbController.getGuild(
+				msg.guild, guildName
+			);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			dbRow = undefined;
@@ -949,7 +1372,11 @@ class Guilds extends Plugin implements IModule {
 
 		if (!dbRow) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_LEAVE_ALREADYDESTROYED")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_LEAVE_ALREADYDESTROYED"
+				)
 			});
 		}
 
@@ -957,129 +1384,260 @@ class Guilds extends Plugin implements IModule {
 
 		if (!role) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_LEAVE_ALREADYDELETEDROLE")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_LEAVE_ALREADYDELETEDROLE"
+				)
 			});
 		}
 
 		try {
-			await msg.member.roles.remove(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_LEFT_GUILD", {
-				guildName: dbRow.name
-			}));
-			visitor && visitor.event("Members", "Left", msg.member.id).send();
+			await msg.member.roles.remove(
+				role,
+				await localizeForGuild(
+					msg.guild,
+					"GUILDS_AUDITLOG_LEFT_GUILD", {
+						guildName: dbRow.name
+					}
+				)
+			);
+
+			visitor && visitor
+				.event("Members", "Left", msg.member.id)
+				.send();
 		} catch (err) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_LEAVE_ROLEFAILED")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_LEAVE_ROLEFAILED"
+				)
 			});
 		}
 
 		return msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
-				key: "GUILDS_LEAVE_DONE",
-				formatOptions: {
-					guildName: escapeDiscordMarkdown(dbRow.name, true)
+			embed: await generateLocalizedEmbed(
+				EmbedType.OK,
+				msg.member, {
+					key: "GUILDS_LEAVE_DONE",
+					formatOptions: {
+						guildName: escapeDiscordMarkdown(dbRow.name, true)
+					}
 				}
-			})
+			)
 		});
+	}
+
+	private static readonly _getProfilePicture = profilePicture(
+		ProfilePictureFormat.TINY,
+		ProfilePictureAnimatedBehavior.NO_ANIMATED
+	);
+
+	private static _getJoinGuildEmbed(str: string, author: GuildMember, title: string) {
+		return generateLocalizedEmbed(
+			EmbedType.Progress,
+			author, {
+				custom: true,
+				string: str
+			}, {
+				universalTitle: title
+			}
+		);
 	}
 
 	private async _joinGuild(msg: Message, dbRow: IGuildRow | undefined, role: Role | undefined, guildName: string) {
 		if (!dbRow || !role) { return; }
 
-		const getEmbed = async (str: string) => {
-			return generateLocalizedEmbed(EmbedType.Progress, msg.member, {
-				custom: true,
-				string: str
-			}, {
-				author: {
-					icon_url: msg.author.avatarURL({ format: "webp", size: 128 }),
-					name: msg.member.displayName
-				}
-			});
-		};
-
 		let cz = <IGuildCustomize> JSON.parse(dbRow.customize);
 
-		let visitor: ua.Visitor | undefined = undefined;
+		let visitor: ua.Visitor | undefined;
+
 		if (cz.ua) {
-			visitor = ua(cz.ua, msg.guild.id, {
-				strictCidFormat: false,
-				https: true,
-				uid: msg.member.id
-			});
+			visitor = ua(
+				cz.ua,
+				msg.guild.id, {
+					strictCidFormat: false,
+					https: true,
+					uid: msg.member.id
+				}
+			);
 		}
 
-		if (cz.invite_only && (!cz.invites || !cz.invites.includes(msg.member.id))) {
-			visitor && visitor.event("Members", "Not invited join attempt", msg.member.id).send();
+		const isInvited =
+			cz.invite_only ?
+				Array.isArray(cz.invites) &&
+				cz.invites.includes(msg.member.id) :
+			true;
+
+		if (!isInvited) {
+			visitor && visitor
+				.event(
+					"Members",
+					"Attempt to join without invitation",
+					msg.member.id
+				)
+				.send();
+
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_IOERR")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_JOIN_IOERR"
+				)
 			});
 		}
 
-		if (cz.banned && Array.isArray(cz.banned) && cz.banned.includes(msg.member.id)) {
-			visitor && visitor.event("Members", "Banned join attempt", msg.member.id).send();
+		const isBanned =
+			Array.isArray(cz.banned) &&
+			cz.banned.includes(msg.member.id);
+
+		if (isBanned) {
+			visitor && visitor
+				.event(
+					"Members",
+					"Banned user attempted to join",
+					msg.member.id
+				)
+				.send();
+
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_BANNEDERR")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_JOIN_BANNEDERR"
+				)
 			});
 		}
 
-		const _msg = <Message> await msg.channel.send({
-			embed: await getEmbed(await localizeForUser(msg.member, "GUILDS_JOIN_PROGRESS", {
-				guildName: escapeDiscordMarkdown(dbRow.name, true)
-			}))
+		const progressMsgTitle = await localizeForUser(
+			msg.member,
+			"GUILDS_JOIN_PROGRESS_TITLE", {
+				username: getUserDisplayName(
+					msg.member, true
+				)
+			}
+		);
+
+		const progressMsg = <Message> await msg.channel.send({
+			embed: await Guilds._getJoinGuildEmbed(
+				await localizeForUser(
+					msg.member,
+					"GUILDS_JOIN_PROGRESS", {
+						guildName: escapeDiscordMarkdown(
+							dbRow.name,
+							true
+						)
+					}
+				),
+				msg.member,
+				progressMsgTitle
+			)
 		});
 
 		if (cz.rules) {
 			const code = (randomString(6)).toUpperCase();
 
-			let __msg: Message | undefined = undefined;
+			let rulesMsg: Message | undefined = undefined;
 
 			// reuse?
-			const embedTitle = await localizeForUser(msg.member, "GUILDS_JOIN_RULES_TITLE", {
-				guildName: escapeDiscordMarkdown(dbRow.name, true)
-			});
+			const embedTitle = await localizeForUser(
+				msg.member,
+				"GUILDS_JOIN_RULES_TITLE", {
+					guildName: escapeDiscordMarkdown(
+						dbRow.name, true
+					)
+				}
+			);
 
 			try {
-				__msg = <Message> await msg.author.send({
-					embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-						custom: true,
-						string: cz.rules
-					}, {
-						universalTitle: embedTitle,
-						fields: [{
-							name: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FIELDS_CODE"),
-							value: code
-						}],
-						footerText: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FOOTER_TEXT")
-					})
+				rulesMsg = <Message> await msg.author.send({
+					embed: await generateLocalizedEmbed(
+						EmbedType.Information,
+						msg.member, {
+							custom: true,
+							string: cz.rules
+						}, {
+							universalTitle: embedTitle,
+							fields: [{
+								name: await localizeForUser(
+									msg.member,
+									"GUILDS_JOIN_RULES_FIELDS_CODE"
+								),
+								value: code
+							}],
+							footerText: await localizeForUser(
+								msg.member,
+								"GUILDS_JOIN_RULES_FOOTER_TEXT"
+							)
+						}
+					)
 				});
 			} catch (err) {
-				return _msg.edit({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
-						key: "GUILDS_JOIN_FAILED_DM",
-						formatOptions: {
-							guildName: escapeDiscordMarkdown(dbRow.name, true)
+				return progressMsg.edit({
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member, {
+							key: "GUILDS_JOIN_FAILED_DM",
+							formatOptions: {
+								guildName: escapeDiscordMarkdown(
+									dbRow.name, true
+								)
+							}
 						}
-					})
+					)
 				});
 			}
 
-			await _msg.edit({
-				embed: await getEmbed(await localizeForUser(msg.member, "GUILDS_JOIN_PROGRESS_RULES", {
-					guildName: escapeDiscordMarkdown(dbRow.name, true)
-				}))
+			// await progressMsg.edit({
+			// 	embed: await getEmbed(
+			// 		await localizeForUser(
+			// 			msg.member, "GUILDS_JOIN_PROGRESS_RULES", {
+			// 				guildName: escapeDiscordMarkdown(
+			// 					dbRow.name, true
+			// 				)
+			// 			}
+			// 		)
+			// 	)
+			// });
+
+			await progressMsg.edit({
+				embed: await Guilds._getJoinGuildEmbed(
+					await localizeForUser(
+						msg.member,
+						"GUILDS_JOIN_PROGRESS_RULES", {
+							guildName: escapeDiscordMarkdown(
+								dbRow.name
+							)
+						}
+					),
+					msg.member,
+					progressMsgTitle
+				)
 			});
 
 			let confirmed = false;
 			if (!$botConfig.sharded) {
 				try {
-					const msgs = await waitForMessages(<DMChannel> __msg.channel, {
-						time: 60 * 1000,
-						variants: [code, code.toLowerCase(), "-"],
-						maxMatches: 1,
-						max: 1,
-						authors: [msg.author.id]
-					});
-					confirmed = msgs.first().content.toLowerCase() === code.toLowerCase();
+					const msgs = await waitForMessages(
+						<DMChannel> rulesMsg.channel, {
+							time: 60 * 1000,
+							variants: [
+								code, "-",
+								code.toLowerCase()
+							],
+							maxMatches: 1,
+							max: 1,
+							authors: [msg.author.id]
+						}
+					);
+
+					const msgContent = msgs
+						.first()!
+						.content
+						.toLowerCase();
+
+					confirmed = msgContent === code.toLowerCase();
 				} catch (err) {
 					confirmed = false;
 				}
@@ -1092,13 +1650,14 @@ class Guilds extends Plugin implements IModule {
 					}
 				});
 
+				// TODO: think of this promise more, doesn't look good
+				// Maybe I should use Bluebird one with .finally & .timeout?
+
 				confirmed = await (new Promise<boolean>((res) => {
 					let t: NodeJS.Timer; // predefines
 					let resolve: (v: boolean) => void;
 
-					const listener = (ipcMsg: IPCMessage<{
-						uid: string
-					}>) => {
+					const listener = (ipcMsg: InviteIPCMessage) => {
 
 						// We actully could not use variable statements
 						// because TypeScript doesn't find them relative
@@ -1137,44 +1696,79 @@ class Guilds extends Plugin implements IModule {
 					process.on("message", listener);
 				}));
 			} else {
-				throw new Error("UNEXPECTED BEHAVIOR: Sharded run, but process.send isn't present");
+				throw new Error(
+					"UNEXPECTED BEHAVIOR: Sharded run, but process.send isn't present"
+				);
 			}
 
 			if (!confirmed) {
 				await msg.author.send({
-					embed: await generateLocalizedEmbed(EmbedType.Warning, msg.member, {
-						key: "GUILDS_JOIN_FAILED_RULES_DM",
-						formatOptions: {
-							guildName: escapeDiscordMarkdown(dbRow.name, true)
+					embed: await generateLocalizedEmbed(
+						EmbedType.Warning,
+						msg.member, {
+							key: "GUILDS_JOIN_FAILED_RULES_DM",
+							formatOptions: {
+								guildName: escapeDiscordMarkdown(
+									dbRow.name, true
+								)
+							}
 						}
-					})
+					)
 				});
-				visitor && visitor.event("Members", "Rules rejected", msg.member.id).send();
-				return _msg.edit({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
-						key: "GUILDS_JOIN_FAILED_RULES",
-						formatOptions: {
-							guildName: escapeDiscordMarkdown(dbRow.name, true)
+
+				visitor && visitor
+					.event(
+						"Members",
+						"User rejected the given rules",
+						msg.member.id
+					)
+					.send();
+
+				return progressMsg.edit({
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member, {
+							key: "GUILDS_JOIN_FAILED_RULES",
+							formatOptions: {
+								guildName: escapeDiscordMarkdown(
+									dbRow.name,
+									true
+								)
+							}
 						}
-					})
+					)
 				});
 			}
 
-			await __msg.edit({
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
-					custom: true,
-					string: cz.rules
-				}, {
-					universalTitle: embedTitle,
-					footerText: await localizeForUser(msg.member, "GUILDS_JOIN_RULES_FOOTER_TEXT_OK")
-				})
+			await rulesMsg.edit({
+				embed: await generateLocalizedEmbed(
+					EmbedType.OK,
+					msg.member, {
+						custom: true,
+						string: cz.rules
+					}, {
+						universalTitle: embedTitle,
+						footerText: await localizeForUser(
+							msg.member,
+							"GUILDS_JOIN_RULES_FOOTER_TEXT_OK"
+						)
+					}
+				)
 			});
 
-			visitor && visitor.event("Members", "Rules accepted", msg.member.id).send();
+			visitor && visitor
+				.event(
+					"Members",
+					"User accepted the given rules",
+					msg.member.id
+				)
+				.send();
 		}
 
 		try {
-			dbRow = await this._getGuildRow(msg.guild, guildName);
+			dbRow = await this._dbController.getGuild(
+				msg.guild, guildName
+			);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
@@ -1182,8 +1776,12 @@ class Guilds extends Plugin implements IModule {
 		}
 
 		if (!dbRow) {
-			return _msg.edit({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_FAILED_DESTROYED")
+			return progressMsg.edit({
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_JOIN_FAILED_DESTROYED"
+				)
 			});
 		}
 
@@ -1193,71 +1791,120 @@ class Guilds extends Plugin implements IModule {
 
 		if (!role) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_FAILED_ROLEDELETED")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_JOIN_FAILED_ROLEDELETED"
+				)
 			});
 		}
 
 		try {
-			await msg.member.roles.add(role, await localizeForGuild(msg.guild, "GUILDS_AUDITLOG_JOINED_GUILD", {
-				guildName: dbRow.name
-			}));
+			await msg.member.roles.add(
+				role,
+				await localizeForGuild(
+					msg.guild,
+					"GUILDS_AUDITLOG_JOINED_GUILD", {
+						guildName: dbRow.name
+					}
+				)
+			);
+
 			visitor && visitor.event("Members", "Joined", msg.member.id).send();
 		} catch (err) {
-			return _msg.edit({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_JOIN_FAILED_ROLEASSIGN")
+			return progressMsg.edit({
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_JOIN_FAILED_ROLEASSIGN"
+				)
 			});
 		}
 
 		if (cz.welcome_msg && cz.welcome_msg_channel) {
 			const channel = msg.guild.channels.get(cz.welcome_msg_channel);
+
 			if (!channel || channel.type !== "text") { return; }
-			await (<TextChannel> channel).send(cz.welcome_msg.replace("{usermention}", `<@${msg.author.id}>`).replace("{username}", escapeDiscordMarkdown(msg.author.username, true)));
+
+			await (<TextChannel> channel).send(
+				cz.welcome_msg
+					.replace("{usermention}", `<@${msg.author.id}>`)
+					.replace("{username}", escapeDiscordMarkdown(
+						msg.author.username,
+						true
+					))
+			);
 		}
 
 		if (cz.invite_only) {
 			const invites = cz.invites!;
+
 			invites.splice(invites.indexOf(msg.member.id), 1);
+
 			cz.invites = invites;
+
 			dbRow.customize = JSON.stringify(cz);
-			await this._updateGuildRow(dbRow);
+
+			await this._dbController.updateGuild(dbRow);
 		}
 
 		if (cz.rules) {
 			await msg.author.send({
-				embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, {
-					key: "GUILDS_JOIN_JOINED_RULES_DM",
-					formatOptions: {
-						guildName: escapeDiscordMarkdown(dbRow.name, true),
-						serverName: escapeDiscordMarkdown(msg.guild.name, true)
+				embed: await generateLocalizedEmbed(
+					EmbedType.OK,
+					msg.member, {
+						key: "GUILDS_JOIN_JOINED_RULES_DM",
+						formatOptions: {
+							guildName: escapeDiscordMarkdown(dbRow.name, true),
+							serverName: escapeDiscordMarkdown(msg.guild.name, true)
+						}
+					}, {
+						universalTitle: await localizeForUser(
+							msg.member,
+							"GUILDS_JOIN_JOINED_RULES_DM_TITLE"
+						)
 					}
-				}, { universalTitle: await localizeForUser(msg.member, "GUILDS_JOIN_JOINED_RULES_DM_TITLE") })
+				)
 			});
 		}
 
-		return _msg.edit({
-			embed: await generateLocalizedEmbed(EmbedType.Tada, msg.member, {
-				key: "GUILDS_JOIN_DONE",
-				formatOptions: {
-					guildName: escapeDiscordMarkdown(dbRow.name, true)
+		return progressMsg.edit({
+			embed: await generateLocalizedEmbed(
+				EmbedType.Tada,
+				msg.member, {
+					key: "GUILDS_JOIN_DONE",
+					formatOptions: {
+						guildName: escapeDiscordMarkdown(dbRow.name, true)
+					}
+				}, {
+					author: {
+						icon_url: msg.author.displayAvatarURL({ format: "webp", size: 128 }),
+						name: msg.member.displayName
+					}
 				}
-			}, {
-				author: {
-					icon_url: msg.author.displayAvatarURL({ format: "webp", size: 128 }),
-					name: msg.member.displayName
-				}
-			})
+			)
 		});
 	}
 
 	private async _getGuildInfo(msg: Message) {
-		const guildName = msg.content.slice(CMD_GUILDS_INFO.length).trim();
+		const guildName = msg.content
+			.slice(CMD_GUILDS_INFO.length)
+			.trim();
+
 		if (guildName.length === 0) {
-			return this._sendHelp(<TextChannel> msg.channel, CMD_GUILDS_INFO, msg.member);
+			return this._sendHelp(
+				<TextChannel> msg.channel,
+				CMD_GUILDS_INFO,
+				msg.member
+			);
 		}
 
-		let dbRow: IGuildRow | undefined = undefined;
+		let dbRow: IGuildRow | undefined;
+
 		try {
-			dbRow = await this._getGuildRow(msg.guild, guildName);
+			dbRow = await this._dbController.getGuild(
+				msg.guild, guildName
+			);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
@@ -1266,14 +1913,23 @@ class Guilds extends Plugin implements IModule {
 
 		if (!dbRow) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_GUILDNOTFOUND")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_EDIT_GUILDNOTFOUND"
+				)
 			});
 		}
 
 		const role = msg.guild.roles.get(dbRow.roleId);
+
 		if (!role) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_INFO_FAILED_ROLEFAILURE")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_INFO_FAILED_ROLEFAILURE"
+				)
 			});
 		}
 
@@ -1281,25 +1937,42 @@ class Guilds extends Plugin implements IModule {
 
 		const fields: IEmbedOptionsField[] = [];
 
-		const guildMembers = msg.guild.members.filter(member => dbRow ? member.roles.has(dbRow.roleId) : false);
+		const guildMembers = msg.guild.members
+			.filter(
+				member => dbRow ?
+					member.roles.has(dbRow.roleId) :
+					false
+			);
 
 		fields.push({
-			name: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBERS"),
-			value: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBERS_VALUE", {
-				count: guildMembers.size
-			}),
+			name: await localizeForUser(
+				msg.member,
+				"GUILDS_INFO_FIELDS_MEMBERS"
+			),
+			value: await localizeForUser(
+				msg.member,
+				"GUILDS_INFO_FIELDS_MEMBERS_VALUE", {
+					count: guildMembers.size
+				}
+			),
 			inline: true
 		});
 
 		const isMember = msg.member.roles.has(dbRow.roleId);
 
 		fields.push({
-			name: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBER"),
-			value: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_MEMBER_VALUE", {
-				member: isMember,
-				greenTick: this._config.emojis.greenTick,
-				redTick: this._config.emojis.redTick
-			}),
+			name: await localizeForUser(
+				msg.member,
+				"GUILDS_INFO_FIELDS_MEMBER"
+			),
+			value: await localizeForUser(
+				msg.member,
+				"GUILDS_INFO_FIELDS_MEMBER_VALUE", {
+					member: isMember,
+					greenTick: this._config.emojis.greenTick,
+					redTick: this._config.emojis.redTick
+				}
+			),
 			inline: true
 		});
 
@@ -1307,45 +1980,67 @@ class Guilds extends Plugin implements IModule {
 
 		if (cz.invite_only) {
 			let str = "";
+
 			if (isMember) {
 				if (dbRow.ownerId === msg.member.id) {
-					str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_OWNER");
+					str = await localizeForUser(
+						msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_OWNER"
+					);
 				} else if (isGuildManager(msg.member, dbRow)) {
-					str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_ADMIN");
+					str = await localizeForUser(
+						msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_ADMIN"
+					);
 				} else {
-					str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_MEMBER");
+					str = await localizeForUser(
+						msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_MEMBER"
+					);
 				}
 			} else {
-				str = await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_INVITED", {
-					invited: cz.invites ? cz.invites.includes(msg.author.id) : false,
-					greenTick: this._config.emojis.greenTick,
-					redTick: this._config.emojis.redTick
-				});
+				str = await localizeForUser(
+					msg.member, "GUILDS_INFO_FIELDS_IOSTATUS_VALUE_INVITED", {
+						invited:
+							Array.isArray(cz.invites) ?
+								cz.invites.includes(msg.author.id) :
+								false,
+						greenTick: this._config.emojis.greenTick,
+						redTick: this._config.emojis.redTick
+					}
+				);
 			}
+
 			fields.push({
-				name: await localizeForUser(msg.member, "GUILDS_INFO_FIELDS_IOSTATUS"),
+				name: await localizeForUser(
+					msg.member,
+					"GUILDS_INFO_FIELDS_IOSTATUS"
+				),
 				value: str
 			});
 		}
 
 		return msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.Empty, msg.member, {
-				custom: true,
-				string: dbRow.description || await localizeForUser(msg.member, "GUILDS_INFO_DESCRIPTIONPLACEHOLDER")
-			}, {
+			embed: await generateLocalizedEmbed(
+				EmbedType.Empty, msg.member, {
+					custom: true,
+					string:
+						dbRow.description ||
+						await localizeForUser(
+							msg.member,
+							"GUILDS_INFO_DESCRIPTIONPLACEHOLDER"
+						)
+				}, {
 					fields,
 					author: guildAuthor ? {
-						icon_url: guildAuthor.user.displayAvatarURL({ format: "webp", size: 128 }),
+						icon_url: Guilds._getProfilePicture(guildAuthor),
 						name: guildAuthor.displayName
 					} : {
-							icon_url: msg.guild.iconURL({ format: "webp", size: 128 }),
-							name: msg.guild.name
-						},
+						icon_url: msg.guild.iconURL(FMT_SMALL_GUILD_ICON),
+						name: msg.guild.name
+					},
 					imageUrl: cz.image_url,
 					thumbUrl: cz.icon_url,
 					title: dbRow.name,
 					footer: {
-						icon_url: msg.guild.iconURL({ format: "webp", size: 128 }),
+						icon_url: msg.guild.iconURL(FMT_SMALL_GUILD_ICON),
 						text: msg.guild.name
 					},
 					ts: role.createdAt
@@ -1355,34 +2050,61 @@ class Guilds extends Plugin implements IModule {
 
 	private async _membersControl(msg: Message) {
 		if (msg.content === CMD_GUILDS_MEMBERS) { return; } // TODO: add instructions lata?
-		let args = msg.content.split(",").map(arg => arg.trim());
-		args[0] = args[0].slice(CMD_GUILDS_MEMBERS.length).trim();
-		args = args.filter(arg => arg.trim() !== "");
+
+		let args = msg.content
+			.split(",")
+			.map(arg => arg.trim());
+
+		args[0] = args[0]
+			.slice(CMD_GUILDS_MEMBERS.length)
+			.trim();
+
+		args = args
+			.filter(arg => arg.trim() !== "");
+
 		// !guilds members guildName, [list/kick/add] <@mention>
 		// guildName, list
 		// guildName, kick, @mention
 		// guildName, add, @mention
 		// guildName, ban, @mention
+
 		if (args.length < 2) { return; }
 
-		let dbRow: IGuildRow | undefined = undefined;
+		let dbRow: IGuildRow | undefined;
+
 		try {
-			dbRow = await this._getGuildRow(msg.guild, args[0]);
+			dbRow = await this._dbController.getGuild(
+				msg.guild, args[0]
+			);
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
-			$snowball.captureException(err, { extra: messageToExtra(msg) });
+
+			$snowball.captureException(
+				err, {
+					extra: messageToExtra(msg)
+				}
+			);
+
 			dbRow = undefined;
 		}
 
 		if (!dbRow) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_EDIT_GUILDNOTFOUND")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_EDIT_GUILDNOTFOUND"
+				)
 			});
 		}
 
 		if (!msg.guild.roles.has(dbRow.roleId)) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_INFO_FAILED_ROLEFAILURE")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_INFO_FAILED_ROLEFAILURE"
+				)
 			});
 		}
 
@@ -1391,16 +2113,28 @@ class Guilds extends Plugin implements IModule {
 		} else if (["kick", "ban", "unban"].includes(args[1]) && args.length > 2) {
 			if (msg.mentions.users.size === 0) {
 				return msg.channel.send({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_NOMENTIONS")
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member,
+						"GUILDS_MEMBERSCONTROL_NOMENTIONS"
+					)
 				});
 			}
 
 			if (!isGuildManager(msg.member, dbRow, false)) {
 				return msg.channel.send({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member,
+						"GUILDS_NOPERMISSIONS"
+					)
 				});
 			}
-			return this._membersControlAction(msg, dbRow, <"kick" | "ban" | "unban"> args[1]);
+
+			return this._membersControlAction(
+				msg, dbRow,
+				<"kick" | "ban" | "unban"> args[1]
+			);
 		}
 	}
 
@@ -1408,27 +2142,38 @@ class Guilds extends Plugin implements IModule {
 
 	private async _membersControlAction(msg: Message, dbRow: IGuildRow, action: "list" | "kick" | "ban" | "unban" | "add") {
 		let statusMsg = <Message> await msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_MEMBERSCONTROL_LOADING")
+			embed: await generateLocalizedEmbed(
+				EmbedType.Progress,
+				msg.member,
+				"GUILDS_MEMBERSCONTROL_LOADING"
+			)
 		});
 
-		const members = msg.guild.members.filter(m => m.roles.has(dbRow.roleId));
+		const members = msg.guild.members
+			.filter(m => m.roles.has(dbRow.roleId));
 
 		const cz = <IGuildCustomize> JSON.parse(dbRow.customize);
 
 		let visitor: ua.Visitor | undefined = undefined;
 		if (cz.ua) {
-			visitor = ua(cz.ua, msg.guild.id, {
-				strictCidFormat: false,
-				https: true,
-				uid: msg.member.id
-			});
+			visitor = ua(
+				cz.ua,
+				msg.guild.id, {
+					strictCidFormat: false,
+					https: true,
+					uid: msg.member.id
+				}
+			);
 		}
 
 		switch (action) {
 			case "list": {
-				let str = `# ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST", {
-					guildName: Guilds._membersControlFixString(dbRow.name)
-				})}`;
+				let str = `# ${await localizeForUser(
+					msg.member,
+					"GUILDS_MEMBERSCONTROL_LIST", {
+						guildName: Guilds._membersControlFixString(dbRow.name)
+					}
+				)}`;
 
 				let ownerStr: string | undefined;
 				const admins: string[] = [];
@@ -1452,21 +2197,35 @@ class Guilds extends Plugin implements IModule {
 				}
 
 				let membersStr = "";
-				membersStr += `## ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_OWNER")}`;
+				membersStr += `## ${await localizeForUser(
+					msg.member,
+					"GUILDS_MEMBERSCONTROL_LIST_OWNER"
+				)}`;
+
 				membersStr += `- ${ownerStr || "[Owner left](This guild is owned by server)"}\n\n`;
 
 				if (admins.length > 0) {
-					membersStr += `## ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_ADMINS")}\n`;
+					membersStr += `## ${await localizeForUser(
+						msg.member,
+						"GUILDS_MEMBERSCONTROL_LIST_ADMINS"
+					)}\n`;
 					membersStr += `${admins.join("\n")}\n\n`;
 				}
 
-				membersStr += `## ${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_LIST_EVERYONE")}\n`;
+				membersStr += `## ${await localizeForUser(
+					msg.member,
+					"GUILDS_MEMBERSCONTROL_LIST_EVERYONE"
+				)}\n`;
 				membersStr += otherMembers.join("\n");
 
 				str += `\n\n${membersStr}`;
 
 				statusMsg = await statusMsg.edit({
-					embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "GUILDS_MEMBERSCONTROL_SENDING")
+					embed: await generateLocalizedEmbed(
+						EmbedType.Progress,
+						msg.member,
+						"GUILDS_MEMBERSCONTROL_SENDING"
+					)
 				});
 
 				try {
@@ -1474,19 +2233,36 @@ class Guilds extends Plugin implements IModule {
 						split: true,
 						code: "md"
 					});
+
 					statusMsg = await statusMsg.edit({
-						embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "GUILDS_MEMBERSCONTROL_SENT")
+						embed: await generateLocalizedEmbed(
+							EmbedType.OK,
+							msg.member,
+							"GUILDS_MEMBERSCONTROL_SENT"
+						)
 					});
 				} catch (err) {
 					statusMsg = await statusMsg.edit({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_SENDINGERR")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member,
+							"GUILDS_MEMBERSCONTROL_SENDINGERR"
+						)
 					});
 				}
 			} break;
 			case "kick": case "ban": case "unban": {
-				if (msg.mentions.users.size > 20) {
+				if (msg.mentions.users.size > MAX_MEMBERSCONTROL_MENTIONS) {
 					statusMsg = await statusMsg.edit({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_MAXMENTIONS")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member, {
+								key: "GUILDS_MEMBERSCONTROL_MAXMENTIONS",
+								formatOptions: {
+									maxMentions: MAX_MEMBERSCONTROL_MENTIONS
+								}
+							}
+						)
 					});
 				}
 
@@ -1495,7 +2271,11 @@ class Guilds extends Plugin implements IModule {
 
 				if (action === "unban" && (!cz.banned || cz.banned.length === 0)) {
 					statusMsg = await statusMsg.edit({
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_MEMBERSCONTROL_NONEBANNED")
+						embed: await generateLocalizedEmbed(
+							EmbedType.Error,
+							msg.member, 
+							"GUILDS_MEMBERSCONTROL_NONEBANNED"
+						)
 					});
 				}
 
@@ -1504,9 +2284,13 @@ class Guilds extends Plugin implements IModule {
 					let adminRemoved = false;
 
 					if (!member) {
-						str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBEROFSERVER", {
-							username: escapeDiscordMarkdown(mention.username, true)
-						})}\n`;
+						str += `${await localizeForUser(msg.member,
+							"GUILDS_MEMBERSCONTROL_NOTAMEMBEROFSERVER", {
+								username: escapeDiscordMarkdown(
+									mention.username, true
+								)
+							}
+						)}\n`;
 						continue;
 					}
 
@@ -1515,83 +2299,174 @@ class Guilds extends Plugin implements IModule {
 						if (isGuildManager(member, dbRow, false)) {
 							const cz = <IGuildCustomize> JSON.parse(dbRow.customize);
 							const index = (cz.admins || []).indexOf(member.id);
+
 							if (index < 0) {
-								str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_SERVERADM", {
-									username: escapeDiscordMarkdown(mention.username, true)
-								})}\n`;
+								str += `${await localizeForUser(
+									msg.member,
+									"GUILDS_MEMBERSCONTROL_SERVERADM", {
+										username: escapeDiscordMarkdown(mention.username, true)
+									}
+								)}\n`;
 								continue;
 							}
+
 							cz.admins.splice(index, 1);
+
 							dbRow.customize = JSON.stringify(cz);
-							await this._updateGuildRow(dbRow);
+
+							await this._dbController.updateGuild(dbRow);
+
 							adminRemoved = true;
 						}
 					} else if (isGuildManager(member, dbRow, false)) {
-						str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_GUILDADMOROWNR", {
-							username: escapeDiscordMarkdown(mention.username, true)
-						})}\n`;
+						str += `${
+							await localizeForUser(
+								msg.member, "GUILDS_MEMBERSCONTROL_GUILDADMOROWNR", {
+									username: escapeDiscordMarkdown(mention.username, true)
+								}
+							)}\n`;
 						continue;
 					}
 
 					if (!member.roles.has(dbRow.roleId)) {
 						if (action === "kick") {
-							str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTAMEMBER", {
-								username: escapeDiscordMarkdown(member.displayName, true)
-							})}\n`;
+							str += `${await localizeForUser(
+								msg.member,
+								"GUILDS_MEMBERSCONTROL_NOTAMEMBER", {
+									username: escapeDiscordMarkdown(member.displayName, true)
+								}
+							)}\n`;
 							continue;
 						}
 					} else {
-						await member.roles.remove(dbRow.roleId, await localizeForGuild(msg.guild, action === "kick" ? "GUILDS_AUDITLOG_KICKED" : "GUILDS_AUDITLOG_BANNED", {
-							initiator: msg.author.tag,
-							guildName: dbRow.name
-						}));
+						const actionStr = action === "kick" ?
+							"GUILDS_AUDITLOG_KICKED" :
+							"GUILDS_AUDITLOG_BANNED";
+
+						await member.roles.remove(
+							dbRow.roleId, 
+							await localizeForGuild(
+								msg.guild,
+								actionStr, {
+									initiator: msg.author.tag,
+									guildName: dbRow.name
+								}
+							)
+						);
 					}
 
 					if (action === "kick") {
-						str += `${await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_KICKEDADMITEM" : "GUILDS_MEMBERSCONTROL_KICKEDITEM", {
-							username: escapeDiscordMarkdown(member.displayName, true)
-						})}\n`;
-						visitor && visitor.event("Users Management", "Member kicked", member.id).send();
-					} else if (action === "ban") {
-						if (!cz.banned) { cz.banned = []; }
-						cz.banned.push(member.id);
-						str += `${await localizeForUser(msg.member, adminRemoved ? "GUILDS_MEMBERSCONTROL_BANNEDADMITEM" : "GUILDS_MEMBERSCONTROL_BANNEDITEM", {
-							username: escapeDiscordMarkdown(member.displayName, true)
-						})}\n`;
-						visitor && visitor.event("Users Management", "Member banned", member.id).send();
-					} else if (action === "unban") {
-						if (!cz.banned) { break; }
-						const index = cz.banned.indexOf(member.id);
-						if (index === -1) {
-							str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_NOTBANNED", {
+						const removeStr = adminRemoved ?
+							"GUILDS_MEMBERSCONTROL_KICKEDADMITEM" :
+							"GUILDS_MEMBERSCONTROL_KICKEDITEM";
+
+						str += `${await localizeForUser(
+							msg.member,
+							removeStr, {
 								username: escapeDiscordMarkdown(member.displayName, true)
-							})}\n`;
+							}
+						)}\n`;
+
+						visitor && visitor
+							.event(
+								"Users Management",
+								"Member kicked",
+								member.id
+							)
+							.send();
+					} else if (action === "ban") {
+						if (!Array.isArray(cz.banned)) {
+							cz.banned = [];
+						}
+
+						cz.banned.push(member.id);
+
+						const removeStr = adminRemoved ?
+							"GUILDS_MEMBERSCONTROL_BANNEDADMITEM" :
+							"GUILDS_MEMBERSCONTROL_BANNEDITEM";
+
+						str += `${await localizeForUser(
+							msg.member,
+							removeStr, {
+								username: escapeDiscordMarkdown(
+									member.displayName, true
+								)
+							}
+						)}\n`;
+
+						visitor && visitor
+							.event(
+								"Users Management",
+								"Member banned",
+								member.id
+							)
+							.send();
+					} else if (action === "unban") {
+						if (!Array.isArray(cz.banned)) { break; }
+
+						const index = cz.banned.indexOf(member.id);
+
+						if (index === -1) {
+							str += `${await localizeForUser(
+								msg.member,
+								"GUILDS_MEMBERSCONTROL_NOTBANNED", {
+									username: escapeDiscordMarkdown(
+										member.displayName, true
+									)
+								}
+							)}\n`;
 							continue;
 						}
+
 						cz.banned.splice(index, 1);
-						str += `${await localizeForUser(msg.member, "GUILDS_MEMBERSCONTROL_UNBANNEDITEM", {
-							username: escapeDiscordMarkdown(member.displayName, true)
-						})}\n`;
+
+						str += `${await localizeForUser(
+							msg.member,
+							"GUILDS_MEMBERSCONTROL_UNBANNEDITEM", {
+								username: escapeDiscordMarkdown(
+									member.displayName, true
+								)
+							}
+						)}\n`;
 					}
+
 					affected++;
 				}
+
 				if (action === "ban" || action === "unban") {
-					if (cz.banned && cz.banned.length === 0) {
+					if (Array.isArray(cz.banned) && cz.banned.length === 0) {
 						delete cz.banned;
 					}
+					
 					dbRow.customize = JSON.stringify(cz);
-					await this._updateGuildRow(dbRow);
+					
+					await this._dbController.updateGuild(dbRow);
 				}
+
+				const actionStr = 
+					action === "kick" ?
+						"GUILDS_MEMBERSCONTROL_KICKED" :
+						action === "ban" ?
+							"GUILDS_MEMBERSCONTROL_BANNED" :
+							"GUILDS_MEMBERSCONTROL_UNBANNED";
+
 				statusMsg = await statusMsg.edit({
-					embed: await generateLocalizedEmbed(affected === 0 ? EmbedType.Error : EmbedType.OK, msg.member, {
-						custom: true,
-						string: str
-					}, {
-						title: await localizeForUser(msg.member, action === "kick" ? "GUILDS_MEMBERSCONTROL_KICKED" : (action === "ban" ? "GUILDS_MEMBERSCONTROL_BANNED" : "GUILDS_MEMBERSCONTROL_UNBANNED"), {
-							members: affected
-						})
-					})
+					embed: await generateLocalizedEmbed(
+						affected === 0 ? EmbedType.Error : EmbedType.OK,
+						msg.member, {
+							custom: true,
+							string: str
+						}, {
+							title: await localizeForUser(
+								msg.member,
+								actionStr, {
+									members: affected
+								}
+							)
+						}
+					)
 				});
+
 			} break;
 		}
 	}
@@ -1599,31 +2474,48 @@ class Guilds extends Plugin implements IModule {
 	private async _inviteToGuild(msg: Message) {
 		if (msg.content === CMD_GUILDS_INVITE) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_INVITE_INFO")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Information,
+					msg.member,
+					"GUILDS_INVITE_INFO"
+				)
 			});
 		}
 
-		const args = msg.content.split(",").map(arg => arg.trim());
+		const args = msg.content
+			.split(",")
+			.map(arg => arg.trim());
+
 		if (args.length === 1) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-					key: "GUILDS_INVITE_USAGE",
-					formatOptions: {
-						prefix: CMD_GUILDS_INVITE
+				embed: await generateLocalizedEmbed(
+					EmbedType.Information,
+					msg.member, {
+						key: "GUILDS_INVITE_USAGE",
+						formatOptions: {
+							prefix: CMD_GUILDS_INVITE
+						}
 					}
-				})
+				)
 			});
 		}
 
 		args[0] = args[0].slice(CMD_GUILDS_INVITE.length + 1);
 
-		let dbRow: IGuildRow | undefined = undefined;
+		let dbRow: IGuildRow | undefined;
+
 		try {
-			dbRow = await this._getGuildRow(msg.guild, args[0]);
+			dbRow = await this._dbController.getGuild(
+				msg.guild, args[0]
+			);
 			// args[0] supposed to be guild name
 		} catch (err) {
 			this.log("err", "Failed to get guild", err);
-			$snowball.captureException(err, { extra: messageToExtra(msg) });
+
+			$snowball.captureException(err, {
+				extra: messageToExtra(msg)
+			});
+
 			dbRow = undefined;
 		}
 
@@ -1639,19 +2531,31 @@ class Guilds extends Plugin implements IModule {
 
 		if (!isGuildManager(msg.member, dbRow)) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_NOPERMISSIONS")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_NOPERMISSIONS"
+				)
 			});
 		}
 
 		if (msg.mentions.users.size === 0) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_INVITE_NOMENTIONS")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_INVITE_NOMENTIONS"
+				)
 			});
 		}
 
 		if (!cz.invites && isRevoke) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_INVITE_NOINVITES")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					msg.member,
+					"GUILDS_INVITE_NOINVITES"
+				)
 			});
 		}
 
@@ -1661,198 +2565,271 @@ class Guilds extends Plugin implements IModule {
 
 		if (isRevoke && cz.invites) {
 			const a = cz.invites.length;
+
 			for (const [uid, mention] of msg.mentions.users) {
 				const index = cz.invites.indexOf(uid);
+				
 				if (index === -1) {
-					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_NOTINVITED", {
-						username: escapeDiscordMarkdown(mention.username, true)
-					})}\n`;
+					str += `${await localizeForUser(
+						msg.member,
+						"GUILDS_INVITE_NOTINVITED", {
+							username: escapeDiscordMarkdown(mention.username, true)
+						}
+					)}\n`;
+
 					continue;
 				}
+				
 				cz.invites.splice(index, 1);
-				str += `${await localizeForUser(msg.member, "GUILDS_INVITE_REVOKEDITEM", {
-					username: escapeDiscordMarkdown(mention.username, true)
-				})}\n`;
+				
+				str += `${await localizeForUser(
+					msg.member,
+					"GUILDS_INVITE_REVOKEDITEM", {
+						username: escapeDiscordMarkdown(mention.username, true)
+					}
+				)}\n`;
 			}
-			for (const uid of cz.invites) {
+
+			for (let i = 0, l = cz.invites.length; i < l; i++) {
+				const uid = cz.invites[i];
 				const index = cz.invites.indexOf(uid);
 				const member = msg.guild.members.get(uid);
+
 				if (member) {
 					if (!member.roles.has(dbRow.roleId)) {
 						continue;
-					} else {
-						str += `${await localizeForUser(msg.member, "GUILDS_INVITE_AUTOREVOKED_1", {
-							username: escapeDiscordMarkdown(member.displayName, true)
-						})}\n`;
 					}
+
+					str += `${await localizeForUser(
+						msg.member,
+						"GUILDS_INVITE_AUTOREVOKED_1", {
+							username: escapeDiscordMarkdown(member.displayName, true)
+						}
+					)}\n`;
 				} else {
-					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_AUTOREVOKED", {
-						id: uid
-					})}\n`;
+					str += `${await localizeForUser(
+						msg.member,
+						"GUILDS_INVITE_AUTOREVOKED", {
+							id: uid
+						}
+					)}\n`;
 				}
-				cz.invites.splice(index, 1);
+
+				if (index !== -1) {
+					cz.invites.splice(index, 1);
+				}
 			}
+
 			revoked = a - cz.invites.length;
 		} else {
-			if (!cz.invites) { cz.invites = []; }
+			if (!Array.isArray(cz.invites)) {
+				cz.invites = [];
+			}
+
 			for (const [userId, userObj] of msg.mentions.users) {
 				const member = msg.guild.members.get(userId);
 				if (!member) {
-					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_NOTAMEMBER", {
-						username: escapeDiscordMarkdown(userObj.username, true)
-					})}\n`;
+					str += `${await localizeForUser(
+						msg.member,
+						"GUILDS_INVITE_NOTAMEMBER", {
+							username: escapeDiscordMarkdown(
+								userObj.username, true
+							)
+						}
+					)}\n`;
+
 					continue;
 				}
 				if (member.roles.has(dbRow.roleId)) {
-					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_GUILDMEMBER", {
-						username: escapeDiscordMarkdown(userObj.username, true)
-					})}\n`;
+					str += `${await localizeForUser(
+						msg.member,
+						"GUILDS_INVITE_GUILDMEMBER", {
+							username: escapeDiscordMarkdown(
+								userObj.username, true
+							)
+						}
+					)}\n`;
+
 					continue;
 				}
 				if (cz.invites.includes(userId)) {
-					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_ALREADYINVITED", {
-						username: escapeDiscordMarkdown(userObj.username, true)
-					})}\n`;
+					str += `${await localizeForUser(
+						msg.member,
+						"GUILDS_INVITE_ALREADYINVITED", {
+							username: escapeDiscordMarkdown(
+								userObj.username, true
+							)
+						}
+					)}\n`;
+
 					continue;
 				}
+
 				cz.invites.push(userId);
+
 				try {
 					await member.send({
-						embed: await generateLocalizedEmbed(EmbedType.Information, member, {
-							key: "GUILDS_INVITE_INVITEMSG",
-							formatOptions: {
-								prefix: BASE_PREFIX,
-								guildName: escapeDiscordMarkdown(dbRow.name, true),
-								serverName: escapeDiscordMarkdown(msg.guild.name, true),
-								RAWguildName: dbRow.name
+						embed: await generateLocalizedEmbed(
+							EmbedType.Information,
+							member, {
+								key: "GUILDS_INVITE_INVITEMSG",
+								formatOptions: {
+									prefix: BASE_PREFIX,
+									guildName: escapeDiscordMarkdown(dbRow.name, true),
+									serverName: escapeDiscordMarkdown(msg.guild.name, true),
+									RAWguildName: dbRow.name,
+									botName: escapeDiscordMarkdown(
+										member.guild.me.displayName,
+										true
+									)
+								}
 							}
-						})
+						)
 					});
-					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_INVITESENT", {
-						username: escapeDiscordMarkdown(member.displayName, true)
-					})}\n`;
+
+					str += `${await localizeForUser(
+						msg.member,
+						"GUILDS_INVITE_INVITESENT", {
+							username: escapeDiscordMarkdown(member.displayName, true)
+						}
+					)}\n`;
 				} catch (err) {
-					str += `${await localizeForUser(msg.member, "GUILDS_INVITE_NOTSENT", {
-						username: escapeDiscordMarkdown(member.displayName, true)
-					})}\n`;
+					str += `${await localizeForUser(
+						msg.member,
+						"GUILDS_INVITE_NOTSENT", {
+							username: escapeDiscordMarkdown(member.displayName, true)
+						}
+					)}\n`;
 				}
+
 				invited++;
 			}
 		}
 
 		dbRow.customize = JSON.stringify(cz);
 
-		await this._updateGuildRow(dbRow);
+		await this._dbController.updateGuild(dbRow);
 
 		if (isRevoke) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(revoked === 0 ? EmbedType.Error : EmbedType.OK, msg.member, {
-					custom: true, string: str
-				}, { title: await localizeForUser(msg.member, "GUILDS_INVITE_REVOKED", { revoked }) })
+				embed: await generateLocalizedEmbed(
+					revoked === 0 ? EmbedType.Error : EmbedType.OK,
+					msg.member, {
+						custom: true, string: str
+					}, {
+						title: await localizeForUser(
+							msg.member,
+							"GUILDS_INVITE_REVOKED", { 
+								revoked 
+							}
+						) 
+					}
+				)
 			});
 		} else {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(invited === 0 ? EmbedType.Error : EmbedType.OK, msg.member, {
-					custom: true, string: str
-				}, { title: await localizeForUser(msg.member, "GUILDS_INVITE_INVITED", { invited }) })
+				embed: await generateLocalizedEmbed(
+					invited === 0 ? EmbedType.Error : EmbedType.OK,
+					msg.member, {
+						custom: true, string: str
+					}, {
+						title: await localizeForUser(
+							msg.member,
+							"GUILDS_INVITE_INVITED", { 
+								invited 
+							}
+						) 
+					}
+				)
 			});
 		}
 	}
 
 	private async _getGuildsList(msg: Message) {
 		const pageVal = msg.content.slice(CMD_GUILDS_LIST.length);
+
 		let list = 1;
+
 		if (pageVal !== "") {
-			list = Math.max(1, Math.abs(Math.round(parseInt(pageVal, 10))));
+			list = parseInt(pageVal, 10);
+			list = Math.abs(list);
+			list = Math.max(1, list);
+
 			if (isNaN(list)) {
 				return msg.channel.send({
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "GUILDS_LIST_WRONGUSAGE")
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member,
+						"GUILDS_LIST_WRONGUSAGE"
+					)
 				});
 			}
 		}
 
-		const dbResp = await this._getGuilds(msg.guild, (10 * list) - 10, 10);
-		if (dbResp.rows.length === 0) {
+		const dbResp = await this._dbController.getGuilds(
+			msg.guild, {
+				offset: (GUILDS_PER_PAGE * list) - GUILDS_PER_PAGE,
+				limit: GUILDS_PER_PAGE
+			}
+		);
+
+		if (dbResp.guilds.length === 0) {
 			return msg.channel.send({
-				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "GUILDS_LIST_EMPTYPAGE")
+				embed: await generateLocalizedEmbed(
+					EmbedType.Information,
+					msg.member,
+					"GUILDS_LIST_EMPTYPAGE"
+				)
 			});
 		}
 
 		const fields: IEmbedOptionsField[] = [];
-		for (const row of dbResp.rows) {
+
+		for (let i = 0, l = dbResp.guilds.length; i < l; i++) {
+			const row = dbResp.guilds[i];
+
+			const hasDescription = 
+				row.description &&
+				row.description.length > 0;
+
+			const description = hasDescription ?
+				row.description :
+				await localizeForUser(
+					msg.member,
+					"GUILDS_LIST_DESCRIPTIONPLACEHOLDER"
+				);
+
 			fields.push({
 				inline: false,
 				name: row.name,
-				value: row.description && row.description.length > 0 ? row.description : await localizeForUser(msg.member, "GUILDS_LIST_DESCRIPTIONPLACEHOLDER")
+				value: description
 			});
 		}
 
 		return msg.channel.send({
-			embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
-				key: "GUILDS_LIST_JOININFO",
-				formatOptions: {
-					prefix: BASE_PREFIX
+			embed: await generateLocalizedEmbed(
+				EmbedType.Information,
+				msg.member, {
+					key: "GUILDS_LIST_JOININFO",
+					formatOptions: {
+						prefix: BASE_PREFIX
+					}
+				}, { 
+					informationTitle: await localizeForUser(
+						msg.member, 
+						"GUILDS_LIST_PAGE", { 
+							list 
+						}
+					),
+					fields
 				}
-			}, { informationTitle: await localizeForUser(msg.member, "GUILDS_LIST_PAGE", { list }), fields })
+			)
 		});
 	}
 
 	// #endregion
 
-	// #region Storage functions
-
-	/**
-	 * @deprecated
-	 */
-	private async _getGuilds(guild: Guild, offset: number = 0, limit: number = 10) {
-		return this._dbController.getGuilds(
-			guild, offset, limit
-		);
-	}
-
-	/**
-	 * @deprecated
-	 */
-	private async _getGuildRow(guild: Guild, name: string): Promise<IGuildRow> {
-		return this._dbController.getGuild(guild, name);
-	}
-
-	/**
-	 * @deprecated
-	 */
-	private async _updateGuildRow(guildRow: IGuildRow): Promise<void> {
-		return this._dbController.updateGuild(guildRow);
-	}
-
-	/**
-	 * @deprecated
-	 */
-	private async _createGuildRow(guild: Guild, name: string, ownerId: string, roleId: string): Promise<void> {
-		return this._dbController.createGuild(guild, name, ownerId, roleId);
-	}
-
-	/**
-	 * @deprecated
-	 */
-	private async _deleteGuildRow(guildRow: IGuildRow): Promise<void> {
-		return this._dbController.deleteGuild(guildRow);
-	}
-
-	// #endregion
-
 	// #region Module functions
-	// private async _getOrCreateGuildRow(guild: Guild, name: string) {
-	// 	let element = await this._getGuildRow(guild, name);
-	// 	if (!element) {
-	// 		await this._createGuildRow(guild, name);
-	// 		element = await this._getGuildRow(guild, name);
-	// 		if (!element) {
-	// 			throw new Error("Can't create guild row at current moment.");
-	// 		}
-	// 	}
-	// 	return element;
-	// }
-
 
 	public async init() {
 		if (!$modLoader.isPendingInitialization(this.signature)) {
@@ -1872,13 +2849,21 @@ class Guilds extends Plugin implements IModule {
 
 		if (this._processMessageListener) {
 			// removing listeners
-			process.removeListener("message", this._processMessageListener);
+			process.removeListener(
+				"message",
+				this._processMessageListener
+			);
 		}
+
 		this.unhandleEvents();
+
 		return true;
 	}
 
 	// #endregion
 }
 
-module.exports = Guilds;
+const FMT_SMALL_GUILD_ICON : AvatarOptions = { format: "webp", size: 128 };
+type InviteIPCMessage = IPCMessage<{ uid: string }>;
+
+export default Guilds;

@@ -5,11 +5,16 @@ let connection: knex;
 
 const LOG = getLogger("Utils:DB");
 
+/**
+ * Gets database connection
+ */
 export function getDB() {
 	if (!connection) {
 		if (!process.env["DB_PASSWD"]) {
 			LOG("warn", "Password not set in environment variables. It is unrecommended to have database open without the password");
+			// throw new Error("DB password not set in process environment.");
 		}
+
 		connection = knex({
 			client: "mysql2",
 			connection: {
@@ -23,6 +28,7 @@ export function getDB() {
 
 		LOG("info", "Connection has been opened!");
 	}
+
 	return connection;
 }
 
@@ -48,6 +54,7 @@ function getTypeInfo(type: string) {
 			}
 			t.notNullable = false;
 		}
+
 		return "";
 	});
 

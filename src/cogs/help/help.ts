@@ -1,10 +1,10 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message } from "discord.js";
-import { generateHelpContent, command } from "../utils/help";
-import { EmbedType } from "../utils/utils";
-import { generateLocalizedEmbed } from "../utils/ez-i18n";
-import { messageToExtra } from "../utils/failToDetail";
+import { generateHelpContent, command } from "@utils/help";
+import { EmbedType } from "@utils/utils";
+import { generateLocalizedEmbed } from "@utils/ez-i18n";
+import { messageToExtra } from "@utils/failToDetail";
 
 @command("HELPFUL", "sb_help", "loc:HELPFULCMD_CMDMETA_DESCRIPTION")
 class HelpfulCommand extends Plugin implements IModule {
@@ -29,7 +29,7 @@ class HelpfulCommand extends Plugin implements IModule {
 
 		let infoMsg: Message | undefined = undefined;
 		if (msg.channel.type !== "dm") {
-			infoMsg = <Message> await msg.channel.send("", {
+			infoMsg = <Message> await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Progress, msg.member, "HELPFULCMD_SENDINGTOPM")
 			});
 		}
@@ -41,13 +41,13 @@ class HelpfulCommand extends Plugin implements IModule {
 				code: "md"
 			});
 			if (infoMsg) {
-				infoMsg = await infoMsg.edit("", {
+				infoMsg = await infoMsg.edit({
 					embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, "HELPFULCMD_SENTTOPM")
 				});
 			}
 		} catch (err) {
 			if (infoMsg) {
-				infoMsg = await infoMsg.edit("", {
+				infoMsg = await infoMsg.edit({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "HELPFULCMD_ERRSENDING")
 				});
 			}
@@ -58,6 +58,7 @@ class HelpfulCommand extends Plugin implements IModule {
 
 	public async unload() {
 		this.unhandleEvents();
+
 		return true;
 	}
 }

@@ -1,18 +1,18 @@
 import { Whitelist } from "../whitelist/whitelist";
-import { IModule, ModuleLoader, convertToModulesMap, IModuleInfo, ModuleBase } from "../../types/ModuleLoader";
+import { IModule, ModuleLoader, convertToModulesMap, IModuleInfo, ModuleBase } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, Guild, TextChannel, GuildMember, DiscordAPIError, User, DMChannel, GuildChannel } from "discord.js";
-import { escapeDiscordMarkdown, resolveGuildChannel } from "../utils/utils";
-import { getDB, createTableBySchema } from "../utils/db";
-import { parse as parseCmd } from "../utils/command";
-import { generateLocalizedEmbed, getGuildLanguage, getUserLanguage, localizeForUser } from "../utils/ez-i18n";
-import { EmbedType, sleep, IEmbedOptionsField, IEmbed } from "../utils/utils";
+import { escapeDiscordMarkdown, resolveGuildChannel } from "@utils/utils";
+import { getDB, createTableBySchema } from "@utils/db";
+import { parse as parseCmd } from "@utils/command";
+import { generateLocalizedEmbed, getGuildLanguage, getUserLanguage, localizeForUser } from "@utils/ez-i18n";
+import { EmbedType, sleep, IEmbedOptionsField, IEmbed } from "@utils/utils";
 import { IStreamingService, IStreamingServiceStreamer, StreamingServiceError, IStreamStatus, StreamStatusChangedHandler, StreamStatusChangedAction } from "./baseService";
-import { createConfirmationMessage } from "../utils/interactive";
-import { command } from "../utils/help";
+import { createConfirmationMessage } from "@utils/interactive";
+import { command } from "@utils/help";
 import { INullableHashMap, Possible } from "../../types/Types";
-import { messageToExtra } from "../utils/failToDetail";
-import { isPremium } from "../utils/premium";
+import { messageToExtra } from "@utils/failToDetail";
+import { isPremium } from "@utils/premium";
 import * as getLogger from "loggy";
 
 const PREFIX = "!streams";
@@ -206,7 +206,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		} catch (err) {
 			this.log("err", `Error starting command "${msg.content}"`, err);
 			$snowball.captureException(err, { extra: messageToExtra(msg) });
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.author, LOCALIZED("CMD_ERROR"))
 			});
 		}
@@ -226,7 +226,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		if (msg.channel.type !== "text") { return; }
 
 		if (!rightsCheck(msg.member)) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
 
@@ -234,7 +234,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		}
 
 		if (!args || args.length !== 1) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: LOCALIZED("SETCHANNEL_USAGE"),
 					formatOptions: {
@@ -252,7 +252,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			const matches = args[0].match(/[0-9]+/);
 			const channelId = matches ? matches[0] : undefined;
 			if (!channelId) {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_WRONGIDFORMAT"))
 				});
 
@@ -263,7 +263,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 			const channel = msg.guild.channels.get(channelId);
 			if (!channel) {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_CHANNELNOTFOUND"))
 				});
 
@@ -271,7 +271,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			}
 
 			if (channel.type !== "text") {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("SETCHANNEL_FAULT_WRONGCHANNELTYPE"))
 				});
 
@@ -285,7 +285,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 		await this._updateSettings(settings);
 
-		await msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("SETCHANNEL_DONE"))
 		});
 	}
@@ -297,7 +297,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		if (msg.channel.type !== "text") { return; }
 
 		if (!rightsCheck(msg.member)) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
 
@@ -305,7 +305,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		}
 
 		if (!args || args.length !== 4) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: LOCALIZED("EDIT_USAGE"),
 					formatOptions: {
@@ -317,24 +317,16 @@ export default class StreamNotifications extends Plugin implements IModule {
 			return;
 		}
 
-		// checking arguments
-		switch (args[2]) {
-			case "mention_everyone": {
-				if (!["true", "false"].includes(args[3])) {
-					await msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_INVALIDARG0"))
-					});
-
-					return;
-				}
-			} break;
-			default: {
-				await msg.channel.send("", {
-					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_INVALIDARG"))
+		if (args[2] === "mention_everyone") {
+			if (!["true", "false"].includes(args[3])) {
+				return msg.channel.send({
+					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_INVALIDARG0"))
 				});
-
-				return;
 			}
+		} else {
+			return msg.channel.send({
+				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_INVALIDARG"))
+			});
 		}
 
 		// find this subscription to ensure that is exists
@@ -345,11 +337,9 @@ export default class StreamNotifications extends Plugin implements IModule {
 		});
 
 		if (!subscription) {
-			await msg.channel.send("", {
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_SUBNOTFOUND"))
 			});
-
-			return;
 		}
 
 		// then getting settings
@@ -365,20 +355,29 @@ export default class StreamNotifications extends Plugin implements IModule {
 		this._guildSettingsCache[settings.guild] = settings;
 
 		if (args[2] === "mention_everyone") {
-			if (args[3] === "true") {
-				// find current one?
+			const index = settings.mentionsEveryone.findIndex((s) => {
+				return !!subscription && s.serviceName === subscription.provider && s.uid === subscription.uid && s.username === subscription.username;
+			});
 
-				const current = settings.mentionsEveryone.find((s) => {
-					return !!subscription && s.serviceName === subscription.provider && s.uid === subscription.uid && s.username === subscription.username;
+			const newState = args[3] === "true";
+			const currentState = index !== -1;
+
+			if (newState === currentState) {
+				return msg.channel.send({
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						msg.member, {
+							key: LOCALIZED("_EDIT_FAULT_ME_ALREADY"),
+							formatOptions: {
+								status: currentState
+							}
+						}
+					)
 				});
+			}
 
-				if (current) {
-					await msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_ME_ALREADYMENTIONS"))
-					});
-
-					return;
-				}
+			if (newState) {
+				// find current one?
 
 				settings.mentionsEveryone.push({
 					serviceName: subscription.provider,
@@ -386,18 +385,6 @@ export default class StreamNotifications extends Plugin implements IModule {
 					username: subscription.username
 				});
 			} else {
-				const index = settings.mentionsEveryone.findIndex((s) => {
-					return !!subscription && s.serviceName === subscription.provider && s.uid === subscription.uid && s.username === subscription.username;
-				});
-
-				if (index === -1) {
-					await msg.channel.send("", {
-						embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("EDIT_FAULT_ME_ALREADYNOTMENTIONS"))
-					});
-
-					return;
-				}
-
 				settings.mentionsEveryone.splice(index, 1);
 			}
 		}
@@ -406,7 +393,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 		await this._updateSettings(rawSettings);
 
-		await msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, msg.member, LOCALIZED("EDIT_DONE"))
 		});
 	}
@@ -426,7 +413,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		}
 
 		if (scope === "guild" && !rightsCheck(msg.member)) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
 
@@ -436,7 +423,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		const i18nSubject = msg.channel.type === "dm" ? msg.author : msg.member;
 
 		if (!args || (args.length !== 2 && args.length !== 3)) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, i18nSubject, {
 					key: LOCALIZED(scope === "guild" ? "ADD_USAGE" : "ADD_USAGE_DM"),
 					formatOptions: {
@@ -458,7 +445,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		}
 
 		if (scope === "user" && (this.options.limits.users && settings.subscribedTo.length >= this.options.limits.users) && !isPremium(msg.author)) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, {
 					key: LOCALIZED("ADD_FAULT_NOPREMIUM"),
 					formatOptions: {
@@ -471,7 +458,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		} else if ((this.whitelistModule && this.whitelistModule.base) && scope === "guild" && (this.options.limits.guilds && settings.subscribedTo.length >= this.options.limits.users)) {
 			const whitelistStatus = await this.whitelistModule.base.isWhitelisted(msg.guild);
 			if (!whitelistStatus) {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, {
 						key: LOCALIZED("ADD_FAULT_NOPARTNER"),
 						formatOptions: {
@@ -488,7 +475,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		const provider = this.servicesLoader.findBase<IStreamingService>(providerName, "name");
 
 		if (!provider) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_PROVIDERNOTFOUND"))
 			});
 
@@ -501,12 +488,12 @@ export default class StreamNotifications extends Plugin implements IModule {
 			streamer = await provider.getStreamer(args[1]);
 		} catch (err) {
 			if (err instanceof StreamingServiceError) {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED(err.stringKey))
 				});
 			} else {
 				$snowball.captureException(err, { extra: messageToExtra(msg) });
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, i18nSubject, LOCALIZED("ADD_FAULT_UNKNOWN"))
 				});
 			}
@@ -555,17 +542,43 @@ export default class StreamNotifications extends Plugin implements IModule {
 			}
 		}
 
-		const confirmationEmbed = await generateLocalizedEmbed(EmbedType.Question, i18nSubject, {
-			key: LOCALIZED(scope === "guild" ? "ADD_CONFIRMATION" : "ADD_CONFIRMATION_DM"),
-			formatOptions: {
-				streamerName: streamer.username,
-				streamerId: streamer.uid
+		let confirmationContent = "";
+
+		confirmationContent += `${
+			await localizeForUser(
+				msg.member,
+				LOCALIZED("ADD_CONFIRMATION"), {
+					streamerName: streamer.username,
+					streamerId: streamer.uid
+				}
+			)
+		}\n`;
+
+		confirmationContent += `${
+			await localizeForUser(
+				msg.member,
+				LOCALIZED(scope === "guild" ? "ADD_CONFIRMATION_INFO_GUILD" : "ADD_CONFIRMATION_INFO_USER")
+			)
+		}\n`;
+
+		confirmationContent += `\n${
+			await localizeForUser(
+				msg.member,
+				LOCALIZED("ADD_CONFIRMATION_QUESTION")
+			)
+		}`;
+
+		const confirmationEmbed = await generateLocalizedEmbed(
+			EmbedType.Question,
+			i18nSubject, {
+				custom: true,
+				string:  confirmationContent
 			}
-		});
+		);
 
 		const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
 		if (!confirmation) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("CANCELED"))
 			});
 
@@ -578,7 +591,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 		await this._noFetchingAvoidance(subscription);
 
-		await msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.OK, i18nSubject, {
 				key: LOCALIZED("ADD_DONE"),
 				formatOptions: {
@@ -598,7 +611,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		}
 
 		if (scope === "guild" && !rightsCheck(msg.member)) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
 
@@ -608,7 +621,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		const i18nSubject = msg.channel.type === "dm" ? msg.author : msg.member;
 
 		if (!args || (args.length !== 2 && args.length !== 3)) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, i18nSubject, {
 					key: LOCALIZED("REMOVE_USAGE"),
 					formatOptions: {
@@ -653,7 +666,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 		await (async () => {
 			if (!rawSubscription) {
-				await msg.channel.send("", {
+				await msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Warning, i18nSubject, LOCALIZED("REMOVE_FAULT_SUBNOTFOUND"))
 				});
 
@@ -697,7 +710,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 
 			await this._uselessFetchingAvoidance(normalSubscription);
 
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.OK, i18nSubject, LOCALIZED("REMOVE_DONE"))
 			});
 		})();
@@ -724,7 +737,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		// !streams YouTube 2
 
 		if (msg.channel.type === "text" && !rightsCheck(msg.member)) {
-			await msg.channel.send("", {
+			await msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, LOCALIZED("NO_PERMISSIONS"))
 			});
 
@@ -742,7 +755,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 		let provider = "any";
 
 		if (args && args.length > 1) {
-			await msg.channel.send("", {
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, {
 					key: LOCALIZED("LIST_USAGE"),
 					formatOptions: {
@@ -750,17 +763,13 @@ export default class StreamNotifications extends Plugin implements IModule {
 					}
 				})
 			});
-
-			return;
 		} else if (args) {
 			page = parseInt(args[0], 10);
 			provider = calledAs.toLowerCase();
 			if (isNaN(page) || page < 1) {
-				await msg.channel.send("", {
+				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_INVALIDPAGE"))
 				});
-
-				return;
 			}
 		} else if (!args) {
 			if (/^[0-9]+$/.test(calledAs)) {
@@ -777,11 +786,9 @@ export default class StreamNotifications extends Plugin implements IModule {
 		const rawSettings = await this._getSettings(msg.channel.type === "text" ? msg.guild : msg.author);
 
 		if (!rawSettings) {
-			await msg.channel.send("", {
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_ISEMPTY"))
 			});
-
-			return;
 		}
 
 		const normalSettings = StreamNotifications._convertToNormalSettings(rawSettings);
@@ -797,15 +804,15 @@ export default class StreamNotifications extends Plugin implements IModule {
 		subscriptions = subscriptions.slice(offset, end);
 
 		if (subscriptions.length === 0) {
-			await msg.channel.send("", {
+			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Information, subject, LOCALIZED("LIST_ISEMPTY"))
 			});
-
-			return;
 		}
 
 		const fields: IEmbedOptionsField[] = [];
+
 		let c = 0;
+
 		for (const result of subscriptions) {
 			fields.push({
 				inline: false,
@@ -817,7 +824,7 @@ export default class StreamNotifications extends Plugin implements IModule {
 			});
 		}
 
-		await msg.channel.send("", {
+		await msg.channel.send({
 			embed: await generateLocalizedEmbed(EmbedType.Information, subject, {
 				key: LOCALIZED("LIST_DESCRIPTION"),
 				formatOptions: {

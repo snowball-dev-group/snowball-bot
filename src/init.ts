@@ -284,6 +284,7 @@ async function initBot(log: logger.ILogFunction, config: IBotConfig, internalCon
 		}
 
 		logger.setAsync(false);
+
 		log("info", "[Shutdown] We're stopping Snowball Bot, please wait a bit...");
 
 		try {
@@ -359,7 +360,7 @@ function prepareAliases(log: logger.ILogFunction) {
 		// ! DON'T FORGET ABOUT TSCONFIG
 		"@sb-types": pathJoin(currentDirectory, "types"),
 		"@cogs": pathJoin(currentDirectory, "cogs"),
-		"@utils": pathJoin(currentDirectory, "cogs/utils/")
+		"@utils": pathJoin(currentDirectory, "utils")
 	});
 
 	log("ok", "[Import Aliases] Aliases registered");

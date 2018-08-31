@@ -1,5 +1,5 @@
 import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError, StreamStatusChangedAction } from "../baseService";
-import { IEmbed, sleep, escapeDiscordMarkdown, IEmbedOptionsField } from "../../utils/utils";
+import { IEmbed, sleep, escapeDiscordMarkdown, IEmbedOptionsField } from "@utils/utils";
 import { default as fetch } from "node-fetch";
 import { chunk } from "lodash";
 import { EventEmitter } from "events";
@@ -8,9 +8,9 @@ import * as http from "http";
 import * as getURL from "full-url";
 import * as Knex from "knex";
 import { parse as parseUrl, Url, URL } from "url";
-import { randomString } from "../../utils/random";
+import { randomString } from "@utils/random";
 import { createHmac } from "mz/crypto";
-import { getDB } from "../../utils/db";
+import { getDB } from "@utils/db";
 import * as getLogger from "loggy";
 
 // customize
@@ -365,8 +365,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		for (const uid of uids) {
 			const streamCache = this.streamsStore[uid];
 			const stream = streamCache ? streamCache.value : undefined;
-			if (stream === null) { ready[uid] = null; continue; }
-			else if (!stream) { continue; }
+			if (stream === null) {
+				ready[uid] = null;
+				continue;
+			} else if (!stream) {
+				continue;
+			}
 
 			if (stream.game_id) {
 				const game = this.gamesStore[stream.game_id];
@@ -464,6 +468,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 	public async fetch(streamers: IStreamingServiceStreamer[]): Promise<void> {
 		if (streamers.length === 0) {
 			// we just don't fetch emptiness
+
 			return;
 		}
 
@@ -521,7 +526,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 						if (createdPayload.metadata && !activePayload.metadata) {
 							return true;
-						} if (!createdPayload.metadata && activePayload.metadata) {
+						} else if (!createdPayload.metadata && activePayload.metadata) {
 							return true;
 						} else if ((createdPayload.metadata && activePayload.metadata) && !this._isMetadataEqual(createdPayload.metadata, activePayload.metadata)) {
 							return true;
@@ -760,6 +765,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			case "D. VA": { name = "DVA"; } break;
 			default: { name = name.toUpperCase(); }
 		}
+
 		return $localizer.getString(lang, `OVERWATCH_HERO_${name}`);
 	}
 
@@ -811,6 +817,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		if (type) {
 			apiUri += `${(i === 0) ? "?" : "&"}type=${type}`;
 		}
+
 		return apiUri;
 	}
 
@@ -819,6 +826,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		for (let i = 0; i < username.length; i++) {
 			apiUri += `${(i === 0 ? "?" : "&")}${ids ? "id" : "login"}=${username[i]}`;
 		}
+
 		return apiUri;
 	}
 
@@ -827,6 +835,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		for (let i = 0; i < ids.length; i++) {
 			apiUri += `${(i === 0 ? "?" : "&")}user_id=${ids[i]}`;
 		}
+
 		return apiUri;
 	}
 
@@ -835,6 +844,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		for (let i = 0; i < ids.length; i++) {
 			apiUri += `${(i === 0 ? "?" : "&")}id=${ids[i]}`;
 		}
+
 		return apiUri;
 	}
 
@@ -857,6 +867,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				const sleepTime = ((resetIn * 1000) - Date.now()) + 5; // time problems
 				this.log("info", `Request to "${uri}" was ratelimited. Sleeping for ${sleepTime}...`);
 				await sleep(sleepTime);
+
 				return loop(attempt + 1);
 			} else if (resp.status !== 200 && resp.status !== 202) {
 				throw new StreamingServiceError("TWITCH_REQ_ERROR", "Error has been received from Twitch", {
@@ -864,8 +875,10 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 					body: (await resp.text())
 				});
 			}
+
 			return isJson ? resp.json() : resp.text();
 		};
+
 		return <T> await loop();
 	}
 
@@ -886,9 +899,11 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			let settings: IWebhookSettings | undefined;
 			if (!this.options.useWebhooks) {
 				this.log("info", "[init] Initialization of the application is not required. Using longpolling only.");
+
 				return;
 			} else if (!(settings = this.options.webhooksSettings)) {
 				this.log("err", "[init] `useWebhooks` set to `true`, but no settings provided. Wondering why it's happened... Did you changed the code?");
+
 				return;
 			}
 			this.log("info", "[init] Please wait while we're initializing the application...");
@@ -904,6 +919,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				if (err) {
 					const eText = "Error initialization webhook server. Webhooks will not be accepted";
 					this.log("err", eText, err);
+
 					return rej(new Error(eText));
 				}
 				this._allowWebhooks = true;
@@ -925,9 +941,11 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 		if (whSettings.domain && (parsed.hostname !== whSettings.domain && !isLocalURL)) {
 			this.log("warn", `[Webhooks] Attempt to access host "${parsed.hostname}" (${req.url}) directly from ${req.connection.remoteAddress}`);
+
 			return this._endResponse(resp, "Unpredicted magic happened. Probably server misconfiguration or you're calling server directly?", 400);
 		} else if (!whSettings.domain && isLocalURL) {
 			this.log("warn", `[Webhooks] Attempt to access from localhost ${req.connection.remoteAddress}`);
+
 			return this._endResponse(resp, "But why?", 400);
 		}
 
@@ -944,6 +962,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			case "get": return this._processTwitchConfirmation(req, resp, parsed);
 			default: {
 				resp.statusCode = 400;
+
 				return resp.end("Invalid method specified");
 			}
 		}
@@ -956,16 +975,19 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 		if (!hook) {
 			this.log("warn", `[Webhooks] Request about unknown hook "${id}", rejected "${req.url}" from "${req.connection.remoteAddress}"`);
+
 			return this._endResponse(resp, "Unknown hook", 400);
 		}
 
 		if (!signature || typeof signature !== "string") {
 			this.log("warn", `[Webhooks] Request with no signature, rejected "${req.url}" from "${req.connection.remoteAddress}"`);
+
 			return this._endResponse(resp, "Signature is not provided or invalid");
 		}
 
 		const content = await (() => {
 			// bad resolving
+
 			return new Promise<string>(res => {
 				let data = "";
 				req.on("data", (b) => {
@@ -981,6 +1003,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		const hash = createHmac(destructedSig[0], hook.key).update(content).digest("hex");
 		if (hash !== destructedSig[1]) {
 			this.log("warn", `[Webhooks] Invalid hash provided, verification failed. "${req.url}" from "${req.connection.remoteAddress}"`);
+
 			return this._endResponse(resp, "Verification failed");
 		}
 
@@ -994,6 +1017,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		const streamer = this.getSubscription(hook.uid);
 		if (!streamer) {
 			this.log("warn", `[Webhook] Not found subscription for "${id}" (${hook.uid})`);
+
 			return;
 		}
 
@@ -1015,10 +1039,12 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		const hook = this._registeredHooks[id];
 		if (!hook) {
 			this.log("info", `[Webhooks] Request about unknown hook "${id}", rejected "${req.url}"`);
+
 			return this._endResponse(resp, "Unknown hook", 400);
 		}
 		if (!parsedURL.query) {
 			this.log("info", `[Webhooks] Unknown request with no query passed, rejected "${req.url}"`);
+
 			return this._endResponse(resp, "No query passed", 400);
 		}
 		switch (parsedURL.query["hub.mode"]) {
@@ -1027,20 +1053,24 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 				hook.registeredAt = Date.now();
 				hook.leaseSeconds = parseInt(parsedURL.query["hub.lease_seconds"], 10);
 				this._scheduleWebhookRenew(hook, hook.leaseSeconds * 1000);
+
 				return this._endResponse(resp, parsedURL.query["hub.challenge"], 202);
 			}
 			case "denied": {
 				this.log("info", `[Webhooks] Failed to create webhook for "${parsedURL.query["hub.topic"]}"`);
 				delete this._registeredHooks[id];
+
 				return this._endResponse(resp);
 			}
 			case "unsubscribe": {
 				this.log("info", `[Webhooks] Unsubscribed from "${parsedURL.query["hub.topic"]}"`);
 				delete this._registeredHooks[id];
+
 				return this._endResponse(resp);
 			}
 			default: {
 				this.log("warn", `[Webhooks] Unknown hub mode - ${parsedURL.query["hub.mode"]}`);
+
 				return this._endResponse(resp); // 👀
 			}
 		}
@@ -1048,6 +1078,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 	private async _endResponse(resp: http.ServerResponse, withContent?: string, statusCode: number = 200, headers?: IHashMap<string | number>) {
 		resp.writeHead(statusCode, undefined, headers ? { ...TXT_HEADER, ...headers } : TXT_HEADER);
+
 		return resp.end(withContent);
 	}
 
@@ -1080,6 +1111,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 			this.log("warn", `[Webhooks] Registration failed for ${uid}`, err);
 			delete this._registeredHooks[randID];
 			delete this._hooksIDs[uid];
+
 			return;
 		}
 
@@ -1213,6 +1245,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 
 				return this.webhooksServer.close((err) => {
 					if (err) { return rej(err); }
+
 					return res();
 				});
 			}))();
@@ -1303,6 +1336,7 @@ class TwitchStreamingService extends EventEmitter implements IStreamingService {
 		for (const uid in this.currentPayloadsStore) {
 			delete this.currentPayloadsStore[uid];
 		}
+
 		return true;
 	}
 }

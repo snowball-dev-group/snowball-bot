@@ -1,9 +1,9 @@
 import { IGuildRow, GuildsDBController } from "@cogs/guilds/dbController";
-import { DatabaseMigration } from "@sb-types/Types";
+import { DatabaseMigration } from "@sb-types/DatabaseMigration";
 import * as logger from "loggy";
 
 export class GuildIDMigration extends DatabaseMigration<IGuildRow> {
-	private static _regexp = /[A-Z0-9]{9,14}\:[A-Z0-9]{9,14}/i;
+	private static _regexp = /[A-Z0-9\-_]{9,14}\:[A-Z0-9\-_]{9,14}/i;
 	private readonly _log = logger("GuildIDMigration");
 
 	public isRequired() {

@@ -1,6 +1,6 @@
-import { IStreamingService, IStreamingServiceStreamer, IStreamStatus, StreamingServiceError, StreamStatusChangedAction } from "../baseService";
-import { IEmbed, sleep, escapeDiscordMarkdown } from "../../utils/utils";
-import { getUUIDByString } from "../../utils/text";
+import * as BaseService from "../baseService";
+import { IEmbed, sleep, escapeDiscordMarkdown } from "@utils/utils";
+import { getUUIDByString } from "@utils/text";
 import { default as fetch } from "node-fetch";
 import { Carina } from "carina";
 import * as ws from "ws";
@@ -19,7 +19,7 @@ interface ICacheItem {
 	channel: IMixerChannel;
 }
 
-class MixerStreamingService extends EventEmitter implements IStreamingService {
+class MixerStreamingService extends EventEmitter implements BaseService.IStreamingService {
 	public get signature() {
 		return "snowball.features.stream_notifications.mixer";
 	}
@@ -56,7 +56,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 		return getUUIDByString(`${this.name.toUpperCase()}::{${cacheItem.startedAt}-${cacheItem.channel.id}}`);
 	}
 
-	public async subscribeTo(streamer: IStreamingServiceStreamer) {
+	public async subscribeTo(streamer: BaseService.IStreamingServiceStreamer) {
 		const listener = async (data: IMixerChannel) => {
 			/**
 			* Cached data to check updates
@@ -67,12 +67,14 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 				const channel = await this.fetchChannel(streamer.uid);
 				if (!channel.online) {
 					this.log("warn", "We were notified about starting stream of", streamer.uid, "but channel is offline");
+
 					return;
 				}
 				// start time
 				const startedAt = await this.getStreamStartTime(streamer.uid);
 				if (!startedAt) {
 					this.log("err", "Unknown error with streamer", streamer.uid);
+
 					return;
 				}
 				currentData = this.currentData[streamer.uid] = {
@@ -138,9 +140,9 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	//              Subscriptions
 	// ========================================
 
-	public addSubscription(streamer: IStreamingServiceStreamer) {
+	public addSubscription(streamer: BaseService.IStreamingServiceStreamer) {
 		if (this.isSubscribed(streamer.uid)) {
-			throw new StreamingServiceError("ALREADY_SUBSCRIBED", "Already subscribed to this streamer");
+			throw new BaseService.StreamingServiceError("ALREADY_SUBSCRIBED", "Already subscribed to this streamer");
 		}
 		this.subscribeTo(streamer);
 	}
@@ -175,7 +177,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 		return `https://mixer.com/api/v1/channels/${username}`;
 	}
 
-	public async getStreamer(username: string): Promise<IStreamingServiceStreamer> {
+	public async getStreamer(username: string): Promise<BaseService.IStreamingServiceStreamer> {
 		const json = <IMixerChannel> await this.makeRequest(this.getAPIURL_Channel(username));
 
 		return {
@@ -195,10 +197,12 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 			const delay = parseInt(_retryHeader, 10);
 			this.log("info", `Ratelimited: waiting ${delay / 1000}sec.`);
 			await sleep(delay);
+
 			return this.makeRequest(uri, attempt + 1);
 		} else if (resp.status === 404) {
-			throw new StreamingServiceError("MIXER_NOTFOUND", "Resource not found");
+			throw new BaseService.StreamingServiceError("MIXER_NOTFOUND", "Resource not found");
 		}
+
 		return (resp.json());
 	}
 
@@ -206,12 +210,15 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 	//                 Discord
 	// ========================================
 
-	public async getEmbed(stream: IStreamStatus, lang: string): Promise<IEmbed> {
+	public async getEmbed(stream: BaseService.IStreamStatus, lang: string): Promise<IEmbed> {
 		const cache = <ICacheItem> stream.payload;
+
 		if (!cache) {
-			throw new StreamingServiceError("MIXER_CACHEFAULT", "Failure: payload not found");
+			throw new BaseService.StreamingServiceError("MIXER_CACHEFAULT", "Failure: payload not found");
 		}
+
 		const gameName = cache.channel.type ? cache.channel.type.name : $localizer.getString(lang, "STREAMING_GAME_VALUE_UNKNOWN");
+
 		return {
 			footer: {
 				icon_url: MIXER_ICON,
@@ -261,7 +268,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 		this.ca.open();
 	}
 
-	public emit(type: StreamStatusChangedAction, update: IStreamStatus) {
+	public emit(type: BaseService.StreamStatusChangedAction, update: BaseService.IStreamStatus) {
 		return super.emit(type, update);
 	}
 
@@ -269,6 +276,7 @@ class MixerStreamingService extends EventEmitter implements IStreamingService {
 		for (const uid in this._carinaListeners) {
 			this.removeSubscription(uid);
 		}
+
 		return true;
 	}
 }

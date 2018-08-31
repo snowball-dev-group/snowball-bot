@@ -1,3 +1,7 @@
+// Original source code is by EvanHahn available on GitHub
+// https://github.com/EvanHahn/HumanizeDuration.js
+// This version is more simplied and oriented to work with Snowball Bot
+
 /**
  * Unit
  */
@@ -33,35 +37,35 @@ export interface IHumanizerOptionsOverrides {
 	 */
 	unitMeasures?: {
 		/**
-		 * How many units year contains
+		 * How much units year contains
 		 */
 		y?: number;
 		/**
-		 * How many units month contains
+		 * How much units month contains
 		 */
 		mo?: number;
 		/**
-		 * How many units week contains
+		 * How much units week contains
 		 */
 		w?: number;
 		/**
-		 * How many units day contains
+		 * How much units day contains
 		 */
 		d?: number;
 		/**
-		 * How many units hour contains
+		 * How much units hour contains
 		 */
 		h?: number;
 		/**
-		 * How many units minute contains
+		 * How much units minute contains
 		 */
 		m?: number;
 		/**
-		 * How many units second contains
+		 * How much units second contains
 		 */
 		s?: number;
 		/**
-		 * How many units millisecond contains
+		 * How much units millisecond contains
 		 */
 		ms?: number;
 	};
@@ -101,35 +105,35 @@ export interface IHumanizerDefaultOptions {
 	 */
 	unitMeasures: {
 		/**
-		 * How many units year contains
+		 * How much units year contains
 		 */
 		y: number;
 		/**
-		 * How many units month contains
+		 * How much units month contains
 		 */
 		mo: number;
 		/**
-		 * How many units week contains
+		 * How much units week contains
 		 */
 		w: number;
 		/**
-		 * How many units day contains
+		 * How much units day contains
 		 */
 		d: number;
 		/**
-		 * How many units hour contains
+		 * How much units hour contains
 		 */
 		h: number;
 		/**
-		 * How many units minute contains
+		 * How much units minute contains
 		 */
 		m: number;
 		/**
-		 * How many units second contains
+		 * How much units second contains
 		 */
 		s: number;
 		/**
-		 * How many units millisecond contains
+		 * How much units millisecond contains
 		 */
 		ms: number;
 	};
@@ -189,7 +193,7 @@ export interface IHumanizerLanguage {
 }
 
 export class Humanizer {
-	static get DEFAULT_OPTIONS(): IHumanizerDefaultOptions {
+	public static get DEFAULT_OPTIONS(): IHumanizerDefaultOptions {
 		return {
 			delimiter: ", ",
 			conjunction: "",
@@ -210,8 +214,17 @@ export class Humanizer {
 		};
 	}
 
-	private readonly _locale: IHumanizerLanguage;
-	private readonly _defaultOptions: IHumanizerDefaultOptions;
+	private _locale: IHumanizerLanguage;
+
+	private _defaultOptions: IHumanizerDefaultOptions;
+
+	public get locale(): IHumanizerLanguage {
+		return this._locale;
+	}
+
+	public get defaultOptions(): IHumanizerDefaultOptions {
+		return this._defaultOptions;
+	}
 
 	constructor(locale: IHumanizerLanguage, options?: IHumanizerDefaultOptions) {
 		if (!locale) {
@@ -219,6 +232,7 @@ export class Humanizer {
 		}
 
 		this._locale = locale;
+
 		if (options) {
 			this._defaultOptions = options;
 		} else {
@@ -231,7 +245,7 @@ export class Humanizer {
 
 		const dictionary = this._locale;
 
-		const options = optionsOverrides ? <IHumanizerDefaultOptions & IHumanizerOptionsOverrides> { ...this._defaultOptions, ...optionsOverrides } : this._defaultOptions;
+		const options = this._getOptions(optionsOverrides);
 
 		const pieces: Array<{
 			unitCount: number;
@@ -289,7 +303,10 @@ export class Humanizer {
 				previousPiece = pieces[i - 1];
 
 				const prevUnitMeasures = options.unitMeasures[previousPiece.unitName];
-				const currentUnitMeasures = options.unitMeasures[piece.unitName] || Humanizer.DEFAULT_OPTIONS.unitMeasures[piece.unitName];
+
+				const currentUnitMeasures = options.unitMeasures[piece.unitName] ||
+					Humanizer.DEFAULT_OPTIONS.unitMeasures[piece.unitName];
+
 				const ratioToLargerUnit = prevUnitMeasures / currentUnitMeasures;
 
 				if (
@@ -329,6 +346,24 @@ export class Humanizer {
 		}
 
 		return renderedResult;
+	}
+
+	public convertDuration(duration: number, unit: Unit, optionsOverrides?: IHumanizerOptionsOverrides) {
+		if (unit === "ms") {
+			return duration;
+		}
+
+		const options = this._getOptions(optionsOverrides);
+
+		return duration * options.unitMeasures[unit];
+	}
+
+	private _getOptions(optionsOverrides?: IHumanizerOptionsOverrides) {
+		return optionsOverrides ?
+			<IHumanizerDefaultOptions & IHumanizerOptionsOverrides> {
+				...this._defaultOptions,
+				...optionsOverrides
+			} : this._defaultOptions;
 	}
 
 	private static _render(count: number, type: Unit, dictionary: IHumanizerLanguage) {

@@ -1,25 +1,11 @@
-import { EventEmitter } from "events";
-import { INullableHashMap } from "./Types";
-import { ISchemaObject } from "./Typer";
+import { INullableHashMap } from "@sb-types/Types";
+import { ISchemaObject } from "@sb-types/Typer";
 import * as logger from "loggy";
 import * as path from "path";
+import * as Interfaces from "@sb-types/ModuleLoader/Interfaces";
+import { ModuleBase } from "@sb-types/ModuleLoader/ModuleBase";
 
 // #region Interfaces and enums
-
-export interface IModuleInfo {
-	/**
-	 * Name of module
-	 */
-	name: string;
-	/**
-	 * Path to module
-	 */
-	path: string;
-	/**
-	 * Options for plugin
-	 */
-	options: any;
-}
 
 export const SCHEMA_MODULEINFO: ISchemaObject = {
 	type: "object",
@@ -48,7 +34,7 @@ export interface IModuleLoaderConfig {
 	/**
 	 * Pre-filled registry with info about modules
 	 */
-	registry: INullableHashMap<IModuleInfo>;
+	registry: INullableHashMap<Interfaces.IModuleInfo>;
 	/**
 	 * Name of module loaded
 	 * Will be used in log
@@ -57,242 +43,9 @@ export interface IModuleLoaderConfig {
 	name: string;
 }
 
-export interface IModule {
-	/**
-	 * Signature of module for other modules
-	 */
-	readonly signature: string;
-	init?(): Promise<void>;
-	/**
-	 * Unload function
-	 */
-	unload(reason?: string): Promise<boolean>;
-}
-
-export enum ModuleLoadState {
-	/**
-	 * Module is ready to load and will be loaded as soon as `load` function will be called
-	 */
-	Ready,
-	/**
-	 * Module loads, calling `load` will throw an error
-	 */
-	Initializing,
-	/**
-	 * Module is loaded, but not yet completely initialized
-	 */
-	Loaded,
-	/**
-	 * Module is loaded and initialized and ready to work
-	 */
-	Initialized,
-	/**
-	 * Module was unloaded using `unload` function call
-	 */
-	Unloaded,
-	/**
-	 * Module was unloaded but with `destroying` method
-	 */
-	Destroyed
-}
-
 // #endregion
 
 // #region Module Keeper
-
-export class ModuleBase<T> extends EventEmitter {
-	/**
-	 * Base information about module
-	 */
-	public readonly info: IModuleInfo;
-
-	/**
-	 * Loaded module
-	 * Will be empty if module isn't loaded yet
-	 */
-	public base?: IModule & T;
-
-	/**
-	 * Module's signature used to identify this module by other modules
-	 */
-	public signature: string | null = null;
-
-	/**
-	 * Module loading state
-	 */
-	public state: ModuleLoadState = ModuleLoadState.Ready;
-
-	constructor(info: IModuleInfo) {
-		super();
-		this.info = info;
-	}
-
-	/**
-	 * Function to load module
-	 * @returns Promise which'll be resolved with this module's base once module is loaded
-	 */
-	public async load() {
-		if (this.state !== ModuleLoadState.Ready && this.state !== ModuleLoadState.Unloaded && this.state !== ModuleLoadState.Destroyed) {
-			throw new Error("Module is already loaded or pending loading");
-		}
-
-		this.state = ModuleLoadState.Initializing;
-
-		try {
-			let mod = require(this.info.path);
-
-			if (typeof mod === "object" && mod.default) {
-				mod = mod.default;
-			}
-
-			if (!isClass(mod)) {
-				throw new Error("The module has returned value of invalid type and will not be stated as loaded");
-			}
-
-			const base = new mod(this.info.options);
-
-			if (!base) {
-				throw new Error("The module has not returned any value and will not be stated as loaded");
-			}
-
-			if (typeof base.unload !== "function") {
-				throw new Error("The module has no `unload` function and will not be stated as loaded");
-			}
-
-			this.base = base;
-			this.signature = base.signature;
-			this.state = ModuleLoadState.Loaded;
-
-			this.emit("loaded", this.signature, this.base);
-
-			if (!base.init) {
-				this.state = ModuleLoadState.Initialized;
-				this.emit("initialized", base);
-			}
-		} catch (err) {
-			this.emit("error", {
-				state: "load#initialize",
-				error: err
-			});
-			throw err;
-		}
-
-		return this;
-	}
-
-	/**
-	 * Initializes the module
-	 */
-	public async init() {
-		if (this.state !== ModuleLoadState.Loaded) { throw new Error("Module is not loaded to initializate it"); }
-		this.emit("initialization");
-		if (this.base && this.base.init) { await this.base.init(); }
-		this.state = ModuleLoadState.Initialized;
-		this.emit("initialized", this.base, this.signature);
-		return this;
-	}
-
-	/**
-	 * Function to unload or complete destroy module if it has no unload method.
-	 * @param reason Reason of unloading which'll be transmitted to module. By default "unload"
-	 * @returns Promise which'll be resolved with this module's base once module is unloaded or destroyed
-	 */
-	public async unload(reason: any = "unload") {
-		if (this.state !== ModuleLoadState.Initialized) { throw new Error("Module is not loaded"); }
-
-		const signature = this.signature;
-
-		this.emit("unloading", signature);
-		this.signature = null;
-
-		if (!this.base) {
-			this.emit("error", {
-				state: "unload",
-				error: new Error("Module was already unloaded, base variable is `undefined`")
-			});
-			this.state = ModuleLoadState.Unloaded;
-		} else if (typeof this.base.unload !== "function") {
-			// ! Deprecated, there will be check on modules loading
-
-			try {
-				for (const key in this.base) {
-					// this.base[key] = undefined;
-					delete this.base[key];
-				}
-
-				this.base = undefined;
-				this.state = ModuleLoadState.Destroyed;
-				this.emit("destroyed", signature);
-			} catch (err) {
-				this.emit("error", {
-					state: "unload#destoy",
-					error: err
-				});
-			}
-
-			this.state = ModuleLoadState.Destroyed;
-		} else {
-			try {
-				const unloaded = await this.base.unload(reason);
-				if (unloaded) {
-					this.base = undefined;
-					this.state = ModuleLoadState.Unloaded;
-				} else {
-					throw new Error("Returned `false`: that means module has troubles with unloading");
-				}
-			} catch (err) {
-				this.emit("error", {
-					state: "unload#unload",
-					error: err
-				});
-			}
-		}
-
-		this.emit("unloaded", signature);
-
-		return this;
-	}
-
-	/**
-	 * Shortcut for checking if module is already initialized or you need to wait for it.
-	 * 
-	 * If module is already initialized, then immediately calls the callback.
-	 * Otherwise subscribes you to the `initialized` event
-	 */
-	public onInit(callback: (base: T) => void) {
-		if (this.state === ModuleLoadState.Initialized && this.base) {
-			callback(this.base);
-			return this;
-		}
-		return this.once("initialized", callback);
-	}
-
-	/**
-	 * Shortcut for checking if module is already loaded or you need to wait for it.
-	 * 
-	 * If module is already loaded, then immediately calls the callback.
-	 * Otehrwise subscribes you to the `loaded` event
-	 * @param callback The callback function that will be called with `base`
-	 */
-	public onLoad(callback: (base: T) => void) {
-		if (this.state === ModuleLoadState.Loaded && this.base) {
-			callback(this.base);
-			return this;
-		}
-		return this.once("loaded", (_sig, base) => callback(base));
-	}
-
-	/**
-	 * Clears require cache for this module.
-	 * Useful while reloading module:
-	 *   In this case module file will be read from disk
-	 * @returns This module's base
-	 */
-	public clearRequireCache() {
-		if (require.cache[this.info.path]) { delete require.cache[this.info.path]; }
-		return this;
-	}
-}
 
 // #endregion
 
@@ -310,7 +63,7 @@ export class ModuleLoader {
 	/**
 	 * Registry with modules
 	 */
-	public registry: INullableHashMap<IModuleInfo> = Object.create(null);
+	public registry: INullableHashMap<Interfaces.IModuleInfo> = Object.create(null);
 	/**
 	 * Registry with currently loaded modules
 	 */
@@ -349,9 +102,11 @@ export class ModuleLoader {
 	 * Add new module to registry
 	 * @param info Information about module
 	 */
-	public register(info: IModuleInfo) {
+	public register(info: Interfaces.IModuleInfo) {
 		this.log("info", "Registered new module", process.env.NODE_ENV === "development" ? info : `"${info.name}" - "${info.path}"`);
+
 		this.registry[info.name] = info;
+
 		return this;
 	}
 
@@ -363,25 +118,31 @@ export class ModuleLoader {
 	 */
 	public async load(name: string | string[], clearRequireCache = false) {
 		if (Array.isArray(name)) {
-			for (const n of name) { await this.load(n, clearRequireCache); }
+			for (let i = 0, l = name.length; i < l; i++) {
+				await this.load(name[i], clearRequireCache);
+			}
+
 			return this;
 		}
 
 		if (!this.registry[name]) {
 			const reason = "Module not found in registry. Use `ModuleLoader#register` to put your module into registry";
 			this.log("err", `#load: attempt to load module "${name}" failed: ${reason}`);
+
 			throw new Error(reason);
 		}
 
 		if (this.loadedModulesRegistry[name]) {
 			const reason = "Module already loaded";
 			this.log("err", `#load: attempt to load module "${name}" failed: ${reason}`);
+
 			throw new Error(reason);
 		}
 
 		const moduleInfo = this.registry[name];
 		if (!moduleInfo) {
 			this.log("err", "#load: module found in registry, but returned undefined value");
+
 			throw new Error("No module info");
 		}
 
@@ -394,6 +155,7 @@ export class ModuleLoader {
 			this.log("info", `#load: path converted: "${moduleInfo.path}" (module can be loaded)`);
 		} catch (err) {
 			this.log("err", "#load: path conversation failed (module can't be loaded)");
+
 			throw err;
 		}
 
@@ -405,20 +167,25 @@ export class ModuleLoader {
 			this.log("err", `${keeperLogPrefix} ERROR:`, errInfo);
 		}).on("initialization", () => {
 			this.log("info", `${keeperLogPrefix} INITIALIZATION`);
+
 			const signature = moduleKeeper.signature;
 			if (signature) { this._pendingInitialization[signature] = true; }
 		}).on("initialized", () => {
 			this.log("ok", `${keeperLogPrefix} INITIALIZED`);
+
 			const signature = moduleKeeper.signature;
 			if (signature) { this._pendingInitialization[signature] = false; }
 		}).on("loaded", (signature: string | null) => {
 			this.log("ok", `${keeperLogPrefix} LOADED: ${signature}`);
+
 			if (signature) { this._pendingUnload[signature] = false; }
 		}).on("unloading", (signature: string | null) => {
 			this.log("info", `${keeperLogPrefix} UNLOADING: had signature ${signature}`);
+
 			if (signature) { this._pendingUnload[signature] = true; }
 		}).on("unloaded", (signature: string | null) => {
 			this.log("ok", `${keeperLogPrefix} UNLOADED: had signature ${signature}`);
+
 			if (signature) { this._pendingUnload[signature] = false; }
 		}).on("destroyed", () => {
 			this.log("err", `${keeperLogPrefix} DESTROYED`);
@@ -442,7 +209,9 @@ export class ModuleLoader {
 			if (violation) {
 				// any signature violation is unacceptable
 				this.log("err", `#load: signature violation found: "${moduleKeeper.info.name}" - violation "${violation}" caused unload`);
+
 				await moduleKeeper.unload("signature_violation");
+
 				return this;
 			}
 
@@ -470,7 +239,10 @@ export class ModuleLoader {
 	 */
 	public async unload(name: string | string[], reason: string = "manual", clearRequireCache = false) {
 		if (Array.isArray(name)) {
-			for (const n of name) { await this.unload(n, reason); }
+			for (let i = 0, l = name.length; i < l; i++) {
+				await this.unload(name[i], reason);
+			}
+
 			return this;
 		}
 
@@ -484,7 +256,9 @@ export class ModuleLoader {
 
 		if (moduleKeeper == null) {
 			this.log("warn", `#unload: check failed: registry member is already \`${moduleKeeper}\``);
+
 			delete this.loadedModulesRegistry[name];
+
 			return this;
 		}
 
@@ -535,7 +309,7 @@ export class ModuleLoader {
 			if (!keeper) { continue; }
 
 			// modules that have no init functions are considered as initializated after load
-			if (keeper.state === ModuleLoadState.Loaded) {
+			if (keeper.state === Interfaces.ModuleLoadState.Loaded) {
 				toInit.push(keeper);
 			}
 		}
@@ -561,7 +335,10 @@ export class ModuleLoader {
 	 */
 	public findBase<T>(searchArg: string, argType: "signature" | "name" = "signature") {
 		const keeper = this.findKeeper<T>(searchArg, argType);
-		if (!keeper) { return undefined; }
+		if (!keeper) {
+			return undefined;
+		}
+
 		return keeper.base;
 	}
 
@@ -601,22 +378,18 @@ export class ModuleLoader {
 
 /**
 * Convert modules object to Map object
-* @param obj Array of module info entries
+* @param arr Array of module info entries
 */
-export function convertToModulesMap(obj: IModuleInfo[]) {
-	const modulesMap: INullableHashMap<IModuleInfo> = Object.create(null);
-	for (const moduleInfo of obj) { modulesMap[moduleInfo.name] = moduleInfo; }
+export function convertToModulesMap(arr: Interfaces.IModuleInfo[]) {
+	const modulesMap: INullableHashMap<Interfaces.IModuleInfo> = Object.create(null);
+
+	for (let i = 0, l = arr.length; i < l; i++) {
+		const moduleInfo = arr[i];
+
+		modulesMap[moduleInfo.name] = moduleInfo;
+	}
+
 	return modulesMap;
-}
-
-const CLASS_REGEXP = /^\s*class\s+/;
-
-/**
- * Checks if passed object is ES6 class
- * @param obj Object to check
- */
-function isClass(obj: any): obj is Function {
-	return typeof obj === "function" && typeof obj.toString === "function" && CLASS_REGEXP.test(obj.toString());
 }
 
 // #endregion

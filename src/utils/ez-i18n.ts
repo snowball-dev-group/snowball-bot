@@ -1,11 +1,12 @@
+import * as UserPreferences from "@utils/userPreferences";
+import * as GuildPreferences from "@utils/guildPreferences";
+import * as utils from "@utils/utils";
 import { GuildMember, User, Guild } from "discord.js";
-import { getPreferenceValue as getUserPreferenceValue, setPreferenceValue as setUserPreferenceValue } from "./userPrefs";
-import { getPreferenceValue as getGuildPreferenceValue, setPreferenceValue as setGuildPreferenceValue } from "./guildPrefs";
-import { EmbedType, IEmbedOptions, generateEmbed } from "./utils";
-import { IFormatMessageVariables, HumanizerUnitToConvert } from "../../types/Localizer";
-import { IHumanizerOptionsOverrides } from "../../types/Humanizer";
-import { INullableHashMap } from "../../types/Types";
-import { intlAcceptsTimezone } from "./extensions";
+import { HumanizerUnitToConvert } from "@sb-types/Localizer/Localizer";
+import { IFormatMessageVariables } from "@sb-types/Localizer/HumanizerInterfaces";
+import { IHumanizerOptionsOverrides } from "@sb-types/Localizer/Humanizer";
+import { INullableHashMap } from "@sb-types/Types";
+import { intlAcceptsTimezone } from "@utils/extensions";
 import { DateTime } from "luxon";
 
 export type UserIdentify = User | GuildMember;
@@ -76,6 +77,7 @@ export function getPreferencesNames() {
 
 export async function localizeForUser(user: UserIdentify, str: string, formatOpts?: IFormatMessageVariables) {
 	const lang = await getUserLanguage(user);
+
 	return formatOpts ? $localizer.getFormattedString(lang, str, formatOpts) : $localizer.getString(lang, str);
 }
 
@@ -104,14 +106,17 @@ export async function getUserLanguage(user: UserIdentify) {
 	if (user instanceof GuildMember && await isGuildEnforceEnabled(user.guild)) {
 		// no need in updating cache and checking user caching
 		// as guild enforces their language
+
 		return getGuildLanguage(user.guild);
 	}
 	const cached = usersCache[user.id];
+
 	return cached ? cached : forceUserLanguageUpdate(user);
 }
 
 export async function getUserTimezone(user: UserIdentify) {
 	const cached = usersTimezonesCache[user.id];
+
 	return cached ? cached : forceUserTimezoneUpdate(user);
 }
 
@@ -120,7 +125,7 @@ export async function getUserTimezone(user: UserIdentify) {
 // #region   Force Updates
 
 export async function forceUserLanguageUpdate(user: UserIdentify): Promise<string> {
-	const preferredLanguage: string | undefined = await getUserPreferenceValue(user, PREFERENCE_USER_LANGUAGE);
+	const preferredLanguage: string | undefined = await UserPreferences.getPreferenceValue(user, PREFERENCE_USER_LANGUAGE);
 	if (!preferredLanguage) {
 		// user has no language set
 		// let set it to the current guilds language
@@ -128,28 +133,34 @@ export async function forceUserLanguageUpdate(user: UserIdentify): Promise<strin
 			// yeah, we could set guild's language
 			// as user comes from some of the guilds
 			const guildLanguage = await getGuildLanguage(user.guild);
-			await setUserPreferenceValue(user, PREFERENCE_USER_LANGUAGE, guildLanguage);
+			await UserPreferences.setPreferenceValue(user, PREFERENCE_USER_LANGUAGE, guildLanguage);
+
 			return usersCache[user.id] = guildLanguage;
 		}
 		// oh, seems we can't set guild's language
 		// let's use default localizer's language!
-		await setUserPreferenceValue(user, PREFERENCE_USER_LANGUAGE, DEFAULT_LANGUAGE);
+		await UserPreferences.setPreferenceValue(user, PREFERENCE_USER_LANGUAGE, DEFAULT_LANGUAGE);
+
 		return usersCache[user.id] = DEFAULT_LANGUAGE;
 	}
+
 	return usersCache[user.id] = preferredLanguage;
 }
 
 export async function forceUserTimezoneUpdate(user: UserIdentify): Promise<string> {
-	const preferredTimezone: string | undefined = await getUserPreferenceValue(user, PREFERENCE_USER_TIMEZONE);
+	const preferredTimezone: string | undefined = await UserPreferences.getPreferenceValue(user, PREFERENCE_USER_TIMEZONE);
 	if (!preferredTimezone) {
 		if (user instanceof GuildMember) {
 			const guildTimezone = await getGuildTimezone(user.guild);
-			await setUserPreferenceValue(user, PREFERENCE_USER_TIMEZONE, guildTimezone);
+			await UserPreferences.setPreferenceValue(user, PREFERENCE_USER_TIMEZONE, guildTimezone);
+
 			return usersTimezonesCache[user.id] = guildTimezone;
 		}
-		await setUserPreferenceValue(user, PREFERENCE_USER_TIMEZONE, DEFAULT_TIMEZONE);
+		await UserPreferences.setPreferenceValue(user, PREFERENCE_USER_TIMEZONE, DEFAULT_TIMEZONE);
+
 		return usersTimezonesCache[user.id] = DEFAULT_TIMEZONE;
 	}
+
 	return usersTimezonesCache[user.id] = preferredTimezone;
 }
 
@@ -167,6 +178,7 @@ export async function forceUserTimezoneUpdate(user: UserIdentify): Promise<strin
 
 export async function localizeForGuild(guild: Guild, str: string, formatOpts?: IFormatMessageVariables) {
 	const lang = await getGuildLanguage(guild);
+
 	return formatOpts ? $localizer.getFormattedString(lang, str, formatOpts) : $localizer.getString(lang, str);
 }
 
@@ -193,11 +205,13 @@ export async function toGuildLocaleString(guild: Guild, date: Date | DateTime | 
 
 export async function getGuildLanguage(guild: Guild) {
 	const cached = guildsCache[guild.id];
+
 	return cached ? cached : forceGuildLanguageUpdate(guild);
 }
 
 export async function getGuildTimezone(guild: Guild) {
 	const cached = guildTimezonesCache[guild.id];
+
 	return cached ? cached : forceGuildTimezoneUpdate(guild);
 }
 
@@ -209,6 +223,7 @@ export async function getGuildTimezone(guild: Guild) {
 
 export async function isGuildEnforceEnabled(guild: Guild) {
 	const cached = guildEnforceCache[guild.id];
+
 	return cached ? cached : forceGuildEnforceUpdate(guild);
 }
 
@@ -217,31 +232,37 @@ export async function isGuildEnforceEnabled(guild: Guild) {
 // #region   Force Updates
 
 export async function forceGuildLanguageUpdate(guild: Guild): Promise<string> {
-	const guildLanguage = await getGuildPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE);
+	const guildLanguage = await GuildPreferences.getPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE);
 	if (!guildLanguage) {
-		await setGuildPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE, DEFAULT_LANGUAGE);
+		await GuildPreferences.setPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE, DEFAULT_LANGUAGE);
+
 		return guildsCache[guild.id] = DEFAULT_LANGUAGE;
 	}
+
 	return guildsCache[guild.id] = guildLanguage;
 }
 
 export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
-	const enforcingStatus = await getGuildPreferenceValue(guild, PREFERENCE_GUILD_ENFORCE, true);
+	const enforcingStatus = await GuildPreferences.getPreferenceValue(guild, PREFERENCE_GUILD_ENFORCE, true);
 	if (!enforcingStatus) {
 		// no enforcing status found
-		await setGuildPreferenceValue(guild, PREFERENCE_GUILD_ENFORCE, DEFAULT_ENFORCE_STATUS);
+		await GuildPreferences.setPreferenceValue(guild, PREFERENCE_GUILD_ENFORCE, DEFAULT_ENFORCE_STATUS);
+
 		return guildEnforceCache[guild.id] = DEFAULT_ENFORCE_STATUS;
 	}
 	guildEnforceCache[guild.id] = enforcingStatus;
+
 	return enforcingStatus;
 }
 
 export async function forceGuildTimezoneUpdate(guild: Guild): Promise<string> {
-	const guildTimezone = await getGuildPreferenceValue(guild, PREFERENCE_GUILD_TIMEZONE);
+	const guildTimezone = await GuildPreferences.getPreferenceValue(guild, PREFERENCE_GUILD_TIMEZONE);
 	if (!guildTimezone) {
-		await setGuildPreferenceValue(guild, PREFERENCE_GUILD_TIMEZONE, DEFAULT_TIMEZONE);
+		await GuildPreferences.setPreferenceValue(guild, PREFERENCE_GUILD_TIMEZONE, DEFAULT_TIMEZONE);
+
 		return guildTimezonesCache[guild.id] = DEFAULT_TIMEZONE;
 	}
+
 	return guildTimezonesCache[guild.id] = guildTimezone;
 }
 
@@ -255,7 +276,7 @@ function isCustomString(obj: any): obj is ICustomEmbedString {
 	return "custom" in obj && obj["custom"] === true && "string" in obj && !("formattingOptions" in obj) && !("key" in obj);
 }
 
-export async function generateLocalizedEmbed(type: EmbedType, target: UserIdentify | Guild, descriptionKey: string | ILocalizedEmbedString | ICustomEmbedString | undefined, options: IEmbedOptions = {}) {
+export async function generateLocalizedEmbed(type: utils.EmbedType, target: UserIdentify | Guild, descriptionKey: string | ILocalizedEmbedString | ICustomEmbedString | undefined, options: utils.IEmbedOptions = {}) {
 	// based on target define localize function
 	const localize = target instanceof Guild ? async (key: string, formatOptions?: IFormatMessageVariables) => {
 		return localizeForGuild(target, key, formatOptions);
@@ -264,54 +285,55 @@ export async function generateLocalizedEmbed(type: EmbedType, target: UserIdenti
 	};
 
 	switch (type) {
-		case EmbedType.Error: {
+		case utils.EmbedType.Error: {
 			if (options.errorTitle) { break; }
 			options.errorTitle = await localize("EMBED_ERROR");
 		} break;
-		case EmbedType.Information: {
+		case utils.EmbedType.Information: {
 			if (options.informationTitle) { break; }
 			options.informationTitle = await localize("EMBED_INFORMATION");
 		} break;
-		case EmbedType.OK: {
+		case utils.EmbedType.OK: {
 			if (options.okTitle) { break; }
 			options.okTitle = await localize("EMBED_SUCCESS");
 		} break;
-		case EmbedType.Tada: {
+		case utils.EmbedType.Tada: {
 			if (options.tadaTitle) { break; }
 			options.tadaTitle = await localize("EMBED_TADA");
 		} break;
-		case EmbedType.Progress: {
+		case utils.EmbedType.Progress: {
 			if (options.progressTitle) { break; }
 			options.progressTitle = await localize("EMBED_PROGRESS");
 		} break;
-		case EmbedType.Question: {
+		case utils.EmbedType.Question: {
 			if (options.questionTitle) { break; }
 			options.questionTitle = await localize("EMBED_QUESTION");
 		} break;
-		case EmbedType.Warning: {
+		case utils.EmbedType.Warning: {
 			if (options.warningTitle) { break; }
 			options.warningTitle = await localize("EMBED_WARNING");
 		} break;
 	}
 
 	if (!descriptionKey) {
-		return generateEmbed(type, undefined, options);
+		return utils.generateEmbed(type, undefined, options);
 	}
 
 	if (typeof descriptionKey === "string") {
 		if (descriptionKey.startsWith("custom:")) {
 			descriptionKey = descriptionKey.slice("custom:".length);
-			return generateEmbed(type, descriptionKey, options);
+
+			return utils.generateEmbed(type, descriptionKey, options);
 		} else {
-			return generateEmbed(type, await localize(descriptionKey), options);
+			return utils.generateEmbed(type, await localize(descriptionKey), options);
 		}
 	}
 
 	if (isCustomString(descriptionKey)) {
-		return generateEmbed(type, descriptionKey.string, options);
+		return utils.generateEmbed(type, descriptionKey.string, options);
 	}
 
-	return generateEmbed(type, await localize(descriptionKey.key, descriptionKey.formatOptions), options);
+	return utils.generateEmbed(type, await localize(descriptionKey.key, descriptionKey.formatOptions), options);
 }
 
 // #region Localizer extending as EZPZ
@@ -330,6 +352,7 @@ export async function extendAndBind(path: string | string[], owner: string) {
 
 	return () => {
 		$localizer.unbindKeys(extendedKeys, owner);
+
 		return $localizer.pruneLanguages(extendedKeys);
 	};
 }

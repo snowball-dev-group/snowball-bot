@@ -1,5 +1,5 @@
 import { Message, MessageReaction, User, TextChannel, GuildMember, DMChannel } from "discord.js";
-import { getMessageMember, getMessageMemberOrAuthor, IEmbed } from "@cogs/utils/utils";
+import { getMessageMember, getMessageMemberOrAuthor, IEmbed } from "@utils/utils";
 import * as Bluebird from "bluebird";
 import * as getLogger from "loggy";
 
@@ -20,7 +20,7 @@ export function createConfirmationMessage(embed: IEmbed, originalMsg: Message): 
 	let logContext = `(CMS / 0:${originalMsg.id})`;
 
 	return new Bluebird(
-		async (resolve, _reject, onCancel) => {
+		async (resolve, _reject) => {
 			let confirmMsg: Message | undefined;
 
 			try {
@@ -248,7 +248,7 @@ function messageWaiter(confirmationMessage: Message, authorId: string) {
 }
 
 function messageToBool(msg: Message): boolean {
-	return msg.content === "y" ? true : false;
+	return msg.content === "y";
 }
 
 function collectMessage(confirmationMessage: Message, authorId: string) {
@@ -325,7 +325,7 @@ interface ICustomConfirmationRules {
 }
 
 export async function createCustomizeConfirmationMessage(embed, channel: TextChannel, rules: ICustomConfirmationRules) {
-	const _confirmationMessage = <Message> await channel.send("", { embed });
+	const _confirmationMessage = <Message> await channel.send({ embed });
 
 	try {
 		for (let i = 0, rl = rules.variants.length; i < rl; i++) {

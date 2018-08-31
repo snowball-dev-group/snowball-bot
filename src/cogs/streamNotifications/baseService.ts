@@ -1,5 +1,5 @@
-import { IEmbed } from "../utils/utils";
-import { IModule } from "../../types/ModuleLoader";
+import { IEmbed } from "@utils/utils";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { EventEmitter } from "events";
 
 export class StreamingServiceError extends Error {

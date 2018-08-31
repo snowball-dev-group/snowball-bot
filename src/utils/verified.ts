@@ -1,8 +1,8 @@
-import { getDB } from "./db";
+import { getDB } from "@utils/db";
 import { GuildMember, Message } from "discord.js";
 import * as getLogger from "loggy";
-import { INullableHashMap } from "../../types/Types";
-import { getMessageMember } from "./utils";
+import { INullableHashMap } from "@sb-types/Types";
+import { getMessageMember } from "@utils/utils";
 
 interface IVerificationData {
 	guildId: string;
@@ -32,6 +32,7 @@ function getLocalStorageKeyBy(guildId: string, memberId: string) {
 
 export async function flushLocalStorage() {
 	localStorage = Object.create(null); // don't change anything, perfo reasons
+
 	return true;
 }
 
@@ -119,12 +120,14 @@ export async function messageEvent(msg: Message) {
 			storedVerification = await getStoredVerification(member);
 			if (!storedVerification) {
 				LOG("err", "Bad times, row not found after creation");
+
 				return;
 			}
 		}
 
 		if (storedVerification.level >= msg.guild.verificationLevel) {
 			// this means that user is verified at guild verification level
+
 			return;
 		}
 
@@ -153,6 +156,7 @@ export async function init(): Promise<boolean> {
 				});
 			} catch (err) {
 				LOG("err", "Can't create table", err);
+
 				return false;
 			}
 		} else {
@@ -160,6 +164,7 @@ export async function init(): Promise<boolean> {
 		}
 	} catch (err) {
 		LOG("err", "Can't check table status", err);
+
 		return false;
 	}
 

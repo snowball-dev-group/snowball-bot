@@ -1,8 +1,8 @@
-import { IModule } from "../../types/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Plugin } from "../plugin";
 import { Message, TextChannel, GuildMember } from "discord.js";
-import { getDB } from "../utils/db";
-import { generateEmbed, EmbedType } from "../utils/utils";
+import { getDB } from "@utils/db";
+import { generateEmbed, EmbedType } from "@utils/utils";
 import * as knex from "knex";
 import * as Random from "random-js";
 import * as getLogger from "loggy";
@@ -91,6 +91,7 @@ class CountV2 extends Plugin implements IModule {
 			if (itHas) {
 				this._log("ok", `DB: we have table '${TABLENAME_MAIN}', can safely continue work...`);
 				this._dbInitialized = this._dbInitialized | DBInitializationState.MainTableInitialized;
+
 				return;
 			}
 			this._log("warn", `DB: seems we doesn't have table '${TABLENAME_MAIN}' in database, going to create it right now`);
@@ -119,6 +120,7 @@ class CountV2 extends Plugin implements IModule {
 			if (itHas) {
 				this._log("ok", `DB: we have table '${TABLENAME_SCOREBOARD}', can safely continue working with players scores`);
 				this._dbInitialized = this._dbInitialized | DBInitializationState.ScoreboardInitialized;
+
 				return;
 			}
 			this._log("warn", `DB: seems we don't have table '${TABLENAME_SCOREBOARD}' in database, going to create it right now`);
@@ -134,8 +136,9 @@ class CountV2 extends Plugin implements IModule {
 			});
 		});
 
-		let cid: NodeJS.Timer; let runs = 0;
-		cid = setInterval(() => {
+		let runs = 0;
+
+		const cid: NodeJS.Timer = setInterval(() => {
 			runs++;
 			if (this._dbInitialized === DBInitializationState.FullyInitialized) {
 				this._log("ok", "DB is initialized");
@@ -145,6 +148,7 @@ class CountV2 extends Plugin implements IModule {
 					clearInterval(cid);
 					this._log("err", "Timeout: waiting for DB initialization");
 				}
+
 				return;
 			}
 			this._log("info", "Updating scoreboard messages");
@@ -182,15 +186,20 @@ class CountV2 extends Plugin implements IModule {
 		if (this._dbInitialized !== DBInitializationState.FullyInitialized) { return undefined; }
 		if (msg.channel.type === "dm") { return undefined; } // never reply in direct messages
 		if (msg.channel.id !== CHANNELID_MAIN) { return undefined; }
-		if (!msg.author) { msg.delete(); return undefined; }
-		if (!msg.content) { msg.delete(); return undefined; }
+
+		if (!msg.author || !msg.content) {
+			await msg.delete();
+
+			return undefined;
+		}
+
 		if (msg.author.id === $discordBot.user.id) { return undefined; }
 
 		const override = msg.content.startsWith("!");
 		if (!CountV2._countRegex.test(override ? msg.content.slice(1) : msg.content)) { return msg.delete(); }
 
 		if (override && msg.author.id === $botConfig.botOwner) {
-			msg.react("⏳");
+			await msg.react("⏳");
 			const nNumber = parseInt(msg.content.slice("!".length), 10);
 			try {
 				await this._db(TABLENAME_MAIN).insert({
@@ -203,12 +212,14 @@ class CountV2 extends Plugin implements IModule {
 					in_queue: "-1"
 				});
 				msg.react("✅");
+
 				return msg.channel.send("✅ Перезапись числа завершена. Теперь введите это число.");
 			} catch (err) {
-				msg.react("❌");
-				msg.channel.send(`❌ Ошибка перезаписи числа: \`${err.message}\`.`);
+				await msg.react("❌");
+				await msg.channel.send(`❌ Ошибка перезаписи числа: \`${err.message}\`.`);
 				this._log("err", "Can't insert new number into database", err);
 			}
+
 			return;
 		} else if (override) {
 			return msg.delete();
@@ -236,6 +247,7 @@ class CountV2 extends Plugin implements IModule {
 				rRowAnsweredBy = JSON.parse(latestRow.answered_by);
 			} catch (err) {
 				this._log("err", "Can't parse latest row `answered_by` column");
+
 				return undefined;
 			}
 		} else {
@@ -244,6 +256,7 @@ class CountV2 extends Plugin implements IModule {
 
 		if (!rRowAnsweredBy) {
 			this._log("err", "No value for `rRowAnsweredBy` variable, returning...");
+
 			return;
 		}
 
@@ -264,6 +277,7 @@ class CountV2 extends Plugin implements IModule {
 
 		if (!answerTimeOK) {
 			messageDeleted = true;
+
 			return msg.delete();
 		} else {
 			const qTime = answerTimeOK && rRowQueueTime !== -1 ? 10000 - (Date.now() - rRowQueueTime) : 10000;
@@ -309,6 +323,7 @@ class CountV2 extends Plugin implements IModule {
 				} catch (err) {
 					this._log("err", "Can't put element into database", err);
 					msg.channel.send(":frowning: К сожалению, возникли проблемы с базой данных.");
+
 					return;
 				}
 
@@ -336,6 +351,7 @@ class CountV2 extends Plugin implements IModule {
 				this._log("err", "Timer should not be called, clearing...");
 				clearTimeout(t);
 			}
+
 			return undefined;
 		}
 	}
@@ -362,6 +378,7 @@ class CountV2 extends Plugin implements IModule {
 				await this._db(TABLENAME_SCOREBOARD).insert(userRow);
 			} catch (err) {
 				this._log("err", "Can't insert new user row to database", err);
+
 				return undefined;
 			}
 		}
@@ -404,6 +421,7 @@ class CountV2 extends Plugin implements IModule {
 				}).update(userRow);
 			} catch (err) {
 				this._log("err", "Can't update element in database", err);
+
 				return undefined;
 			}
 
@@ -443,7 +461,7 @@ class CountV2 extends Plugin implements IModule {
 		}
 
 		if (!this._scoreboardMessages.top10) {
-			const msg = <Message> await ch.send("", {
+			const msg = <Message> await ch.send({
 				embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
 					footerText: STRINGS.TOP_10
 				})
@@ -453,7 +471,7 @@ class CountV2 extends Plugin implements IModule {
 
 		if (this._scoreboardMessages.latestChanges) { return; }
 
-		const msg = <Message> await ch.send("", {
+		const msg = <Message> await ch.send({
 			embed: generateEmbed(EmbedType.Empty, STRINGS.LOADING, {
 				footerText: STRINGS.LATEST_CHANGES
 			})
@@ -469,6 +487,7 @@ class CountV2 extends Plugin implements IModule {
 				await this._newScoreboardMessage();
 			} catch (err) {
 				this._log("err", "Can't update scoreboard messages, can't update scoreboard.", err);
+
 				return;
 			}
 		}
@@ -501,6 +520,7 @@ class CountV2 extends Plugin implements IModule {
 			top10 = await this._db(TABLENAME_SCOREBOARD).orderBy("exp", "DESC").limit(15);
 		} catch (err) {
 			this._log("err", "Can't get top 10 from database!", err);
+
 			return;
 		}
 
@@ -531,6 +551,7 @@ class CountV2 extends Plugin implements IModule {
 
 	public async unload() {
 		this.unhandleEvents();
+
 		return true;
 	}
 }

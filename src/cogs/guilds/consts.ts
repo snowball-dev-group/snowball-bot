@@ -57,3 +57,33 @@ export const enum SHARDING_MESSAGE_TYPE {
 	PENDING_INVITE_CLEAR = "guilds:rules:pending_clear",
 	PENDING_INVITE_CREATE = "guilds:rules:pending"
 }
+
+export const EDITABLE_PARAMS = [
+	"image",
+	"description",
+	"rules",
+	"welcome_msg_channel",
+	"welcome_msg",
+	"icon",
+	"owner",
+	"google-ua",
+	"private",
+	"invite_only",
+	"add_admin",
+	"add_adm",
+	"remove_admin",
+	"rm_admin",
+	"delete_admin",
+	"add_emoji"
+];
+
+export const RESERVER_GUILD_NAMES = [
+	"create",
+	"edit",
+	"invite",
+	"delete",
+	"list",
+	"info"
+];
+
+export const GUILDS_PER_PAGE = 10;

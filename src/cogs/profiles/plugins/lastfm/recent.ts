@@ -1,10 +1,10 @@
 import { IProfilesPlugin, AddedProfilePluginType } from "../plugin";
 import { GuildMember } from "discord.js";
-import { IEmbedOptionsField, escapeDiscordMarkdown, resolveEmojiMap } from "../../../utils/utils";
+import { IEmbedOptionsField, escapeDiscordMarkdown, resolveEmojiMap } from "@utils/utils";
 import { getOrFetchRecents } from "./lastfm";
 import { IRecentTracksResponse } from "./lastfmInterfaces";
-import { localizeForUser, getUserLanguage } from "../../../utils/ez-i18n";
-import { replaceAll } from "../../../utils/text";
+import { localizeForUser, getUserLanguage } from "@utils/ez-i18n";
+import { replaceAll } from "@utils/text";
 import { DetailedError } from "../../../../types/Types";
 import * as getLogger from "loggy";
 import { default as ProfilesModule } from "../../profiles";
@@ -91,6 +91,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 
 		if (!profile) {
 			LOG("err", logPrefix, "No 'profile' variable!");
+
 			return {
 				inline: true,
 				name: `${this._config.emojis.logo} Last.fm`,

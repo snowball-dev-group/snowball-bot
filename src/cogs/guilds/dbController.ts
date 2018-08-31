@@ -1,6 +1,6 @@
 import { Guild } from "discord.js";
-import { getDB, createTableBySchema } from "@cogs/utils/db";
-import { DatabaseMigration } from "@sb-types/Types";
+import { getDB, createTableBySchema } from "@utils/db";
+import { DatabaseMigration } from "@sb-types/DatabaseMigration";
 import * as shortid from "shortid";
 import * as getLogger from "loggy";
 import * as path from "path";
@@ -60,7 +60,7 @@ export class GuildsDBController {
 		);
 	}
 
-	public async getGuild(guild: Guild, name: string) {
+	public async getGuild(guild: Guild, name: string) : Promise<IGuildRow | undefined> {
 		return this._db(this._tableName)
 			.where({
 				guildId: guild.id,
@@ -69,20 +69,24 @@ export class GuildsDBController {
 			.first();
 	}
 
-	public async getGuilds(guild: Guild, offset = 0, limit = 10) {
+	public async getGuilds(guild: Guild, options: ISelectOptions) : Promise<IGetGuildsResponse> {
 		const rows = await this._db(this._tableName)
 			.select()
 			.where({
 				guildId: guild.id
 			})
-			.offset(offset)
-			.limit(limit);
+			.offset(
+				options.offset
+			)
+			.limit(
+				options.limit
+			);
 
 		// TODO: see if something wrong here:
 		return {
-			offset: offset,
-			nextOffset: offset + limit,
-			rows: <IGuildRow[]> rows
+			offset: options.offset,
+			nextOffset: options.offset + options.limit,
+			guilds: <IGuildRow[]> rows
 		};
 	}
 
@@ -215,4 +219,15 @@ export interface IGuildCustomize {
 	 * Banned users
 	 */
 	banned?: string[];
+}
+
+interface IGetGuildsResponse {
+	offset: number;
+	nextOffset: number;
+	guilds: IGuildRow[];
+}
+
+interface ISelectOptions {
+	offset: number;
+	limit: number;
 }

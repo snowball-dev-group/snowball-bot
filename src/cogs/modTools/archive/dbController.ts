@@ -1,4 +1,4 @@
-import { getDB } from "../../utils/db";
+import { getDB } from "@utils/db";
 import { Message, MessageAttachment, MessageEmbed } from "discord.js";
 import * as getLogger from "loggy";
 
@@ -53,6 +53,7 @@ export class ArchiveDBController {
 	 */
 	public async insertMessage(msg: IDBMessage): Promise<IDBMessage> {
 		if (!this._initComplete) { throw ERRORS.INIT_NOT_COMPLETE; }
+
 		return this._db(this._tableName).insert(msg, "*");
 	}
 
@@ -91,6 +92,7 @@ export class ArchiveDBController {
 		if (offset > 0) {
 			req = req.offset(offset);
 		}
+
 		return req;
 	}
 
@@ -112,7 +114,7 @@ export function convertAttachment(attachment: MessageAttachment) : IEmulatedAtta
 		id: attachment.id,
 		file: {
 			url: attachment.url,
-			name: attachment.name
+			name: attachment.name || "unknown"
 		}
 	};
 }

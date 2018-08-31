@@ -1,10 +1,10 @@
-import { IModule } from "../../types/ModuleLoader";
-import { Plugin } from "../plugin";
-import { Message } from "discord.js";
-import { command } from "../utils/help";
+import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { Plugin } from "@cogs/plugin";
+import { command } from "@utils/help";
 import MessagesFlows, { IMessageFlowContext, IPublicFlowCommand } from "../cores/messagesFlows";
-import { getUserLanguage } from "../utils/ez-i18n";
+import { getUserLanguage } from "@utils/ez-i18n";
 import * as getLogger from "loggy";
+import { getMessageMemberOrAuthor } from "@utils/utils";
 
 const ALLOWED_CMDS = ["ping", "ping_embed"];
 
@@ -35,31 +35,42 @@ class Ping extends Plugin implements IModule {
 	}
 
 	private async _onMessage(ctx: IMessageFlowContext) {
-		if (!ctx.parsed) { return; }
-		if (!ALLOWED_CMDS.includes(ctx.parsed.command)) { return; }
+		const msg = ctx.message;
+		const author = await getMessageMemberOrAuthor(msg);
 
-		const userLang = await getUserLanguage(ctx.message.member || ctx.message.member);
+		if (
+			!ctx.parsed ||
+			!author ||
+			!ALLOWED_CMDS.includes(ctx.parsed.command)
+		) {
+			return;
+		}
+
+		const userLang = await getUserLanguage(author);
 
 		let pongStr = $localizer.getString(userLang, "PING_PONG");
 
-		const isEmbed = ctx.parsed.command === "ping_embed",
-		startDate = Date.now(),
-		msg = <Message> await ctx.message.channel.send(isEmbed ? { embed: { description: "Pong!" } } : "ℹ Pong!"),
-		receivedTime = Date.now(),
-		ping = Math.max(0, (msg.createdAt.getTime() - startDate)),
-		delay = receivedTime - startDate,
-		delayWoPing = delay - ping,
-		isNegativeDelay = delayWoPing < 0,
-		delayWoPingStr = isNegativeDelay ? `${delayWoPing}` : `+${delayWoPing}`;
+		const isEmbed = ctx.parsed.command === "ping_embed";
 
-		pongStr = $localizer.getFormattedString(userLang, "PING_PONG_DETAILS", {
-			ping,
-			delay: delayWoPing,
-			total: delay,
-			isNegativeDelay
-		});
+		const msgContent = 
+			isEmbed ? {
+				description: pongStr
+			} : pongStr;
 
-		Ping._log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms (${delayWoPingStr}ms, =${delay}ms)`);
+		const startDate = Date.now();
+
+		await msg.channel.send(msgContent);
+
+		const ping = Date.now() - startDate;
+
+		pongStr = $localizer.getFormattedString(
+			userLang,
+			"PING_PONG_DETAILS", {
+				ping: ping
+			}
+		);
+
+		Ping._log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms`);
 
 		return msg.edit(isEmbed ? { embed: { description: pongStr } } : pongStr);
 	}
@@ -68,7 +79,9 @@ class Ping extends Plugin implements IModule {
 		if (this._flowHandler) {
 			this._flowHandler.unhandle();
 		}
+
 		this.unhandleEvents();
+
 		return true;
 	}
 }
