@@ -8,6 +8,8 @@ import LocalizerParser from "@sb-types/Localizer/LocalizerParser";
 import LocalizerJSONParser from "@sb-types/Localizer/parsers/JSONParser";
 import * as logger from "loggy";
 
+const PATH_SEP_LENGTH = path.sep.length;
+
 export class LocalizerFileLoader {
 	private readonly _log: logger.ILogFunction;
 	private _parsersCollection: LocalizerParsersCollection;
@@ -160,7 +162,7 @@ export class LocalizerFileLoader {
 	}
 
 	private _sliceWithSeparator(filePath: string, dirName: string) {
-		return filePath.slice(dirName.length + path.sep.length);
+		return filePath.slice(dirName.length + PATH_SEP_LENGTH);
 	}
 
 }
