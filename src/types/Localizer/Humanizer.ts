@@ -214,9 +214,8 @@ export class Humanizer {
 		};
 	}
 
-	private _locale: IHumanizerLanguage;
-
-	private _defaultOptions: IHumanizerDefaultOptions;
+	private readonly _locale: IHumanizerLanguage;
+	private readonly _defaultOptions: IHumanizerDefaultOptions;
 
 	public get locale(): IHumanizerLanguage {
 		return this._locale;
@@ -280,13 +279,15 @@ export class Humanizer {
 		}
 
 		let firstOccupiedUnitIndex = 0;
-		pieces.some((piece, i) => {
+
+		for (let i = 0, l = pieces.length; i < l; i++) {
+			const piece = pieces[i];
+
 			if (piece.unitCount) {
 				firstOccupiedUnitIndex = i;
+				break;
 			}
-
-			return !!piece.unitCount;
-		});
+		}
 
 		if (options.round) {
 			let previousPiece;
@@ -322,13 +323,24 @@ export class Humanizer {
 		}
 
 		const result: string[] = [];
-		pieces.some((piece) => {
+
+		for (let i = 0, l = pieces.length; i < l; i++) {
+			const piece = pieces[i];
+
 			if (piece.unitCount) {
-				result.push(Humanizer._render(piece.unitCount, piece.unitName, dictionary));
+				result.push(
+					Humanizer._render(
+						piece.unitCount,
+						piece.unitName,
+						dictionary
+					)
+				);
 			}
 
-			return (result.length === options.largest);
-		});
+			if (result.length === options.largest) {
+				break;
+			}
+		}
 
 		let renderedResult: string = "";
 		if (result.length) {
