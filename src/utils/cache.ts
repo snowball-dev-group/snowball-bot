@@ -51,13 +51,16 @@ export async function storeValue<T>(owner: string, key: string, value: AllowedTy
 		// thanx <3
 		for (let i = 0; i < value.length; i++) {
 			let val = value[i];
+
 			if (typeof val === "object") {
 				val = JSON.stringify(val);
 				stringifyTriggeredAt.push(i);
 			}
+
 			pipeline = pipeline.rpush(builtKey, val);
 		}
-		pipeline = pipeline.expire(builtKey, ttl);
+
+		pipeline.expire(builtKey, ttl);
 
 		const stringifyCalled = stringifyTriggeredAt.length > 0;
 
@@ -70,6 +73,7 @@ export async function storeValue<T>(owner: string, key: string, value: AllowedTy
 		};
 	} else {
 		let stringifyCalled = false;
+
 		if (typeof value === "object") {
 			stringifyCalled = true;
 			value = JSON.stringify(value);
