@@ -23,6 +23,7 @@ export class FlakeId {
 		const options = {
 			machineId: 0,
 			timeOffset: 0,
+			processId: 1,
 			...opts
 		};
 
