@@ -30,11 +30,11 @@
 		}
 	},
 	"include": [
-		"src/**/*",
-		"typings/**/*"
+		"src/**/*"
 	],
 	"exclude": [
 		"node_modules",
-		"out"
+		"out",
+		"**/*.x.js"
 	]
 }
