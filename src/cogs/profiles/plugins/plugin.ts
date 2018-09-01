@@ -1,4 +1,4 @@
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { IEmbedOptionsField } from "@utils/utils";
 import { Message, GuildMember } from "discord.js";
 import { default as ProfilesModule } from "../profiles";

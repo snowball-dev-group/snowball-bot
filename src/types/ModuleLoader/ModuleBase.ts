@@ -224,3 +224,5 @@ export class ModuleBase<T> extends EventEmitter {
 		return this;
 	}
 }
+
+export default ModuleBase;

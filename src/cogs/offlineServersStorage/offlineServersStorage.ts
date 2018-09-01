@@ -1,4 +1,4 @@
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Plugin } from "@cogs/plugin";
 import { Guild } from "discord.js";
 import { INullableHashMap } from "@sb-types/Types";

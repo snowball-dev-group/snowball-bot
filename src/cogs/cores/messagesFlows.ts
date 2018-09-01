@@ -2,12 +2,13 @@ import { randomString } from "@utils/random";
 import { sleep } from "@utils/utils";
 import { setTimeout } from "timers";
 import PrefixAll from "./prefixAll/prefixAll";
-import { IModule, ModuleBase, ModuleLoadState } from "@sb-types/ModuleLoader/ModuleLoader";
 import { Message } from "discord.js";
-import { parse as parseCmd, ICommandParseResult } from "@utils/command";
+import * as Command from "@utils/command";
 import * as getLogger from "loggy";
 import * as Bluebird from "bluebird";
 import { EventEmitter } from "events";
+import { IModule, ModuleLoadState } from "@sb-types/ModuleLoader/Interfaces";
+import ModuleBase from "@sb-types/ModuleLoader/ModuleBase";
 
 export const MESSAGEFLOWS_SIGNATURE = "snowball.core_features.messageflows";
 export const HANDLER_TIMEOUT = 5000;
@@ -16,7 +17,7 @@ export const HANDLER_MAXTIMEOUT = 120000; // 2 mins for handler? yay
 export const CHECK_MAXTIMEOUT = 60000; // 1 min for checker
 // still could be disabled via -1
 
-export default class MessagesFlows implements IModule {
+export class MessagesFlows implements IModule {
 	public get signature() {
 		return MESSAGEFLOWS_SIGNATURE;
 	}
@@ -133,11 +134,11 @@ export default class MessagesFlows implements IModule {
 	 * @param handler Command handler
 	 * @param commands Commands to handle
 	 */
-	public watchForCommands(handler: Handler<ICommandParseResult>, commands: string | string[]) : Readonly<IPublicFlowCommand> {
-		const eventHandler = (msg: Message, prefix: string, parsed: ICommandParseResult) => {
+	public watchForCommands(handler: Handler<Command.ICommandParseResult>, commands: string | string[]) : Readonly<IPublicFlowCommand> {
+		const eventHandler = (msg: Message, prefix: string, parsed: Command.ICommandParseResult) => {
 			// building context for each execution
 
-			const ctx: IMessageFlowContext<ICommandParseResult> = {
+			const ctx: IMessageFlowContext<Command.ICommandParseResult> = {
 				message: msg,
 				prefix,
 				parsed
@@ -192,7 +193,7 @@ export default class MessagesFlows implements IModule {
 	 * @param check Command checking function
 	 * @param options Options for watcher
 	 */
-	public watchForMessages<T = ICommandParseResult>(handler: Handler<T>, check: IFlowCheckArgument<T>, options: IWatcherCreationOptions<T> = {
+	public watchForMessages<T = Command.ICommandParseResult>(handler: Handler<T>, check: IFlowCheckArgument<T>, options: IWatcherCreationOptions<T> = {
 		followsTheFlow: true,
 		checkPrefix: true,
 		timeoutCheck: this._timings.timeoutCheck,
@@ -202,9 +203,9 @@ export default class MessagesFlows implements IModule {
 
 		const normalCheck = (() => {
 			if (Array.isArray(check)) {
-				return (ctx: IMessageFlowContext<ICommandParseResult>) => ctx.parsed && ctx.parsed.command ? check.includes(ctx.parsed.command) : false;
+				return (ctx: IMessageFlowContext<Command.ICommandParseResult>) => ctx.parsed && ctx.parsed.command ? check.includes(ctx.parsed.command) : false;
 			} else if (typeof check === "string") {
-				return (ctx: IMessageFlowContext<ICommandParseResult>) => ctx.parsed && ctx.parsed.command ? check === ctx.parsed.command : false;
+				return (ctx: IMessageFlowContext<Command.ICommandParseResult>) => ctx.parsed && ctx.parsed.command ? check === ctx.parsed.command : false;
 			}
 
 			return check;
@@ -236,7 +237,7 @@ export default class MessagesFlows implements IModule {
 
 	private async _parseCommand(msg: Message, prefix?: string | false) {
 		// if (typeof prefix !== "boolean") { prefix = await this._getPrefix(msg); }
-		return parseCmd(prefix ? msg.content.slice(prefix.length) : msg.content);
+		return Command.parse(prefix ? msg.content.slice(prefix.length) : msg.content);
 	}
 
 	private async _getPrefix(msg: Message) {
@@ -437,7 +438,7 @@ export interface IWatcherCreationOptions<T> {
 	timeoutHandler?: boolean | number;
 }
 
-export interface IMessageFlowContext<T = ICommandParseResult> {
+export interface IMessageFlowContext<T = Command.ICommandParseResult> {
 	/**
 	 * The message bot has just received and that passed the check
 	 */
@@ -497,4 +498,4 @@ export enum FlowControlArgument {
 	RECALL_AFTER = 3
 }
 
-module.exports = MessagesFlows;
+export default MessagesFlows;

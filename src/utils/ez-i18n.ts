@@ -2,9 +2,8 @@ import * as UserPreferences from "@utils/userPreferences";
 import * as GuildPreferences from "@utils/guildPreferences";
 import * as utils from "@utils/utils";
 import { GuildMember, User, Guild } from "discord.js";
-import { HumanizerUnitToConvert } from "@sb-types/Localizer/Localizer";
 import { IFormatMessageVariables } from "@sb-types/Localizer/HumanizerInterfaces";
-import { IHumanizerOptionsOverrides } from "@sb-types/Localizer/Humanizer";
+import { IHumanizerOptionsOverrides, Unit } from "@sb-types/Localizer/Humanizer";
 import { INullableHashMap } from "@sb-types/Types";
 import { intlAcceptsTimezone } from "@utils/extensions";
 import { DateTime } from "luxon";
@@ -81,7 +80,7 @@ export async function localizeForUser(user: UserIdentify, str: string, formatOpt
 	return formatOpts ? $localizer.getFormattedString(lang, str, formatOpts) : $localizer.getString(lang, str);
 }
 
-export async function humanizeDurationForUser(user: UserIdentify, duration: number, unit: HumanizerUnitToConvert = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
+export async function humanizeDurationForUser(user: UserIdentify, duration: number, unit: Unit = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
 	return $localizer.humanizeDuration(await getUserLanguage(user), duration, unit, humanizerOptions);
 }
 
@@ -182,7 +181,7 @@ export async function localizeForGuild(guild: Guild, str: string, formatOpts?: I
 	return formatOpts ? $localizer.getFormattedString(lang, str, formatOpts) : $localizer.getString(lang, str);
 }
 
-export async function humanizeDurationForGuild(guild: Guild, duration: number, unit: HumanizerUnitToConvert = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
+export async function humanizeDurationForGuild(guild: Guild, duration: number, unit: Unit = "ms", humanizerOptions?: IHumanizerOptionsOverrides) {
 	$localizer.humanizeDuration(await getGuildLanguage(guild), duration, unit, humanizerOptions);
 }
 
@@ -339,19 +338,20 @@ export async function generateLocalizedEmbed(type: utils.EmbedType, target: User
 // #region Localizer extending as EZPZ
 
 /**
- * Extends all languages from the folder and binds extended keys
+ * Extends all languages from the folder and assigns extended keys
+ * returning function to divest and prune languages from extended keys
  * @param path Path to load language(s) from
  * @returns Function to prune languages and unbind the keys
  */
-export async function extendAndBind(path: string | string[], owner: string) {
+export async function extendAndAssign(path: string | string[], owner: string) {
 	const extendedKeys = await $localizer.extendLanguages(
-		await $localizer.directoryToLanguagesTree(path)
+		await $localizer.fileLoader.directoryToLanguagesTree(path)
 	);
 
-	$localizer.bindKeys(extendedKeys, owner);
+	$localizer.keysAssignation.assignKeys(extendedKeys, owner);
 
 	return () => {
-		$localizer.unbindKeys(extendedKeys, owner);
+		$localizer.keysAssignation.divestKeys(extendedKeys, owner);
 
 		return $localizer.pruneLanguages(extendedKeys);
 	};

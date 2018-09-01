@@ -1,4 +1,4 @@
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Message, Guild } from "discord.js";
 import { INullableHashMap } from "../../../types/Types";
 import { PrefixAllDBController } from "./dbController";

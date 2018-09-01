@@ -1,4 +1,4 @@
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Plugin } from "../plugin";
 import { messageEvent, guildMemberAddEvent, guildMemberRemoveEvent, init } from "@utils/verified";
 import * as getLogger from "loggy";

@@ -1,5 +1,5 @@
 import { generateLocalizedEmbed, localizeForGuild, localizeForUser } from "@utils/ez-i18n";
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Plugin } from "../plugin";
 import { Message, Guild, Role, GuildMember, VoiceChannel, Collection } from "discord.js";
 import { getDB } from "@utils/db";

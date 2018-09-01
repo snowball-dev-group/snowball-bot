@@ -1,6 +1,6 @@
 import { isPremium } from "@utils/premium";
 import { Plugin } from "../plugin";
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { GuildMember, Message, Role, TextChannel } from "discord.js";
 import { EmbedType, resolveGuildRole, escapeDiscordMarkdown } from "@utils/utils";
 import { generateLocalizedEmbed, localizeForUser } from "@utils/ez-i18n";

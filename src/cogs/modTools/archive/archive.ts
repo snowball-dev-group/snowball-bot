@@ -1,6 +1,6 @@
 import { messageToExtra } from "@utils/failToDetail";
 import { IHashMap } from "../../../types/Types";
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Plugin } from "../../plugin";
 import { Message, Guild, TextChannel, User, GuildMember } from "discord.js";
 import { EmbedType, IEmbedOptionsField, resolveGuildChannel, resolveGuildMember, IEmbed } from "@utils/utils";

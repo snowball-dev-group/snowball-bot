@@ -1,4 +1,4 @@
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Plugin } from "../plugin";
 import { Message, Guild, TextChannel, GuildMember, User } from "discord.js";
 import { command } from "@utils/help";

@@ -1,10 +1,10 @@
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Plugin } from "../plugin";
 import { Message, TextChannel } from "discord.js";
 import { getDB } from "@utils/db";
 import { convertNumbers } from "@utils/letters";
 import { getMessageMember, resolveEmojiMap } from "@utils/utils";
-import { localizeForGuild, extendAndBind } from "@utils/ez-i18n";
+import { localizeForGuild, extendAndAssign } from "@utils/ez-i18n";
 import * as logger from "loggy";
 
 const DEFAULT_TABLE_NAME = "count";
@@ -106,7 +106,7 @@ export default class Count extends Plugin implements IModule {
 
 		this._log("info", "[init] Extending locales and binding ownership...");
 
-		this._pruneI18nFunc = await extendAndBind(
+		this._pruneI18nFunc = await extendAndAssign(
 			[__dirname, "i18n"],
 			this.signature
 		);

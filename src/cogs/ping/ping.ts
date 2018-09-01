@@ -1,4 +1,4 @@
-import { IModule } from "@sb-types/ModuleLoader/ModuleLoader";
+import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Plugin } from "@cogs/plugin";
 import { command } from "@utils/help";
 import MessagesFlows, { IMessageFlowContext, IPublicFlowCommand } from "../cores/messagesFlows";
