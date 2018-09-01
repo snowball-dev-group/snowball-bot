@@ -1,18 +1,18 @@
-import * as path from "path";
-import * as fs from "mz/fs";
-import * as micromatch from "micromatch";
-import * as Types from "@sb-types/Types";
 import * as Interfaces from "@sb-types/Localizer/HumanizerInterfaces";
-import LocalizerParsersCollection from "@sb-types/Localizer/LocalizerParsersCollection";
 import LocalizerParser from "@sb-types/Localizer/LocalizerParser";
+import LocalizerParsersCollection from "@sb-types/Localizer/LocalizerParsersCollection";
 import LocalizerJSONParser from "@sb-types/Localizer/parsers/JSONParser";
+import * as Types from "@sb-types/Types";
 import * as logger from "loggy";
+import * as micromatch from "micromatch";
+import * as fs from "mz/fs";
+import * as path from "path";
 
 const PATH_SEP_LENGTH = path.sep.length;
 
 export class LocalizerFileLoader {
 	private readonly _log: logger.ILogFunction;
-	private _parsersCollection: LocalizerParsersCollection;
+	private readonly _parsersCollection: LocalizerParsersCollection;
 
 	public get parsersCollection(): LocalizerParsersCollection {
 		return this._parsersCollection;
