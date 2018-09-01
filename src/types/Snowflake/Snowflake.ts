@@ -14,15 +14,16 @@ interface IFlakeIdOptions {
  * @see https://github.com/s-yadav/FlakeId
  */
 export class FlakeId {
+	private readonly _machineId: string;
+	private readonly _timeOffset: number;
 	private _seq: number;
-	private _machineId: string;
-	private _timeOffset: number;
 	private _lastTime: number;
 
 	constructor(opts?: IFlakeIdOptions) {
-		const options = opts || {
+		const options = {
 			machineId: 0,
-			timeOffset: 0
+			timeOffset: 0,
+			...opts
 		};
 
 		this._seq = 0;
