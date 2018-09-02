@@ -7,7 +7,8 @@ RUN apk add --update git && \
 
 WORKDIR /opt/app
 
-COPY package{,-lock}.json /opt/app/
+COPY package.json /opt/app/
+COPY package-lock.json /opt/app
 
 RUN yarn install --production
 
