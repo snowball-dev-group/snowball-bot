@@ -121,15 +121,18 @@ export default class Profiles extends Plugin implements ModuleLoaderInterfaces.I
 					$snowball.captureException(err, { extra: details.messageToExtra(err) });
 				}
 			},
-			"presenceUpdate": async (oldMember: djs.GuildMember, newMember: djs.GuildMember) => {
+			"presenceUpdate": async (oldPresence: djs.Presence, newPresence: djs.Presence) => {
 				try {
-					await this.onPresenсeUpdate(oldMember, newMember);
+					await this.onPresenсeUpdate(oldPresence, newPresence);
 				} catch (err) {
 					this.log("err", "Error handling user presence update", err);
+
+					const oldMember = oldPresence.member!;
+
 					$snowball.captureException(err, {
 						extra: {
-							oldMember: details.memberToExtra(oldMember),
-							newMember: details.memberToExtra(newMember),
+							oldPresence: oldPresence,
+							newPresence: newPresence,
 							guild: details.guildToExtra(oldMember.guild)
 						}
 					});
@@ -167,23 +170,40 @@ export default class Profiles extends Plugin implements ModuleLoaderInterfaces.I
 		// }
 	}
 
-	private async onPresenсeUpdate(old: djs.GuildMember, member: djs.GuildMember) {
-		const profile = await this.getOrCreateProfile(member, member.guild);
+	private async onPresenсeUpdate(oldPresence: djs.Presence, newPresence: djs.Presence) {
+		const member = newPresence.member;
 
-		if (old.presence.status !== member.presence.status) {
-			if (old.presence.activity && member.presence.activity) {
-				if (old.presence.activity.equals(member.presence.activity)) {
-					return; // nothing changed
-				}
-			}
-		} else {
-			if (old.presence.activity && member.presence.activity && old.presence.activity.equals(member.presence.activity)) {
-				return; // game not changed ?
-			}
+		if (!member) {
+			this.log("warn", `Presence update event for unknown member (user ${newPresence.user.id})`);
+
+			return;
 		}
+
+		if (
+			!Profiles._isStatusChanged(oldPresence, newPresence) &&
+			!Profiles._isPresenceChanged(oldPresence, newPresence)
+		) {
+			return;
+		}
+
+		const profile = await this.getOrCreateProfile(member, member.guild);
 
 		profile.status_changed = (new Date()).toISOString();
 		await this.updateProfile(profile);
+	}
+
+	private static _isStatusChanged(oldPresence: djs.Presence, newPresence: djs.Presence) {
+		return oldPresence.status !== newPresence.status;
+	}
+
+	private static _isPresenceChanged(oldPresence: djs.Presence, newPresence: djs.Presence) {
+		if (oldPresence.activity && newPresence.activity) {
+			if (oldPresence.activity.equals(newPresence.activity)) {
+				return false; // game not changed ?
+			}
+		}
+
+		return true;
 	}
 
 	// =====================================
