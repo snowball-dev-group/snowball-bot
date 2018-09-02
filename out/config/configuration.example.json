@@ -244,8 +244,8 @@
     "autoLoad": ["PrefixAll", "MessagesFlows", "prefixAllPlugin", "ping", "eval", "whitelist", "setLanguage", "modTools_archive", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "guilds", "verificationhandler", "streamNotifications", "fl", "premiumControl"],
     "botOwner": "80351110224678912",
     "localizerOptions": {
-        "languages": ["ru-RU", "en-US", "ru-UFL", "uk-UA", "be-BY", "fr-FR", "it-IT"],
-        "source_language": "ru-RU",
+        "languages": ["en-US.yaml"],
+        "source_language": "en-US",
         "default_language": "en-US",
         "directory": "./languages/",
         "disable_coverage_log": true
