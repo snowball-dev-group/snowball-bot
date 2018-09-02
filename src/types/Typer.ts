@@ -46,6 +46,10 @@ export interface ISchemaObject {
 	 * If `type` is set to `string`, checks if `regexp` test not fails
 	 */
 	regexp?: RegExp;
+	/**
+	 * If value is optional, but requires other key to be set then
+	 */
+	eitherRequired?: KeysOfAny;
 }
 
 /**
@@ -83,8 +87,14 @@ export interface ITypeErrorInvalidInfo {
 	isNotArray?: boolean;
 	isNaN?: boolean;
 	isRegExpFailed?: boolean;
+	eitherRequired?: {
+		parent?: any;
+		key: KeysOfAny;
+	};
 	schemaRef: ISchemaObject;
 }
+
+type KeysOfAny = keyof any | Array<keyof any>;
 
 /**
  * Class of TyperError: Error that Typer throws once one of tests fails
@@ -135,7 +145,7 @@ export class Typer {
 	 * @param val Value
 	 * @param path Path of object
 	 */
-	public static checkValueBySchema(schema: ISchemaObject, val: any, path: string) {
+	public static checkValueBySchema(schema: ISchemaObject, val: any, path: string, parent: any) {
 		// preparing
 		if (Typer.isUndefined(schema.optional)) {
 			schema.optional = false;
@@ -150,7 +160,52 @@ export class Typer {
 					schemaRef: schema
 				});
 			} else {
-				// -> Optional, skipping futher checks
+				// => Optional, check if either key persists
+
+				if (parent != null) {
+					const eitherRequired = schema.eitherRequired;
+
+					if (!Typer.isUndefined(eitherRequired)) {
+						if (Array.isArray(eitherRequired)) {
+							for (let i = 0, l = eitherRequired.length; i < l; i++) {
+								if (parent[eitherRequired[i]]) {
+									return;
+								}
+							}
+
+							throw new TyperError(
+								`Either value of this or ${
+									eitherRequired
+										.map(prop => prop.toString())
+										.join("/")
+								} property must be set`,
+								path, {
+									eitherRequired: {
+										parent,
+										key: eitherRequired.slice()
+									},
+									schemaRef: schema
+								}
+							);
+						}
+
+						if (parent[eitherRequired]) {
+							return;
+						}
+
+						throw new TyperError(
+							`Either value of this or ${eitherRequired.toString()} property must be set`,
+							path, {
+								eitherRequired: {
+									parent,
+									key: eitherRequired
+								},
+								schemaRef: schema
+							}
+						);
+					}
+				}
+
 				return;
 			}
 		}
@@ -235,7 +290,7 @@ export class Typer {
 		// => => Checking if `isArray && schemaInfo.elementSchema` but `obj[*]` is not matches `schemaInfo.elementSchema`
 		if (schema.isArray && schema.elementSchema) {
 			for (const o in val) {
-				Typer.checkValueBySchema(schema.elementSchema, val[o], `${path}[${o}]`);
+				Typer.checkValueBySchema(schema.elementSchema, val[o], `${path}[${o}]`, val);
 			}
 		} else if (schema.isObject && schema.schema) {
 			Typer.checkObjectBySchema(schema.schema, val, `${path}`);
@@ -245,7 +300,7 @@ export class Typer {
 	public static checkObjectBySchema(schema: ISchema, obj: object, deepPath: string = "obj") {
 		for (const property in schema) {
 			const propSchema = schema[property]!;
-			Typer.checkValueBySchema(propSchema, obj[property], `${deepPath}.${property}`);
+			Typer.checkValueBySchema(propSchema, obj[property], `${deepPath}.${property}`, obj);
 		}
 	}
 }
