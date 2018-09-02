@@ -90,6 +90,7 @@ export class Localizer {
 			}
 
 			this._log("warn", "Only default language specified. Default language will be set as source language");
+			opts.sourceLanguage = opts.defaultLanguage;
 		}
 
 		// killing console spam about no translations???
