@@ -217,7 +217,7 @@ export class Localizer {
 		} catch (err) {
 			this._log("err", "Error at initializing localizer", err);
 
-			return;
+			throw err;
 		}
 
 		if (!this._langsMap[this._opts.sourceLanguage]) {
