@@ -1,6 +1,7 @@
 import * as UserPreferences from "@utils/userPreferences";
 import * as GuildPreferences from "@utils/guildPreferences";
 import * as utils from "@utils/utils";
+import * as getLogger from "loggy";
 import { GuildMember, User, Guild } from "discord.js";
 import { IFormatMessageVariables } from "@sb-types/Localizer/HumanizerInterfaces";
 import { IHumanizerOptionsOverrides, Unit } from "@sb-types/Localizer/Humanizer";
@@ -9,6 +10,7 @@ import { intlAcceptsTimezone } from "@utils/extensions";
 import { DateTime } from "luxon";
 
 export type UserIdentify = User | GuildMember;
+const LOG = getLogger("Utils:EZ-I18N");
 const PREFERENCE_USER_LANGUAGE = ":language";
 const PREFERENCE_USER_TIMEZONE = ":timezone";
 const PREFERENCE_GUILD_LANGUAGE = ":language";
@@ -108,6 +110,7 @@ export async function getUserLanguage(user: UserIdentify) {
 
 		return getGuildLanguage(user.guild);
 	}
+
 	const cached = usersCache[user.id];
 
 	return cached ? cached : forceUserLanguageUpdate(user);
@@ -124,7 +127,7 @@ export async function getUserTimezone(user: UserIdentify) {
 // #region   Force Updates
 
 export async function forceUserLanguageUpdate(user: UserIdentify): Promise<string> {
-	const preferredLanguage: string | undefined = await UserPreferences.getPreferenceValue(user, PREFERENCE_USER_LANGUAGE);
+	let preferredLanguage: string | undefined = await UserPreferences.getPreferenceValue(user, PREFERENCE_USER_LANGUAGE);
 	if (!preferredLanguage) {
 		// user has no language set
 		// let set it to the current guilds language
@@ -141,6 +144,15 @@ export async function forceUserLanguageUpdate(user: UserIdentify): Promise<strin
 		await UserPreferences.setPreferenceValue(user, PREFERENCE_USER_LANGUAGE, DEFAULT_LANGUAGE);
 
 		return usersCache[user.id] = DEFAULT_LANGUAGE;
+	}
+
+	if (!$localizer.languageExists(preferredLanguage)) {
+		LOG(
+			"warn",
+			`Cannot find preferred language "${preferredLanguage}" of user ${user.id}, "${DEFAULT_LANGUAGE}" will be used instead`
+		);
+
+		preferredLanguage = DEFAULT_LANGUAGE;
 	}
 
 	return usersCache[user.id] = preferredLanguage;
@@ -231,11 +243,20 @@ export async function isGuildEnforceEnabled(guild: Guild) {
 // #region   Force Updates
 
 export async function forceGuildLanguageUpdate(guild: Guild): Promise<string> {
-	const guildLanguage = await GuildPreferences.getPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE);
+	let guildLanguage = await GuildPreferences.getPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE);
 	if (!guildLanguage) {
 		await GuildPreferences.setPreferenceValue(guild, PREFERENCE_GUILD_LANGUAGE, DEFAULT_LANGUAGE);
 
 		return guildsCache[guild.id] = DEFAULT_LANGUAGE;
+	}
+
+	if (!$localizer.languageExists(guildLanguage)) {
+		LOG(
+			"warn",
+			`Cannot find preferred language "${guildLanguage}" of guild ${guild.id}, "${DEFAULT_LANGUAGE}" will be used instead`
+		);
+
+		guildLanguage = DEFAULT_LANGUAGE;
 	}
 
 	return guildsCache[guild.id] = guildLanguage;
@@ -249,6 +270,7 @@ export async function forceGuildEnforceUpdate(guild: Guild): Promise<boolean> {
 
 		return guildEnforceCache[guild.id] = DEFAULT_ENFORCE_STATUS;
 	}
+
 	guildEnforceCache[guild.id] = enforcingStatus;
 
 	return enforcingStatus;
