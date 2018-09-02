@@ -612,14 +612,14 @@ export class Localizer {
 		// OwO
 
 		let defaultDefinition: Humanizing.IHumanizerLanguage = {
-			y: (years: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:YEARS", { years }),
-			mo: (months: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:MONTHS", { months }),
-			w: (weeks: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:WEEKS", { weeks }),
-			d: (days: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:DAYS", { days }),
-			h: (hours: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:HOURS", { hours }),
-			m: (minutes: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:MINUTES", { minutes }),
-			s: (seconds: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:SECONDS", { seconds }),
-			ms: (milliseconds: number) => this.getFormattedString(lang, "@HUMANIZE:DURATION:MILLISECONDS", { milliseconds })
+			y: (years: number) => this.getFormattedString(lang, "+HUMANIZE:DURATION:YEARS", { years }),
+			mo: (months: number) => this.getFormattedString(lang, "+HUMANIZE:DURATION:MONTHS", { months }),
+			w: (weeks: number) => this.getFormattedString(lang, "+HUMANIZE:DURATION:WEEKS", { weeks }),
+			d: (days: number) => this.getFormattedString(lang, "+HUMANIZE:DURATION:DAYS", { days }),
+			h: (hours: number) => this.getFormattedString(lang, "+HUMANIZE:DURATION:HOURS", { hours }),
+			m: (minutes: number) => this.getFormattedString(lang, "+HUMANIZE:DURATION:MINUTES", { minutes }),
+			s: (seconds: number) => this.getFormattedString(lang, "+HUMANIZE:DURATION:SECONDS", { seconds }),
+			ms: (milliseconds: number) => this.getFormattedString(lang, "+HUMANIZE:DURATION:MILLISECONDS", { milliseconds })
 		};
 
 		if (languageOverride) {
