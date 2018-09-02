@@ -71,7 +71,10 @@ type TypeName<T> =
  * Mapped type to make schemas based on interfaces
  */
 export type InterfaceSchema<T> = {
-	[P in keyof T]-?: ISchemaObject & { type: TypeName<T[P]> | "any" }
+	[P in keyof T]-?: 
+		ISchemaObject &
+		{ type: TypeName<T[P]> | "any" } &
+		{ eitherRequired?: keyof T }
 };
 
 /**
