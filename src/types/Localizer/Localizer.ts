@@ -23,15 +23,16 @@ export interface ILocalizerOptions {
 
 export const SCHEMA_LOCALIZEROPTIONS: InterfaceSchema<ILocalizerOptions> = {
 	"languages": {
-		type: "object", isArray: true,
+		type: "object",
+		isArray: true,
 		elementSchema: { type: "string" }
 	},
-	"sourceLanguage": { type: "string" },
-	"defaultLanguage": { type: "string" },
+	"sourceLanguage": { type: "string", optional: true, eitherRequired: "defaultLanguage" },
+	"defaultLanguage": { type: "string", optional: true, eitherRequired: "sourceLanguage" },
 	"directory": { type: "string" },
 	"disableCoverageLog": { type: "boolean", optional: true },
 	"extendOverride": { type: "boolean", optional: true },
-	"parsersPreset": { type: "object", isArray: true }
+	"parsersPreset": { type: "object", isArray: true, optional: true }
 };
 
 const META_KEYS = ["+NAME", "+COUNTRY"];
