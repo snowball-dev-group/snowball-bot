@@ -16,7 +16,7 @@ export interface ILocalizerOptions {
 	sourceLanguage: string;
 	defaultLanguage: string;
 	directory: string;
-	disableConverageLog: boolean | string[];
+	disableCoverageLog: boolean | string[];
 	extendOverride?: boolean;
 	parsersPreset?: LocalizerParser[];
 }
@@ -95,13 +95,13 @@ export class Localizer {
 			missingTranslation: "ignore"
 		});
 
-		const { defaultLanguage, sourceLanguage, disableConverageLog } = opts;
+		const { defaultLanguage, sourceLanguage, disableCoverageLog } = opts;
 
 		{
-			const covgLogDisabledType = typeof disableConverageLog;
+			const covgLogDisabledType = typeof disableCoverageLog;
 
 			if (covgLogDisabledType === "object") {
-				if (!Array.isArray(disableConverageLog)) {
+				if (!Array.isArray(disableCoverageLog)) {
 					throw new Error("`disable_coverage_log` should be either array or boolean");
 				}
 
@@ -111,10 +111,10 @@ export class Localizer {
 					possibleLanguages.push(defaultLanguage);
 				}
 
-				opts.disableConverageLog = disableConverageLog
+				opts.disableCoverageLog = disableCoverageLog
 					.filter(possibleLanguages.includes);
 			} else if (covgLogDisabledType === "boolean") {
-				this._coverageDisabledGlobally = opts.disableConverageLog;
+				this._coverageDisabledGlobally = opts.disableCoverageLog;
 			} else {
 				throw new Error("`disable_coverage_log` should be either array or boolean");
 			}
@@ -334,9 +334,9 @@ export class Localizer {
 	private _isCoverageDisabledFor(langName?: string) {
 		return this._coverageDisabledGlobally || (this._coverageDisablingSet ? (// is set?
 			langName ? (// do we at all have lang name?
-				this._opts.disableConverageLog && // it may be set as false here
+				this._opts.disableCoverageLog && // it may be set as false here
 				// if not false - searching in array
-				((<string[]> this._opts.disableConverageLog).includes(langName))
+				((<string[]> this._opts.disableCoverageLog).includes(langName))
 			) : false // if not - we don't need to log it
 		) : false); // if not set - false
 	}
