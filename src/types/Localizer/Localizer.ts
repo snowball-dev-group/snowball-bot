@@ -204,6 +204,8 @@ export class Localizer {
 
 				// Creating humanizer
 				this._humanizersMap[langName] = this.createCustomHumanizer(langName);
+
+				this._log("ok", `Loaded "${langName}" language (file "${langFileName}")`);
 			}
 
 			this._log("info", "Requesting source language");
