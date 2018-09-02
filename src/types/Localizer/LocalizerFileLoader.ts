@@ -21,6 +21,10 @@ export class LocalizerFileLoader {
 	constructor(name: string, parsersPreset?: LocalizerParser[]) {
 		this._log = logger(name);
 
+		this._parsersCollection = new LocalizerParsersCollection(
+			`${name}:Parsers`
+		);
+
 		if (parsersPreset != null) {
 			for (let i = 0, l = parsersPreset.length; i < l; i++) {
 				const parser = parsersPreset[i];
