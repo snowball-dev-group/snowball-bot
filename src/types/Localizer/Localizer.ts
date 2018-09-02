@@ -82,12 +82,12 @@ export class Localizer {
 	constructor(name: string, opts: ILocalizerOptions) {
 		this._log = getLogger(name);
 
-		if (!opts.defaultLanguage) {
-			opts.defaultLanguage = this._sourceLang;
-		} else if (opts.defaultLanguage !== opts.sourceLanguage) {
-			this._fallbackQueue.push(
-				opts.defaultLanguage
-			);
+		if (!opts.sourceLanguage) {
+			if (!opts.defaultLanguage) {
+				throw new Error("No source language specified");
+			}
+
+			this._log("warn", "Only default language specified. Default language will be set as source language");
 		}
 
 		// killing console spam about no translations???
@@ -95,7 +95,17 @@ export class Localizer {
 			missingTranslation: "ignore"
 		});
 
-		const { defaultLanguage, sourceLanguage, disableCoverageLog } = opts;
+		const { sourceLanguage, disableCoverageLog } = opts;
+		let { defaultLanguage } = opts;
+
+		if (!opts.defaultLanguage) {
+			defaultLanguage =
+				opts.defaultLanguage = this._sourceLang;
+		} else if (defaultLanguage !== sourceLanguage) {
+			this._fallbackQueue.push(
+				opts.defaultLanguage
+			);
+		}
 
 		if (disableCoverageLog != null) {
 			const covgLogDisabledType = typeof disableCoverageLog;
@@ -179,7 +189,6 @@ export class Localizer {
 									langFileName
 								)
 							);
-
 				} catch (err) {
 					this._log("err", "Could not read", langFileName, "language file", err);
 					continue;
@@ -209,9 +218,9 @@ export class Localizer {
 			}
 
 			this._log("info", "Requesting source language");
-			const defaultLanguage = this._langsMap[this._opts.sourceLanguage];
-			if (!defaultLanguage) {
-				throw new Error("Source language not found");
+			const sourceLanguage = this._langsMap[this._opts.sourceLanguage];
+			if (!sourceLanguage) {
+				throw new Error(`Source language ("${this._opts.sourceLanguage}") not found`);
 			}
 
 			this._log("info", "Calculating language files coverages");
