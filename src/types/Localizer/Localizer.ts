@@ -84,7 +84,7 @@ export class Localizer {
 
 		if (!opts.sourceLanguage) {
 			if (!opts.defaultLanguage) {
-				throw new Error("No source language specified");
+				throw new Error("No source language specified in options");
 			}
 
 			this._log("warn", "Only default language specified. Default language will be set as source language");
