@@ -61,6 +61,8 @@ export class LocalizerFileLoader {
 
 		const content = await fs.readFile(fileName, { "encoding": "utf8" });
 
+		this._log("info", `Parsing "${fileName}" with "${parser.name}"...`);
+
 		const parsed = parser.parse(content);
 
 		if (typeof parsed !== "object") {
@@ -78,7 +80,9 @@ export class LocalizerFileLoader {
 	 * @param throwOnError Throw error if reading of file in directory fails
 	 */
 	public async directoryToLanguagesTree(directory: string | string[], toLangCode?: LangFileToCodeFunction, filter?: FilterType, throwOnError = false) {
-		if (Array.isArray(directory)) { directory = path.join(...directory); }
+		if (Array.isArray(directory)) {
+			directory = path.join(...directory);
+		}
 
 		let fileNames = await this.recursiveReadDirectory(directory);
 
@@ -127,7 +131,9 @@ export class LocalizerFileLoader {
 	 * @param recursiveCall Is this recursive call? If you set this to true, you'll get `dirName` included
 	 */
 	private async recursiveReadDirectory(dirName: string | string[], recursiveCall = false): Promise<string[]> {
-		if (Array.isArray(dirName)) { dirName = path.join(...dirName); }
+		if (Array.isArray(dirName)) {
+			dirName = path.join(...dirName);
+		}
 
 		const result: string[] = [];
 
