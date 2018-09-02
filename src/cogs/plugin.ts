@@ -113,7 +113,7 @@ export interface IEventsMap <T> {
 	/**
 	 * Emitted whenever a guild member's presence changes, or they change one of their details.
 	 */
-	presenceUpdate?: ((oldPresence: Presence, newPresence: Presence) => T) | Array<((oldPresence: Presence, newPresence: Presence) => T)>;
+	presenceUpdate?: ((oldPresence: Presence | undefined, newPresence: Presence) => T) | Array<((oldPresence: Presence | undefined, newPresence: Presence) => T)>;
 	/**
 	 * Emitted whenever the client tries to reconnect to the WebSocket.
 	 */
