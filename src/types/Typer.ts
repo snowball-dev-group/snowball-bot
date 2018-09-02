@@ -2,49 +2,49 @@
  * Schema for object, contains all parametrs that Typer should check
  */
 export interface ISchemaObject {
-    /**
-     * Is element optional and could be undefined?
-     */
+	/**
+	 * Is element optional and could be undefined?
+	 */
 	optional?: boolean;
-    /**
-     * Type of object (`typeof`/`any`)
-     * Use `any` to skip all type checks
-     */
+	/**
+	 * Type of object (`typeof`/`any`)
+	 * Use `any` to skip all type checks
+	 */
 	type: string;
-    /**
-     * `true` if object by this property is an array
-     * Will be auto-determinated based on `instanceOf` (if present)
-     */
+	/**
+	 * `true` if object by this property is an array
+	 * Will be auto-determinated based on `instanceOf` (if present)
+	 */
 	isArray?: boolean;
-    /**
-     * `true` if object by this property is a object
-     * Will be automatically set to `true` if `isArray` = `true`
-     */
+	/**
+	 * `true` if object by this property is a object
+	 * Will be automatically set to `true` if `isArray` = `true`
+	 */
 	isObject?: boolean;
-    /**
-     * `true` if object by this property is a number
-     * Will be automatically set to `false` if `isArray` = `true` or `isObject` = `true`
-     */
+	/**
+	 * `true` if object by this property is a number
+	 * Will be automatically set to `false` if `isArray` = `true` or `isObject` = `true`
+	 */
 	isNumber?: boolean;
-    /**
-     * Additional `instanceof` check
-     */
+	/**
+	 * Additional `instanceof` check
+	 */
 	instanceOf?: any;
-    /**
-     * If `isNumber` is set to `true`, then checks if number is NaN
-     */
+	/**
+	 * If `isNumber` is set to `true`, then checks if number is NaN
+	 */
 	notNaN?: boolean;
-    /**
-     * If `isObject` is set to `true`, then checks if property contains valid object
-     */
+	/**
+	 * If `isObject` is set to `true`, then checks if property contains valid object
+	 */
 	schema?: ISchema;
-    /**
-     * If `isArray` is set to `true`, then checks if every element in array matches schema
-     */
+	/**
+	 * If `isArray` is set to `true`, then checks if every element in array matches schema
+	 */
 	elementSchema?: ISchemaObject;
-    /**
-     * If `type` is set to `string`, checks if `regexp` test not fails
-     */
+	/**
+	 * If `type` is set to `string`, checks if `regexp` test not fails
+	 */
 	regexp?: RegExp;
 }
 
@@ -52,8 +52,23 @@ export interface ISchemaObject {
  * Recursive schema, hashmap-like
  */
 export interface ISchema {
-	[property: string]: ISchemaObject;
+	[property: string]: ISchemaObject | undefined;
 }
+
+type TypeName<T> =
+	T extends string ? "string" :
+	T extends number ? "number" :
+	T extends boolean ? "boolean" :
+	// T extends undefined ? "undefined" :
+	T extends Function ? "function" :
+	"object";
+
+/**
+ * Mapped type to make schemas based on interfaces
+ */
+export type InterfaceSchema<T> = {
+	[P in keyof T]-?: ISchemaObject & { type: TypeName<T[P]> | "any" }
+};
 
 /**
  * Details about what Typer disliked in your value
@@ -75,9 +90,9 @@ export interface ITypeErrorInvalidInfo {
  * Class of TyperError: Error that Typer throws once one of tests fails
  */
 export class TyperError extends Error {
-    /**
-     * Prefix for Typer errors
-     */
+	/**
+	 * Prefix for Typer errors
+	 */
 	public static errorPrefix = "Typer check failed:";
 
 	constructor(message: string, public readonly path: string, public readonly invalidInfo: ITypeErrorInvalidInfo) {
@@ -90,36 +105,36 @@ export class TyperError extends Error {
  * It's recommended for user-input data, like configs
  */
 export class Typer {
-    /**
-     * Checks if `obj` is undefined or null
-     */
+	/**
+	 * Checks if `obj` is undefined or null
+	 */
 	public static isUndefined(obj: any): obj is undefined | null {
 		return typeof obj === "undefined" || obj === null;
 	}
 
-    /**
-     * Alias to `Array.isArray`
-     * @deprecated Use `Array.isArray` instead
-     */
+	/**
+	 * Alias to `Array.isArray`
+	 * @deprecated Use `Array.isArray` instead
+	 */
 	public static isArray(obj: any): obj is any[] {
 		return Array.isArray(obj);
 	}
 
-    /**
-     * Checks if passed `obj` is Object
-     * Alias to `typeof obj === "object"`
-     */
+	/**
+	 * Checks if passed `obj` is Object
+	 * Alias to `typeof obj === "object"`
+	 */
 	public static isObject(obj: any): obj is object {
 		return typeof obj === "object";
 	}
 
-    /**
-     * Checks selected value by schema
-     * Throws TyperError if value contains Errors
-     * @param schema Schema
-     * @param val Value
-     * @param path Path of object
-     */
+	/**
+	 * Checks selected value by schema
+	 * Throws TyperError if value contains Errors
+	 * @param schema Schema
+	 * @param val Value
+	 * @param path Path of object
+	 */
 	public static checkValueBySchema(schema: ISchemaObject, val: any, path: string) {
 		// preparing
 		if (Typer.isUndefined(schema.optional)) {
@@ -229,7 +244,7 @@ export class Typer {
 
 	public static checkObjectBySchema(schema: ISchema, obj: object, deepPath: string = "obj") {
 		for (const property in schema) {
-			const propSchema = schema[property];
+			const propSchema = schema[property]!;
 			Typer.checkValueBySchema(propSchema, obj[property], `${deepPath}.${property}`);
 		}
 	}
