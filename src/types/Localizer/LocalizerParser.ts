@@ -33,7 +33,7 @@ export abstract class LocalizerParser {
 			
 			const type = typeof val;
 
-			if (!val || type === "object") {
+			if (val == null || type === "object") {
 				throw new Error(`Value for "${key}" has invalid type: ${type}`);
 			}
 
