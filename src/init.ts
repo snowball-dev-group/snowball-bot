@@ -1,8 +1,8 @@
-import { SnowballBot, IBotConfig, IInternalBotConfig } from "./types/SnowballBot";
 import { join as pathJoin } from "path";
 import * as cluster from "cluster";
 import * as logger from "loggy";
 import * as Bluebird from "bluebird";
+import { IBotConfig, IInternalBotConfig } from "@sb-types/SnowballBot";
 
 const CORE_INFO = {
 	"version": "0.9.9986"
@@ -29,9 +29,17 @@ const EXIT_ABORT_SIGNALS_REQUIRED = 3;
 // After such time signal will not be counted anymore
 const EXIT_ABORT_SIGNALS_TTL = 3000; // ms
 
+// tslint:disable-next-line:whitespace
+let SB: typeof import("@sb-types/SnowballBot");
+
 (async () => {
+
 	let log = logger(":init");
 	logger.setAsync(false);
+
+	prepareAliases(log);
+
+	SB = require("@sb-types/SnowballBot");
 
 	let config: IBotConfig;
 	try {
@@ -243,7 +251,7 @@ async function initBot(log: logger.ILogFunction, config: IBotConfig, internalCon
 	await prepare(log);
 
 	log("info", "[Run] Initializing bot...");
-	const snowball = new SnowballBot(config, internalConfig);
+	const snowball = new SB.SnowballBot(config, internalConfig);
 
 	if (!config.ravenUrl) {
 		log("info", "[Sentry] Want beautiful reports for bot errors?");
@@ -344,8 +352,6 @@ async function initBot(log: logger.ILogFunction, config: IBotConfig, internalCon
 }
 
 async function prepare(log: logger.ILogFunction) {
-	prepareAliases(log);
-
 	setupBluebird(log);
 }
 
