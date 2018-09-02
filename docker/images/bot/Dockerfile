@@ -15,6 +15,6 @@ RUN yarn install --production
 RUN yarn add full-icu
 ENV NODE_ICU_DATA node_modules/full-icu
 
-COPY . /opt/
+COPY . /opt/app
 
 CMD node --trace-warnings --use_strict init.js
