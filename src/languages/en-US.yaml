@@ -693,6 +693,9 @@ FL_ERR_NOTTEXTCHANNEL: "The command doesn't work here."
 # Used as a footer text for embed with fixed message
 FL_MESSAGE_INREPLY: "Keyboard layout changed by {botname}"
 
+# Used as a title of the “fl” command
+FL_META_NAME: "QWERTY Layout Switch"
+
 # Sent when command called without any arguments
 FSTHINGS_CHOOSE_NOROLENAME: |-
   **The message doesn't contain a role name or its mention**.
@@ -1303,7 +1306,7 @@ GUILDS_MEMBERSCONTROL_UNBANNED: "{members, plural, =0 {No members were} one {# m
 # {username} (string) — display name of the user admin taken action on
 GUILDS_MEMBERSCONTROL_UNBANNEDITEM: "{username} unbanned in the guild."
 
-# USed as title of the “guild create” subcommand
+# Used as title of the “guild create” subcommand
 GUILDS_META_CREATE: "Create Guild"
 
 GUILDS_META_CREATE_ARG0_DESC: "name of a new guild"
