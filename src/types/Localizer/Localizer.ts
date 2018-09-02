@@ -1,6 +1,6 @@
 import "any-promise/register/bluebird";
 import * as Humanizing from "@sb-types/Localizer/Humanizer";
-import { ISchema } from "@sb-types/Typer";
+import { InterfaceSchema } from "@sb-types/Typer";
 import * as Types from "@sb-types/Types";
 import { ILogFunction } from "loggy";
 import * as path from "path";
@@ -21,15 +21,17 @@ export interface ILocalizerOptions {
 	parsersPreset?: LocalizerParser[];
 }
 
-export const SCHEMA_LOCALIZEROPTIONS: ISchema = {
+export const SCHEMA_LOCALIZEROPTIONS: InterfaceSchema<ILocalizerOptions> = {
 	"languages": {
 		type: "object", isArray: true,
 		elementSchema: { type: "string" }
 	},
-	"source_language": { type: "string" },
-	"default_language": { type: "string" },
+	"sourceLanguage": { type: "string" },
+	"defaultLanguage": { type: "string" },
 	"directory": { type: "string" },
-	"disable_coverage_log": { type: "boolean", optional: true }
+	"disableCoverageLog": { type: "boolean", optional: true },
+	"extendOverride": { type: "boolean", optional: true },
+	"parsersPreset": { type: "object", isArray: true }
 };
 
 const META_KEYS = ["+NAME", "+COUNTRY"];
