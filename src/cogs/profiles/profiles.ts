@@ -121,19 +121,24 @@ export default class Profiles extends Plugin implements ModuleLoaderInterfaces.I
 					$snowball.captureException(err, { extra: details.messageToExtra(err) });
 				}
 			},
-			"presenceUpdate": async (oldPresence: djs.Presence, newPresence: djs.Presence) => {
+			"presenceUpdate": async (oldPresence: djs.Presence | undefined, newPresence: djs.Presence) => {
 				try {
 					await this.onPresenсeUpdate(oldPresence, newPresence);
 				} catch (err) {
 					this.log("err", "Error handling user presence update", err);
 
-					const oldMember = oldPresence.member!;
+					const additionalInfo = newPresence.member ? {
+							member: details.memberToExtra(newPresence.member),
+							guild: details.guildToExtra(newPresence.member.guild)
+						} : {
+							user: details.userToExtra(newPresence.user)
+						};
 
 					$snowball.captureException(err, {
 						extra: {
 							oldPresence: oldPresence,
 							newPresence: newPresence,
-							guild: details.guildToExtra(oldMember.guild)
+							...additionalInfo
 						}
 					});
 				}
@@ -170,7 +175,7 @@ export default class Profiles extends Plugin implements ModuleLoaderInterfaces.I
 		// }
 	}
 
-	private async onPresenсeUpdate(oldPresence: djs.Presence, newPresence: djs.Presence) {
+	private async onPresenсeUpdate(oldPresence: djs.Presence | undefined, newPresence: djs.Presence) {
 		const member = newPresence.member;
 
 		if (!member) {
@@ -179,16 +184,19 @@ export default class Profiles extends Plugin implements ModuleLoaderInterfaces.I
 			return;
 		}
 
-		if (
-			!Profiles._isStatusChanged(oldPresence, newPresence) &&
-			!Profiles._isPresenceChanged(oldPresence, newPresence)
-		) {
-			return;
+		if (oldPresence) {
+			if (
+				!Profiles._isStatusChanged(oldPresence, newPresence) &&
+				!Profiles._isPresenceChanged(oldPresence, newPresence)
+			) {
+				return;
+			}
 		}
 
 		const profile = await this.getOrCreateProfile(member, member.guild);
 
 		profile.status_changed = (new Date()).toISOString();
+
 		await this.updateProfile(profile);
 	}
 
