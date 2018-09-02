@@ -1,4 +1,4 @@
-import { Message, Channel, Emoji, Guild, User, GuildMember, Snowflake, Collection, MessageReaction, Role } from "discord.js";
+import { Message, Channel, Emoji, Guild, User, GuildMember, Snowflake, Collection, MessageReaction, Role, Presence, VoiceState } from "discord.js";
 
 export interface IEventsMap <T> {
 	/**
@@ -113,7 +113,7 @@ export interface IEventsMap <T> {
 	/**
 	 * Emitted whenever a guild member's presence changes, or they change one of their details.
 	 */
-	presenceUpdate?: ((oldMember: GuildMember, newMember: GuildMember) => T) | Array<((oldMember: GuildMember, newMember: GuildMember) => T)>;
+	presenceUpdate?: ((oldPresence: Presence, newPresence: Presence) => T) | Array<((oldPresence: Presence, newPresence: Presence) => T)>;
 	/**
 	 * Emitted whenever the client tries to reconnect to the WebSocket.
 	 */
@@ -149,7 +149,7 @@ export interface IEventsMap <T> {
 	/**
 	 * Emitted whenever a user changes voice state - e.g. joins/leaves a channel, mutes/unmutes.
 	 */
-	voiceStateUpdate?: ((oldMember: GuildMember, newMember: GuildMember) => T) | Array<((oldMember: GuildMember, newMember: GuildMember) => T)>;
+	voiceStateUpdate?: ((oldState: VoiceState, newState: VoiceState) => T) | Array<((oldState: VoiceState, newState: VoiceState) => T)>;
 }
 
 export class Plugin {
