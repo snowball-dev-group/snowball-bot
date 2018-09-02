@@ -97,7 +97,7 @@ export class Localizer {
 
 		const { defaultLanguage, sourceLanguage, disableCoverageLog } = opts;
 
-		{
+		if (disableCoverageLog != null) {
 			const covgLogDisabledType = typeof disableCoverageLog;
 
 			if (covgLogDisabledType === "object") {
