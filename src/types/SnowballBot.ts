@@ -5,6 +5,7 @@ import * as djs from "discord.js";
 import * as logger from "loggy";
 import * as Raven from "raven";
 import { ISchema, Typer } from "./Typer";
+import { LocalizerYAMLParser } from "@sb-types/Localizer/parsers/YAMLParser";
 
 export interface IBotConfig {
 	/**
@@ -383,9 +384,18 @@ export class SnowballBot {
 	 * Creates, initializes, defines global variable of localizer
 	 */
 	public async prepareLocalizator() {
-		if (global["$localizer"]) { throw new Error("Localizer is already prepared"); }
+		if (global["$localizer"]) {
+			throw new Error("Localizer is already prepared");
+		}
 
-		const localizer = new Localization.Localizer(`${this._config.name}:Localizer`, this._config.localizerOptions);
+		const localizer = new Localization.Localizer(
+			`${this._config.name}:Localizer`,
+			this._config.localizerOptions
+		);
+
+		localizer.fileLoader.parsersCollection.addParser(
+			new LocalizerYAMLParser()
+		);
 
 		await localizer.init();
 
