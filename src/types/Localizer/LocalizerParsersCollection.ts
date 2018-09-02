@@ -4,16 +4,6 @@ import * as logger from "loggy";
 import * as shortid from "shortid";
 
 /**
- * Options for a new instance of Localizer Parsers Collection
- */
-interface ICollectionOptions {
-	/**
-	 * Name that will be used in logger
-	 */
-	name: string;
-}
-
-/**
  * A collection of parsers for Localizers.
  * 
  * Parsers used to read files of different formats
@@ -23,12 +13,12 @@ export class LocalizerParsersCollection {
 	private readonly _parserExtensions: WeakMap<LocalizerParser, string[]> = new WeakMap();
 	private readonly _log: logger.ILogFunction;
 
-	constructor(option: ICollectionOptions) {
-		if (!option.name) {
-			option.name = `${LocalizerParsersCollection.name}-${shortid()}`;
+	constructor(name?: string) {
+		if (!name) {
+			name = `${LocalizerParsersCollection.name}-${shortid()}`;
 		}
 
-		this._log = logger(option.name);
+		this._log = logger(name);
 	}
 
 	/**
