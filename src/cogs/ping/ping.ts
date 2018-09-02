@@ -5,6 +5,7 @@ import MessagesFlows, { IMessageFlowContext, IPublicFlowCommand } from "../cores
 import { getUserLanguage } from "@utils/ez-i18n";
 import * as getLogger from "loggy";
 import { getMessageMemberOrAuthor } from "@utils/utils";
+import { Message } from "discord.js";
 
 const ALLOWED_CMDS = ["ping", "ping_embed"];
 
@@ -59,7 +60,7 @@ class Ping extends Plugin implements IModule {
 
 		const startDate = Date.now();
 
-		await msg.channel.send(msgContent);
+		const pongMsg = <Message> await msg.channel.send(msgContent);
 
 		const ping = Date.now() - startDate;
 
@@ -72,7 +73,7 @@ class Ping extends Plugin implements IModule {
 
 		Ping._log("info", `Ping for sendMessage#embed to Channel#${msg.channel.id}: ${ping}ms`);
 
-		return msg.edit(isEmbed ? { embed: { description: pongStr } } : pongStr);
+		return pongMsg.edit(isEmbed ? { embed: { description: pongStr } } : pongStr);
 	}
 
 	public async unload() {
