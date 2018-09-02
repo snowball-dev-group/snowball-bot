@@ -65,6 +65,6 @@
         "build": "gulp"
     },
     "engines": {
-        "node": ">=9.3.0"
+        "node": ">=10.8.0"
     }
 }
