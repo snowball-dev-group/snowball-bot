@@ -1,7 +1,7 @@
 import { generateLocalizedEmbed, localizeForGuild, localizeForUser } from "@utils/ez-i18n";
 import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import { Plugin } from "../plugin";
-import { Message, Guild, Role, GuildMember, VoiceChannel, Collection } from "discord.js";
+import { Message, Guild, Role, GuildMember, VoiceChannel, Collection, VoiceState } from "discord.js";
 import { getDB } from "@utils/db";
 import { EmbedType, resolveGuildRole, resolveGuildChannel, getMessageMember } from "@utils/utils";
 import { isVerified, isInitializated as isVerifiedEnabled } from "@utils/verified";
@@ -76,7 +76,7 @@ class VoiceRole extends Plugin implements IModule {
 
 	constructor() {
 		super({
-			"voiceStateUpdate": (oldMember: GuildMember, newMember: GuildMember) => this._onVCUpdated(oldMember, newMember)
+			"voiceStateUpdate": (oldVoiceState: VoiceState, newVoiceState: VoiceState) => this._onVCUpdated(oldVoiceState, newVoiceState)
 		}, true);
 		this._log("info", "Loading 'VoiceRole' plugin");
 	}
@@ -215,26 +215,29 @@ class VoiceRole extends Plugin implements IModule {
 		}
 	}
 
-	private async _onVCUpdated(oldMember: GuildMember, newMember: GuildMember) {
-		if (isVerifiedEnabled() && !(await isVerified(newMember))) {
+	private async _onVCUpdated(oldVCState: VoiceState, newVCState: VoiceState) {
+		const member = newVCState.member;
+
+		if (isVerifiedEnabled() && !(await isVerified(member))) {
 			// not going to do anything if user isn't verified
 			return;
 		}
-		if (oldMember.voice.channel && newMember.voice.channel) {
-			if (oldMember.voice.channel.guild.id !== newMember.voice.channel.guild.id) {
+
+		if (oldVCState.channel && newVCState.channel) {
+			if (oldVCState.channel.guild.id !== newVCState.channel.guild.id) {
 				// moved from one server to another (╯°□°）╯︵ ┻━┻
 				// better not to wait this
-				this._doRemoveRoles(oldMember);
-				this._doGiveRoles(newMember);
+				this._doRemoveRoles(oldVCState);
+				this._doGiveRoles(newVCState);
 			} else {
 				// just moved from channel to channel on same server
-				this._doRemoveRoles(oldMember, newMember);
-				this._doGiveRoles(newMember);
+				this._doRemoveRoles(oldVCState, newVCState);
+				this._doGiveRoles(newVCState);
 			}
-		} else if (oldMember.voice.channel && !newMember.voice.channel) {
-			this._doRemoveRoles(oldMember);
-		} else if (!oldMember.voice.channel && newMember.voice.channel) {
-			this._doGiveRoles(newMember);
+		} else if (oldVCState.channel && !newVCState.channel) {
+			this._doRemoveRoles(oldVCState);
+		} else if (!oldVCState.channel && newVCState.channel) {
+			this._doGiveRoles(newVCState);
 		}
 	}
 
@@ -426,12 +429,17 @@ class VoiceRole extends Plugin implements IModule {
 		return;
 	}
 
-	private async _doGiveRoles(member: GuildMember) {
+	private async _doGiveRoles(voiceState: VoiceState) {
+		const member = voiceState.member;
+
 		const row = await this._getGuildRow(member.guild);
-		const specificRow = member.voice.channel ? await this._getSpecificRow(member.voice.channel) : undefined;
+
+		const vChannel = voiceState.channel;
+
+		const specificRow = vChannel ? await this._getSpecificRow(vChannel) : undefined;
 		if (!row && !specificRow) { return; }
 
-		if (row && member.voice.channel && row.voice_role !== "-") {
+		if (row && vChannel && row.voice_role !== "-") {
 			// we have row & user in voice channel
 			// let's check everything
 			if (member.guild.roles.has(row.voice_role)) {
@@ -439,9 +447,15 @@ class VoiceRole extends Plugin implements IModule {
 				// let's give it to user if he has not it
 				if (!member.roles.has(row.voice_role)) {
 					// yep, take this role, my dear
-					await member.roles.add(row.voice_role, await localizeForGuild(member.guild, "VOICEROLE_JOINED_VC", {
-						channelName: member.voice.channel.name
-					}));
+					await member.roles.add(
+						row.voice_role,
+						await localizeForGuild(
+							member.guild,
+							"VOICEROLE_JOINED_VC", {
+								channelName: vChannel.name
+							}
+						)
+					);
 				} // nop, you have this role, next time.. next time...
 			} else {
 				// guild has no our voice role
@@ -460,20 +474,29 @@ class VoiceRole extends Plugin implements IModule {
 				await this._deleteSpecificRow(specificRow);
 			} else if (!member.roles.has(specificRow.voice_role)) {
 				// dear, why don't you have this specific role?
-				await member.roles.add(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_ADDED", {
-					channelName: member.voice.channel!.name
-				}));
+				await member.roles.add(
+					specificRow.voice_role,
+					await localizeForGuild(
+						member.guild,
+						"VOICEROLE_SPECIFIC_ADDED", {
+							channelName: vChannel!.name
+						}
+					)
+				);
 			}
 		}
 	}
 
-	private async _doRemoveRoles(member: GuildMember, newMember?: GuildMember) {
+	private async _doRemoveRoles(voiceState: VoiceState, newVCState?: VoiceState) {
+		const member = voiceState.member;
+
 		const row = await this._getGuildRow(member.guild);
-		const specificRow = member.voice.channel ? await this._getSpecificRow(member.voice.channel) : undefined;
+
+		const specificRow = voiceState.channel ? await this._getSpecificRow(voiceState.channel) : undefined;
 
 		if (!row && !specificRow) { return; }
 
-		if (!newMember || !newMember.voice.channel) {
+		if (!newVCState || !newVCState.channel) {
 			// checking IF user not in voice channel anymore
 			// OR if we have no 'newMember' (means user left from any channel on guild)
 			// THEN deleting role
@@ -483,11 +506,15 @@ class VoiceRole extends Plugin implements IModule {
 					// but let's check if user HAS this role
 					if (member.roles.has(row.voice_role)) {
 						// yes, he has it, can remove
-						await member.roles.remove(row.voice_role, await localizeForGuild(
-							member.guild, "VOICEROLE_LEFT_VC", {
-								channelName: member.voice.channel!.name
-							}
-						));
+						await member.roles.remove(
+							row.voice_role,
+							await localizeForGuild(
+								member.guild,
+								"VOICEROLE_LEFT_VC", {
+									channelName: member.voice.channel!.name
+								}
+							)
+						);
 					} // else we doing nothin'
 				} else {
 					// wowee, role got deleted
@@ -499,7 +526,7 @@ class VoiceRole extends Plugin implements IModule {
 		}
 
 		// tslint:disable-next-line:early-exit
-		if (specificRow && member.voice.channel) {
+		if (specificRow && voiceState.channel) {
 			// we had specific role for old channel
 			// time to test if everything is OK
 			if (!member.guild.roles.has(specificRow.voice_role)) {
@@ -510,9 +537,15 @@ class VoiceRole extends Plugin implements IModule {
 			} else if (member.roles.has(specificRow.voice_role)) {
 				// there we got good answer means everything is OK
 				// we can remove old specific role
-				await member.roles.remove(specificRow.voice_role, await localizeForGuild(member.guild, "VOICEROLE_SPECIFIC_REMOVED", {
-					channelName: member.voice.channel.name
-				}));
+				await member.roles.remove(
+					specificRow.voice_role,
+					await localizeForGuild(
+						member.guild,
+						"VOICEROLE_SPECIFIC_REMOVED", {
+							channelName: voiceState.channel.name
+						}
+					)
+				);
 			}
 		}
 	}
