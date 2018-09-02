@@ -4,7 +4,7 @@ import * as ModLoader from "@sb-types/ModuleLoader/ModuleLoader";
 import * as djs from "discord.js";
 import * as logger from "loggy";
 import * as Raven from "raven";
-import { ISchema, Typer } from "./Typer";
+import { Typer, InterfaceSchema } from "./Typer";
 import { LocalizerYAMLParser } from "@sb-types/Localizer/parsers/YAMLParser";
 
 export interface IBotConfig {
@@ -31,7 +31,7 @@ export interface IBotConfig {
 	/**
 	 * Discord Client's config
 	 */
-	djs_config: djs.ClientOptions;
+	djsConfig: djs.ClientOptions;
 	/**
 	 * Localizator options
 	 */
@@ -120,7 +120,7 @@ declare global {
 	const $snowball: SnowballBot;
 }
 
-const SCHEMA_CONFIG: ISchema = {
+const SCHEMA_CONFIG: InterfaceSchema<IBotConfig> = {
 	"token": { type: "string" },
 	"name": { type: "string" },
 	"botOwner": { type: "string" },
@@ -230,7 +230,7 @@ export class SnowballBot {
 		};
 
 		// Prepare the options
-		const djsOptions = this._config.djs_config || {};
+		const djsOptions = this._config.djsConfig || {};
 
 		{ // Checks the shards count
 			const shardCount = this._internalConfiguration.shardsCount;
