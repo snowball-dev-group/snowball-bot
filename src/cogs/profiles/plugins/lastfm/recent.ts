@@ -57,7 +57,9 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 	}
 
 	public async getEmbed(info: ILastFMInfo | string, caller: GuildMember, profilesModule: ProfilesModule): Promise<IEmbedOptionsField> {
-		if (typeof info !== "object") { info = <ILastFMInfo> JSON.parse(info); }
+		if (typeof info !== "object") {
+			info = <ILastFMInfo> JSON.parse(info);
+		}
 
 		const logPrefix = `getEmbed(${info.username}):`;
 		let profile: IRecentTracksResponse | undefined = undefined;
@@ -95,21 +97,48 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 			return {
 				inline: true,
 				name: `${this._config.emojis.logo} Last.fm`,
-				value: `❌ ${await localizeForUser(caller, "LASTFMPROFILEPLUGIN_ERR_INVALIDRESP")}`
+				value: `❌ ${await localizeForUser(
+					caller,
+					"LASTFMPROFILEPLUGIN_ERR_INVALIDRESP"
+				)}`
 			};
 		}
 
 		try {
-			let str = profile.recenttracks.track.length === 0 ? `${this._config.emojis.ghost} ${await localizeForUser(caller, "")}` : "";
-			let tracksCount = 0;
-			for (const track of profile.recenttracks.track) {
-				if (++tracksCount > 3) { break; }
-				const fixedUrl = replaceAll(replaceAll(track.url, "(", "%28"), ")", "%29");
+			const recentTracks = profile.recenttracks.track;
+			const recentTracksLen = recentTracks.length;
 
-				let trackStr = await localizeForUser(caller, "LASTFMPROFILEPLUGIN_TRACK", {
-					name: escapeDiscordMarkdown(track.name, true),
-					artist: escapeDiscordMarkdown(track.artist["#text"], true)
-				});
+			let str = 
+			recentTracksLen === 0 ? 
+					await localizeForUser(
+						caller,
+						"LASTFMPROFILEPLUGIN_EMPTYHISTORY", {
+							ghost: this._config.emojis.ghost
+						}
+					) : "";
+
+			let tracksCount = 0;
+
+			for (let i = 0, l = recentTracksLen; i < l; i++) {
+				const track = recentTracks[i];
+
+				if (++tracksCount > 3) { break; }
+
+				const fixedUrl = replaceAll(
+					replaceAll(track.url, "(", "%28"),
+					")", "%29"
+				);
+
+				let trackStr = await localizeForUser(
+					caller, "LASTFMPROFILEPLUGIN_TRACK", {
+						name: escapeDiscordMarkdown(
+							track.name, true
+						),
+						artist: escapeDiscordMarkdown(
+							track.artist["#text"], true
+						)
+					}
+				);
 
 				trackStr = `[${trackStr}](${fixedUrl})`;
 
@@ -120,10 +149,25 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 					trackStr = `🎵 ${trackStr}`;
 				} else if (track.date) {
 					const playedAt = Number(track.date.uts) * 1000;
-					const sincePlayed = profilesModule.serverTimeHumanize(Date.now() - playedAt, 1, false, await getUserLanguage(caller));
-					trackStr = ` ${trackStr} \`${await localizeForUser(caller, "LASTFMPROFILEPLUGIN_SINCEPLAYED", {
-						sincePlayed
-					})}\``;
+
+					const sincePlayed = profilesModule.serverTimeHumanize(
+						Date.now() - playedAt, 1,
+						false,
+						await getUserLanguage(caller)
+					);
+
+					trackStr = await localizeForUser(
+						caller,
+						"LASTFMPROFILEPLUGIN_ITEM", {
+							trackLine: trackStr,
+							sincePlayed: await localizeForUser(
+								caller,
+								"LASTFMPROFILEPLUGIN_SINCEPLAYED", {
+									sincePlayed
+								}
+							)
+						}
+					);
 				}
 
 				str += `${trackStr}\n`;
