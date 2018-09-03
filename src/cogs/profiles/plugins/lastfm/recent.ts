@@ -32,7 +32,12 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 
 	constructor(config: ILastFMPluginConfig) {
 		// converting to any
-		config.emojis = <any> resolveEmojiMap(config.emojis, $discordBot.emojis);
+		config.emojis = <any> resolveEmojiMap(
+			config.emojis,
+			$discordBot.emojis,
+			true
+		);
+
 		this._config = config;
 	}
 
