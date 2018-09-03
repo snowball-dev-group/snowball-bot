@@ -1611,7 +1611,7 @@ LASTFMPROFILEPLUGIN_TRACK: "**{name}** by {artist}"
 
 # Used to display how long ago the track was played
 # {sincePlayed} (string) — localized time string, see “+HUMANIZE:DURATION:…” strings
-LASTFMPROFILEPLUGIN_SINCEPLAYED: "Played {sincePlayed} ago"
+LASTFMPROFILEPLUGIN_SINCEPLAYED: "{sincePlayed} ago"
 
 # Sent when the bot's profile picture have been updated
 OWNERCMDS_CHANGEAVY_DONE: "Profile picture successfully updated."
