@@ -511,7 +511,7 @@ class VoiceRole extends Plugin implements IModule {
 							await localizeForGuild(
 								member.guild,
 								"VOICEROLE_LEFT_VC", {
-									channelName: member.voice.channel!.name
+									channelName: voiceState.channel!.name
 								}
 							)
 						);
