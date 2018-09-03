@@ -1586,6 +1586,15 @@ LASTFMPROFILEPLUGIN_ERR_UNKNOWN@NOERROR: "Unknown error code received from the L
 # Sent when an unknown error has occurred while fetching the profile
 LASTFMPROFILEPLUGIN_ERR_UNKNOWN: "Unknown error has occurred while loading the profile."
 
+# Used when there are no recent listened tracks
+# {ghostEmoji} (string) — emoji with ghost 👻
+LASTFMPROFILEPLUGIN_EMPTYHISTORY: "{ghostEmoji} Woo! No recent tracks found…"
+
+# Used to display an item from listening history
+# {trackLine} (string) — generated line for track (see “LASTFMPROFILEPLUGIN_TRACK”)
+# {sincePlayed} (string) — how long ago the track was played (see “LASTFMPROFILEPLUGIN_SINCEPLAYED”)
+LASTFMPROFILEPLUGIN_ITEM: "{trackLine} · {sincePlayed}"
+
 # Used to display the track in history
 # {name} (string) — name of the track
 # {artist} (string) — artist(s)
