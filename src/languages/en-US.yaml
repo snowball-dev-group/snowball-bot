@@ -1586,6 +1586,13 @@ LASTFMPROFILEPLUGIN_ERR_UNKNOWN@NOERROR: "Unknown error code received from the L
 # Sent when an unknown error has occurred while fetching the profile
 LASTFMPROFILEPLUGIN_ERR_UNKNOWN: "Unknown error has occurred while loading the profile."
 
+# Used for currently playing item
+# {barsEmoji} (string) — animated emoji with equalizer bars
+# {trackLine} (string) — generated line for track (see “LASTFMPROFILEPLUGIN_TRACK”)
+LASTFMPROFILEPLUGIN_CURRENTLYPLAYING: |-
+  {barsEmoji} **Сейчас играет**:
+  {trackLine}
+
 # Used when there are no recent listened tracks
 # {ghostEmoji} (string) — emoji with ghost 👻
 LASTFMPROFILEPLUGIN_EMPTYHISTORY: "{ghostEmoji} Woo! No recent tracks found…"
@@ -1593,7 +1600,9 @@ LASTFMPROFILEPLUGIN_EMPTYHISTORY: "{ghostEmoji} Woo! No recent tracks found…"
 # Used to display an item from listening history
 # {trackLine} (string) — generated line for track (see “LASTFMPROFILEPLUGIN_TRACK”)
 # {sincePlayed} (string) — how long ago the track was played (see “LASTFMPROFILEPLUGIN_SINCEPLAYED”)
-LASTFMPROFILEPLUGIN_ITEM: "{trackLine} · {sincePlayed}"
+LASTFMPROFILEPLUGIN_ITEM: |-
+  {trackLine}
+  · *{sincePlayed}*
 
 # Used to display the track in history
 # {name} (string) — name of the track
@@ -1602,7 +1611,7 @@ LASTFMPROFILEPLUGIN_TRACK: "**{name}** by {artist}"
 
 # Used to display how long ago the track was played
 # {sincePlayed} (string) — localized time string, see “+HUMANIZE:DURATION:…” strings
-LASTFMPROFILEPLUGIN_SINCEPLAYED: "{sincePlayed} ago"
+LASTFMPROFILEPLUGIN_SINCEPLAYED: "Played {sincePlayed} ago"
 
 # Sent when the bot's profile picture have been updated
 OWNERCMDS_CHANGEAVY_DONE: "Profile picture successfully updated."
