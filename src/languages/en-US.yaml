@@ -1590,7 +1590,7 @@ LASTFMPROFILEPLUGIN_ERR_UNKNOWN: "Unknown error has occurred while loading the p
 # {barsEmoji} (string) — animated emoji with equalizer bars
 # {trackLine} (string) — generated line for track (see “LASTFMPROFILEPLUGIN_TRACK”)
 LASTFMPROFILEPLUGIN_CURRENTLYPLAYING: |-
-  {barsEmoji} **Сейчас играет**:
+  {barsEmoji} **Now Playing**:
   {trackLine}
 
 # Used when there are no recent listened tracks
