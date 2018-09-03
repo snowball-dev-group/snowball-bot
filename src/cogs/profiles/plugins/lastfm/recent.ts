@@ -118,7 +118,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 					await localizeForUser(
 						caller,
 						"LASTFMPROFILEPLUGIN_EMPTYHISTORY", {
-							ghost: this._config.emojis.ghost
+							ghostEmoji: this._config.emojis.ghost
 						}
 					) : "";
 
