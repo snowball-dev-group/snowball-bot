@@ -155,7 +155,8 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 					trackStr = `${await localizeForUser(
 						caller,
 						"LASTFMPROFILEPLUGIN_CURRENTLYPLAYING", {
-							trackLine: trackStr
+							trackLine: trackStr,
+							barsEmoji: this._config.emojis.bars
 						}
 					)}\n`;
 				} else if (track.date) {
