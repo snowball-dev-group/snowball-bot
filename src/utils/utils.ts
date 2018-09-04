@@ -365,23 +365,41 @@ export function generateEmbed(type: EmbedType, description: string | undefined, 
 	return embed;
 }
 
-export interface ILoggerFunction {
-	(type: "log" | "info" | "ok" | "warn" | "err" | "error" | "warning" | "trace" | "info_trace" | "warn_trace" | "err_trace", arg, ...args: any[]): ILogger;
+/**
+ * Default options for resolving
+ */
+interface IResolveOptions {
+	/**
+	 * Should name strictly equal to search
+	 */
+	strict: boolean;
+	/**
+	 * Is search case-sensetive
+	 */
+	caseStrict: boolean;
 }
 
-export interface ILogger {
-	name: string;
-	log: ILoggerFunction;
-}
+const DEFAULT_ROLE_RESOLVE_OPTIONS: IResolveOptions = {
+	strict: true,
+	caseStrict: false
+};
 
 export const SNOWFLAKE_REGEXP = /^[0-9]{16,20}$/;
 
-export function resolveGuildRole(nameOrId: string, guild: Guild, strict = true, caseStrict = false) {
+export function resolveGuildRole(nameOrId: string, guild: Guild, options: Partial<IResolveOptions>) {
 	if (SNOWFLAKE_REGEXP.test(nameOrId)) {
 		// can be ID
 		const role = guild.roles.get(nameOrId);
 		if (role) { return role; }
 	}
+
+	const {
+		strict,
+		caseStrict
+	} = {
+		...DEFAULT_ROLE_RESOLVE_OPTIONS,
+		...options
+	};
 
 	if (!caseStrict) {
 		nameOrId = nameOrId.toLowerCase();
@@ -410,9 +428,42 @@ export function resolveGuildRole(nameOrId: string, guild: Guild, strict = true, 
 	return undefined;
 }
 
+type ChannelType = "text" | "voice" | "category";
+
+/**
+ * Options for channel resolving
+ */
+interface IGuildChannelResolveOptions extends IResolveOptions {
+	/**
+	 * Can search contain channel mention to parse
+	 */
+	possibleMention: boolean;
+	/**
+	 * Which channel types to match
+	 */
+	types: ChannelType[];
+}
+
+const DEFAULT_CHANNEL_RESOLVE_OPTIONS: IGuildChannelResolveOptions = {
+	strict: true,
+	caseStrict: false,
+	possibleMention: false,
+	types: ["text", "voice"]
+};
+
 const CHANNEL_MENTION_SNOWFLAKE = /^\<\#([0-9]{16,20})\>$/;
 
-export function resolveGuildChannel(nameOrID: string, guild: Guild, strict = true, caseStrict = false, possibleMention = false, types: Array<"text" | "voice" | "category"> = ["text", "voice"]) {
+export function resolveGuildChannel(nameOrID: string, guild: Guild, options: Partial<IGuildChannelResolveOptions>) {
+	const {
+		strict,
+		caseStrict,
+		possibleMention,
+		types
+	} = {
+		...DEFAULT_CHANNEL_RESOLVE_OPTIONS,
+		...options
+	};
+
 	if (possibleMention) {
 		const res = CHANNEL_MENTION_SNOWFLAKE.exec(nameOrID);
 		if (res && res[1]) {
@@ -473,7 +524,38 @@ export async function safeMemberFetch(guild: Guild, id: string, errCallback?: (e
 	}
 }
 
-export async function resolveGuildMember(nameOrID: string, guild: Guild, strict = false, caseStrict = false, possibleMention = false, fetch = true): Promise<GuildMember | undefined> {
+/**
+ * Options for member resolving
+ */
+interface IGuildMemberResolveOptions extends IResolveOptions {
+	/**
+	 * Can search contain user mention to parse
+	 */
+	possibleMention: boolean;
+	/**
+	 * Fetch members list before the search?
+	 */
+	fetch: boolean;
+}
+
+const DEFAULT_MEMBER_RESOLVE_OPTIONS: IGuildMemberResolveOptions = {
+	strict: false,
+	caseStrict: false,
+	possibleMention: false,
+	fetch: false
+};
+
+export async function resolveGuildMember(nameOrID: string, guild: Guild, options: Partial<IGuildMemberResolveOptions>): Promise<GuildMember | undefined> {
+	const {
+		strict,
+		caseStrict,
+		possibleMention,
+		fetch
+	} = {
+		...DEFAULT_MEMBER_RESOLVE_OPTIONS,
+		...options
+	};
+
 	if (possibleMention) {
 		const res = USER_MENTION_SNOWFLAKE.exec(nameOrID);
 		if (res && res[1]) {
