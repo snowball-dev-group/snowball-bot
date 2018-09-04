@@ -105,6 +105,3 @@ export function isClass(obj: any): obj is Function {
 		typeof obj.toString === "function" &&
 		CLASS_REGEXP.test(obj.toString());
 }
-
-export default isClass;
-
