@@ -22,6 +22,8 @@ export class GuildIDMigration extends DatabaseMigration<IGuildRow> {
 
 					return stop();
 				}
+
+				resolve(false);
 			});
 		});
 	}
