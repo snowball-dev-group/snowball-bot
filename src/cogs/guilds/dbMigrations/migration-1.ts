@@ -13,7 +13,7 @@ export class GuildIDMigration extends DatabaseMigration<IGuildRow> {
 					const row = chunk[i];
 	
 					if (!GuildIDMigration._requiresFix(row)) {
-						return;
+						continue;
 					}
 
 					this._log("info", `[${this._tableName}] Found guild with bad ID: ${row.gid}. Migration is required`);
