@@ -204,7 +204,9 @@ class FanServerThings extends Plugin implements IModule {
 				embed: await generateLocalizedEmbed(EmbedType.Information, msg.member, "FSTHINGS_CHOOSE_NOROLENAME")
 			});
 		} else if (!role) {
-			role = resolveGuildRole(roleName, msg.guild, false);
+			role = resolveGuildRole(roleName, msg.guild, {
+				strict: false
+			});
 		}
 
 		if (!role) {

@@ -159,7 +159,10 @@ class PremiumControl extends Plugin implements IModule {
 
 		// premiumctl:role
 		if (args[0].toLowerCase() !== "none") {
-			const role = Utils.resolveGuildRole(args[0], msg.guild, false);
+			const role = Utils.resolveGuildRole(args[0], msg.guild, {
+				strict: false
+			});
+
 			if (!role) {
 				return msg.channel.send({
 					embed: await i18n.generateLocalizedEmbed(Utils.EmbedType.Error, msg.member, "PREMIUMCTL_SETROLE_NOTFOUND")

@@ -490,7 +490,11 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 		}
 
-		const resolvedMember = await resolveGuildMember(resolvableUser, guild, false, false);
+		const resolvedMember = await resolveGuildMember(resolvableUser, guild, {
+			strict: false,
+			caseStrict: false
+		});
+
 		if (resolvedMember) { return resolvedMember.user; }
 
 		if (!SNOWFLAKE_REGEXP.test(resolvableUser)) {
@@ -508,7 +512,12 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 		}
 
-		const resolvedChannel = resolveGuildChannel(resolvableChannel, guild, false);
+		const resolvedChannel = resolveGuildChannel(resolvableChannel, guild, {
+			strict: false,
+			types: ["text"],
+			possibleMention: true
+		});
+
 		if (resolvableChannel) { return resolvedChannel; }
 
 		throw new Error("Channel not found");

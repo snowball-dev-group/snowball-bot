@@ -409,7 +409,11 @@ class Colors extends Plugin implements IModule {
 		let requiredRoles: djs.Role[] | djs.Role | undefined = undefined;
 		if (namedArgs.required_role) {
 			if (namedArgs.required_role.indexOf("|") === -1) {
-				requiredRoles = utils.resolveGuildRole(namedArgs.required_role, msg.guild, false, false);
+				requiredRoles = utils.resolveGuildRole(namedArgs.required_role, msg.guild, {
+					strict: false,
+					caseStrict: false
+				});
+
 				if (!requiredRoles) {
 					return msg.channel.send({
 						embed: await i18n.generateLocalizedEmbed(utils.EmbedType.Error, msg.member, "COLORS_ADD_REQUIREDROLENOTFOUND")
@@ -419,7 +423,11 @@ class Colors extends Plugin implements IModule {
 				const requiredRolesNames = namedArgs.required_role.split("|").map(arg => arg.trim());
 				requiredRoles = [];
 				for (const nameToResolve of requiredRolesNames) {
-					const resolvedRole = utils.resolveGuildRole(nameToResolve, msg.guild, false, false);
+					const resolvedRole = utils.resolveGuildRole(nameToResolve, msg.guild, {
+						strict: false,
+						caseStrict: false
+					});
+
 					if (!resolvedRole) {
 						return msg.channel.send({
 							embed: await i18n.generateLocalizedEmbed(utils.EmbedType.Error, msg.member, {
