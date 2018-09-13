@@ -2799,7 +2799,7 @@ class Guilds extends Plugin implements IModule {
 				row.description :
 				await i18n.localizeForUser(
 					msg.member,
-					"GUILDS_LIST_DESCRIPTIONPLACEHOLDER"
+					"GUILDS_INFO_DESCRIPTIONPLACEHOLDER"
 				);
 
 			fields.push({
