@@ -1,6 +1,6 @@
 import * as Interfaces from "@sb-types/ModuleLoader/Interfaces";
 import { EventEmitter } from "events";
-import isClass from "@utils/extensions";
+import { isClass } from "@utils/extensions";
 
 export class ModuleBase<T> extends EventEmitter {
 	/**
