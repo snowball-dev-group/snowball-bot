@@ -167,7 +167,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			});
 		}
 
-		if (!channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"])) {
+		if (!channel.permissionsFor(msg.member)!.has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"])) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOPERMISSIONS")
 			});
@@ -181,7 +181,7 @@ class ModToolsArchive extends Plugin implements IModule {
 			}
 		})();
 
-		if (!originalMessage && !msg.member.permissions.has("MANAGE_MESSAGES", true) && !channel.permissionsFor(msg.member).has("MANAGE_MESSAGES", true)) {
+		if (!originalMessage && !msg.member.permissions.has("MANAGE_MESSAGES", true) && !channel.permissionsFor(msg.member)!.has("MANAGE_MESSAGES", true)) {
 			return msg.channel.send({
 				embed: await generateLocalizedEmbed(EmbedType.Error, msg.member, "ARCHIVE_MESSAGE_NOPERMISSIONS@REMOVED")
 			});
@@ -460,7 +460,11 @@ class ModToolsArchive extends Plugin implements IModule {
 					return true;
 				}
 
-				return channel.permissionsFor(msg.member).has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
+				const userPerms = channel.permissionsFor(msg.member);
+
+				return userPerms ? 
+					userPerms.has(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]) :
+					false;
 			});
 		} else {
 			return msg.channel.send({
