@@ -730,7 +730,13 @@ export default class StreamNotifications extends Plugin implements ModLoaderInte
 		if (scope !== "guild" || !arg) { return { use: false }; }
 
 		return {
-			use: true, channel: <djs.TextChannel> utils.resolveGuildChannel(arg, guild, false, false, true, ["text"])
+			use: true,
+			channel: <djs.TextChannel> utils.resolveGuildChannel(arg, guild, {
+				caseStrict: false,
+				strict: false,
+				possibleMention: true,
+				types: ["text"]
+			})
 		};
 	}
 

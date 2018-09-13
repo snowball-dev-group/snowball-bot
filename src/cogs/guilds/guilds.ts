@@ -465,9 +465,12 @@ class Guilds extends Plugin implements IModule {
 				)
 			});
 		} else {
-			role = utils.resolveGuildRole(args[1],
-				msg.guild,
-				false, false
+			role = utils.resolveGuildRole(
+				args[1],
+				msg.guild, {
+					caseStrict: false,
+					strict: false
+				}
 			);
 
 			if (!role) {

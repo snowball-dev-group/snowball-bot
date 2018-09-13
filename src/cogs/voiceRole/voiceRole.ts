@@ -591,7 +591,11 @@ class VoiceRole extends Plugin implements IModule {
 				});
 			}
 
-			const resolvedRole = resolveGuildRole(parsed.arguments[0].raw, msg.guild, false);
+			const resolvedRole = resolveGuildRole(parsed.arguments[0].raw, msg.guild, {
+				caseStrict: false,
+				strict: false
+			});
+
 			if (!resolvedRole) {
 				return msg.channel.send({
 					embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
@@ -791,14 +795,24 @@ class VoiceRole extends Plugin implements IModule {
 					});
 				}
 
-				const resolvedChannel = resolveGuildChannel(specArgs[0], msg.guild, false, false, false, ["voice"]);
+				const resolvedChannel = resolveGuildChannel(specArgs[0], msg.guild, {
+					caseStrict: false,
+					strict: false,
+					possibleMention: false,
+					types: ["voice"]
+				});
+
 				if (!resolvedChannel) {
 					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_CHANNELERR")
 					});
 				}
 
-				const resolvedRole = resolveGuildRole(specArgs[1], msg.guild, false);
+				const resolvedRole = resolveGuildRole(specArgs[1], msg.guild, {
+					caseStrict: false,
+					strict: false
+				});
+
 				if (!resolvedRole) {
 					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_ROLENOTFOUND")
@@ -917,7 +931,13 @@ class VoiceRole extends Plugin implements IModule {
 					});
 				}
 
-				const resolvedChannel = resolveGuildChannel(specArgs[0], msg.guild, false, false, false, ["voice"]);
+				const resolvedChannel = resolveGuildChannel(specArgs[0], msg.guild, {
+					caseStrict: false,
+					strict: false,
+					possibleMention: false,
+					types: ["voice"]
+				});
+
 				if (!resolvedChannel) {
 					return msg.channel.send({
 						embed: await generateLocalizedEmbed(EmbedType.Error, msgMember, "VOICEROLE_SETTING_FAULT_CHANNELERR")

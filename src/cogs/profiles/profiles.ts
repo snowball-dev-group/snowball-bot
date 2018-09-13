@@ -262,14 +262,18 @@ export default class Profiles extends Plugin implements ModuleLoaderInterfaces.I
 			} else {
 				const searchTerm = msg.content.slice("!profile ".length);
 				const rst = Date.now();
-				const resolvedMember = await (async () => {
-					try {
-						return await utils.resolveGuildMember(searchTerm, msg.guild, false, false);
-					} catch (err) {
-						// in case of some error
-						return undefined;
-					}
-				})();
+				const resolvedMember = await 
+					utils
+						.resolveGuildMember(
+							searchTerm,
+							msg.guild, {
+								caseStrict: false,
+								strict: false,
+								possibleMention: false,
+								fetch: false
+							}
+						)
+						.catch(() => undefined);
 
 				this.log("info", `Resolving hook took ${(Date.now() - rst)}ms on guild ${msg.guild.id} for search '${searchTerm}'`);
 
