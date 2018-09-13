@@ -386,7 +386,7 @@ const DEFAULT_ROLE_RESOLVE_OPTIONS: IResolveOptions = {
 
 export const SNOWFLAKE_REGEXP = /^[0-9]{16,20}$/;
 
-export function resolveGuildRole(nameOrId: string, guild: Guild, options: Partial<IResolveOptions>) {
+export function resolveGuildRole(nameOrId: string, guild: Guild, options?: Partial<IResolveOptions>) {
 	if (SNOWFLAKE_REGEXP.test(nameOrId)) {
 		// can be ID
 		const role = guild.roles.get(nameOrId);
@@ -453,7 +453,7 @@ const DEFAULT_CHANNEL_RESOLVE_OPTIONS: IGuildChannelResolveOptions = {
 
 const CHANNEL_MENTION_SNOWFLAKE = /^\<\#([0-9]{16,20})\>$/;
 
-export function resolveGuildChannel(nameOrID: string, guild: Guild, options: Partial<IGuildChannelResolveOptions>) {
+export function resolveGuildChannel(nameOrID: string, guild: Guild, options?: Partial<IGuildChannelResolveOptions>) {
 	const {
 		strict,
 		caseStrict,
@@ -545,7 +545,7 @@ const DEFAULT_MEMBER_RESOLVE_OPTIONS: IGuildMemberResolveOptions = {
 	fetch: false
 };
 
-export async function resolveGuildMember(nameOrID: string, guild: Guild, options: Partial<IGuildMemberResolveOptions>): Promise<GuildMember | undefined> {
+export async function resolveGuildMember(nameOrID: string, guild: Guild, options?: Partial<IGuildMemberResolveOptions>): Promise<GuildMember | undefined> {
 	const {
 		strict,
 		caseStrict,
