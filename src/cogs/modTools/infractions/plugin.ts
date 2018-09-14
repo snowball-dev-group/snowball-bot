@@ -6,6 +6,7 @@ import { GuildMember, TextChannel } from "discord.js";
 import { IModule } from "@sb-types/ModuleLoader/Interfaces";
 import ModuleBase from "@sb-types/ModuleLoader/ModuleBase";
 import { ErrorMessages } from "@sb-types/Consts";
+import * as createLogger from "loggy";
 
 interface IPluginOptions {
 	/**
@@ -27,8 +28,14 @@ export default class InfractionsPlugin implements IModule {
 	private readonly _allowNotes: boolean;
 	private _infKeeper: ModuleBase<Infractions>;
 	private _flowHandler: IPublicFlowCommand;
+	private static readonly _log = createLogger("InfractionsPlugin");
 
 	constructor(options: IPluginOptions) {
+		InfractionsPlugin._log("warn", "--- !!! ---");
+		InfractionsPlugin._log("warn", "This is a very early release of the ModTools:Infractions module");
+		InfractionsPlugin._log("warn", "If you are not developer, please do not enable this plugin and module");
+		InfractionsPlugin._log("warn", "--- !!! ---");
+
 		if (options) {
 			this._allowNotes = Boolean(options.allowNotes);
 		} else {
