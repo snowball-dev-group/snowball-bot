@@ -9,6 +9,7 @@ export class LocalizerKeysAssignation implements NamedClass {
 
 	constructor(name: string) {
 		this._log = logger(name);
+		this._assignedKeys = Object.create(null);
 	}
 
 	public get name() {
