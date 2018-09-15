@@ -1,0 +1,36 @@
+MODTOOLS_SLOWMODE_DEFAULT: |-
+  This command toggles slow mode using not yet published Discord API.
+
+  Note that, in some of Discord apps, on stable versions, there are not indicators for it.
+
+  Command usage: `{prefix}slowmode [seconds]`.
+
+MODTOOLS_SLOWMODE_META: "Toggles Slow Mode in Channel"
+
+MODTOOLS_SLOWMODE_CHANNELTYPE: "This command only works in text channels on servers."
+
+MODTOOLS_SLOWMODE_ARGSERR@LENGTH: "Invalid number of arguments, this command only accepts one argument — `[seconds]`."
+
+MODTOOLS_SLOWMOdE_ARGSERR@NOTNUMBER: "Argument of seconds should be a valid number within range 0-120."
+
+MODTOOLS_SLOWMODE_ARGSERR@NAN: "Unable to convert that argument of seconds to a valid number."
+
+MODTOOLS_SLOWMODE_ARGSERR@120: "You can only enable slow mode with restriction of 120 seconds maximum."
+
+MODTOOLS_SLOWMODE_ARGSERR@LESSTHAN0: "Could not make time go other direction, this may cause a serious issues for our existance. Try a valid value within range of 0-120 seconds, where 0 just turns the slow mode off."
+
+MODTOOLS_SLOWMODE_APIERR@PERM: "Seems the bot has no permission to manage this channel or change the setting."
+
+MODTOOLS_SLOWMODE_APIERR@RATELIMITED: "Oops! The bot is being ratelimited by Discord, means you have to wait a bit before calling the command again."
+
+MODTOOLS_SLOWMODE_APIERR@API_UNAVAILABLE: "Unfortunately, Discord API had an accident processing our request. Try again and if this happen again, check [status page](https://status.discordapp.com/) to see if Discord having problems at the moment."
+
+MODTOOLS_SLOWMODE_APIERR@UNKNOWN: "Unknown Discord API error. Try again later."
+
+MODTOOLS_SLOWMODE_DONE@ENABLED: "Slow mode has been enabled in this channel, members now need to wait {duration} before sending another message."
+
+MODTOOLS_SLOWMODE_DONE@DISABLED: "Slow mode has been disabled in this channel."
+
+MODTOOLS_SLOWMODE_PERMSERR@UNKNOWN_MEMBER: "Unable to check your permissions to call this command. Try again later."
+
+MODTOOLS_SLOWMODE_PERMSERR@NO_MANAGE_CHANNEL: "You've attempted to change slow mode setting in the channel, unfortunately you don't have required permissions to do that. If you are sure that have required permissions, contact the bot developer."
