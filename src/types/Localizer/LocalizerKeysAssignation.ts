@@ -86,7 +86,7 @@ export class LocalizerKeysAssignation implements NamedClass {
 
 			const index = owners.indexOf(owner);
 
-			if (index !== -1) {
+			if (index === -1) {
 				this._log("warn", `Key "${key}" wasn't bound to the "${owner}". Skipped`);
 				continue;
 			}
