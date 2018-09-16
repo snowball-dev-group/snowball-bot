@@ -12,17 +12,27 @@ export class ModuleBase<T> extends EventEmitter {
 	 * Loaded module
 	 * Will be empty if module isn't loaded yet
 	 */
-	public base?: Interfaces.IModule & T;
+	public get base() {
+		return this._base;
+	}
 
 	/**
 	 * Module's signature used to identify this module by other modules
 	 */
-	public signature: string | null = null;
+	public get signature() {
+		return this._signature;
+	}
 
 	/**
 	 * Module loading state
 	 */
-	public state: Interfaces.ModuleLoadState = Interfaces.ModuleLoadState.Ready;
+	public get state() {
+		return this._state;
+	}
+
+	private _state: Interfaces.ModuleLoadState = Interfaces.ModuleLoadState.Ready;
+	private _base?: Interfaces.IModule & T;
+	private _signature: string | null = null;
 
 	constructor(info: Interfaces.IModuleInfo) {
 		super();
@@ -37,11 +47,11 @@ export class ModuleBase<T> extends EventEmitter {
 	 * @returns Promise which'll be resolved with this module's base once module is loaded
 	 */
 	public async load() {
-		if (this.state !== Interfaces.ModuleLoadState.Ready && this.state !== Interfaces.ModuleLoadState.Unloaded && this.state !== Interfaces.ModuleLoadState.Destroyed) {
+		if (this._state !== Interfaces.ModuleLoadState.Ready && this._state !== Interfaces.ModuleLoadState.Unloaded && this._state !== Interfaces.ModuleLoadState.Destroyed) {
 			throw new Error("Module is already loaded or pending loading");
 		}
 
-		this.state = Interfaces.ModuleLoadState.Initializing;
+		this._state = Interfaces.ModuleLoadState.Initializing;
 
 		try {
 			let mod = require(this.info.path);
@@ -64,14 +74,14 @@ export class ModuleBase<T> extends EventEmitter {
 				throw new Error("The module has no `unload` function and will not be stated as loaded");
 			}
 
-			this.base = base;
-			this.signature = base.signature;
-			this.state = Interfaces.ModuleLoadState.Loaded;
+			this._base = base;
+			this._signature = base.signature;
+			this._state = Interfaces.ModuleLoadState.Loaded;
 
-			this.emit("loaded", this.signature, this.base);
+			this.emit("loaded", this._signature, this._base);
 
 			if (!base.init) {
-				this.state = Interfaces.ModuleLoadState.Initialized;
+				this._state = Interfaces.ModuleLoadState.Initialized;
 				this.emit("initialized", base);
 			}
 		} catch (err) {
@@ -91,19 +101,19 @@ export class ModuleBase<T> extends EventEmitter {
 	 * @fires ModuleBase<T>#initialized
 	 */
 	public async initialize() {
-		if (this.state !== Interfaces.ModuleLoadState.Loaded) {
+		if (this._state !== Interfaces.ModuleLoadState.Loaded) {
 			throw new Error("Module is not loaded to initializate it");
 		}
 
 		this.emit("initialization");
 
-		if (this.base && this.base.init) {
-			await this.base.init();
+		if (this._base && this._base.init) {
+			await this._base.init();
 		}
 
-		this.state = Interfaces.ModuleLoadState.Initialized;
+		this._state = Interfaces.ModuleLoadState.Initialized;
 
-		this.emit("initialized", this.base, this.signature);
+		this.emit("initialized", this._base, this._signature);
 
 		return this;
 	}
@@ -119,35 +129,35 @@ export class ModuleBase<T> extends EventEmitter {
 	 */
 	public async unload(reason: any = "unload") {
 		if (
-			this.state !== Interfaces.ModuleLoadState.Initialized &&
-			this.state !== Interfaces.ModuleLoadState.Loaded
+			this._state !== Interfaces.ModuleLoadState.Initialized &&
+			this._state !== Interfaces.ModuleLoadState.Loaded
 		) {
 			throw new Error("Module is not loaded");
 		}
 
-		const signature = this.signature;
+		const signature = this._signature;
 
 		this.emit("unloading", signature);
-		this.signature = null;
+		this._signature = null;
 
-		if (!this.base) {
+		if (!this._base) {
 			this.emit("error", {
 				state: "unload",
 				error: new Error("Module was already unloaded, base variable is `undefined`")
 			});
 
-			this.state = Interfaces.ModuleLoadState.Unloaded;
-		} else if (typeof this.base.unload !== "function") {
+			this._state = Interfaces.ModuleLoadState.Unloaded;
+		} else if (typeof this._base.unload !== "function") {
 			// ! Deprecated, there will be check on modules loading
 
 			try {
-				for (const key in this.base) {
-					// this.base[key] = undefined;
-					delete this.base[key];
+				for (const key in this._base) {
+					// this._base[key] = undefined;
+					delete this._base[key];
 				}
 
-				this.base = undefined;
-				this.state = Interfaces.ModuleLoadState.Destroyed;
+				this._base = undefined;
+				this._state = Interfaces.ModuleLoadState.Destroyed;
 
 				this.emit("destroyed", signature);
 			} catch (err) {
@@ -157,13 +167,13 @@ export class ModuleBase<T> extends EventEmitter {
 				});
 			}
 
-			this.state = Interfaces.ModuleLoadState.Destroyed;
+			this._state = Interfaces.ModuleLoadState.Destroyed;
 		} else {
 			try {
-				const unloaded = await this.base.unload(reason);
+				const unloaded = await this._base.unload(reason);
 				if (unloaded) {
-					this.base = undefined;
-					this.state = Interfaces.ModuleLoadState.Unloaded;
+					this._base = undefined;
+					this._state = Interfaces.ModuleLoadState.Unloaded;
 				} else {
 					throw new Error("Returned `false`: that means module has troubles with unloading");
 				}
@@ -188,8 +198,8 @@ export class ModuleBase<T> extends EventEmitter {
 	 * @listens ModuleBase<T>#initialized
 	 */
 	public onInit(callback: (base: T) => void) {
-		if (this.state === Interfaces.ModuleLoadState.Initialized && this.base) {
-			callback(this.base);
+		if (this._state === Interfaces.ModuleLoadState.Initialized && this._base) {
+			callback(this._base);
 
 			return this;
 		}
@@ -206,8 +216,8 @@ export class ModuleBase<T> extends EventEmitter {
 	 * @listens ModuleBase<T>#loaded
 	 */
 	public onLoad(callback: (base: T) => void) {
-		if (this.state === Interfaces.ModuleLoadState.Loaded && this.base) {
-			callback(this.base);
+		if (this._state === Interfaces.ModuleLoadState.Loaded && this._base) {
+			callback(this._base);
 
 			return this;
 		}
