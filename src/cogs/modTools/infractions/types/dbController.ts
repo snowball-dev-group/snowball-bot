@@ -289,7 +289,7 @@ export class InfractionsDBController extends EventEmitter {
 		}
 
 		if (!(await this._checkTable())) {
-			this._createTable();
+			await this._createTable();
 		}
 
 		this._isInitialized = true;
