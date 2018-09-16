@@ -131,7 +131,7 @@ export class InfractionsDBController extends EventEmitter {
 	}
 
 	private static _escapeSearchQuery(query: string) {
-		return query.replace(/([_$])/, "$1");
+		return query.replace(/([_$])/, "\\$1");
 	}
 
 	// #endregion
