@@ -208,7 +208,7 @@ export default class Infractions implements IModule {
 	 * Initializated the module
 	 */
 	public async init() {
-		if ($modLoader.isPendingInitialization(this.signature)) {
+		if (!$modLoader.isPendingInitialization(this.signature)) {
 			throw new Error("This module doesn't pending initialization");
 		}
 
