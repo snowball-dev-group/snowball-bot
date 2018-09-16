@@ -321,6 +321,8 @@ export class ModuleLoader {
 				await keeper.initialize();
 			} catch (err) {
 				this.log("warn", `Failed to initialize module "${keeper.info.name}":`, err);
+
+				keeper.unload();
 			}
 		}
 
