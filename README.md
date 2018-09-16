@@ -12,73 +12,69 @@ Currently features set is pretty small. Bot is currently developing slowly, that
 
 * **Guilds**. Separate channels and categories by interests — create guilds!
 
-    Snowball Bot Guilds functions allows you to set up guild information, create welcome messages, make guilds invite-only and more.
+  Snowball Bot Guilds functions allows you to set up guild information, create welcome messages, make guilds invite-only and more.
 
 * **Colors**. Make your member list look COLORFUL 🌈
 
-    This function allows your members to obtain color roles. Color roles are empty roles without any permission but only set color. Red, yellow, orange, R A I N B O W. As with guilds you get nice looking list, required roles to obtain color.
+  This function allows your members to obtain color roles. Color roles are empty roles without any permission but only set color. Red, yellow, orange, R A I N B O W. As with guilds you get nice looking list, required roles to obtain color.
 
 * **Voice Roles**. Roles only for those who are in voice channels
 
-    Voice Roles functionality allows you to give special role if members joins any channel on the server OR special role if they join specific channel. Why? This way you could hide channels like `#for-boring-people-without-mic`.
+  Voice Roles functionality allows you to give special role if members joins any channel on the server OR special role if they join specific channel. Why? This way you could hide channels like `#for-boring-people-without-mic`.
 
 * **Stream Notifications**. Announce your Twitch, YouTube, Mixer streams
 
-    Let your members know you have started stream with or without annoying `@everyone` mention.
+  Let your members know you have started stream with or without annoying `@everyone` mention.
 
-    We also allow you to subscribe to your own channels, so you'll receive DM notifications for streams as long as you have mutual server with Snowball Bot with open DMs (you currently cannot add bots to friends list in Discord, poor bots — rude Discord).
+  We also allow you to subscribe to your own channels, so you'll receive DM notifications for streams as long as you have mutual server with Snowball Bot with open DMs (you currently cannot add bots to friends list in Discord, poor bots — rude Discord).
 
 * **Localization**. Привет! Bonjour!
 
-    Snowball Bot is [translated by the community](https://crowdin.com/project/snowball-bot) on Crowdin. As of now English US (Snowball Bot original language is Russian), Ukrainian, Belarusian, French, Italian were added.
+  Snowball Bot is [translated by the community](https://crowdin.com/project/snowball-bot) on Crowdin. As of now English US (Snowball Bot original language is Russian), Ukrainian, Belarusian, French, Italian were added.
 
-    We respect server owners, so they can enforce single language for every member on the server. But where enforcing is disabled you're free to use language you want.
+  We respect server owners, so they can enforce single language for every member on the server. But where enforcing is disabled you're free to use language you want.
 
-    Not only languages, but time zones too. Everywhere time is printed we'll use your time zone and it CANNOT be enforced by server administators in ethic considerations. Time zones apply globally for your account, not per server.
+  Not only languages, but time zones too. Everywhere time is printed we'll use your time zone and it CANNOT be enforced by server administators in ethic considerations. Time zones apply globally for your account, not per server.
 
 * **ModTools** (unfinished!). Be true mod
 
-    While ModTools are yet developing, we already got something to present you:
+  While ModTools are yet developing, we already got something to present you:
 
-    * **Archives**. Archive messages into text files even if they were disabled.
+  * **Archives**. Archive messages into text files even if they were disabled.
 
-        Honestly admitting: we aren't original and this feature is first was found by us in [Rowboat](https://rowboat.party/). Differences is that we localize logs for those who requested it; Snowball Bot is open for everyone and we're allow and support hosting by your own.
+    Honestly admitting: we aren't original and this feature is first was found by us in [Rowboat](https://rowboat.party/). Differences is that we localize logs for those who requested it; Snowball Bot is open for everyone and we're allow and support hosting by your own.
 
     And these ModTools features may see the light in the future:
 
     * **Infractions**. Keep them recorded (we're about warning and notes)
 
-        Same way shamelessly stolen from Rowboat. We're just too much in love with it... Oh.
+      Same way shamelessly stolen from Rowboat. We're just too much in love with it... Oh.
 
-        This feature allows you to record warnings and leave notes about members. So any other moderator could check if member was warned before. This is useful, isn't it?
+      This feature allows you to record warnings and leave notes about members. So any other moderator could check if member was warned before. This is useful, isn't it?
 
     * **Temporal Mutes and Bans**. If you could not stop the conflicts
 
-        As many other bots we'll allow you to mute members with special “Shut up” role. But going further we decided why not makes temporal too, you just want for some time exclude member from the community.
+      As many other bots we'll allow you to mute members with special “Shut up” role. But going further we decided why not makes temporal too, you just want for some time exclude member from the community.
 
     * **Notifications**. Let 'em be updated
 
-        You can turn this option on so every time you give member infractions, they'll receive notification with reason why you did it.
+      You can turn this option on so every time you give member infractions, they'll receive notification with reason why you did it.
 
-        Once you add infraction, you'll be asked if you wish to send member notification and edit reason (by default there's no reason and just plain text “You have received the warning for violating rules of the server …”.
+      Once you add infraction, you'll be asked if you wish to send member notification and edit reason (by default there's no reason and just plain text “You have received the warning for violating rules of the server …”.
 
-        Also you set up custom template for server.
-
-    * **ModMail**. Like e-mail but Discord analog
-
-        Mail moderators and administators of the server without and some of them will reply to use. TICKET LIKE SYSTEM YAY!
+      Also you set up custom template for server.
 
     * **Alert Command**. No need to ping any moderator if you could ping only active
 
-        Remember the time of `@Moderators` role being mentionable and somewhere at night you receive notification because a member has question. Sad times. Oh, my clock says it's happens “Right now”. Well, we do want to change it.
+      Remember the time of `@Moderators` role being mentionable and somewhere at night you receive notification because a member has question. Sad times. Oh, my clock says it's happens “Right now”. Well, we do want to change it.
 
     * **Info cards**
 
-        Allows you to quickly see some information, like number of infractions user has, when they were active and so on.
+      Allows you to quickly see some information, like number of infractions user has, when they were active and so on.
 
     * **ModLog**. See what happens right now
 
-        Message deletions or editions. Nicknames and username changes. Channel changes and so on
+      Message deletions or editions. Nicknames and username changes. Channel changes and so on
 
     * AND MANY OTHER TOOLS. We don't even know what to expect in the future
 
@@ -88,11 +84,11 @@ Currently features set is pretty small. Bot is currently developing slowly, that
 
 * **Profiles**. Show information about you to others
 
-    Snowball Bot allows you to create profiles per servers, it could be used on role play servers and anywhere. Type out your bio with markdown support (including links).
+  Snowball Bot allows you to create profiles per servers, it could be used on role play servers and anywhere. Type out your bio with markdown support (including links).
 
-    We'll be working on including more ways to customize profiles and for server admins, as such we already have:
+  We'll be working on including more ways to customize profiles and for server admins, as such we already have:
 
-  * **Profiles Plugins**
+  * **Profiles Plugins**. Upgrade your profile
 
     ![An example of Overwatch Overall Statistic Plugin usage](https://i.imgur.com/bx8Xetj.png)
 
@@ -110,11 +106,11 @@ Currently features set is pretty small. Bot is currently developing slowly, that
 
   * **Spotify Rich Presence** support
 
-      When your Spotify Rich Presence is on, Snowball Bot shows currently playing song instead of current status.
+    When your Spotify Rich Presence is on, Snowball Bot shows currently playing song instead of current status.
 
-      ![An example of Spotify listening status](https://i.imgur.com/sggL0k3.png)
+    ![An example of Spotify listening status](https://i.imgur.com/sggL0k3.png)
 
-  * **Custom Image**
+  * **Custom Image**. Maybe you can embed your comissioned image here
 
     You can set your custom image in profile that will be show in embed for everyone who opens you profile.
 
@@ -131,9 +127,9 @@ Currently features set is pretty small. Bot is currently developing slowly, that
 
 * **Verification Handling**
 
-    If your server has verification enabled, than Snowball Bot will wait for the first message from user before enabling any features. Previously, we suffered from “Voice Role Bypass”, which allowed to bypass server verification just by joining voice channel and getting voice role.
+  If your server has verification enabled, than Snowball Bot will wait for the first message from user before enabling any features. Previously, we suffered from “Voice Role Bypass”, which allowed to bypass server verification just by joining voice channel and getting voice role.
 
-    Discord currently doesn't let bots know if members passed server verification.
+  Discord currently doesn't let bots know if members passed server verification.
 
 * **Open Source**
 
@@ -141,7 +137,7 @@ Currently features set is pretty small. Bot is currently developing slowly, that
 
   Also open source means:
 
-  * Right to self-hosting
+  * Right to self-host
 
     You're free to host bot on your servers for your Discord servers.
 
@@ -156,10 +152,6 @@ Currently features set is pretty small. Bot is currently developing slowly, that
   * Right to contribute
 
     We allow everyone to make contribution into that project by fixing bugs, adding new features and anything related to modifying code.
-
-  * Cool
-
-    Yeah, Open Source is cool. We love Open Source.
 
 ---
 
