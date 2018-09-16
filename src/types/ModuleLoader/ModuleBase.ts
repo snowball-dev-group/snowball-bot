@@ -90,7 +90,7 @@ export class ModuleBase<T> extends EventEmitter {
 	 * @fires ModuleBase<T>#initialization
 	 * @fires ModuleBase<T>#initialized
 	 */
-	public async init() {
+	public async initialize() {
 		if (this.state !== Interfaces.ModuleLoadState.Loaded) {
 			throw new Error("Module is not loaded to initializate it");
 		}
