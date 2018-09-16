@@ -127,21 +127,21 @@ export class ModuleLoader {
 
 		if (!this.registry[name]) {
 			const reason = "Module not found in registry. Use `ModuleLoader#register` to put your module into registry";
-			this.log("err", `#load: attempt to load module "${name}" failed: ${reason}`);
+			this.log("err", `[Load] attempt to load module "${name}" failed: ${reason}`);
 
 			throw new Error(reason);
 		}
 
 		if (this.loadedModulesRegistry[name]) {
 			const reason = "Module already loaded";
-			this.log("err", `#load: attempt to load module "${name}" failed: ${reason}`);
+			this.log("err", `[Load] attempt to load module "${name}" failed: ${reason}`);
 
 			throw new Error(reason);
 		}
 
 		const moduleInfo = this.registry[name];
 		if (!moduleInfo) {
-			this.log("err", "#load: module found in registry, but returned undefined value");
+			this.log("err", "[Load] module found in registry, but returned undefined value");
 
 			throw new Error("No module info");
 		}
@@ -152,9 +152,9 @@ export class ModuleLoader {
 
 		try {
 			moduleInfo.path = require.resolve(moduleInfo.path);
-			this.log("info", `#load: path converted: "${moduleInfo.path}" (module can be loaded)`);
+			this.log("info", `[Load] path converted: "${moduleInfo.path}" (module can be loaded)`);
 		} catch (err) {
-			this.log("err", "#load: path conversation failed (module can't be loaded)");
+			this.log("err", "[Load] path conversation failed (module can't be loaded)");
 
 			throw err;
 		}
@@ -208,7 +208,7 @@ export class ModuleLoader {
 
 			if (violation) {
 				// any signature violation is unacceptable
-				this.log("err", `#load: signature violation found: "${moduleKeeper.info.name}" - violation "${violation}" caused unload`);
+				this.log("err", `[Load] signature violation found: "${moduleKeeper.info.name}" - violation "${violation}" caused unload`);
 
 				await moduleKeeper.unload("signature_violation");
 
@@ -220,11 +220,11 @@ export class ModuleLoader {
 				this.signaturesRegistry[moduleKeeper.signature] = moduleKeeper;
 			}
 		} catch (err) {
-			this.log("err", `#load: module "${moduleKeeper.info.name}" rejected loading`);
+			this.log("err", `[Load] module "${moduleKeeper.info.name}" rejected loading`);
 			throw err;
 		}
 
-		this.log("ok", `#load: module "${moduleKeeper.info.name}" resolved (loading complete)`);
+		this.log("ok", `[Load] module "${moduleKeeper.info.name}" resolved (loading complete)`);
 		this.loadedModulesRegistry[moduleKeeper.info.name] = moduleKeeper;
 
 		return this;
@@ -248,14 +248,14 @@ export class ModuleLoader {
 
 		if (!this.loadedModulesRegistry[name]) {
 			const reason = "Module not found or not loaded yet";
-			this.log("err", `#unload: check failed: ${reason}`);
+			this.log("err", `[Unload] check failed: ${reason}`);
 			throw new Error(reason);
 		}
 
 		const moduleKeeper = this.loadedModulesRegistry[name];
 
 		if (moduleKeeper == null) {
-			this.log("warn", `#unload: check failed: registry member is already \`${moduleKeeper}\``);
+			this.log("warn", `[Unload] check failed: registry member is already \`${moduleKeeper}\``);
 
 			delete this.loadedModulesRegistry[name];
 
@@ -268,15 +268,16 @@ export class ModuleLoader {
 
 		try {
 			await moduleKeeper.unload(reason);
+
 			if (clearRequireCache) {
 				moduleKeeper.clearRequireCache();
 			}
 		} catch (err) {
-			this.log("err", `#unload: module "${name}" rejected to unload:`, err);
+			this.log("err", `[Unload] module "${name}" rejected to unload:`, err);
 			throw err;
 		}
 
-		this.log("ok", `#unload: module "${name}" successfully unloaded`);
+		this.log("ok", `[Unload] module "${name}" successfully unloaded`);
 
 		delete this.loadedModulesRegistry[name];
 
