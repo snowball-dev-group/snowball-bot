@@ -109,10 +109,10 @@ export class InfractionsDBController extends EventEmitter {
 
 				switch (val[0]) {
 					case "starts":
-						searchQuery = `%${searchQuery}`; 
+						searchQuery = `${searchQuery}%`; 
 						break;
 					case "ends":
-						searchQuery = `${searchQuery}%`; 
+						searchQuery = `%${searchQuery}`; 
 						break;
 					case "includes":
 						searchQuery = `%${searchQuery}%`; 
