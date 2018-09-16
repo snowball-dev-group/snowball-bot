@@ -318,7 +318,7 @@ export class ModuleLoader {
 
 		for (const keeper of toInit) {
 			try {
-				await keeper.init();
+				await keeper.initialize();
 			} catch (err) {
 				this.log("warn", `Failed to initialize module "${keeper.info.name}":`, err);
 			}
