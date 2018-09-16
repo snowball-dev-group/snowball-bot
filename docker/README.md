@@ -14,15 +14,14 @@ Don't forget to share your feedback on [our Discord servers](/README.md#discord-
 
 ## Deployment Example
 
-> ⚠ **Windows systems are not supported**!
+> ⚠ **Beware when using on Windows**!
 >
-> Docker having a lot problems working on Windows, for example,
-> you may not be able to start the database using Docker for Windows,
-> and you can't have make database persistent across restarts using
-> Docker Toolbox.
+> Docker Toolbox for Windows is **not supported** (and will not be).
+> Use [Docker CE](https://docs.docker.com/install/) for this.
+> Note, that the bot may work weird on Windows.
 >
-> If you were able to fix the issues, please create a Merge Request —
-> you may read the [Contributing Guide here](/CONTRIBUTING.md).
+> Find you any issues with Docker images on Windows, you may report them —
+> read the [Contributing Guide here](/CONTRIBUTING.md) to get started.
 
 ```bash
 # Clone repository
