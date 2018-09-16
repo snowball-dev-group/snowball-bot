@@ -118,7 +118,12 @@ export class ModuleBase<T> extends EventEmitter {
 	 * @returns Promise which'll be resolved with this module's base once module is unloaded or destroyed
 	 */
 	public async unload(reason: any = "unload") {
-		if (this.state !== Interfaces.ModuleLoadState.Initialized) { throw new Error("Module is not loaded"); }
+		if (
+			this.state !== Interfaces.ModuleLoadState.Initialized &&
+			this.state !== Interfaces.ModuleLoadState.Loaded
+		) {
+			throw new Error("Module is not loaded");
+		}
 
 		const signature = this.signature;
 
