@@ -313,7 +313,9 @@ export interface ISearchFilter {
 export interface ISelectOptions {
 	limit?: number;
 	offset?: number;
-	orderBy?: [string, "desc" | "asc"];
+	orderBy?: [InfractionKeys, "desc" | "asc"];
 }
+
+type InfractionKeys = keyof IInfraction;
 
 export default InfractionsDBController;
