@@ -29,6 +29,8 @@ export default class Infractions implements IModule {
 		this._controller = new InfractionsDBController(
 			opts.tableName
 		);
+
+		this._registeredPlugins = Object.create(null);
 	}
 
 	/**
