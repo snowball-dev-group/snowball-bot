@@ -637,12 +637,12 @@ export function getUserDisplayName(user: GuildMember | User, includeTag = false,
 	if (user instanceof GuildMember) {
 		displayName = user.displayName;
 		if (includeTag) {
-			displayName += `#${user.user.tag}`;
+			displayName += `#${user.user.discriminator}`;
 		}
 	} else {
 		displayName = user.username;
 		if (includeTag) {
-			displayName += `#${user.tag}`;
+			displayName += `#${user.discriminator}`;
 		}
 	}
 
