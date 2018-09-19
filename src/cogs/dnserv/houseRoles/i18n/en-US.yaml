@@ -1,0 +1,39 @@
+DNSERV_HOUSEROLE_AUDITLOG@ASSIGN: "Assign House Role"
+
+DNSERV_HOUSEROLE_AUDITLOG@DEASSIGN: "Remove House Role"
+
+DNSERV_HOUSEROLE_ERR_NOHOUSE: |-
+  {caller, select, self {You are} other {{username} is}} not in any of the HypeSquad houses, so weren't assigned a role."
+
+DNSERV_HOUSEROLE_ERR_APIERR: |- 
+  It seems like we cannot currently find out which house {caller, select, self {you belong} other {{username} belongs}} to.
+
+  Try again a bit later or contact the bot administrator.
+
+DNSERV_HOUSEROLE_ERR_NOROLES: |-
+  {caller, select, self {You already have} other {{username} already has}} no HypeSquad House roles.
+
+DNSERV_HOUSEROLE_ERR_UNKNOWN: |-
+  Oops! Something definitely gone wrong while we tried to process your request.
+  
+  Try to call command a little later.
+
+DNSERV_HOUSEROLE_HOUSE_BALANCE: "Balance"
+
+DNSERV_HOUSEROLE_HOUSE_BRAVERY: "Bravery"
+
+DNSERV_HOUSEROLE_HOUSE_BRILLIANCE: "Brilliance"
+
+DNSERV_HOUSEROLE_HOUSE+JOINER: ", "
+
+DNSERV_HOUSEROLE_ASSIGNED: |-
+  {caller, select, self {You've} other {{username} have}} been assigned the {rolesCount, plural, =0 {none} =1 {{houses} role} other {{houses} roles}}.
+
+DNSERV_HOUSEROLE_DEASSIGN: |-
+  {caller, select, self {Your} other {{username}'s}} house {rolesCount, plural, one {role of {houses} was} other {roles of {houses} were}} removed.
+
+# '
+
+DNSERV_HOUSEROLE_UNKNOWN_SUBCMD: "Unknown subcommand. Available subcommands are — `assign` and `remove`."
+
+DNSERV_HOUSEROLE_UNKNOWN_PROPOSE: "We're unable to find the member you want assign role to, please check if mention is valid or use ID instead."
