@@ -14,10 +14,10 @@ import { getDB } from "@utils/db";
 import * as getLogger from "loggy";
 
 // customize
-const TWITCH_ICON = "https://p.dafri.top/snowball/res/twitch_glitch.png";
+const TWITCH_ICON = "https://i.imgur.com/Y1LxRum.png";
 const TWITCH_COLOR = 0x6441A4;
 const TWITCH_USERNAME_REGEXP = /^[a-z0-9_]{3,24}$/;
-const TWITCH_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_twitch.png";
+const TWITCH_OFFLINE_BANNER = "https://i.imgur.com/JZdUQZ4.png";
 
 // defaults
 const DEFAULT_UPDATE_INTERVAL = 150000;

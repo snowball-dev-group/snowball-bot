@@ -12,7 +12,7 @@ Carina.WebSocket = ws;
 
 const MIXER_ICON = "https://i.imgur.com/fQsQPkd.png";
 const MIXER_COLOR = 0x1FBAED;
-const MIXER_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_mixer.png";
+const MIXER_OFFLINE_BANNER = "https://i.imgur.com/gUM6X2w.jpg";
 
 interface ICacheItem {
 	startedAt: number;

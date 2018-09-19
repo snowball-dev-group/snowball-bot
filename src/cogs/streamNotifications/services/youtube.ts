@@ -7,7 +7,7 @@ import { IHashMap } from "../../../types/Types";
 const MAX_CHANNEL_CACHE_LIFE = 600000;  // ms
 const YOUTUBE_ICON = "https://i.imgur.com/ZvRybuh.png";
 const YOUTUBE_COLOR = 0xCD201F;
-const YOUTUBE_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_youtube.png";
+const YOUTUBE_OFFLINE_BANNER = "https://i.imgur.com/CoodJN4.png";
 // const YOUTUBE_ID_REGEXP = /^[a-zA-Z0-9\_\-]{23,26}$/;
 
 interface ICacheItem<T> {

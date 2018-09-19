@@ -22,7 +22,7 @@ PLEASE AVOID ITS FUTHER USAGE IN YOUR BOT AND CONSIDER SWITCH TO TWITCH_NEW MODU
 const TWITCH_ICON = "https://i.imgur.com/2JHEBZk.png";
 const TWITCH_COLOR = 0x6441A4;
 const TWITCH_USERNAME_REGEXP = /^[a-zA-Z0-9_]{3,24}$/;
-const TWITCH_OFFLINE_BANNER = "https://pages.dafri.top/sb-res/offline_twitch.png";
+const TWITCH_OFFLINE_BANNER = "https://i.imgur.com/JZdUQZ4.png";
 
 interface IServiceOptions {
 	clientId: string;
