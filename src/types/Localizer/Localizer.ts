@@ -562,7 +562,15 @@ export class Localizer {
 	) {
 		const str = this.getString(lang, key, fallback);
 
-		return <string> this._formatMessage(str, variables, lang);
+		return <string> this.formatString(lang, str, variables);
+	}
+
+	public formatString(
+		lang: string,
+		str: string,
+		variables?: Interfaces.IFormatMessageVariables
+	) {
+		return this._formatMessage(str, variables, lang);
 	}
 
 	/**
