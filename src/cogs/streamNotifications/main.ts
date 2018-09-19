@@ -509,6 +509,7 @@ export default class StreamNotifications extends Plugin implements ModLoaderInte
 		{
 			// checking alternative channel usage
 			const usedAlternativeChannelArg = StreamNotifications._usedAlternativeChannelArgument(scope, msg.guild, args[2]);
+
 			if (usedAlternativeChannelArg.use) {
 				if (!usedAlternativeChannelArg.channel) {
 					await msg.channel.send({
@@ -554,16 +555,38 @@ export default class StreamNotifications extends Plugin implements ModLoaderInte
 					streamerId: streamer.uid
 				}
 			)
-		}\n`;
+		}\n\n`;
 
 		confirmationContent += `${
 			await i18n.localizeForUser(
 				msg.member,
-				LOCALIZED(scope === "guild" ? "ADD_CONFIRMATION_INFO_GUILD" : "ADD_CONFIRMATION_INFO_USER")
+				LOCALIZED(
+					scope === "guild" ?
+						"ADD_CONFIRMATION_INFO_GUILD" :
+						"ADD_CONFIRMATION_INFO_USER"
+				)
 			)
-		}\n`;
+		}\n\n`;
 
-		confirmationContent += `\n${
+		if (alternativeChannel) {
+			confirmationContent += `${
+				await i18n.localizeForUser(
+					msg.member,
+					LOCALIZED("ADD_CONFIRMATION_INFO_ALTCHANNEL"), {
+						channel: alternativeChannel.toString()
+					}
+				)
+			}\n\n`;
+		}
+
+		confirmationContent += `${
+			await i18n.localizeForUser(
+				msg.member,
+				LOCALIZED("ADD_CONFIRMATION_INFO_SHARED")
+			)
+		}\n\n`;
+
+		confirmationContent += `${
 			await i18n.localizeForUser(
 				msg.member,
 				LOCALIZED("ADD_CONFIRMATION_QUESTION")
