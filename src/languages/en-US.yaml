@@ -2449,6 +2449,11 @@ STREAMING_ADD_CONFIRMATION: |-
 STREAMING_ADD_CONFIRMATION_INFO_GUILD: |-
   • Every time stream starts on this channel, related notification will be sent in the specified channel. You will be able to add @​everyone mention to it later.
 
+# Used in the message sent as a confirmation when user wants to subscribe to a new channel on the server and selected alternative channel
+# {channel} (string) — mention of the channel
+STREAMING_ADD_CONFIRMATION_INFO_ALTCHANNEL: |-
+  • You've selected to send messages to Discord channel other than default — {channel}.
+
 # Used in the message sent as a confirmation when user wants to subscribe to a new channel in Direct Messages
 # ⚠ Do not change suggestion ID
 STREAMING_ADD_CONFIRMATION_INFO_USER: |-
