@@ -11,6 +11,18 @@
 # For example, English can be British (United Kingdom), Canadian (Canada), American (US)
 +COUNTRY: "United States"
 
+# Short code of the language
+# For example, for Russian it would be “ru”
++SHORT_CODE: "en"
+
+# Crowdin Code that will be used for translation project promo
+# To get the code:
+#  1) Open project page, select needed language
+#  2) Look for code in URL after “snowball-bot/”
+# For example, for Swedish it would be “sv-SE”:
+#  https://crowdin.com/project/snowball-bot/sv-SE
++CROWDIN_CODE: "en-US"
+
 # Is fix layout supported?
 # `true` if supported, otherwise 
 +FL_SUPPORTED: "false"
