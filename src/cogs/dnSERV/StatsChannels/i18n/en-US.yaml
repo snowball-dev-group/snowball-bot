@@ -1,0 +1,7 @@
+# Used to format a name of the stat channel for members
+# {members} (string) — number of members on the server
+DNSERV_STATCHANNEL_FORMAT_MEMBERS: "{members, plural, one {# member} other {# members}}"
+
+# Used to format a name of the stat channel for time
+# {time} (string) — current time of the server according to its time zone
+DNSERV_STATCHANNEL_FORMAT_TIME: "{time}"
