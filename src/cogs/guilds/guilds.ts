@@ -1068,7 +1068,7 @@ class Guilds extends Plugin implements IModule {
 							"GUILDS_EDIT_INVALIDTYPE"
 						)
 					});
-				} else if ((<number> attachment["size"]) > EMOJI_MAXSIZE) {
+				} else if (attachment.size > EMOJI_MAXSIZE) {
 					// by some reason discord.js has no typedefs for `size`
 					return msg.channel.send({
 						embed: await i18n.generateLocalizedEmbed(
