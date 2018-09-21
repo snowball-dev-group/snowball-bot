@@ -1,0 +1,8 @@
+# Sent to user when they attempt to star their own message
+DNSERV_STAR_BLOCKED@SELF-STAR: "You've attempted to add star to your own message. It has been blocked. Please don't ask anybody to star your messages, including such hidden motivation."
+
+# Sent to user when they attempt to star a message and its being handled by bot
+DNSERV_STAR_BLOCKED@FILTER: "You've attempted to add star to the message that our system thinks doesn't qualify to be starred. These could be bots messages, messages containing profanity or something else which disqualified the message from being starred. Please, don't star these messages."
+
+# Send to user when they attempt to star a message and they are been added to block list
+DNSERV_STAR_BLOCKED@USER-BLOCK: "You've attempted to add star to message, but you've been disallowed from adding stars to messages by the server administrator. If you think it's mistake, try to find and contact the team which can assist you with the question."
