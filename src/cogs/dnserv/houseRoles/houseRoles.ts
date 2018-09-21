@@ -7,7 +7,21 @@ import { resolveGuildMember, EmbedType, getMessageMember } from "@utils/utils";
 import * as getLogger from "loggy";
 
 type Options = Partial<{
+	/**
+	 * Guild ID for which this plugin is initializing
+	 */
+	guildId: string;
+	/**
+	 * Token of the user that will be used to check the house
+	 *
+	 * We're NOT providing any instructions how to get your token
+	 *
+	 * Please, create a separate account, verify e-mails and join needed servers
+	 */
 	token: string;
+	/**
+	 * Roles for houses
+	 */
 	roles: Partial<Roles>
 }>;
 
@@ -17,13 +31,18 @@ type Roles = {
 	brilliance: string;
 };
 
+const SIGNATURE_BASE = "snowball.partners.dnserv.house_roles";
+
 export class HouseRoles {
+	private readonly _signature: string;
+
 	public get signature() {
-		return "snowball.partners.dnserv.house_roles";
+		return this._signature;
 	}
 
 	private static readonly _log = getLogger("dnSERV Reborn - HouseRole");
 
+	private readonly _guildId: string;
 	private readonly _userToken: string;
 	private readonly _houseRoles: Roles;
 
@@ -36,7 +55,11 @@ export class HouseRoles {
 			throw new Error("No options set");
 		}
 
-		const { roles, token } = opts;
+		const { roles, token, guildId } = opts;
+
+		if (!guildId) {
+			throw new Error("No guild ID specified");
+		}
 
 		if (!roles) {
 			throw new Error("No house roles specified");
@@ -56,11 +79,31 @@ export class HouseRoles {
 
 		this._houseRoles = <any> roles;
 		this._userToken = token;
+		this._guildId = guildId;
+
+		this._signature = `${SIGNATURE_BASE}~${guildId}`;
 	}
 
 	public async init() {
 		if (!$modLoader.isPendingInitialization(this.signature)) {
 			throw new Error(ErrorMessages.NOT_PENDING_INITIALIZATION);
+		}
+
+		const guildId = this._guildId;
+
+		const guild = $discordBot.guilds.get(guildId);
+
+		if (!guild) {
+			if ($botConfig.sharded) {
+				HouseRoles._log(
+					"warn",
+					`Guild ${guildId} is not present on this shard`
+				);
+
+				return;
+			}
+
+			throw new Error(`Guild ${guildId} not found`);
 		}
 
 		this._i18nUnhandle = await extendAndAssign(
@@ -101,7 +144,12 @@ export class HouseRoles {
 		// 3. Called with subcommand of "assign"
 		//    and user mention (admin) → assign role to user
 
-		const { parsed } = ctx;
+		const { parsed, message } = ctx;
+
+		if (!message.guild || message.guild.id !== this._guildId) {
+			return;
+		}
+
 		const { arguments: args } = parsed;
 
 		try {
