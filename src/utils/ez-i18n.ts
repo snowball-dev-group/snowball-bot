@@ -365,7 +365,7 @@ export async function generateLocalizedEmbed(type: utils.EmbedType, target: User
  * @param path Path to load language(s) from
  * @returns Function to prune languages and unbind the keys
  */
-export async function extendAndAssign(path: string | string[], owner: string) {
+export async function extendAndAssign(path: string | string[], owner: string) : ExtendAssignReturn {
 	const extendedKeys = await $localizer.extendLanguages(
 		await $localizer.fileLoader.directoryToLanguagesTree(path)
 	);
@@ -378,6 +378,9 @@ export async function extendAndAssign(path: string | string[], owner: string) {
 		return $localizer.pruneLanguages(extendedKeys);
 	};
 }
+
+type ExtendAssignReturn = Promise<ExtensionAssignUnhandleFunction>;
+export type ExtensionAssignUnhandleFunction = () => string[];
 
 // #endregion
 
