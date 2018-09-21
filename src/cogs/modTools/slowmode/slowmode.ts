@@ -248,6 +248,8 @@ export class Slowmode implements IModule {
 			this._i18nUnhandle();
 		}
 
+		this._unloaded = true;
+
 		return true;
 	}
 }
