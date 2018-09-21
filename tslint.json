@@ -31,7 +31,7 @@
         "no-regex-spaces": true,
         "no-return-await": true,
         "no-string-throw": true,
-        "no-this-assignment": true,
+        "no-this-assignment": [ true, { "allow-destructuring": true } ],
         "no-unnecessary-type-assertion": true,
         "no-unnecessary-callback-wrapper": true,
         "no-unused-expression": [ true, "allow-fast-null-checks" ],
