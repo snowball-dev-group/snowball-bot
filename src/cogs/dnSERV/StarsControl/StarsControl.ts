@@ -77,7 +77,7 @@ export class StarsControl implements IModule {
 	private _handler?: ReactionHandler;
 	private _i18nUnhandle?: ExtensionAssignUnhandleFunction;
 
-	private _settings: IStarControlSettings;
+	private readonly _settings: IStarControlSettings;
 	private _compiledDisqualificationProcess?: AnyOfResult<IAddedReaction>;
 
 	constructor(settings?: IStarControlSettings) {
