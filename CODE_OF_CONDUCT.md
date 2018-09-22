@@ -55,7 +55,7 @@ further defined and clarified by project maintainers.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at [snowball@dafri.top](mailto:snowball@dafri.top?subject=Report+Violation). All
+reported by contacting the project team at [dafrinochiterov+snowball-help@yandex.ru](mailto:dafrinochiterov+snowball-help@yandex.ru?subject=Report+Violation). All
 complaints will be reviewed and investigated and will result in a response that
 is deemed necessary and appropriate to the circumstances. The project team is
 obligated to maintain confidentiality with regard to the reporter of an incident.
