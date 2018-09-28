@@ -106,7 +106,7 @@ ARCHIVE_ERR_NOTHINGFOUND: "**Unable to find anything**. Perhaps the bot did not 
 
 # Sent when archiving is done to say how many messages been found with the attached archive file
 # {lines} (number) — how many messages were archived into file
-ARCHIVE_DONE: ":mag: **Search complete** — we have found and archived {lines, plural, one {# message} other {# messages}}."
+ARCHIVE_DONE: "🔎 **Search complete** — we have found and archived {lines, plural, one {# message} other {# messages}}."
 
 # Sent when user types the Message Preview command without any arguments
 # {prefix} (string) — prefix used to call the command
@@ -115,7 +115,7 @@ ARCHIVE_MESSAGE_HELP: |-
 
   Usage: `{prefix} [Message ID]`.
 
-  :warning: Please note, that…
+  ⚠ Please note, that…
   • Message is searched within the whole server, using the archive database.
   • Archives messages never deleted or updated (if edited). 
   • The message won't be displayed if the caller has no access to the channel where the message was sent.
@@ -175,7 +175,7 @@ ARCHIVE_STATUS_ALREADY: "Message Archiving is already turned **{status, select, 
 ARCHIVE_STATUS_CONFIRMATION_ENABLING: |-
   Turn Message Archiving on?
 
-  :warning: **What you need to know before enabling this option**:
+  ⚠ **What you need to know before enabling this option**:
 
   • All messages from the server will be stored for an unlimited time — this may change later.
 
@@ -191,7 +191,7 @@ ARCHIVE_STATUS_CONFIRMATION_ENABLING: |-
 ARCHIVE_STATUS_CONFIRMATION_DISABLING: |-
   Turn Message Archiving off?
 
-  :warning: This will not delete any archived messages, but you won't be able to export them to the file until archiving is enabled back again.
+  ⚠ This will not delete any archived messages, but you won't be able to export them to the file until archiving is enabled back again.
 
   If you wish to completely purge archived messages, you must contact the person who owns this bot.
 
@@ -718,7 +718,7 @@ FSTHINGS_CHOOSE_NOROLENAME: |-
 FSTHINGS_CHOOSE_ROLENOTFOUND: |-
   **Role not found**. Are you sure the name is correct?
 
-  :warning: If the message contained the role mention, this must be a bug in [library we use](https://discord.js.org/). Please, contact the bot developer about this and we'll check everything.
+  ⚠ If the message contained the role mention, this must be a bug in [library we use](https://discord.js.org/). Please, contact the bot developer about this and we'll check everything.
 
 # Sent when bot found the role but none members on the server assigned to it
 FSTHINGS_CHOOSE_EMPTYROLE: "No members found with this role."
@@ -868,7 +868,7 @@ GUILDS_CREATE_WRONGARGSCOUNT: "Invalid number of arguments."
 GUILDS_DELETE_CONFIRMATION: |-
   Are you sure you want to remove this guild?
 
-  :information_source: Its role won't be deleted and unassigned from the members.
+  ℹ Its role won't be deleted and unassigned from the members.
 
 # Sent when guild has been deleted
 GUILDS_DELETE_DONE: "Guild deleted."
@@ -1962,7 +1962,7 @@ PREFIXALL_INFO_REMOVE: |-
 
   Use `{prefix} [prefix]` to delete the prefix from the server.
 
-  :warning: The server should have at least one prefix left.
+  ⚠ The server should have at least one prefix left.
 
 # Sent when user presses “×” in the confirmation dialog
 PREFIXALL_PREFIX_CANCELED: "Operation canceled."
@@ -2544,16 +2544,16 @@ STREAMING_CMD_ERROR: "An error occured while running the command."
 
 # Used as a base string for any service in the embed about a stream
 # {username} (string) — channel name
-STREAMING_DESCRIPTION: ":red_circle: {username} streaming now."
+STREAMING_DESCRIPTION: "🔴 {username} is streaming now!"
 
 # Used as a base string for any service in the embed about a stream
 # {username} (string) — channel name
-STREAMING_DESCRIPTION_OFFLINE: ":checked_flag: {username}'s stream ended."
+STREAMING_DESCRIPTION_OFFLINE: "🏁 {username}'s stream ended."
 
 # Used as a base string for the Twitch service in the embed about the stream
 # {username} (string) — channel name
 # {type} (string) — type of the stream (“live” for a live stream, “vodcast” for the VOD plays)
-STREAMING_DESCRIPTION_TWITCH: ":red_circle: {username} {type, select, live {streaming now} other {does VODCAST}}."
+STREAMING_DESCRIPTION_TWITCH: "🔴 {username} {type, select, live {is streaming now!} other {does VODCAST.}}"
 
 # Sent when user edits notification settings
 STREAMING_EDIT_DONE: "Notification Settings changed."
