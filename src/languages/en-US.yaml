@@ -1538,21 +1538,6 @@ LANGUAGE_SWITCH_USAGE: "Correct command usage: `{prefix} [code]`. You can get th
 # Sent when user specifies an invalid time zone
 LANGUAGE_TIMEZONE_INVALID: "Invalid time zone."
 
-# Sent when bot cannot find the specified time zone
-LANGUAGE_TIMEZONE_NOT_FOUND: "No time zone matches the search."
-
-# Sent as a confirmation for the language timezone command
-LANGUAGE_TIMEZONE_CONFIRMATION@FOUND_ADDRESS: |-
-  Found the following location: {address}.
-
-  Do you want to set its time zone as yours?
-
-# Sent when user presses “×” in the confirmation
-LANGUAGE_TIMEZONE_CANCELED_TITLE: "Canceled."
-
-# Sent when time zone haven't been changed
-LANGUAGE_TIMEZONE_CANCELED@FOUND_ADDRESS: "Time zone has __not__ been changed."
-
 # Used to show the current user's time zone
 # {timezone} (string) — time zone used for user
 LANGUAGE_TIMEZONE_CURRENT@USER: "Your current time zone — {timezone}."
@@ -1564,9 +1549,6 @@ LANGUAGE_TIMEZONE_CURRENT@GUILD: "Current server's time zone — {timezone}."
 # Used to show the current time in selected time zone
 # {currentTime} (string) — current datetime string formated used Node.js Intl API (with recent ICU data)
 LANGUAGE_TIMEZONE_TIME: "Current time in the selected time zone: {currentTime}."
-
-# Sent when bot cannot find the specified location using the Google Maps API
-LANGUAGE_TIMEZONE_APIERR@TIMEZONE_RESOLVE: "Cannot find the time zone for the found location."
 
 # Sent when the server's time zone have been changed
 LANGUAGE_TIMEZONE_DONE@GUILD: |-
