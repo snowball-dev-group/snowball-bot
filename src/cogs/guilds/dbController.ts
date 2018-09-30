@@ -187,6 +187,11 @@ export interface IGuildCustomize {
 	 */
 	invite_only?: boolean;
 	/**
+	 * Message that shown when member tries to join this guild
+	 * without the invite
+	 */
+	invite_only_msg?: string;
+	/**
 	 * Google Analystic key
 	*/
 	ua?: string;
