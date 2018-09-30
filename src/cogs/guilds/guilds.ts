@@ -935,6 +935,16 @@ class Guilds extends Plugin implements IModule {
 					}
 				);
 			} break;
+			case "invite_only_msg": {
+				content = text.removeEveryoneMention(content);
+
+				customize.invite_only_msg = content;
+
+				doneString = await i18n.localizeForUser(
+					msg.member,
+					"GUILDS_EDIT_INVITE_ONLY_MSG_SET"
+				);
+			} break;
 			case "add_admin": case "add_adm": {
 				if (isCalledByAdmin) {
 					return msg.channel.send({
@@ -1481,6 +1491,22 @@ class Guilds extends Plugin implements IModule {
 					msg.member.id
 				)
 				.send();
+
+			const message = cz.invite_only_msg;
+
+			if (message != null) {
+				return msg.channel.send({
+					embed: await i18n.generateLocalizedEmbed(
+						utils.EmbedType.Error,
+						msg.member, {
+							key: "GUILDS_JOIN_IOERR@MESSAGE",
+							formatOptions: {
+								message
+							}
+						}
+					)
+				});
+			}
 
 			return msg.channel.send({
 				embed: await i18n.generateLocalizedEmbed(

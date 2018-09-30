@@ -984,6 +984,9 @@ GUILDS_EDIT_WELCOMECHANNELSET: "Channel for the welcome messages changed."
 # Sent when welcome message has been changed
 GUILDS_EDIT_WELCOMEMSGSET: "Welcome message content changed."
 
+# Sent when invite only message has been changed
+GUILDS_EDIT_INVITE_ONLY_MSG_SET: "Invite only message changed."
+
 # Sent when user tries to set welcome message channel setting to invalid channel (like voice-type channel)
 GUILDS_EDIT_WRONGCHANNEL: "Invalid channel."
 
@@ -1164,8 +1167,15 @@ GUILDS_JOIN_FAILED_RULES: "Didn't accept the rules of the guild “{guildName}.�
 # Used in Direct Messages when user didn't accept the rules of the guild
 GUILDS_JOIN_FAILED_RULES_DM: "Cannot join the guild — you haven't accepted the rules of the guild “{guildName}.”"
 
-# Sent when user tries to join the guild which requires invites and user doesn't have it
+# Sent when user tries to join the guild which requires invite and user doesn't have it
 GUILDS_JOIN_IOERR: "This is an invite-only guild. You must be invited by the manager in order to join."
+
+# Sent when user tries to join the guild which requires invite and user doesn't have it
+# {message} (string) — message from guild admins to not invited users
+GUILDS_JOIN_IOERR@MESSAGE: |-
+  This is an invite-only guild:
+
+  {message}
 
 # Sent when user accept the rules of the guild via confirmation code
 GUILDS_JOIN_JOINED_RULES_DM: "Thanks for accepting the rules. You've now joined the guild “{guildName}” on the server “{serverName}”!"
