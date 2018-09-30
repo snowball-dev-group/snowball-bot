@@ -11,11 +11,7 @@ import { IHashMap, createHashMap } from "@sb-types/Types";
 import { messageToExtra } from "@utils/failToDetail";
 import { DateTime } from "luxon";
 import { intlAcceptsTimezone } from "@utils/extensions";
-import { default as fetch } from "node-fetch";
 import * as getLogger from "loggy";
-import { URL } from "url";
-import { get, storeValue } from "@utils/cache";
-import { createConfirmationMessage } from "@utils/interactive";
 
 const BASE_PREFIX = "!sb_lang";
 const CMD = {
@@ -27,13 +23,11 @@ const CMD = {
 	GUILDS_ENFORCE: `${BASE_PREFIX} guild enforce`
 };
 const HELP_CATEGORY = "LANGUAGE";
-const CACHE_OWNER = "snowball.setlanguage.locations";
 
 interface ISetLanguageCommandOptions {
 	no_lazy: boolean;
 	crowdinLink: string;
 	flags: IHashMap<string>;
-	googleApiKey?: string;
 }
 
 @help.command(HELP_CATEGORY, BASE_PREFIX.slice(1), "loc:LANGUAGE_META_DEFAULT")
@@ -67,7 +61,6 @@ export class SetLanguageCommand extends Plugin implements IModule {
 	private readonly _flags: IHashMap<string> = Object.create(null);
 	private readonly _noLazy: boolean;
 	private readonly _crowdinLink: string;
-	private readonly _googleMapsApiKey?: string;
 
 	constructor(options: ISetLanguageCommandOptions) {
 		super({
@@ -78,7 +71,6 @@ export class SetLanguageCommand extends Plugin implements IModule {
 
 		this._noLazy = !!options["no_lazy"];
 		this._crowdinLink = options.crowdinLink;
-		this._googleMapsApiKey = options.googleApiKey;
 		this._flags = createHashMap(options.flags);
 	}
 
@@ -357,9 +349,9 @@ export class SetLanguageCommand extends Plugin implements IModule {
 		let newTZ = msg.content.slice(CMD.TIMEZONE.length);
 
 		if (!intlAcceptsTimezone(newTZ)) {
-			const result = await SetLanguageCommand._timezoneFallback(msg, msgAuthor, newTZ, this._googleMapsApiKey);
-			if (!result) { return; }
-			newTZ = result;
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(utils.EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_INVALID")
+			});
 		}
 
 		await UserPreferences.setPreferenceValue(msgAuthor, this._prefs.userTimezone, newTZ);
@@ -406,9 +398,9 @@ export class SetLanguageCommand extends Plugin implements IModule {
 		let newTZ = msg.content.slice(CMD.GUILDS_TIMEZONE.length);
 
 		if (!intlAcceptsTimezone(newTZ)) {
-			const result = await SetLanguageCommand._timezoneFallback(msg, msgMember, newTZ, this._googleMapsApiKey);
-			if (!result) { return; }
-			newTZ = result;
+			return msg.channel.send({
+				embed: await i18n.generateLocalizedEmbed(utils.EmbedType.Error, msgMember, "LANGUAGE_TIMEZONE_INVALID")
+			});
 		}
 
 		await GuildPreferences.setPreferenceValue(msgMember.guild, this._prefs.userTimezone, newTZ);
@@ -425,91 +417,6 @@ export class SetLanguageCommand extends Plugin implements IModule {
 				), msgMember, newTZ)
 			})
 		});
-	}
-
-	private static async _timezoneFallback(msg: Message, msgAuthor: GuildMember | User, newTZ: string, apiKey?: string) : Promise<string | undefined> {
-		if (!apiKey) {
-			await msg.channel.send({
-				embed: await i18n.generateLocalizedEmbed(utils.EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_INVALID")
-			});
-
-			return;
-		}
-
-		// do we have cache for this?
-
-		const cached = await get<string>(CACHE_OWNER, newTZ.toLowerCase());
-
-		if (cached == null) {
-			// resolving address with google maps
-
-			const findResp = await SetLanguageCommand._sendGoogleMapsReq<IGoogleGeocodingResponse>("geocode", apiKey, {
-				address: newTZ,
-				language: await i18n.localizeForUser(msgAuthor, "+SHORT_CODE")
-			});
-
-			if (findResp.status !== "OK" || findResp.results.length === 0) {
-				await msg.channel.send({
-					embed: await i18n.generateLocalizedEmbed(utils.EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_NOT_FOUND")
-				});
-
-				return;
-			}
-
-			const selectedAddress = findResp.results[0]; // first one
-
-			const confirmationEmbed = await i18n.generateLocalizedEmbed(utils.EmbedType.Question, msgAuthor, {
-				key: "LANGUAGE_TIMEZONE_CONFIRMATION@FOUND_ADDRESS",
-				formatOptions: { address: selectedAddress.formatted_address }
-			});
-
-			const confirmation = await createConfirmationMessage(confirmationEmbed, msg);
-
-			if (!confirmation) {
-				await msg.channel.send({
-					embed: await i18n.generateLocalizedEmbed(utils.EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_CANCELED@FOUND_ADDRESS")
-				});
-
-				return;
-			}
-
-			// trying to resolve timezone
-
-			const timezoneResp = await SetLanguageCommand._sendGoogleMapsReq<IGoogleTimezoneResponse>("timezone", apiKey, {
-				timestamp: (Date.now() / 1000).toFixed(0),
-				location: `${selectedAddress.geometry.location.lat},${selectedAddress.geometry.location.lng}`
-			});
-
-			if (timezoneResp.status !== "OK" || !intlAcceptsTimezone(timezoneResp.timeZoneId)) {
-				await msg.channel.send({
-					embed: await i18n.generateLocalizedEmbed(utils.EmbedType.Error, msgAuthor, "LANGUAGE_TIMEZONE_APIERR@TIMEZONE_RESOLVE", {
-						universalTitle: await i18n.localizeForUser(msgAuthor, "LANGUAGE_TIMEZONE_CANCELED_TITLE")
-					})
-				});
-
-				return;
-			}
-
-			storeValue(CACHE_OWNER, newTZ, timezoneResp.timeZoneId, 604800);
-
-			newTZ = timezoneResp.timeZoneId;
-		} else { newTZ = cached; }
-
-		return newTZ;
-	}
-
-	private static async _sendGoogleMapsReq<T>(apiType: string, apiKey: string, query: { [key: string]: string }) : Promise<T> {
-		const uri = new URL(`https://maps.googleapis.com/maps/api/${apiType}/json`);
-		
-		for (const key in query) { uri.searchParams.set(key, query[key]); }
-
-		uri.searchParams.set("key", apiKey);
-
-		const resp = await fetch(uri.toString());
-
-		if (resp.status !== 200) { throw new Error(`Invalid response code`); }
-
-		return resp.json();
 	}
 
 	private static async _timezoneCurrentTime(str: string, msgAuthor: GuildMember | User, timezone: string) {
@@ -534,27 +441,6 @@ export class SetLanguageCommand extends Plugin implements IModule {
 
 		return true;
 	}
-}
-
-interface IGoogleGeocodingResponse extends IGoogleResponse {
-	results: Array<{
-		formatted_address: string;
-		geometry: {
-			location: {
-				lat: number;
-				lng: number;
-			}
-		}
-	}>;
-}
-
-interface IGoogleTimezoneResponse extends IGoogleResponse {
-	timeZoneId: string;
-	timeZoneName: string;
-}
-
-interface IGoogleResponse {
-	status: string;
 }
 
 
