@@ -25,7 +25,7 @@ Don't forget to share your feedback on [our Discord servers](/README.md#discord-
 
 ```bash
 # Clone repository
-git clone https://gitlab.com/snowball-dev-group/Snowball-Bot.git
+git clone https://github.com/snowball-dev-group/snowball-bot.git
 cd Snowball-Bot
 
 # Initializate all modules
