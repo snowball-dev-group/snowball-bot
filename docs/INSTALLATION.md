@@ -258,7 +258,7 @@ Once you configured everything and run the script. Bot should start up normally.
 
 <!-- META -->
 
-[gitlab_ci]: https://gitlab.com/SnowballBot/Snowball/pipelines?scope=branches&page=1
+[gitlab_ci]: https://gitlab.com/snowball-dev-group/snowball-bot-ci/pipelines?scope=branches&page=1
 [building_doc]: ./BUILDING.md
 [contribution_doc]: ./CONTRIBUTION.md
 [configuration_Doc]: ./CONFIGURATION.md
