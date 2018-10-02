@@ -20,21 +20,21 @@ First of all, let's talk about what kind of contribution you want to make into t
 
 You can leave your feedback on our Discord server. Our Discord servers can be found in the [README file][discord_links].
 
-Or if you want, leave feedback in the Issues section on our [GitLab repository][gitlab_url].
+Or if you want, leave feedback in the Issues section on our [GitHub repository][github_url].
 
 ## Issues
 
-Same applies to the bugs, but with an exclusion: any bugs linked to the code (when you understand and know exactly where an error happens) are going to the Issues section. We track issues on both [GitHub][github_issues] and [GitLab][gitlab_issues]. We still recommend using GitLab.
+Same applies to the bugs, but with an exclusion: any bugs linked to the code (when you understand and know exactly where an error happens) are going to the Issues section. We track issues on [GitHub][github_issues] only. Do not anymore use our GitLab repository except CI one to obtain latest artifacts: old repository is archived and never ever going to be updated, as well as any other our repositories we had moved to GitHub.
 
 ## Merge Requests
 
 There are a few requirements for every merge request:
 
-### 1. GitLab
+### 1. GitHub
 
-**You must commit to the GitLab origin (fork)**. GitHub is our mirror to reach more audience and for people who want to fork repository there for some reason. We do love GitHub, but there are many features we miss.
+**You must commit to the GitHub origin**. GitLab WAS (not anymore) our main home for the repository previously, when GitHub was staying as mirror. But times changed and we've decided to move to GitHub completely, so now any Pull Requests should go to GitHub. GitLab repository is archived and you must not interact with it (read above).
 
-[![Click here: Visit our GitLab](https://img.shields.io/badge/Click%20here-Visit%20our%20GitLab-red.svg?longCache=false&style=for-the-badge&colorB=E24329)][gitlab_url]
+We hope you will like these changes and it'll help us grow a little. We're sorry it tooks us time to decide between platforms.
 
 ---
 
@@ -46,9 +46,11 @@ We're doing any translation-related things in our Crowdin translation project, d
 
 If your language isn't in the list on the Crowdin, please notify us in Discord or create an Issue. PMing Crowdin project managers is ineffective and may not give any result!
 
+Do not forget to see [our repository containing rules and stuff][github_i18n_rules].
+
 We add languages with more than 20% of translated strings. Approvals are not required, most voted strings are going to exported localization files.
 
-For Merge Requests, we only accept those, that contribute to the Russian locale.
+For Pull Requests, we only accept those, that contribute to the source locale (English, US, `en-US`).
 
 ---
 
@@ -98,19 +100,20 @@ This folder is what you deploy on a server. You don't need to change anything th
 
 #### Some of our tips:
 
-##### 1. Use Visual Studio Code
+##### 1. We recommend using Visual Studio Code
 
-Use [Visual Studio **Code**](https://code.visualstudio.com/). It has awesome support for TypeScript, is free, open source, actively developing and just good for developers. *(100% not promo)*
+We highly recommend to use [Visual Studio **Code**](https://code.visualstudio.com/) if you still can't decide which editor to use. It has awesome support for TypeScript, is free, open source, actively developing and just good for developers. *(100% not promo)*
 
-Some extensions we strongly recommend:
+Some extensions you may need:
 
-- [TSLint extension](https://marketplace.visualstudio.com/items?itemName=eg2.tslint) allows you to see most of the TSLint errors without running it from a terminal (does not work with rules that require type informaiton, so you still need to run the TSLint manually sometimes)
+- [Better Comments](https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments) - this will help you to create more human-friendly comments in your code
 - [EditorConfig](https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig) - makes things like identation to be more consistent in all files by having single config in the root directory of the project
 - [GitLens](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens) supercharges the Git capabilities built into Visual Studio Code. It helps you to visualize code authorship at a glance via Git blame annotations and code lens, seamlessly navigate and explore Git repositories, gain valuable insights via powerful comparison commands, and so much more
-- [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) to send HTTP requests without leaving the editor, just open a new file and type something like `GET https://google.com/`
 - [Indent Rainbow](https://marketplace.visualstudio.com/items?itemName=oderwat.indent-rainbow) allows you to see indentation (tabs) more clearly by configurable highlighting rainbow
-- [Better Comments](https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments) - this will help you to create more human-friendly comments in your code
-- [GitLab Workflow](https://marketplace.visualstudio.com/items?itemName=fatihacet.gitlab-workflow) integrates GitLab to VSCode by adding GitLab specific options to VSCode command palette and status bar.
+- [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) to send HTTP requests without leaving the editor, just open a new file and type something like `GET https://google.com/`
+- [TSLint extension](https://marketplace.visualstudio.com/items?itemName=eg2.tslint) allows you to see most of the TSLint errors without running it from a terminal (does not work with rules that require type informaiton, so you still need to run the TSLint manually sometimes)
+
+But! If you already found a code editor, then stick with it and code happy. Do not forget to follow the editor configuration of Identation using Tabs (size for them is your preference, remember) and finish files with empty line.
 
 ##### 2. Reuse code
 
@@ -129,7 +132,6 @@ Be sure not to use private modules in ones you uploading to this repository.
 
 As examples of private modules we put:
 
-- `shibe channel` - deletes any messages which are `!shib`, useful isn't it?
 - `fs things` - module of our partnered server which syncs subscribers to one role and checks nicknames of the members
 - `count` - counting from one to ∞ to test how many database can store
 - `count v2` - almost same as `count` but requires to calculate next number (15563 + 20 = ?)
@@ -164,13 +166,13 @@ Created with :heart: by Snowball's Development Team.
 
 <!-- META -->
 
-[gitlab_url]: https://gitlab.com/SnowballBot/Snowball
+[building_doc]: /docs/BUILDING.md
+[code_doc]: /CODE_OF_CONDUCT.md
+[commit_style_doc]: /docs/COMMIT_STYLE.md
 [crowdin_url]: https://crowdin.com/project/snowball-bot
 [discord_links]: /README.md#join-our-discord-servers
-[code_doc]: /CODE_OF_CONDUCT.md
-[todo_doc]: /TODO.md
-[commit_style_doc]: /docs/COMMIT_STYLE.md
-[building_doc]: /docs/BUILDING.md
+[github_i18n_rules]: https://github.com/snowball-dev-group/snowball-bot-translation
+[github_issues]: https://github.com/snowball-dev-group/snowball-bot/issues
+[github_url]: https://github.com/snowball-dev-group/snowball-bot
 [installation_doc]: /docs/INSTALLATION.md
-[github_issues]: https://github.com/DaFri-Nochiterov/SnowballBot/issues
-[gitlab_issues]: https://gitlab.com/SnowballBot/Snowball/issues
+[todo_doc]: /TODO.md
