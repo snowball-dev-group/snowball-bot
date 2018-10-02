@@ -26,4 +26,4 @@ Module that sends stream notifications
 
 ## Contributors & Sources
 
-- Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**
+- Created by **[DaFri_Nochiterov](https://github.com/dafri-nochiterov)**
