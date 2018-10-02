@@ -1,6 +1,6 @@
 import BaseDBManager from "@cogs/streamNotifications/db/BaseDBManager";
 import { SharedSubscriptionData, addSharedSubscriptionColumns } from "@cogs/streamNotifications/db/Subscriptions/SubscriptionData";
-import { NotificationsSettingsData, addNotificationSettingsColumns } from "@cogs/streamNotifications/db/NotificationsSettingsData";
+import { NotificationsSettingsData, addNotificationSettingsColumns } from "@cogs/streamNotifications/db/Settings/NotificationsSettingsData";
 import * as db from "@utils/db";
 
 //  Settings
@@ -129,6 +129,6 @@ export class NotificationsSettingsDB {
 	}
 }
 
-type OptionalSettings = Promise<NotificationsSettingsData | null>;
+type OptionalSettings = Promise<NotificationsSettingsData | undefined>;
 
 export default NotificationsSettingsDB;

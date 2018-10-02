@@ -1,5 +1,5 @@
-import NotificationsSettingsDB from "./NotificationsSettingsDB";
-import { NotificationsSettingsData, fulfillmentCheck } from "./NotificationsSettingsData";
+import NotificationsSettingsDB from "../Settings/NotificationsSettingsDB";
+import { NotificationsSettingsData, fulfillmentCheck } from "../Settings/NotificationsSettingsData";
 import SharedSubscriptionData from "../Subscriptions/SubscriptionData";
 import SubscriptionBasedController from "../SubscriptionBasedController";
 

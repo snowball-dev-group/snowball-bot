@@ -21,4 +21,3 @@ export function fulfillmentCheck(data: Partial<NotificationsSettingsData>) : dat
 	return subFulfillmentCheck(data);
 }
 
-export default NotificationsSettingsData;

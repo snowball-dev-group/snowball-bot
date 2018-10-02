@@ -52,6 +52,19 @@ export class SubscriptionsDB {
 			.first();
 	}
 
+	public async createSubscription(subscription: SubscriptionData) {
+		checkInitDone(this);
+
+		// Check if there such subscription
+
+		if ((await this.getSubscription(subscription)) != null) {
+			throw new Error("Subscription exists");
+		}
+
+		return this._db(this._tableName)
+			.insert(subscription);
+	}
+
 	public async updateSubscription(data: SubscriptionData) {
 		checkInitDone(this);
 

@@ -1,7 +1,7 @@
-import SharedSubscriptionData from "./Subscriptions/SubscriptionData";
+import SharedSubscriptionData from "../Subscriptions/SubscriptionData";
 import NotificationsDB from "./NotificationsDB";
 import { NotificationData, fulfillmentCheck } from "./NotificationData";
-import SubscriptionBasedController from "./SubscriptionBasedController";
+import SubscriptionBasedController from "../SubscriptionBasedController";
 
 type D = NotificationData;
 type P = NotificationsDB;

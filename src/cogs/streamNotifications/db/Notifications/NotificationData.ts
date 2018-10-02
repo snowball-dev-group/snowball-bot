@@ -1,6 +1,6 @@
-import { SharedSubscriptionData, fulfillmentCheck as subFulfillmentCheck } from "./Subscriptions/SubscriptionData";
+import { SharedSubscriptionData, fulfillmentCheck as subFulfillmentCheck } from "../Subscriptions/SubscriptionData";
 import { TableBuilder } from "knex";
-import { MissingPropertyError } from "./SubscriptionBasedController";
+import { MissingPropertyError } from "../SubscriptionBasedController";
 
 export type NotificationData = SharedSubscriptionData & {
 	readonly messageId: string;
@@ -25,5 +25,3 @@ export function fulfillmentCheck(data: Partial<NotificationData>) : data is Noti
 
 	return true;
 }
-
-export default NotificationData;

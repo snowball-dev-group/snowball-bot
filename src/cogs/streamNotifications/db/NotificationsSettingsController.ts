@@ -1,7 +1,7 @@
-import NotificationsSettingsDB from "./NotificationsSettingsDB";
-import { NotificationsSettingsData, fulfillmentCheck } from "./NotificationsSettingsData";
-import SharedSubscriptionData from "../Subscriptions/SubscriptionData";
-import SubscriptionBasedController from "../SubscriptionBasedController";
+import NotificationsSettingsDB from "./Settings/NotificationsSettingsDB";
+import { NotificationsSettingsData, fulfillmentCheck } from "./Settings/NotificationsSettingsData";
+import SharedSubscriptionData from "./Subscriptions/SubscriptionData";
+import SubscriptionBasedController from "./SubscriptionBasedController";
 
 type P = NotificationsSettingsDB;
 type D = NotificationsSettingsData;

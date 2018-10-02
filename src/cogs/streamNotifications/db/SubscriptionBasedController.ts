@@ -1,14 +1,12 @@
 import SharedSubscriptionData from "./Subscriptions/SubscriptionData";
 
-const CREATE_STATES = new WeakMap<SubscriptionBasedController<any, any>, boolean>();
+const CREATE_STATES = new WeakMap<BaseController<any, any>, boolean>();
 
-export abstract class SubscriptionBasedController<P, D> {
+export abstract class BaseController<P, D> {
 	protected readonly _parent: P;
-	protected readonly _subscription: SharedSubscriptionData;
 	protected _data: Partial<D>;
 
-	constructor(subscription: SharedSubscriptionData, parent: P) {
-		this._subscription = subscription;
+	constructor(parent: P) {
 		this._parent = parent;
 		this._data = Object.create(null);
 	}
@@ -28,7 +26,7 @@ export abstract class SubscriptionBasedController<P, D> {
 	/**
 	 * Gets data from the database
 	 */
-	protected abstract _getData() : Promise<D | null>;
+	protected abstract _getData() : Promise<D | undefined>;
 
 	/**
 	 * Checks if the current data meets the requirements to be posted
@@ -51,6 +49,16 @@ export abstract class SubscriptionBasedController<P, D> {
 		}
 
 		return fetchState;
+	}
+}
+
+export abstract class SubscriptionBasedController<P, D> extends BaseController<P, D> {
+	protected readonly _subscription: SharedSubscriptionData;
+
+	constructor(subscription: SharedSubscriptionData, parent: P) {
+		super(parent);
+
+		this._subscription = subscription;
 	}
 }
 

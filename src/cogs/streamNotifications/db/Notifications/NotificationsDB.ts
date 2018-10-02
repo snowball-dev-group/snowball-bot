@@ -1,5 +1,5 @@
-import BaseDBManager from "./BaseDBManager";
-import { SharedSubscriptionData, addSharedSubscriptionColumns, getSelection } from "./Subscriptions/SubscriptionData";
+import BaseDBManager from "../BaseDBManager";
+import { SharedSubscriptionData, addSharedSubscriptionColumns, getSelection } from "../Subscriptions/SubscriptionData";
 import { NotificationData, addNotificationColumns } from "./NotificationData";
 import * as db from "@utils/db";
 
@@ -101,6 +101,6 @@ export class NotificationsDB {
 	}
 }
 
-type Notification = Promise<NotificationData | null>;
+type Notification = Promise<NotificationData | undefined>;
 
 export default NotificationsDB;
