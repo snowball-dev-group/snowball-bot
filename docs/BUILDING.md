@@ -20,7 +20,7 @@ For others we recommend to check out either `staged` or `master`.
 To clone project and check out to the needed branch, use command:
 
 ```bash
-git clone --branch=staged https://gitlab.com/snowball-dev-group/Snowball-Bot.git
+git clone --branch=staged https://github.com/snowball-dev-group/snowball-bot.git
 ```
 
 ### 2. Installing dependencies
