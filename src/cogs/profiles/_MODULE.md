@@ -24,4 +24,4 @@ Profiles - plugin that allows to create server members their own profiles with a
 
 ## Contributors & Sources
 
-- Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**
+- Created by **[DaFri_Nochiterov](https://github.com/dafri-nochiterov)**

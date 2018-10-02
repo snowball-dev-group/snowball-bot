@@ -29,4 +29,4 @@ Whitelist control plugin that allows you to ban, activate and deactivate some se
 
 ## Contributors & Sources
 
-- Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**
+- Created by **[DaFri_Nochiterov](https://github.com/dafri-nochiterov)**

@@ -10,4 +10,4 @@ Evil eval in Node "virtual machine", so it won't crash your process, hopefully..
 
 ## Contributors & Sources
 
-- Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**
+- Created by **[DaFri_Nochiterov](https://github.com/dafri-nochiterov)**

@@ -21,4 +21,4 @@ Adds statuses rotation, allows to set own status and more.
 
 ## Contributors & Sources
 
-- Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**
+- Created by **[DaFri_Nochiterov](https://github.com/dafri-nochiterov)**

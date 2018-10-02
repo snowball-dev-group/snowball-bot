@@ -10,4 +10,4 @@ Owner commands to `!change_avy` (profile picture), `!change_nickname` and `!chan
 
 ## Contributors & Sources
 
-- Created by **[DaFri_Nochiterov](https://gitlab.com/dafri-nochiterov)**
+- Created by **[DaFri_Nochiterov](https://github.com/dafri-nochiterov)**
