@@ -2,45 +2,126 @@ import { stripEmptyChars, escapeRegExp } from "@utils/text";
 import { INullableHashMap } from "../types/Types";
 import { slice } from "lodash";
 
+/**
+ * Default separator for the arguments
+ */
 export const CMDPARSER_ARGUMENTS_SEPARATOR = ",";
 
 /**
  * Parses command into delicious pieces
  * @param str String to parse
- * @param argsSeparator Separator for arguments
+ * @param options Options for the parsing
  */
-export function parse(str: string, argsSeparator = CMDPARSER_ARGUMENTS_SEPARATOR): ICommandParseResult {
+export function parse(str: string, options?: IParseOptions): ICommandParseResult {
+	options = {
+		separator: CMDPARSER_ARGUMENTS_SEPARATOR,
+		enableQuotes: true,
+		lowercase: false,
+		...options
+	};
+
 	const parts = str.split(" ");
 
-	const cmd = parts.shift()!;
-	const subCmd = parts.shift() || null; // subcmd / null
+	let cmd = parts.shift()!;
+	let subCmd = parts.shift() || null; // subcmd / null
 
 	let args: ICommandParseResultArg[] | null = null;
 
 	let argsStr: string | undefined = undefined;
 
+	const { separator, enableQuotes } = options;
+
 	if (parts.length > 0) {
 		args = [];
 
-		const cmdStr = `${cmd}${subCmd != null ? ` ${subCmd} ` : " "}`;
+		const cmdStr = `${cmd}${subCmd ? ` ${subCmd} ` : " "}`;
+
 		argsStr = str.substring(cmdStr.length);
 
-		const argSplitResult = argumentSplit(argsStr, argsSeparator);
+		const argSplitResult = argumentSplit(
+			argsStr,
+			separator,
+			enableQuotes
+		);
+
 		for (let i = 0, l = argSplitResult.length; i < l; i++) {
 			const arg = argSplitResult[i];
+
+			const value = stripEmptyChars(arg)
+				.trim()
+				.replace(/\\\,/g, ",");
+
 			args.push({
 				raw: arg,
-				value: stripEmptyChars(arg).trim().replace(/\\\,/g, ",")
+				value
 			});
+		}
+	}
+
+	const { lowercase } = options;
+
+	if (lowercase != null) {
+		if (lowercase === true || lowercase === "command") {
+			cmd = cmd.toLowerCase();
+		}
+
+		if (subCmd != null) {
+			if (lowercase === true || lowercase === "subcommand") {
+				subCmd = subCmd.toLowerCase();
+			}
 		}
 	}
 
 	return {
 		command: cmd,
 		subCommand: subCmd,
-		arguments: args != null ? argsGenerator(args, argsStr!) : null,
-		content: subCmd != null ? `${subCmd}${argsStr ? ` ${argsStr}` : ""}` : ""
+		arguments: args
+			? argsGenerator(args, argsStr!)
+			: null,
+		content: subCmd
+			? `${subCmd}${argsStr || ""}`
+			: ""
 	};
+}
+
+export interface IParseOptions {
+	/**
+	 * Separator for the arguments.
+	 * 
+	 * Sets the characters used to separate arguments from each other.
+	 * For example, for `|` it will split "arg1 | arg2" to `["arg1", "arg2"]`
+	 * and for `-` it will not: `["arg1 | arg2"]`.
+	 * 
+	 * It is recommended to not use complex separators.
+	 * 
+	 * Separators can be escaped by placing `\` before them:
+	 * `"arg1 \\| arg2"` ⇒ `["arg1 | arg2"]`.
+	 * 
+	 * **This is set to `,` by default.**
+	 */
+	separator?: string;
+	/**
+	 * Enable quotations marks in arguments?
+	 * 
+	 * This will allow users to use arguments like `"Hello, world!"`
+	 * without worrying about the separation of the arguments after `Hello`.
+	 * 
+	 * Quotation marks can also be escaped using the `\` before them.
+	 * 
+	 * **This is enabled by default.**
+	 */
+	enableQuotes?: boolean;
+	/**
+	 * Convert command or subcommand to lowercase?
+	 * 
+	 * If set to `true`, both command and subcommand will be
+	 * converted to the lowercase. You can also provide string
+	 * of either "command" or  "subcommand" to convert only one
+	 * of them. Value of `false` will disable conversion.
+	 * 
+	 * **This is disabled by default.**
+	 */
+	lowercase?: boolean | ("command" | "subcommand");
 }
 
 function argsGenerator(args: ICommandParseResultArg[], original: string): ICommandParseResultArgs {
@@ -49,25 +130,34 @@ function argsGenerator(args: ICommandParseResultArg[], original: string): IComma
 
 	for (let i = 0, l = args.length; i < l; i++) {
 		const arg = args[i];
+
 		if (arg.value.length > 0) {
 			normal.push(arg.value);
 		}
+
 		raw.push(arg.raw);
 	}
 
 	// tslint:disable-next-line:prefer-object-spread
 	return Object.assign(args, {
-		only: (type: "value" | "raw") => slice(type === "value" ? normal : raw),
+		only(type: "value" | "raw") {
+			return slice(type === "value" ? normal : raw);
+		},
 		original
 	});
 }
 
 /**
+ * RegExp to find next quotation mark without the escape
+ */
+const QUOTE_MARK_REGEXP = /(?<=([^\\\\]))"/;
+
+/**
  * Works speedy than `String#split()` and has separator escaping
- * @param argStr Arguments string
+ * @param str Arguments string
  * @param separator Separator
  */
-export function argumentSplit(argStr: string, separator = ",") {
+export function argumentSplit(str: string, separator = ",", enableQuotes = true) {
 	if (separator.length === 0) {
 		throw new Error("`separator` can't be empty string");
 	}
@@ -79,19 +169,44 @@ export function argumentSplit(argStr: string, separator = ",") {
 	// \\ for separator escape, in Discord would look like "hello\, world!" ("hello\\, world!")
 	const separatorRegexp = RegExp(`(?<=(^|[^\\\\]))${separator}`);
 
-	let nPos = 0;
-	while (nPos !== -1) {
-		argStr = argStr.substr(nPos);
+	let nextIndex = 0;
 
-		const separatorMatch = separatorRegexp.exec(argStr);
+	while (nextIndex !== -1) {
+		str = str.substr(nextIndex);
 
-		let curArgEndPos: null | number = null;
+		if (enableQuotes && str[0] === "\"") {
+			// try to find second one
+
+			const quoteEnd = QUOTE_MARK_REGEXP.exec(str);
+
+			if (quoteEnd) {
+				nextIndex = quoteEnd.index + quoteEnd[0].length;
+
+				args.push(
+					str
+						.substring(1, quoteEnd.index)
+						.replace("\\\"", "\"")
+				);
+
+				continue;
+			}
+		}
+
+		const separatorMatch = separatorRegexp.exec(str);
+
+		let argEndIndex: number | undefined;
+
 		if (separatorMatch) {
-			nPos = separatorMatch.index + separatorMatch[0].length;
-			curArgEndPos = separatorMatch.index;
-		} else { nPos = -1; }
+			nextIndex = separatorMatch.index + separatorMatch[0].length;
 
-		args.push(argStr.substring(0, curArgEndPos === null ? undefined : curArgEndPos));
+			argEndIndex = separatorMatch.index;
+		} else {
+			nextIndex = -1;
+		}
+
+		args.push(
+			str.substring(0, argEndIndex)
+		);
 	}
 
 	return args;
@@ -100,21 +215,95 @@ export function argumentSplit(argStr: string, separator = ",") {
 /**
  * "Redirects" command from message to needed handler
  * @param parsed Parsed message
- * @param redirects Handlers for these commands
+ * @param redirects Handlers for the commands
  * @example
  * commandRedirect(parsed, { "ping": () => this._pingHandler(parsed) })
+ * @deprecated This API will be removed soon, use `createRedirector` instead
  */
-export function commandRedirect(parsed: ICommandParseResult, redirects: INullableHashMap<(parsed: ICommandParseResult) => any>) {
+export function commandRedirect(parsed: ICommandParseResult, redirects: RedirectsMap) {
 	const command = parsed.command;
-
-	// parsed.command → "!hello"
-	// commands → { "!hello" }
 
 	const callback = redirects[command];
 
 	if (callback) {
 		return callback(parsed);
 	}
+}
+
+/**
+ * RegExp to check if the command is valid
+ */
+const COMMAND_REGEX = /^[^ ]+$/i;
+
+/**
+ * Check if there any uppercase character in the command
+ */
+const UPPERCASE_REGEXP = /[A-Z]/;
+
+/**
+ * Creates a command redirector
+ * @param redirects Redirects for the commands
+ * @param options Options for the redirector
+ * @example
+ * ```
+ * this._redirector = commands.createRedirector({
+ *   "ping": (ctx) => this._onPing(ctx),
+ * });
+ * 
+ * // ...
+ * 
+ * this._redirector(commands.parse(msg));
+ * ```
+ */
+export function createRedirector(redirects: RedirectsMap, options?: IRedirectorOptions) {
+	options = {
+		ignoreCase: true,
+		...options
+	};
+
+	for (const command in redirects) {
+		if (!COMMAND_REGEX.test(command)) {
+			throw new Error(`Invalid command: ${command}`);
+		}
+
+		if (!options.ignoreCase || !UPPERCASE_REGEXP.test(command)) {
+			continue;
+		}
+
+		const redirect = redirects[command];
+
+		delete redirects[command];
+
+		redirects[command.toLowerCase()] = redirect;
+	}
+
+	return (parsed: ICommandParseResult) => {
+		let { command } = parsed;
+
+		if (options && options.ignoreCase) {
+			command = command.toLowerCase();
+		}
+
+		const callback = redirects[command];
+
+		if (callback) {
+			return callback(parsed);
+		}
+	};
+}
+
+type RedirectsMap = INullableHashMap<(parsed: ICommandParseResult) => any>;
+
+export interface IRedirectorOptions {
+	/**
+	 * What happens on the fail
+	 * @param ctx Context
+	 */
+	onFail?(ctx): any;
+	/**
+	 * Ignore case of the commands
+	 */
+	ignoreCase?: boolean;
 }
 
 export interface ICommandParseResult {
