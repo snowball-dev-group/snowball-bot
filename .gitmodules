@@ -1,6 +1,3 @@
-[submodule "src/cogs/reload"]
-	path = src/cogs/reload
-	url = ../Modules/Reload_Module.git
 [submodule "src/cogs/8ball"]
 	path = src/cogs/8ball
-	url = ../Modules/8Ball.git
+	url = ../../snowball-dev-group/snowball-bot-8ball.git
