@@ -255,7 +255,7 @@ const UPPERCASE_REGEXP = /[A-Z]/;
  * this._redirector(commands.parse(msg));
  * ```
  */
-export function createRedirector(redirects: RedirectsMap, options?: IRedirectorOptions) {
+export function createRedirector(redirects: RedirectsMap, options?: IRedirectorOptions): Redirector {
 	options = {
 		ignoreCase: true,
 		...options
@@ -293,6 +293,8 @@ export function createRedirector(redirects: RedirectsMap, options?: IRedirectorO
 }
 
 type RedirectsMap = INullableHashMap<(parsed: ICommandParseResult) => any>;
+
+export type Redirector = (ctx: ICommandParseResult) => void;
 
 export interface IRedirectorOptions {
 	/**
