@@ -24,7 +24,7 @@ class OwnerCommands implements IModule {
 		return "snowball.core_features.ownercmds";
 	}
 
-	private static _log = getLogger("OwnerCommands");
+	private static readonly _log = getLogger("OwnerCommands");
 
 	private _handler: MF.IPublicFlowCommand;
 	private _isUnloaded = false;
