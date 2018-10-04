@@ -220,7 +220,10 @@ export function argumentSplit(str: string, separator = ",", enableQuotes = true)
  * commandRedirect(parsed, { "ping": () => this._pingHandler(parsed) })
  * @deprecated This API will be removed soon, use `createRedirector` instead
  */
-export function commandRedirect(parsed: ICommandParseResult, redirects: RedirectsMap) {
+export function commandRedirect(
+	parsed: ICommandParseResult,
+	redirects: RedirectsMap<ICommandParseResult>
+) {
 	const command = parsed.command;
 
 	const callback = redirects[command];
@@ -255,7 +258,10 @@ const UPPERCASE_REGEXP = /[A-Z]/;
  * this._redirector(commands.parse(msg));
  * ```
  */
-export function createRedirector(redirects: RedirectsMap, options?: IRedirectorOptions): Redirector {
+export function createRedirector<T = ICommandParseResult>(
+	redirects: RedirectsMap<T>,
+	options?: IRedirectorOptions
+): Redirector<T> {
 	options = {
 		ignoreCase: true,
 		...options
@@ -277,8 +283,8 @@ export function createRedirector(redirects: RedirectsMap, options?: IRedirectorO
 		redirects[command.toLowerCase()] = redirect;
 	}
 
-	return (parsed: ICommandParseResult) => {
-		let { command } = parsed;
+	return (ctx) => {
+		let { command } = ctx;
 
 		if (options && options.ignoreCase) {
 			command = command.toLowerCase();
@@ -287,14 +293,15 @@ export function createRedirector(redirects: RedirectsMap, options?: IRedirectorO
 		const callback = redirects[command];
 
 		if (callback) {
-			return callback(parsed);
+			return callback(ctx);
 		}
 	};
 }
 
-type RedirectsMap = INullableHashMap<(parsed: ICommandParseResult) => any>;
-
-export type Redirector = (ctx: ICommandParseResult) => void;
+type RedirectsMap<T> = INullableHashMap<RedirectorCallback<T>>;
+type RedirectorCallback<T> = (ctx: RedirectorContext<T>) => any;
+export type RedirectorContext<T> = T & ICommandParseResult;
+export type Redirector<T> = (ctx: RedirectorContext<T>) => void;
 
 export interface IRedirectorOptions {
 	/**
