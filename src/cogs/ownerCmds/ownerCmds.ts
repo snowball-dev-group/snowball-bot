@@ -1,137 +1,245 @@
 import { IModule } from "@sb-types/ModuleLoader/Interfaces";
-import { Plugin } from "../plugin";
 import { Message } from "discord.js";
 import { generateLocalizedEmbed } from "@utils/ez-i18n";
-import { EmbedType, escapeDiscordMarkdown, getMessageMemberOrAuthor } from "@utils/utils";
+import { EmbedType, escapeDiscordMarkdown, getMessageMemberOrAuthor, getUserDisplayName } from "@utils/utils";
 import { default as fetch } from "node-fetch";
-import { parse, commandRedirect } from "@utils/command";
-import * as logger from "loggy";
+import { createRedirector, RedirectorCallback } from "@utils/command";
+import { ErrorMessages } from "@sb-types/Consts";
+import * as MF from "@cogs/cores/messagesFlows";
+import * as getLogger from "loggy";
 
-class OwnerCommands extends Plugin implements IModule {
+const EMOJI_OK = "👌";
+const EMOJI_FAIL = "🚫";
+
+type OwnerCommandsUnion = "set_avatar" | "set_username";
+
+const COMMANDS: OwnerCommandsUnion[] = ["set_avatar", "set_username"];
+
+type OwnerCommandsRedirects = {
+	[command in OwnerCommandsUnion]: RedirectorCallback<MF.IMessageFlowContext>
+};
+
+class OwnerCommands implements IModule {
 	public get signature() {
 		return "snowball.core_features.ownercmds";
 	}
 
-	private readonly _log: Function = logger("OwnerCMDs");
+	private static readonly _log = getLogger("OwnerCommands");
 
-	constructor() {
-		super({
-			"message": (msg: Message) => this._onMessage(msg)
+	private _handler: MF.IPublicFlowCommand;
+	private _isUnloaded = false;
+
+	public async init() {
+		if (!$modLoader.isPendingInitialization(this.signature)) {
+			throw new Error(
+				ErrorMessages.NOT_PENDING_INITIALIZATION
+			);
+		}
+
+		const redirects: OwnerCommandsRedirects = {
+			set_username: (ctx) => OwnerCommands._changeName(ctx),
+			set_avatar: (ctx) => OwnerCommands._changeAvatar(ctx)
+		};
+
+		const redirect = createRedirector<MF.IMessageFlowContext>(
+			redirects
+		);
+
+		const mfKeeper = $modLoader.findKeeper<MF.MessagesFlows>(
+			"snowball.core_features.messageflows"
+		);
+
+		if (!mfKeeper) {
+			throw new Error("MessagesFlows Keeper not found");
+		}
+
+		mfKeeper.onInit((mf) => {
+			const handler = mf.watchForCommands(
+				redirect,
+				COMMANDS
+			);
+
+			if (this._isUnloaded) {
+				return handler.unhandle();
+			}
+
+			this._handler = handler;
 		});
 	}
 
-	private async _onMessage(msg: Message) {
-		if (!msg.author) { return; }
-		if (msg.author.id !== $botConfig.botOwner) { return; }
+	/**
+	 * Checks if message can be used by message sender
+	 * @param msg Message to check again
+	 */
+	private static _canUseCommand(msg: Message) {
+		return msg.author && msg.author.id === $botConfig.botOwner;
+	}
+
+	/**
+	 * Changes the username of the bot
+	 * @param ctx Command call context
+	 */
+	private static async _changeName(ctx: MF.IMessageFlowContext) {
+		const { message: msg } = ctx;
+
+		if (!OwnerCommands._canUseCommand(msg)) {
+			return;
+		}
 
 		const caller = await getMessageMemberOrAuthor(msg);
 
 		if (!caller) { return; }
 
-		const parsed = parse(msg.content);
+		const { parsed } = ctx;
 
-		return commandRedirect(parsed, {
-			"!change_name": async () => {
-				try {
-					const oldName = $discordBot.user.username;
-					const newUser = await $discordBot.user.setUsername(
-						parsed.content
-					);
-					await msg.react("✅");
+		try {
+			const oldName = $discordBot.user.tag;
 
-					return msg.channel.send({
-						embed: await generateLocalizedEmbed(
-							EmbedType.OK, caller, {
-								key: "OWNERCMDS_CHANGENAME_DONE",
-								formatOptions: {
-									oldName: escapeDiscordMarkdown(oldName, true),
-									newName: escapeDiscordMarkdown(newUser.username, true)
-								}
-							})
-					});
-				} catch (err) {
-					await msg.react("🚫");
+			const newUser = await $discordBot.user.setUsername(
+				parsed.content
+			);
 
-					return msg.channel.send({
-						embed: await generateLocalizedEmbed(
-							EmbedType.Error, caller, {
-								key: "OWNERCMDS_CHANGENAME_FAULT",
-								formatOptions: {
-									errMessage: err.message
-								}
-							})
-					});
-				}
-			},
-			"!change_pfp": async () => {
-				try {
-					const attachment = msg.attachments.first();
+			OwnerCommands._log("ok", `Changed profile picture from "${oldName}" to "${newUser.tag}" per ${getUserDisplayName(caller, true)}'s request`);
 
-					if (!attachment) {
-						return msg.channel.send({
-							embed: await generateLocalizedEmbed(
-								EmbedType.Error,
-								caller,
-								"OWNERCMDS_CHANGEAVY_NOATTACHMENT"
-							)
-						});
+			await OwnerCommands._silentReaction(msg, EMOJI_OK);
+
+			return msg.channel.send({
+				embed: await generateLocalizedEmbed(
+					EmbedType.OK, caller, {
+						key: "OWNERCMDS_CHANGENAME_DONE",
+						formatOptions: {
+							oldName: escapeDiscordMarkdown(oldName, true),
+							newName: escapeDiscordMarkdown(newUser.username, true)
+						}
 					}
+				)
+			});
+		} catch (err) {
+			await OwnerCommands._silentReaction(msg, EMOJI_FAIL);
 
-					const resp = await fetch(attachment.url);
-
-					if (resp.status !== 200) {
-						return msg.channel.send({
-							embed: await generateLocalizedEmbed(
-								EmbedType.Progress, caller,
-								"OWNERCMDS_CHANGEAVY_FAULT_RESPERR"
-							)
-						});
+			return msg.channel.send({
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error, caller, {
+						key: "OWNERCMDS_CHANGENAME_FAULT",
+						formatOptions: {
+							errMessage: err.message
+						}
 					}
+				)
+			});
+		}
+	}
 
-					try {
-						const newUser = await $discordBot.user.setAvatar(await resp.buffer());
+	/**
+	 * Changes the profile picture of the bot
+	 * @param ctx Command call context
+	 */
+	private static async _changeAvatar(ctx: MF.IMessageFlowContext) {
+		const { message: msg } = ctx;
 
-						return msg.channel.send({
-							embed: await generateLocalizedEmbed(
-								EmbedType.OK, caller, "OWNERCMDS_CHANGEAVY_DONE", {
-									imageUrl: newUser.displayAvatarURL({ format: "png", size: 1024 })
-								}
-							)
-						});
-					} catch (err) {
-						return msg.channel.send({
-							embed: await generateLocalizedEmbed(
-								EmbedType.Error, caller, {
-									key: "OWNERCMDS_CHANGEAVY_FAULT_SETFAILED",
-									formatOptions: {
-										errMessage: err.message
-									}
-								})
-						});
-					}
-				} catch (err) {
-					this._log("err", "Error changing/downloading profile picture");
+		if (!OwnerCommands._canUseCommand(msg)) {
+			return;
+		}
 
-					return msg.channel.send({
-						embed: await generateLocalizedEmbed(
-							EmbedType.Error, caller, {
-								key: "OWNERCMDS_CHANGEAVY_FAULT_REQERROR",
-								formatOptions: {
-									errMsg: err.message
-								}
-							})
-					});
-				}
+		const caller = await getMessageMemberOrAuthor(msg);
+
+		if (!caller) { return; }
+
+		try {
+			const attachment = msg.attachments.first();
+
+			if (!attachment) {
+				return msg.channel.send({
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						caller,
+						"OWNERCMDS_CHANGEAVY_NOATTACHMENT"
+					)
+				});
 			}
-		});
+
+			const resp = await fetch(attachment.url);
+
+			if (resp.status !== 200) {
+				return msg.channel.send({
+					embed: await generateLocalizedEmbed(
+						EmbedType.Progress,
+						caller,
+						"OWNERCMDS_CHANGEAVY_FAULT_RESPERR"
+					)
+				});
+			}
+
+			try {
+				const newUser = await $discordBot.user.setAvatar(
+					await resp.buffer()
+				);
+
+				OwnerCommands._log("ok", `Changed profile avatar to "${newUser.displayAvatarURL()}" per ${getUserDisplayName(caller, true)}'s request`);
+
+				return msg.channel.send({
+					embed: await generateLocalizedEmbed(
+						EmbedType.OK,
+						caller,
+						"OWNERCMDS_CHANGEAVY_DONE", {
+							imageUrl: newUser.displayAvatarURL({ format: "png", size: 1024 })
+						}
+					)
+				});
+			} catch (err) {
+				return msg.channel.send({
+					embed: await generateLocalizedEmbed(
+						EmbedType.Error,
+						caller, {
+							key: "OWNERCMDS_CHANGEAVY_FAULT_SETFAILED",
+							formatOptions: {
+								errMessage: err.message
+							}
+						}
+					)
+				});
+			}
+		} catch (err) {
+			await OwnerCommands._silentReaction(msg, EMOJI_FAIL);
+
+			return msg.channel.send({
+				embed: await generateLocalizedEmbed(
+					EmbedType.Error,
+					caller, {
+						key: "OWNERCMDS_CHANGEAVY_FAULT_REQERROR",
+						formatOptions: {
+							errMsg: err.message
+						}
+					}
+				)
+			});
+		}
+	}
+
+	/**
+	 * Leaves reaction on the message or silently ignores any error
+	 * @param msg Message to leave reaction on
+	 * @param reaction Reaction to leave
+	 */
+	private static async _silentReaction(msg: Message, reaction: string) {
+		return msg.react(reaction).catch(
+			// silently ignore error
+			() => Promise.resolve()
+		);
 	}
 
 	public async unload() {
 		if (!$modLoader.isPendingUnload(this.signature)) {
-			throw new Error("This module is not pending unload");
+			throw new Error(
+				ErrorMessages.NOT_PENDING_UNLOAD
+			);
 		}
 
-		this.unhandleEvents();
+		if (this._handler) {
+			this._handler.unhandle();
+		} else {
+			this._isUnloaded = true;
+		}
 
 		return true;
 	}
