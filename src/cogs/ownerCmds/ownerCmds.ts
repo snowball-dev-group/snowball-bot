@@ -3,13 +3,21 @@ import { Message } from "discord.js";
 import { generateLocalizedEmbed } from "@utils/ez-i18n";
 import { EmbedType, escapeDiscordMarkdown, getMessageMemberOrAuthor, getUserDisplayName } from "@utils/utils";
 import { default as fetch } from "node-fetch";
-import { createRedirector } from "@utils/command";
+import { createRedirector, RedirectorCallback } from "@utils/command";
 import { ErrorMessages } from "@sb-types/Consts";
 import * as MF from "@cogs/cores/messagesFlows";
 import * as getLogger from "loggy";
 
 const EMOJI_OK = "👌";
 const EMOJI_FAIL = "🚫";
+
+type OwnerCommandsUnion = "set_avatar" | "set_username";
+
+const COMMANDS: OwnerCommandsUnion[] = ["set_avatar", "set_username"];
+
+type OwnerCommandsRedirects = {
+	[command in OwnerCommandsUnion]: RedirectorCallback<MF.IMessageFlowContext>
+};
 
 class OwnerCommands implements IModule {
 	public get signature() {
@@ -28,10 +36,14 @@ class OwnerCommands implements IModule {
 			);
 		}
 
-		const redirect = createRedirector<MF.IMessageFlowContext>({
-			"change_name": (ctx) => OwnerCommands._changeName(ctx),
-			"change_avatar": (ctx) => OwnerCommands._changeAvatar(ctx)
-		});
+		const redirects: OwnerCommandsRedirects = {
+			set_username: (ctx) => OwnerCommands._changeName(ctx),
+			set_avatar: (ctx) => OwnerCommands._changeAvatar(ctx)
+		};
+
+		const redirect = createRedirector<MF.IMessageFlowContext>(
+			redirects
+		);
 
 		const mfKeeper = $modLoader.findKeeper<MF.MessagesFlows>(
 			"snowball.core_features.messageflows"
@@ -44,7 +56,7 @@ class OwnerCommands implements IModule {
 		mfKeeper.onInit((mf) => {
 			const handler = mf.watchForCommands(
 				redirect,
-				["set_avatar", "set_username"]
+				COMMANDS
 			);
 
 			if (this._isUnloaded) {
