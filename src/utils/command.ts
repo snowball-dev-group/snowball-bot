@@ -298,8 +298,8 @@ export function createRedirector<T = ICommandParseResult>(
 	};
 }
 
-type RedirectsMap<T> = INullableHashMap<RedirectorCallback<T>>;
-type RedirectorCallback<T> = (ctx: RedirectorContext<T>) => any;
+export type RedirectsMap<T> = INullableHashMap<RedirectorCallback<T>>;
+export type RedirectorCallback<T> = (ctx: RedirectorContext<T>) => any;
 export type RedirectorContext<T> = T & ICommandParseResult;
 export type Redirector<T> = (ctx: RedirectorContext<T>) => void;
 
