@@ -135,7 +135,7 @@ export function parse(str: string, options?: IParseOptions): ICommandParseResult
 		command,
 		subCommand,
 		arguments: args
-			? argsGenerator(args, argsStr!)
+			? argsGenerator(args, argsStr)
 			: null,
 		content: subCommand
 			? `${subCommand}${argsStr || ""}`
