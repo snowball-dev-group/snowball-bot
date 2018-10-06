@@ -27,63 +27,74 @@ export function parse(str: string, options?: IParseOptions): ICommandParseResult
 
 	const { enableQuotes } = options;
 
+	// Next index of the space character
+	let nextIndex = 0;
+
 	{ // Parsing command and subcommand
 		let baseStr = str;
 
-		let nextIndex = 0;
-
 		{
 			nextIndex = baseStr.indexOf(" ");
-	
-			command = baseStr.slice(0, nextIndex);
 
-			baseStr = baseStr.slice(nextIndex + 1);
+			const noSpace = nextIndex === -1;
+
+			command = noSpace
+				? baseStr
+				: baseStr.slice(0, nextIndex);
+
+			baseStr = noSpace
+				? ""
+				: baseStr.slice(nextIndex + 1);
 		}
 
-		(() => {
-			if (options.skipSubcommand) { return; }
-
-			if (enableQuotes) {
-				if (baseStr.startsWith("\"")) {
-					const quoteMatch = QUOTE_MARK_REGEXP.exec(baseStr);
-
-					if (quoteMatch) {
-						nextIndex = quoteMatch.index;
-
-						subCommand = baseStr.slice(1, nextIndex);
-
-						baseStr = baseStr.slice(nextIndex + 1);
-
-						if (baseStr[0] === " ") {
-							baseStr = baseStr.slice(1);
+		if (nextIndex !== -1) {
+			(() => {
+				if (options.skipSubcommand) { return; }
+	
+				if (enableQuotes) {
+					if (baseStr.startsWith("\"")) {
+						const quoteMatch = QUOTE_MARK_REGEXP.exec(baseStr);
+	
+						if (quoteMatch) {
+							nextIndex = quoteMatch.index;
+	
+							subCommand = baseStr.slice(1, nextIndex);
+	
+							baseStr = baseStr.slice(nextIndex + 1);
+	
+							if (baseStr[0] === " ") {
+								baseStr = baseStr.slice(1);
+							}
+	
+							return;
 						}
-
-						return;
 					}
 				}
-			}
-
-			nextIndex = baseStr.indexOf(" ");
-
-			if (nextIndex === -1) {
-				subCommand = baseStr;
-
-				baseStr = "";
-
-				return;
-			}
-
-			subCommand = baseStr.slice(0, nextIndex);
-
-			baseStr = baseStr.slice(nextIndex + 1);
-		})();
+	
+				nextIndex = baseStr.indexOf(" ");
+	
+				if (nextIndex === -1) {
+					subCommand = baseStr;
+	
+					baseStr = "";
+	
+					return;
+				}
+	
+				subCommand = baseStr.slice(0, nextIndex);
+	
+				baseStr = baseStr.slice(nextIndex + 1);
+			})();
+		}
 
 		argsStr = baseStr;
 	}
 
 	let args: ICommandParseResultArg[] | null = null;
 
-	if (argsStr.length > 0) {
+	// If there is no `nextIndex` set means there is no arguments
+	// No sence of calling .length on argsStr
+	if (nextIndex !== 1) {
 		args = [];
 
 		const argSplitResult = argumentSplit(
