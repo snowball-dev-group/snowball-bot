@@ -228,7 +228,8 @@ export function argumentSplit(str: string, separator = ",", enableQuotes = true)
 	let nextIndex = 0;
 
 	while (nextIndex !== -1) {
-		str = str.substr(nextIndex);
+		str = str.slice(nextIndex);
+
 		if (str.length === 0) { break; }
 
 		if (enableQuotes && str[0] === "\"") {
