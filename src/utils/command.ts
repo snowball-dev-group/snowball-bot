@@ -17,30 +17,89 @@ export function parse(str: string, options?: IParseOptions): ICommandParseResult
 		separator: CMDPARSER_ARGUMENTS_SEPARATOR,
 		enableQuotes: true,
 		lowercase: false,
+		skipSubcommand: false,
 		...options
 	};
 
-	const parts = str.split(" ");
+	let command: string;
+	let subCommand: string | null = null;
+	let argsStr = "";
 
-	let cmd = parts.shift()!;
-	let subCmd = parts.shift() || null; // subcmd / null
+	const { enableQuotes } = options;
+
+	// Next index of the space character
+	let nextIndex = 0;
+
+	{ // Parsing command and subcommand
+		let baseStr = str;
+
+		{
+			nextIndex = baseStr.indexOf(" ");
+
+			const noSpace = nextIndex === -1;
+
+			command = noSpace
+				? baseStr
+				: baseStr.slice(0, nextIndex);
+
+			baseStr = noSpace
+				? ""
+				: baseStr.slice(nextIndex + 1);
+		}
+
+		if (nextIndex !== -1) {
+			(() => {
+				if (options.skipSubcommand) { return; }
+	
+				if (enableQuotes) {
+					if (baseStr.startsWith("\"")) {
+						const quoteMatch = QUOTE_MARK_REGEXP.exec(baseStr);
+	
+						if (quoteMatch) {
+							nextIndex = quoteMatch.index;
+	
+							subCommand = baseStr.slice(1, nextIndex);
+	
+							baseStr = baseStr.slice(nextIndex + 1);
+	
+							if (baseStr[0] === " ") {
+								baseStr = baseStr.slice(1);
+							}
+	
+							return;
+						}
+					}
+				}
+	
+				nextIndex = baseStr.indexOf(" ");
+	
+				if (nextIndex === -1) {
+					subCommand = baseStr;
+	
+					baseStr = "";
+	
+					return;
+				}
+	
+				subCommand = baseStr.slice(0, nextIndex);
+	
+				baseStr = baseStr.slice(nextIndex + 1);
+			})();
+		}
+
+		argsStr = baseStr;
+	}
 
 	let args: ICommandParseResultArg[] | null = null;
 
-	let argsStr: string | undefined = undefined;
-
-	const { separator, enableQuotes } = options;
-
-	if (parts.length > 0) {
+	// If there is no `nextIndex` set means there is no arguments
+	// No sence of calling .length on argsStr
+	if (nextIndex !== 1) {
 		args = [];
-
-		const cmdStr = `${cmd}${subCmd ? ` ${subCmd} ` : " "}`;
-
-		argsStr = str.substring(cmdStr.length);
 
 		const argSplitResult = argumentSplit(
 			argsStr,
-			separator,
+			options.separator,
 			enableQuotes
 		);
 
@@ -62,24 +121,24 @@ export function parse(str: string, options?: IParseOptions): ICommandParseResult
 
 	if (lowercase != null) {
 		if (lowercase === true || lowercase === "command") {
-			cmd = cmd.toLowerCase();
+			command = command.toLowerCase();
 		}
 
-		if (subCmd != null) {
+		if (subCommand != null) {
 			if (lowercase === true || lowercase === "subcommand") {
-				subCmd = subCmd.toLowerCase();
+				subCommand = subCommand.toLowerCase();
 			}
 		}
 	}
 
 	return {
-		command: cmd,
-		subCommand: subCmd,
+		command,
+		subCommand,
 		arguments: args
-			? argsGenerator(args, argsStr!)
+			? argsGenerator(args, argsStr)
 			: null,
-		content: subCmd
-			? `${subCmd}${argsStr || ""}`
+		content: subCommand
+			? `${subCommand}${argsStr || ""}`
 			: ""
 	};
 }
@@ -122,6 +181,14 @@ export interface IParseOptions {
 	 * **This is disabled by default.**
 	 */
 	lowercase?: boolean | ("command" | "subcommand");
+	/**
+	 * Skip subcommand part?
+	 * 
+	 * Everything after the command will be parsed as arguments.
+	 * 
+	 * **This is disabled by default.**
+	 */
+	skipSubcommand?: boolean;
 }
 
 function argsGenerator(args: ICommandParseResultArg[], original: string): ICommandParseResultArgs {
@@ -172,7 +239,9 @@ export function argumentSplit(str: string, separator = ",", enableQuotes = true)
 	let nextIndex = 0;
 
 	while (nextIndex !== -1) {
-		str = str.substr(nextIndex);
+		str = str.slice(nextIndex);
+
+		if (str.length === 0) { break; }
 
 		if (enableQuotes && str[0] === "\"") {
 			// try to find second one
@@ -184,7 +253,7 @@ export function argumentSplit(str: string, separator = ",", enableQuotes = true)
 
 				args.push(
 					str
-						.substring(1, quoteEnd.index)
+						.slice(1, quoteEnd.index)
 						.replace("\\\"", "\"")
 				);
 
@@ -205,7 +274,7 @@ export function argumentSplit(str: string, separator = ",", enableQuotes = true)
 		}
 
 		args.push(
-			str.substring(0, argEndIndex)
+			str.slice(0, argEndIndex)
 		);
 	}
 
