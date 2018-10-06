@@ -229,6 +229,7 @@ export function argumentSplit(str: string, separator = ",", enableQuotes = true)
 
 	while (nextIndex !== -1) {
 		str = str.substr(nextIndex);
+		if (str.length === 0) { break; }
 
 		if (enableQuotes && str[0] === "\"") {
 			// try to find second one
