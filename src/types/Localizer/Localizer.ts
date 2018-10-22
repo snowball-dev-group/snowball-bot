@@ -366,10 +366,20 @@ export class Localizer {
 		const keysAssignation = this._keysAssignation;
 		const importedKeys: string[] = [];
 		const langMap = this._langsMap[langName];
-		const sourceLanguage =
-			langName !== this._sourceLang ? this._langsMap[this._sourceLang] : undefined;
 
-		if (!langMap) { throw new Error(`Language "${langName}" is not loaded yet`); }
+		const sourceLanguage = langName !== this._sourceLang
+			? this._langsMap[this._sourceLang]
+			: undefined;
+
+		if (!langMap) { 
+			if (process.env["NODE_ENV"] !== "production") {
+				throw new Error(`Language "${langName}" is not loaded yet`);
+			}
+
+			this._log("warn_trace", `Language "${langName}" is not loaded, skipping...`);
+
+			return;
+		}
 
 		if (typeof langFile !== "object" || Array.isArray(langFile)) {
 			langFile = await this._loader.loadStringsMap(langFile);
