@@ -464,7 +464,11 @@ export class Localizer {
 			const langName = langs[i];
 			const langFile = languagesTree[langName];
 
-			for (const key of await this.extendLanguage(langName, langFile)) {
+			const langKeys = await this.extendLanguage(langName, langFile);
+
+			if (!langKeys) { continue; }
+
+			for (const key of langKeys) {
 				if (!importedKeys.includes(key)) {
 					importedKeys.push(key);
 				}
