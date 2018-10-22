@@ -572,7 +572,7 @@ export class Localizer {
 	) {
 		const str = this.getString(lang, key, fallback);
 
-		return <string> this.formatString(lang, str, variables);
+		return this.formatString(lang, str, variables);
 	}
 
 	public formatString(
