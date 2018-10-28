@@ -366,10 +366,20 @@ export class Localizer {
 		const keysAssignation = this._keysAssignation;
 		const importedKeys: string[] = [];
 		const langMap = this._langsMap[langName];
-		const sourceLanguage =
-			langName !== this._sourceLang ? this._langsMap[this._sourceLang] : undefined;
 
-		if (!langMap) { throw new Error(`Language "${langName}" is not loaded yet`); }
+		const sourceLanguage = langName !== this._sourceLang
+			? this._langsMap[this._sourceLang]
+			: undefined;
+
+		if (!langMap) { 
+			if (process.env["NODE_ENV"] !== "production") {
+				throw new Error(`Language "${langName}" is not loaded yet`);
+			}
+
+			this._log("warn_trace", `Language "${langName}" is not loaded, skipping...`);
+
+			return;
+		}
 
 		if (typeof langFile !== "object" || Array.isArray(langFile)) {
 			langFile = await this._loader.loadStringsMap(langFile);
@@ -454,7 +464,11 @@ export class Localizer {
 			const langName = langs[i];
 			const langFile = languagesTree[langName];
 
-			for (const key of await this.extendLanguage(langName, langFile)) {
+			const langKeys = await this.extendLanguage(langName, langFile);
+
+			if (!langKeys) { continue; }
+
+			for (const key of langKeys) {
 				if (!importedKeys.includes(key)) {
 					importedKeys.push(key);
 				}
@@ -562,7 +576,7 @@ export class Localizer {
 	) {
 		const str = this.getString(lang, key, fallback);
 
-		return <string> this.formatString(lang, str, variables);
+		return this.formatString(lang, str, variables);
 	}
 
 	public formatString(
