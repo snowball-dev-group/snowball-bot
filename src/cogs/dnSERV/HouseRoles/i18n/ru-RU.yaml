@@ -1,0 +1,39 @@
+---
+DNSERV_HOUSEROLE_AUDITLOG@ASSIGN: "Присвоение роли династии"
+DNSERV_HOUSEROLE_AUDITLOG@DEASSIGN: "Удаление роли династии"
+DNSERV_HOUSEROLE_ERR_NOHOUSE: |-
+  {caller, select, self {Вы не состоите} other {{username} не состоит}} в династиях HypeSquad, так что никакой роли не было присвоено.
+DNSERV_HOUSEROLE_ERR_APIERR: |-
+  Похоже, что мы можем определить к какой династии {caller, select, self {вы принадлежите} other {принадлежит {username}}}.
+  
+  Попробуйте чуть позже или свяжитесь с разработчиком бота.
+DNSERV_HOUSEROLE_ERR_NOROLES: |-
+  У {caller, select, self {вас} other {{username}}} уже убраны все роли династий HypeSquad.
+DNSERV_HOUSEROLE_ERR_UNKNOWN: |-
+  Упс! Что-то определённо пошло не так, пока мы пытались выполнить ваш запрос.
+  
+  Попробуйте вызвать эту команду чуть позже.
+DNSERV_HOUSEROLE_HOUSE_BALANCE: "Balance"
+DNSERV_HOUSEROLE_HOUSE_BRAVERY: "Bravery"
+DNSERV_HOUSEROLE_HOUSE_BRILLIANCE: "Brilliance"
+DNSERV_HOUSEROLE_HOUSE+JOINER: ", "
+DNSERV_HOUSEROLE_ASSIGNED: |-
+  {caller, select, self {Вам} other {{username}}} {roleCount, plural, =0 {не были присвоены роли} =1 {была присвоена роль династии {houses}} other {были присвоены роли династий {houses}}}.
+DNSERV_HOUSEROLE_DEASSIGN: |2
+  {
+      caller, select,
+          self {
+              {
+                  rolesCount, plural,
+                      one {Ваша роль династии {houses} была убрана}
+                      other {Ваши роли династий {houses} были убраны}
+              }}
+          other {
+              {
+                  rolesCount, plural,
+                      one {Роль династии {houses} была убрана}
+                      other {Роли династий {houses} были убраны}
+              } с {username}}
+  }.
+DNSERV_HOUSEROLE_UNKNOWN_SUBCMD: "Неизвестная субкоманда. Доступные субкоманды: `assign` и `remove`."
+DNSERV_HOUSEROLE_UNKNOWN_PROPOSE: "Не удалось найти участника, которому вы хотели присвоить роли, пожалуйста, убедитесь, что упомянули пользователя правильно или же используйте его ID."
