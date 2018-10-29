@@ -244,7 +244,7 @@
     "autoLoad": ["PrefixAll", "MessagesFlows", "prefixAllPlugin", "ping", "eval", "whitelist", "setLanguage", "modTools_archive", "count", "embedME", "ownerCMDs", "shibChannel", "count_V2", "8Ball", "voiceRole", "profiles", "help", "colors", "guilds", "verificationhandler", "streamNotifications", "fl", "premiumControl"],
     "botOwner": "80351110224678912",
     "localizerOptions": {
-        "languages": ["en-US.yaml"],
+        "languages": ["en-US.yaml", "ru-RU.yaml"],
         "source_language": "en-US",
         "default_language": "en-US",
         "directory": "./languages/",
