@@ -23,7 +23,7 @@
         "shortid": "^2.2.13",
         "sqlite3": "^4.0.2",
         "timestring": "^5.0.1",
-        "universal-analytics": "^0.4.17",
+        "universal-analytics": "^0.4.20",
         "ws": "^6.0.0"
     },
     "name": "snowballbot-discord",
