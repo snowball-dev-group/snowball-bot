@@ -151,7 +151,7 @@ export class LastFMRecentProfilePlugin implements IProfilesPlugin {
 				// just typescript and "wtf":
 				//  see I checked `track["@attr"]` and now in second check of now playing
 				//  it tells me that `"@attr"` IS POSSIBLE TO BE UNDEFINED WOOOOOOOAH DUDEEEEE
-				if (track["@attr"] && track["@attr"]!.nowplaying) {
+				if (track["@attr"] && track["@attr"].nowplaying) {
 					trackStr = `${await localizeForUser(
 						caller,
 						"LASTFMPROFILEPLUGIN_CURRENTLYPLAYING", {
