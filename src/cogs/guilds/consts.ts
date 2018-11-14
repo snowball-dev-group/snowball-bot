@@ -66,7 +66,6 @@ export const EDITABLE_PARAMS = [
 	"welcome_msg",
 	"icon",
 	"owner",
-	"google-ua",
 	"private",
 	"invite_only",
 	"invite_only_msg",
