@@ -854,34 +854,6 @@ class Guilds extends Plugin implements IModule {
 					}
 				);
 			} break;
-			case "google-ua": {
-				if (isCalledByAdmin) {
-					return msg.channel.send({
-						embed: await i18n.generateLocalizedEmbed(
-							utils.EmbedType.Error,
-							msg.member,
-							"GUILDS_EDIT_NOPERMS"
-						)
-					});
-				}
-
-				if (!content.startsWith("UA-")) {
-					return msg.channel.send({
-						embed: await i18n.generateLocalizedEmbed(
-							utils.EmbedType.Error,
-							msg.member,
-							"GUILDS_EDIT_GOOGLEUAWRONGCODE"
-						)
-					});
-				}
-
-				customize.ua = content;
-
-				doneString = await i18n.localizeForUser(
-					msg.member,
-					"GUILDS_EDIT_GOOGLEUADONE"
-				);
-			} break;
 			case "invite_only": case "private": {
 				if (isCalledByAdmin) {
 					return msg.channel.send({
