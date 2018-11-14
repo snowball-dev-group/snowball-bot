@@ -57,7 +57,7 @@
         "tslint-consistent-codestyle": "^1.13.3",
         "tslint-eslint-rules": "^5.4.0",
         "tslint-sonarts": "^1.8.0",
-        "typescript": "^3.0.3"
+        "typescript": "^3.1.6"
     },
     "scripts": {
         "lint": "tslint --project tsconfig.json src/**/*.ts",
