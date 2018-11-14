@@ -14,7 +14,6 @@ import * as utils from "@utils/utils";
 import * as djs from "discord.js";
 import * as getLogger from "loggy";
 import { default as fetch } from "node-fetch";
-import * as ua from "universal-analytics";
 import { parse as parseURI } from "url";
 
 const DEFAULT_TABLE_NAME = "guilds";
@@ -1297,19 +1296,6 @@ class Guilds extends Plugin implements IModule {
 			});
 		}
 
-		let visitor: ua.Visitor | undefined;
-
-		if (cz.ua) {
-			visitor = ua(
-				cz.ua,
-				msg.guild.id, {
-					strictCidFormat: false,
-					https: true,
-					uid: msg.member.id
-				}
-			);
-		}
-
 		let str = await i18n.localizeForUser(
 			msg.member,
 			"GUILDS_LEAVE_CONFIRMATION", {
@@ -1335,8 +1321,6 @@ class Guilds extends Plugin implements IModule {
 
 		const confirmation = await interactive.createConfirmationMessage(confirmationEmbed, msg);
 		if (!confirmation) {
-			visitor && visitor.event("Members", "Saved from leave", msg.member.id).send();
-
 			return msg.channel.send({
 				embed: await i18n.generateLocalizedEmbed(
 					utils.EmbedType.OK,
@@ -1387,10 +1371,6 @@ class Guilds extends Plugin implements IModule {
 					}
 				)
 			);
-
-			visitor && visitor
-				.event("Members", "Left", msg.member.id)
-				.send();
 		} catch (err) {
 			return msg.channel.send({
 				embed: await i18n.generateLocalizedEmbed(
@@ -1436,19 +1416,6 @@ class Guilds extends Plugin implements IModule {
 
 		let cz = <DBController.IGuildCustomize> JSON.parse(dbRow.customize);
 
-		let visitor: ua.Visitor | undefined;
-
-		if (cz.ua) {
-			visitor = ua(
-				cz.ua,
-				msg.guild.id, {
-					strictCidFormat: false,
-					https: true,
-					uid: msg.member.id
-				}
-			);
-		}
-
 		const isInvited =
 			cz.invite_only ?
 				Array.isArray(cz.invites) &&
@@ -1456,14 +1423,6 @@ class Guilds extends Plugin implements IModule {
 			true;
 
 		if (!isInvited) {
-			visitor && visitor
-				.event(
-					"Members",
-					"Attempt to join without invitation",
-					msg.member.id
-				)
-				.send();
-
 			const message = cz.invite_only_msg;
 
 			if (message != null) {
@@ -1494,14 +1453,6 @@ class Guilds extends Plugin implements IModule {
 			cz.banned.includes(msg.member.id);
 
 		if (isBanned) {
-			visitor && visitor
-				.event(
-					"Members",
-					"Banned user attempted to join",
-					msg.member.id
-				)
-				.send();
-
 			return msg.channel.send({
 				embed: await i18n.generateLocalizedEmbed(
 					utils.EmbedType.Error,
@@ -1717,14 +1668,6 @@ class Guilds extends Plugin implements IModule {
 					)
 				});
 
-				visitor && visitor
-					.event(
-						"Members",
-						"User rejected the given rules",
-						msg.member.id
-					)
-					.send();
-
 				return progressMsg.edit({
 					embed: await i18n.generateLocalizedEmbed(
 						utils.EmbedType.Error,
@@ -1756,14 +1699,6 @@ class Guilds extends Plugin implements IModule {
 					}
 				)
 			});
-
-			visitor && visitor
-				.event(
-					"Members",
-					"User accepted the given rules",
-					msg.member.id
-				)
-				.send();
 		}
 
 		try {
@@ -1810,8 +1745,6 @@ class Guilds extends Plugin implements IModule {
 					}
 				)
 			);
-
-			visitor && visitor.event("Members", "Joined", msg.member.id).send();
 		} catch (err) {
 			return progressMsg.edit({
 				embed: await i18n.generateLocalizedEmbed(
@@ -2155,18 +2088,6 @@ class Guilds extends Plugin implements IModule {
 
 		const cz = <DBController.IGuildCustomize> JSON.parse(dbRow.customize);
 
-		let visitor: ua.Visitor | undefined = undefined;
-		if (cz.ua) {
-			visitor = ua(
-				cz.ua,
-				msg.guild.id, {
-					strictCidFormat: false,
-					https: true,
-					uid: msg.member.id
-				}
-			);
-		}
-
 		switch (action) {
 			case "list": {
 				let str = `# ${await i18n.localizeForUser(
@@ -2367,14 +2288,6 @@ class Guilds extends Plugin implements IModule {
 								username: utils.escapeDiscordMarkdown(member.displayName, true)
 							}
 						)}\n`;
-
-						visitor && visitor
-							.event(
-								"Users Management",
-								"Member kicked",
-								member.id
-							)
-							.send();
 					} else if (action === "ban") {
 						if (!Array.isArray(cz.banned)) {
 							cz.banned = [];
@@ -2394,14 +2307,6 @@ class Guilds extends Plugin implements IModule {
 								)
 							}
 						)}\n`;
-
-						visitor && visitor
-							.event(
-								"Users Management",
-								"Member banned",
-								member.id
-							)
-							.send();
 					} else if (action === "unban") {
 						if (!Array.isArray(cz.banned)) { break; }
 

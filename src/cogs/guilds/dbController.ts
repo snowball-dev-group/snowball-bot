@@ -192,10 +192,6 @@ export interface IGuildCustomize {
 	 */
 	invite_only_msg?: string;
 	/**
-	 * Google Analystic key
-	*/
-	ua?: string;
-	/**
 	 * Welcome message
 	 */
 	welcome_msg?: string;
