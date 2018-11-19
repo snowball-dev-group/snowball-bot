@@ -42,7 +42,7 @@
         "@types/micromatch": "^3.1.0",
         "@types/mz": "0.0.32",
         "@types/node": "^10.12.7",
-        "@types/node-fetch": "^2.1.2",
+        "@types/node-fetch": "^2.1.4",
         "@types/random-js": "^1.0.31",
         "@types/raven": "^2.5.1",
         "@types/shortid": "0.0.29",
