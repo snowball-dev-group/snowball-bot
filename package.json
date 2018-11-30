@@ -11,7 +11,7 @@
         "knex": "^0.15.2",
         "lodash": "^4.17.11",
         "loggy": "gitlab:BlackSilverBot/loggy#b030f0e80b485086ae88cd21c8bdee2bde798189",
-        "luxon": "^1.7.1",
+        "luxon": "^1.8.2",
         "micromatch": "^3.1.10",
         "minimist": "^1.2.0",
         "module-alias": "^2.1.0",
